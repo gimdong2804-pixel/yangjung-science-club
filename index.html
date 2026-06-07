@@ -1271,6 +1271,34 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        @keyframes heartPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes commentFadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+
+        .animate-heart {
+            animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: #ff6b6b !important;
+        }
+
+        .animate-heart-cancel {
+            animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .comment-slide-in {
+            animation: fadeInDown 0.4s ease forwards;
+        }
+
+        .comment-fade-out {
+            animation: commentFadeOut 0.4s ease forwards;
+        }
+
         /* Responsive Adjustments */
         @media (max-width: 768px) {
             header {
@@ -2217,53 +2245,69 @@
             }
 
             postsUnsubscribe = query.onSnapshot((snapshot) => {
-                // 기존 일반 카드 모두 지우기
-                const cards = boardContainer.querySelectorAll('.board-card:not(.pinned)');
-                cards.forEach(card => card.remove());
+                // 기존 카드 모두 지우기
+                boardContainer.innerHTML = '';
 
-                // 총 글 개수 업데이트 (고정글 제외)
-                document.querySelector('.board-header span').innerHTML = `전체 게시글 <span style="color: var(--accent-color); font-weight: bold;">${snapshot.size}</span>개`;
-
-            snapshot.forEach((doc) => {
-                const post = doc.data();
-                const timeStr = formatDate(post.createdAt);
-                const avatar = post.author ? post.author.substring(0, 1) : '?';
-                let avatarHtml = `<div class="board-author-avatar" style="background: hsl(${Math.random() * 360}, 60%, 50%)">${avatar}</div>`;
-                if (post.userPhoto) {
-                    avatarHtml = `<img class="board-author-avatar" src="${post.userPhoto}" alt="${post.author}" style="object-fit: cover; border: 1px solid var(--glass-border);">`;
+                // 총 글 개수 업데이트
+                const headerSpan = document.querySelector('.board-header span');
+                if(headerSpan) {
+                    headerSpan.innerHTML = `전체 게시글 <span style="color: var(--accent-color); font-weight: bold;">${snapshot.size}</span>개`;
                 }
 
-                const cardHtml = `
-                    <div class="board-card" data-id="${doc.id}">
-                        <div class="board-card-header">
-                            <div class="board-author">
-                                ${avatarHtml}
-                                <span class="board-author-name">${post.author}</span>
-                            </div>
-                            <span class="board-time">${timeStr}</span>
-                        </div>
-                        <h3 class="board-title">${post.title}</h3>
-                        <p class="board-preview">${post.body}</p>
-                        <div class="board-footer">
-                            <span>조회 ${post.views}회</span>
-                            <div class="board-stats">
-                                <span><i class="fa-regular fa-comment"></i> <span id="comment-cnt-${doc.id}">0</span></span>
-                                <span><i class="fa-regular fa-heart"></i> ${post.likes}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                boardContainer.insertAdjacentHTML('beforeend', cardHtml);
-
-                const newCard = boardContainer.lastElementChild;
-                newCard.addEventListener('click', () => openPostDetail(doc.id, post, avatarHtml, timeStr));
-
-                // 댓글 수 불러오기
-                db.collection('posts').doc(doc.id).collection('comments').onSnapshot(snap => {
-                    const el = document.getElementById(`comment-cnt-${doc.id}`);
-                    if(el) el.innerText = snap.size;
+                // pinned 항목 우선 정렬
+                const docs = [...snapshot.docs].sort((a, b) => {
+                    const pinA = a.data().pinned ? 1 : 0;
+                    const pinB = b.data().pinned ? 1 : 0;
+                    return pinB - pinA; // 내림차순
                 });
-            });
+
+                docs.forEach((doc) => {
+                    const post = doc.data();
+                    const timeStr = formatDate(post.createdAt);
+                    const avatar = post.author ? post.author.substring(0, 1) : '?';
+                    let avatarHtml = `<div class="board-author-avatar" style="background: hsl(${Math.random() * 360}, 60%, 50%)">${avatar}</div>`;
+                    if (post.userPhoto) {
+                        avatarHtml = `<img class="board-author-avatar" src="${post.userPhoto}" alt="${post.author}" style="object-fit: cover; border: 1px solid var(--glass-border);">`;
+                    }
+
+                    const pinBadge = post.pinned ? `<span style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; margin-bottom: 0.5rem; display: inline-block;"><i class="fa-solid fa-thumbtack"></i> 상단 고정</span><br>` : '';
+                    const isLiked = currentUser && post.likedUsers && post.likedUsers.includes(currentUser.uid);
+                    const heartIcon = isLiked ? 'fa-solid fa-heart animate-heart' : 'fa-regular fa-heart';
+                    const heartColor = isLiked ? 'color: #ff6b6b;' : '';
+                    const cardStyle = post.pinned ? 'border: 1px solid var(--accent-color); background: rgba(59, 130, 246, 0.05);' : '';
+
+                    const cardHtml = `
+                        <div class="board-card" data-id="${doc.id}" style="${cardStyle}">
+                            ${pinBadge}
+                            <div class="board-card-header">
+                                <div class="board-author">
+                                    ${avatarHtml}
+                                    <span class="board-author-name">${post.author}</span>
+                                </div>
+                                <span class="board-time">${timeStr}</span>
+                            </div>
+                            <h3 class="board-title">${post.title}</h3>
+                            <p class="board-preview">${post.body}</p>
+                            <div class="board-footer">
+                                <span>조회 ${post.views}회</span>
+                                <div class="board-stats">
+                                    <span><i class="fa-regular fa-comment"></i> <span id="comment-cnt-${doc.id}">0</span></span>
+                                    <span><i class="${heartIcon}" style="${heartColor}"></i> ${post.likes || 0}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    boardContainer.insertAdjacentHTML('beforeend', cardHtml);
+
+                    const newCard = boardContainer.lastElementChild;
+                    newCard.addEventListener('click', () => openPostDetail(doc.id, post, avatarHtml, timeStr));
+
+                    // 댓글 수 불러오기
+                    db.collection('posts').doc(doc.id).collection('comments').onSnapshot(snap => {
+                        const el = document.getElementById(`comment-cnt-${doc.id}`);
+                        if(el) el.innerText = snap.size;
+                    });
+                });
             });
         }
 
@@ -2317,18 +2361,34 @@
             db.collection('posts').doc(id).update({ views: firebase.firestore.FieldValue.increment(1) });
             post.views += 1;
 
-            // 게시글 삭제 버튼 노출 여부 결정 (글 작성자이거나 회장 계정인 경우)
-            const isAuthor = currentUser && (post.uid === currentUser.uid || currentUser.email === 'gimdong2804@gmail.com');
+            const isPresident = currentUser && currentUser.email === 'gimdong2804@gmail.com';
+            const isAuthor = currentUser && (post.uid === currentUser.uid || isPresident);
+            
+            // 삭제 버튼 (작성자 또는 회장)
             const deleteBtnHtml = isAuthor ? `
                 <button onclick="deletePost('${id}')" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem;" title="삭제하기">
                     <i class="fa-solid fa-trash-can"></i> 삭제
                 </button>
             ` : '';
+            
+            // 고정 버튼 (회장 전용)
+            const pinBtnHtml = isPresident ? `
+                <button onclick="togglePin('${id}', ${post.pinned || false})" style="background: none; border: none; color: ${post.pinned ? 'var(--accent-color)' : 'var(--text-secondary)'}; cursor: pointer; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; margin-right: 1rem;" title="${post.pinned ? '고정 해제' : '상단 고정'}">
+                    <i class="fa-solid fa-thumbtack"></i> ${post.pinned ? '고정됨' : '고정하기'}
+                </button>
+            ` : '';
+
+            const isLiked = currentUser && post.likedUsers && post.likedUsers.includes(currentUser.uid);
+            const heartIcon = isLiked ? 'fa-solid fa-heart animate-heart' : 'fa-regular fa-heart';
+            const heartColor = isLiked ? 'color: #ff6b6b;' : 'color: var(--text-primary);';
 
             area.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                     <div style="color: var(--accent-color); font-size: 0.85rem; font-weight: 600;">건의방 · 제안</div>
-                    ${deleteBtnHtml}
+                    <div style="display: flex; align-items: center;">
+                        ${pinBtnHtml}
+                        ${deleteBtnHtml}
+                    </div>
                 </div>
                 <h2 class="post-body-title" style="margin-bottom: 0.5rem; font-size: 1.6rem; color: var(--text-primary);">${post.title}</h2>
                 <div style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
@@ -2342,7 +2402,7 @@
                     </div>
                     <div class="board-stats" style="font-size: 0.95rem;">
                         <span><i class="fa-regular fa-comment"></i> <span id="detailTopCommentCount">0</span></span>
-                        <span style="cursor: pointer; color: var(--text-primary);" onclick="likePost('${id}')" id="detailLikeBtn"><i class="fa-regular fa-heart"></i> ${post.likes}</span>
+                        <span style="cursor: pointer; transition: color 0.3s; ${heartColor}" onclick="likePost('${id}')" id="detailLikeBtn"><i class="${heartIcon}"></i> <span id="detailLikeCnt">${post.likes || 0}</span></span>
                     </div>
                 </div>
                 
@@ -2360,16 +2420,14 @@
                 const commentsHtml = snap.docs.map(cDoc => {
                     const c = cDoc.data();
                     const cTime = formatDate(c.createdAt);
-                    const isPresident = c.author.includes('회장') || (c.email && c.email === 'gimdong2804@gmail.com');
-                    const badge = isPresident ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem;">공식 답변</span>' : '';
+                    const isPresidentComment = c.author.includes('회장') || (c.email && c.email === 'gimdong2804@gmail.com');
+                    const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem;">공식 답변</span>' : '';
                     
-                    // 구글 프로필 사진이 있으면 그걸 사용하고, 없으면 기본 아바타 노출
-                    let cAvatarHtml = `<div class="board-author-avatar" style="background: ${isPresident ? 'var(--accent-color)' : '#9ca3af'}; width: 32px; height: 32px; font-size: 0.8rem; margin-top: 0.2rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;">${isPresident ? '<i class="fa-solid fa-crown" style="font-size: 0.6rem;"></i>' : c.author.substring(0,1)}</div>`;
+                    let cAvatarHtml = `<div class="board-author-avatar" style="background: ${isPresidentComment ? 'var(--accent-color)' : '#9ca3af'}; width: 32px; height: 32px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;">${isPresidentComment ? '<i class="fa-solid fa-crown" style="font-size: 0.6rem;"></i>' : c.author.substring(0,1)}</div>`;
                     if (c.userPhoto) {
-                        cAvatarHtml = `<img class="board-author-avatar" src="${c.userPhoto}" alt="${c.author}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; border: 1px solid var(--glass-border); margin-top: 0.2rem;">`;
+                        cAvatarHtml = `<img class="board-author-avatar" src="${c.userPhoto}" alt="${c.author}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; border: 1px solid var(--glass-border);">`;
                     }
 
-                    // 댓글 삭제 버튼 노출 여부 (작성자 본인 또는 회장)
                     const isCommentAuthor = currentUser && (c.uid === currentUser.uid || currentUser.email === 'gimdong2804@gmail.com');
                     const cDeleteBtn = isCommentAuthor ? `
                         <button onclick="deleteComment('${id}', '${cDoc.id}')" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.8rem; margin-left: auto; display: flex; align-items: center; padding: 0.25rem;" title="댓글 삭제">
@@ -2378,9 +2436,9 @@
                     ` : '';
 
                     return `
-                        <div class="comment-item" style="display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <div class="comment-item comment-slide-in" id="comment-${cDoc.id}" style="display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.03);">
                             ${cAvatarHtml}
-                            <div class="comment-content" style="flex: 1; min-width: 0;">
+                            <div class="comment-content" style="flex: 1; min-width: 0; padding-top: 0.2rem;">
                                 <div class="comment-header" style="display: flex; align-items: center; gap: 0.5rem;">
                                     <span class="board-author-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">${c.author}</span>
                                     ${badge}
@@ -2398,8 +2456,58 @@
             switchPage(currentPage, postDetailPage);
         }
 
-        window.likePost = function(id) {
-            db.collection('posts').doc(id).update({ likes: firebase.firestore.FieldValue.increment(1) });
+        window.likePost = async function(id) {
+            if (!currentUser) {
+                alert('좋아요를 누르시려면 먼저 Google 로그인을 해주세요!');
+                openDrawer();
+                return;
+            }
+            
+            const btn = document.getElementById('detailLikeBtn');
+            const icon = btn.querySelector('i');
+            const cntSpan = document.getElementById('detailLikeCnt');
+            const postRef = db.collection('posts').doc(id);
+            
+            try {
+                const doc = await postRef.get();
+                if (doc.exists) {
+                    const postData = doc.data();
+                    const likedUsers = postData.likedUsers || [];
+                    const isLiked = likedUsers.includes(currentUser.uid);
+                    
+                    if (isLiked) {
+                        // 좋아요 취소
+                        await postRef.update({
+                            likes: firebase.firestore.FieldValue.increment(-1),
+                            likedUsers: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+                        });
+                        icon.className = 'fa-regular fa-heart animate-heart-cancel';
+                        btn.style.color = 'var(--text-primary)';
+                        cntSpan.innerText = Math.max(0, (postData.likes || 1) - 1);
+                        setTimeout(() => icon.classList.remove('animate-heart-cancel'), 300);
+                    } else {
+                        // 좋아요 추가
+                        await postRef.update({
+                            likes: firebase.firestore.FieldValue.increment(1),
+                            likedUsers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                        });
+                        icon.className = 'fa-solid fa-heart animate-heart';
+                        btn.style.color = '#ff6b6b';
+                        cntSpan.innerText = (postData.likes || 0) + 1;
+                    }
+                }
+            } catch (error) {
+                console.error("Error toggling like: ", error);
+            }
+        };
+
+        window.togglePin = async function(id, currentPinned) {
+            if(!currentUser || currentUser.email !== 'gimdong2804@gmail.com') return;
+            try {
+                await db.collection('posts').doc(id).update({ pinned: !currentPinned });
+                // 고정 상태 반영을 위해 상세페이지 닫음
+                switchPage(postDetailPage, suggestionPage);
+            } catch(e) { console.error(e); }
         };
 
         window.deletePost = async function(id) {
@@ -2416,11 +2524,27 @@
 
         window.deleteComment = async function(postId, commentId) {
             if (!confirm('정말로 이 댓글을 삭제하시겠습니까?')) return;
-            try {
-                await db.collection('posts').doc(postId).collection('comments').doc(commentId).delete();
-            } catch (error) {
-                console.error("Error deleting comment: ", error);
-                alert('댓글 삭제 실패');
+            const commentEl = document.getElementById(`comment-${commentId}`);
+            
+            if (commentEl) {
+                commentEl.classList.remove('comment-slide-in');
+                commentEl.classList.add('comment-fade-out');
+                
+                setTimeout(async () => {
+                    try {
+                        await db.collection('posts').doc(postId).collection('comments').doc(commentId).delete();
+                    } catch (error) {
+                        console.error("Error deleting comment: ", error);
+                        alert('댓글 삭제 실패');
+                    }
+                }, 400); // fade out 대기
+            } else {
+                try {
+                    await db.collection('posts').doc(postId).collection('comments').doc(commentId).delete();
+                } catch (error) {
+                    console.error("Error deleting comment: ", error);
+                    alert('댓글 삭제 실패');
+                }
             }
         };
 
