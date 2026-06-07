@@ -2131,7 +2131,7 @@
         <img src="" alt="확대 이미지" id="imageLightboxImg">
     </div>
 
-    <button class="fab fab-hidden" id="writePostBtn" aria-label="글쓰기" style="opacity: 0; pointer-events: none; visibility: hidden;">
+    <button class="fab fab-hidden" id="writePostBtn" aria-label="글쓰기">
         <i class="fa-solid fa-pen"></i>
     </button>
 
@@ -2406,22 +2406,6 @@
                         siteFooter.style.display = 'none';
                     }
 
-                    // [추가] 커뮤니티 페이지(suggestionPage)인 경우에만 작성 버튼 표시
-                    const writePostBtn = document.getElementById('writePostBtn');
-                    if (writePostBtn) {
-                        if (toPage === suggestionPage) {
-                            writePostBtn.classList.remove('fab-hidden');
-                            writePostBtn.style.opacity = '1';
-                            writePostBtn.style.pointerEvents = 'auto';
-                            writePostBtn.style.visibility = 'visible';
-                        } else {
-                            writePostBtn.classList.add('fab-hidden');
-                            writePostBtn.style.opacity = '0';
-                            writePostBtn.style.pointerEvents = 'none';
-                            writePostBtn.style.visibility = 'hidden';
-                        }
-                    }
-                    
                     // 인사말 페이지로 왔을 때만 페이드 인으로 스크롤바 노출
                     if (toPage === greetingPage) {
                         showScrollbar();
@@ -2429,8 +2413,36 @@
                     
                     // 현재 활성화된 페이지 상태 업데이트
                     currentPage = toPage;
+
+                    // [수정] 작성 버튼 가시성 업데이트 (통합 함수 호출)
+                    if (typeof updateWriteButtonVisibility === 'function') {
+                        updateWriteButtonVisibility(toPage);
+                    }
                 });
             }, 400);
+        }
+
+        // [추가] 작성 버튼 가시성 통합 제어 함수
+        function updateWriteButtonVisibility(page) {
+            const btn = document.getElementById('writePostBtn');
+            if (!btn) return;
+            const targetPage = page || currentPage;
+            const sideDetail = document.getElementById('sideDetailContainer');
+            const isDetailHidden = !sideDetail || sideDetail.classList.contains('detail-hidden');
+            const shouldShow = (targetPage === suggestionPage) && isDetailHidden;
+            if (shouldShow) {
+                btn.classList.remove('fab-hidden');
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+                btn.style.visibility = 'visible';
+                btn.style.transform = 'scale(1) rotate(0)';
+            } else {
+                btn.classList.add('fab-hidden');
+                btn.style.opacity = '0';
+                btn.style.pointerEvents = 'none';
+                btn.style.visibility = 'hidden';
+                btn.style.transform = 'scale(0.8) rotate(45deg)';
+            }
         }
 
         greetingLink.addEventListener('click', (e) => {
@@ -2841,8 +2853,8 @@
                 // 1. 먼저 애니메이션 클래스만 추가합니다. (포지션 변경은 뒤로 미룸)
                 sideDetailContainer.classList.add('detail-hidden');
 
-                // 작성 버튼 다시 표시
-                if (writePostBtn) writePostBtn.classList.remove('fab-hidden');
+                // [수정] 작성 버튼 다시 표시 여부 판단 (통합 함수 호출)
+                updateWriteButtonVisibility();
 
                 // 2. 애니메이션(0.6s)이 완전히 끝난 뒤에 레이아웃을 정리합니다.
                 setTimeout(() => {
@@ -2877,8 +2889,10 @@
                 const isFullscreen = currentDetailMode === 'fullscreen';
                 const isMobile = window.innerWidth <= 1023;
 
-                // 작성 버튼 숨기기
-                if (writePostBtn) writePostBtn.classList.add('fab-hidden');
+                // [수정] 작성 버튼 숨기기 (통합 함수 호출)
+                // hidden 클래스를 명시적으로 설정하여 shouldShow 조건이 false가 되게 함
+                sideDetailContainer.classList.add('detail-hidden');
+                updateWriteButtonVisibility();
 
                 // 1. 먼저 부모 요소를 이동시키고 클래스를 설정합니다.
                 if (isFullscreen || isMobile) {
