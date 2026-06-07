@@ -1683,13 +1683,14 @@
             top: 90px;
             max-height: calc(100vh - 120px);
             overflow-y: auto;
-            /* 애니메이션 성능 최적화 및 속도 조절 */
-            will-change: transform, opacity, width, margin;
-            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-                        opacity 0.5s ease,
-                        width 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-                        margin 0.6s cubic-bezier(0.16, 1, 0.3, 1),
-                        padding 0.6s ease;
+            /* 하드웨어 가속 및 성능 최적화 */
+            backface-visibility: hidden;
+            will-change: transform, opacity;
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                        opacity 0.4s ease,
+                        width 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                        margin 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                        padding 0.5s ease;
             display: flex;
             flex-direction: column;
             padding-bottom: 90px;
@@ -1699,22 +1700,29 @@
             transform: translateX(0);
         }
 
+        /* 전체화면일 때는 너비/여백 애니메이션을 꺼서 찌그러짐 방지 */
+        .side-detail-container.fullscreen-detail {
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                        opacity 0.4s ease;
+            width: 100vw !important;
+            margin: 0 !important;
+        }
+
         .side-detail-container.detail-hidden {
             opacity: 0 !important;
             visibility: hidden !important;
             transform: translateX(100%) !important;
             pointer-events: none !important;
-            border: none !important;
-            overflow: hidden !important;
         }
 
-        /* 데스크탑 사이드 모드에서만 너비 애니메이션 적용하여 본문 밀어내기 */
+        /* 데스크탑 사이드 모드에서만 너비 조절로 본문 밀어내기 */
         @media (min-width: 1024px) {
             .side-detail-container:not(.fullscreen-detail).detail-hidden {
                 width: 0 !important;
                 padding-left: 0 !important;
                 padding-right: 0 !important;
                 margin-left: -2rem !important;
+                border: none !important;
             }
         }
 
@@ -1787,12 +1795,11 @@
                 top: 0 !important;
                 padding-bottom: 80px;
                 transform: translateX(0);
+                /* 모바일에서도 너비 애니메이션 배제 */
                 transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
             }
             .side-detail-container.detail-hidden {
                 transform: translateX(100%);
-                width: 100vw;
-                margin-left: 0;
                 opacity: 0;
             }
             .side-detail-container .comment-input-area {
