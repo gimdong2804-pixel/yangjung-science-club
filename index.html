@@ -1676,10 +1676,10 @@
             top: 90px;
             max-height: calc(100vh - 120px);
             overflow-y: auto;
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease, visibility 0.4s, width 0.4s cubic-bezier(0.4, 0, 0.2, 1), margin 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease, visibility 0.4s, width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), margin 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: flex;
             flex-direction: column;
-            padding-bottom: 90px; /* 댓글 입력 영역 공간 */
+            padding-bottom: 90px;
             z-index: 10;
             opacity: 1;
             visibility: visible;
@@ -1689,12 +1689,12 @@
         .side-detail-container.hidden {
             opacity: 0;
             visibility: hidden;
-            transform: translateX(100%);
+            transform: translateX(50px); /* 살짝 옆에서 밀려오는 느낌 */
             pointer-events: none;
             width: 0;
             padding-left: 0;
             padding-right: 0;
-            margin-left: -2rem; /* gap 보정 */
+            margin-left: -2rem;
             border: none;
             overflow: hidden;
         }
@@ -1768,11 +1768,13 @@
                 top: 0 !important;
                 padding-bottom: 80px;
                 transform: translateX(0);
+                transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
             }
             .side-detail-container.hidden {
                 transform: translateX(100%);
                 width: 100vw;
                 margin-left: 0;
+                opacity: 0;
             }
             .side-detail-container .comment-input-area {
                 position: fixed;
@@ -2835,23 +2837,24 @@
             currentPostId = id;
             currentDetailMode = mode;
             const sideDetailContainer = document.getElementById('sideDetailContainer');
+
             if (sideDetailContainer) {
                 const isFullscreen = currentDetailMode === 'fullscreen';
                 const isMobile = window.innerWidth <= 1023;
                 
-                // 모바일이거나 풀스크린 모드이면 body로 이동하여 부모 요소의 Stacking Context(transform 등) 제한을 탈출해 전체화면이 짤리지 않게 합니다.
+                // 1. 먼저 부모 요소를 이동시킵니다. (애니메이션 시작 전)
                 if (isFullscreen || isMobile) {
                     if (sideDetailContainer.parentElement !== document.body) {
                         document.body.appendChild(sideDetailContainer);
                     }
                 } else {
-                    // 데스크탑 사이드 뷰 모드이면 원래 위치인 community-layout으로 복귀시킵니다.
                     const communityLayout = document.querySelector('.community-layout');
                     if (communityLayout && sideDetailContainer.parentElement !== communityLayout) {
                         communityLayout.appendChild(sideDetailContainer);
                     }
                 }
                 
+                // 2. 클래스를 설정합니다.
                 sideDetailContainer.classList.toggle('fullscreen-detail', isFullscreen);
                 document.body.classList.toggle('detail-open', isFullscreen || isMobile);
 
@@ -2861,6 +2864,14 @@
                         ? '<i class="fa-solid fa-file-lines"></i> 건의글 상세'
                         : '<i class="fa-regular fa-comments"></i> 댓글 보기';
                 }
+
+                // 3. 브라우저가 레이아웃을 계산할 시간을 준 뒤 hidden을 제거하여 애니메이션을 작동시킵니다.
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        sideDetailContainer.classList.remove('hidden');
+                        sideDetailContainer.scrollTop = 0;
+                    });
+                });
             }
 
             const area = document.getElementById('detailPostArea');
@@ -2995,10 +3006,7 @@
                 commentArea.innerHTML = `<h3 style="margin-bottom: 1.5rem; color: var(--text-primary); font-size: 1.1rem;">댓글 <span style="color: var(--accent-color);" id="detailCommentCount">${snap.size}</span></h3>` + commentsHtml;
             });
 
-            if (sideDetailContainer) {
-                sideDetailContainer.classList.remove('hidden');
-                sideDetailContainer.scrollTop = 0;
-            }
+            // openPostDetail 하단에 있던 중복 hidden 제거 로직은 함수 내부(상단)로 옮겼으므로 여기서는 삭제합니다.
         }
 
         // 상세 닫기 이벤트 바인딩
