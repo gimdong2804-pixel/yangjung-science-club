@@ -1298,11 +1298,10 @@
         }
 
         .user-email {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            word-break: break-all;
+            white-space: normal;
         }
 
         .logout-btn {
@@ -1975,12 +1974,14 @@
                 // UI 업데이트
                 googleLoginBtn.classList.add('hidden');
                 userProfileInfo.classList.remove('hidden');
-                userName.innerText = user.displayName;
+
+                const isPresident = user.email === 'gimdong2804@gmail.com';
+                userName.innerText = isPresident ? "회장 김동현" : user.displayName;
                 userEmail.innerText = user.email;
                 userAvatar.src = user.photoURL || '';
 
                 if (postAuthorInput) {
-                    postAuthorInput.value = user.displayName;
+                    postAuthorInput.value = isPresident ? "회장 김동현" : user.displayName;
                     postAuthorInput.placeholder = "작성자 이름";
                 }
             } else {
@@ -2026,7 +2027,7 @@
                 return;
             }
             const title = document.getElementById('postTitle').value.trim();
-            const author = currentUser.displayName;
+            const author = currentUser.email === 'gimdong2804@gmail.com' ? "회장 김동현" : currentUser.displayName;
             const body = document.getElementById('postBody').value.trim();
 
             if (!title || !body) {
@@ -2043,6 +2044,7 @@
                     author: author,
                     uid: currentUser.uid,
                     userPhoto: currentUser.photoURL || '',
+                    email: currentUser.email,
                     body: body,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     views: 0,
@@ -2129,7 +2131,7 @@
             post.views += 1;
 
             // 게시글 삭제 버튼 노출 여부 결정 (글 작성자이거나 회장 계정인 경우)
-            const isAuthor = currentUser && (post.uid === currentUser.uid || currentUser.email.startsWith('gimdo'));
+            const isAuthor = currentUser && (post.uid === currentUser.uid || currentUser.email === 'gimdong2804@gmail.com');
             const deleteBtnHtml = isAuthor ? `
                 <button onclick="deletePost('${id}')" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem;" title="삭제하기">
                     <i class="fa-solid fa-trash-can"></i> 삭제
@@ -2171,7 +2173,7 @@
                 const commentsHtml = snap.docs.map(cDoc => {
                     const c = cDoc.data();
                     const cTime = formatDate(c.createdAt);
-                    const isPresident = c.author.includes('회장') || (c.email && c.email.startsWith('gimdo'));
+                    const isPresident = c.author.includes('회장') || (c.email && c.email === 'gimdong2804@gmail.com');
                     const badge = isPresident ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem;">공식 답변</span>' : '';
                     
                     // 구글 프로필 사진이 있으면 그걸 사용하고, 없으면 기본 아바타 노출
@@ -2181,7 +2183,7 @@
                     }
 
                     // 댓글 삭제 버튼 노출 여부 (작성자 본인 또는 회장)
-                    const isCommentAuthor = currentUser && (c.uid === currentUser.uid || currentUser.email.startsWith('gimdo'));
+                    const isCommentAuthor = currentUser && (c.uid === currentUser.uid || currentUser.email === 'gimdong2804@gmail.com');
                     const cDeleteBtn = isCommentAuthor ? `
                         <button onclick="deleteComment('${id}', '${cDoc.id}')" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.8rem; margin-left: auto; display: flex; align-items: center; padding: 0.25rem;" title="댓글 삭제">
                             <i class="fa-solid fa-trash-can"></i>
@@ -2249,7 +2251,7 @@
 
             try {
                 await db.collection('posts').doc(currentPostId).collection('comments').add({
-                    author: currentUser.displayName,
+                    author: currentUser.email === 'gimdong2804@gmail.com' ? "회장 김동현" : currentUser.displayName,
                     uid: currentUser.uid,
                     userPhoto: currentUser.photoURL || '',
                     email: currentUser.email,
