@@ -2040,6 +2040,7 @@
         });
 
         suggestionBackBtn.addEventListener('click', () => {
+            closeSideDetail();
             switchPage(currentPage, mainPage);
         });
 
@@ -2231,6 +2232,7 @@
         let currentPostId = null; // 상세 페이지용 전역 변수
 
         let postsUnsubscribe = null;
+        let postUnsubscribe = null;
 
         function loadPosts(sortBy = 'latest') {
             if (postsUnsubscribe) {
@@ -2310,7 +2312,7 @@
                                 <span>조회 ${post.views}회</span>
                                 <div class="board-stats">
                                     <span><i class="fa-regular fa-comment"></i> <span id="comment-cnt-${doc.id}">0</span></span>
-                                    <span><i class="${heartIcon}" style="${heartColor}"></i> ${post.likes || 0}</span>
+                                    <span style="cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 4px; transition: background 0.2s;" onclick="event.stopPropagation(); likePost('${doc.id}')" title="좋아요"><i class="${heartIcon}" style="${heartColor}"></i> ${post.likes || 0}</span>
                                 </div>
                             </div>
                         </div>
@@ -2371,67 +2373,93 @@
             });
         }
 
+        let commentUnsubscribe = null;
+
+        // 상세 닫기 함수
+        function closeSideDetail() {
+            const sideDetailContainer = document.getElementById('sideDetailContainer');
+            if (sideDetailContainer) {
+                sideDetailContainer.classList.add('hidden');
+            }
+            if (postUnsubscribe) {
+                postUnsubscribe();
+                postUnsubscribe = null;
+            }
+            if (commentUnsubscribe) {
+                commentUnsubscribe();
+                commentUnsubscribe = null;
+            }
+            currentPostId = null;
+        }
+
         // 상세 페이지 렌더링
         function openPostDetail(id, post, avatar, timeStr) {
             currentPostId = id;
             const area = document.getElementById('detailPostArea');
+            
             // 조회수 증가
             db.collection('posts').doc(id).update({ views: firebase.firestore.FieldValue.increment(1) });
-            post.views += 1;
 
-            const isPresident = currentUser && currentUser.email === 'gimdong2804@gmail.com';
-            const isAuthor = currentUser && (post.uid === currentUser.uid || isPresident);
-            
-            // 삭제 버튼 (작성자 또는 회장)
-            const deleteBtnHtml = isAuthor ? `
-                <button onclick="deletePost('${id}')" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem;" title="삭제하기">
-                    <i class="fa-solid fa-trash-can"></i> 삭제
-                </button>
-            ` : '';
-            
-            // 고정 버튼 (회장 전용)
-            const pinBtnHtml = isPresident ? `
-                <button onclick="togglePin('${id}', ${post.pinned || false})" style="background: none; border: none; color: ${post.pinned ? 'var(--accent-color)' : 'var(--text-secondary)'}; cursor: pointer; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; margin-right: 1rem;" title="${post.pinned ? '고정 해제' : '상단 고정'}">
-                    <i class="fa-solid fa-thumbtack"></i> ${post.pinned ? '고정됨' : '고정하기'}
-                </button>
-            ` : '';
+            if (postUnsubscribe) postUnsubscribe();
+            postUnsubscribe = db.collection('posts').doc(id).onSnapshot(docSnap => {
+                if (!docSnap.exists) return;
+                const currentPost = docSnap.data();
 
-            const isLiked = currentUser && post.likedUsers && post.likedUsers.includes(currentUser.uid);
-            const heartIcon = isLiked ? 'fa-solid fa-heart animate-heart' : 'fa-regular fa-heart';
-            const heartColor = isLiked ? 'color: #ff6b6b;' : 'color: var(--text-primary);';
-
-            area.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                    <div style="color: var(--accent-color); font-size: 0.85rem; font-weight: 600;">건의방 · 제안</div>
-                    <div style="display: flex; align-items: center;">
-                        ${pinBtnHtml}
-                        ${deleteBtnHtml}
-                    </div>
-                </div>
-                <h2 class="post-body-title" style="margin-bottom: 0.5rem; font-size: 1.6rem; color: var(--text-primary);">${post.title}</h2>
-                <div style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
-                    ${timeStr} &nbsp;|&nbsp; 조회 ${post.views}회
-                </div>
+                const isPresident = currentUser && currentUser.email === 'gimdong2804@gmail.com';
+                const isAuthor = currentUser && (currentPost.uid === currentUser.uid || isPresident);
                 
-                <div class="board-card-header" style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
-                    <div class="board-author" style="flex: 1;">
-                        ${avatar}
-                        <span class="board-author-name" style="font-weight: 600; font-size: 1rem;">${post.author}</span>
-                    </div>
-                    <div class="board-stats" style="font-size: 0.95rem;">
-                        <span><i class="fa-regular fa-comment"></i> <span id="detailTopCommentCount">0</span></span>
-                        <span style="cursor: pointer; transition: color 0.3s; ${heartColor}" onclick="likePost('${id}')" id="detailLikeBtn"><i class="${heartIcon}"></i> <span id="detailLikeCnt">${post.likes || 0}</span></span>
-                    </div>
-                </div>
+                // 삭제 버튼 (작성자 또는 회장)
+                const deleteBtnHtml = isAuthor ? `
+                    <button onclick="deletePost('${id}')" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem;" title="삭제하기">
+                        <i class="fa-solid fa-trash-can"></i> 삭제
+                    </button>
+                ` : '';
                 
-                <div class="post-body" style="font-size: 1.05rem; line-height: 1.7; color: var(--text-primary);">
-                    ${post.body.replace(/\n/g, '<br>')}
-                </div>
-            `;
+                // 고정 버튼 (회장 전용)
+                const pinBtnHtml = isPresident ? `
+                    <button onclick="togglePin('${id}', ${currentPost.pinned || false})" style="background: none; border: none; color: ${currentPost.pinned ? 'var(--accent-color)' : 'var(--text-secondary)'}; cursor: pointer; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; margin-right: 1rem;" title="${currentPost.pinned ? '고정 해제' : '상단 고정'}">
+                        <i class="fa-solid fa-thumbtack"></i> ${currentPost.pinned ? '고정됨' : '고정하기'}
+                    </button>
+                ` : '';
+
+                const isLiked = currentUser && currentPost.likedUsers && currentPost.likedUsers.includes(currentUser.uid);
+                const heartIcon = isLiked ? 'fa-solid fa-heart animate-heart' : 'fa-regular fa-heart';
+                const heartColor = isLiked ? 'color: #ff6b6b;' : 'color: var(--text-primary);';
+
+                area.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <div style="color: var(--accent-color); font-size: 0.85rem; font-weight: 600;">건의방 · 제안</div>
+                        <div style="display: flex; align-items: center;">
+                            ${pinBtnHtml}
+                            ${deleteBtnHtml}
+                        </div>
+                    </div>
+                    <h2 class="post-body-title" style="margin-bottom: 0.5rem; font-size: 1.6rem; color: var(--text-primary);">${currentPost.title}</h2>
+                    <div style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
+                        ${timeStr} &nbsp;|&nbsp; 조회 ${currentPost.views || 0}회
+                    </div>
+                    
+                    <div class="board-card-header" style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+                        <div class="board-author" style="flex: 1;">
+                            ${avatar}
+                            <span class="board-author-name" style="font-weight: 600; font-size: 1rem;">${currentPost.author}</span>
+                        </div>
+                        <div class="board-stats" style="font-size: 0.95rem;">
+                            <span><i class="fa-regular fa-comment"></i> <span id="detailTopCommentCount">0</span></span>
+                            <span style="cursor: pointer; transition: color 0.3s; ${heartColor}" onclick="likePost('${id}')" id="detailLikeBtn"><i class="${heartIcon}"></i> <span id="detailLikeCnt">${currentPost.likes || 0}</span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="post-body" style="font-size: 1.05rem; line-height: 1.7; color: var(--text-primary); padding-bottom: 1rem;">
+                        ${currentPost.body.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+            });
 
             // 댓글 실시간 렌더링
             const commentArea = document.getElementById('detailCommentArea');
-            db.collection('posts').doc(id).collection('comments').onSnapshot(snap => {
+            if (commentUnsubscribe) commentUnsubscribe();
+            commentUnsubscribe = db.collection('posts').doc(id).collection('comments').onSnapshot(snap => {
                 const topCountEl = document.getElementById('detailTopCommentCount');
                 if (topCountEl) topCountEl.innerText = snap.size;
 
@@ -2499,7 +2527,17 @@
                 commentArea.innerHTML = `<h3 style="margin-bottom: 1.5rem; color: var(--text-primary); font-size: 1.1rem;">댓글 <span style="color: var(--accent-color);" id="detailCommentCount">${snap.size}</span></h3>` + commentsHtml;
             });
 
-            switchPage(currentPage, postDetailPage);
+            const sideDetailContainer = document.getElementById('sideDetailContainer');
+            if (sideDetailContainer) {
+                sideDetailContainer.classList.remove('hidden');
+                sideDetailContainer.scrollTop = 0;
+            }
+        }
+
+        // 상세 닫기 이벤트 바인딩
+        const closeSideDetailBtn = document.getElementById('closeSideDetailBtn');
+        if (closeSideDetailBtn) {
+            closeSideDetailBtn.addEventListener('click', closeSideDetail);
         }
 
         window.likePost = async function(id) {
@@ -2509,11 +2547,7 @@
                 return;
             }
             
-            const btn = document.getElementById('detailLikeBtn');
-            const icon = btn.querySelector('i');
-            const cntSpan = document.getElementById('detailLikeCnt');
             const postRef = db.collection('posts').doc(id);
-            
             try {
                 const doc = await postRef.get();
                 if (doc.exists) {
@@ -2522,24 +2556,15 @@
                     const isLiked = likedUsers.includes(currentUser.uid);
                     
                     if (isLiked) {
-                        // 좋아요 취소
                         await postRef.update({
                             likes: firebase.firestore.FieldValue.increment(-1),
                             likedUsers: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
                         });
-                        icon.className = 'fa-regular fa-heart animate-heart-cancel';
-                        btn.style.color = 'var(--text-primary)';
-                        cntSpan.innerText = Math.max(0, (postData.likes || 1) - 1);
-                        setTimeout(() => icon.classList.remove('animate-heart-cancel'), 300);
                     } else {
-                        // 좋아요 추가
                         await postRef.update({
                             likes: firebase.firestore.FieldValue.increment(1),
                             likedUsers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
                         });
-                        icon.className = 'fa-solid fa-heart animate-heart';
-                        btn.style.color = '#ff6b6b';
-                        cntSpan.innerText = (postData.likes || 0) + 1;
                     }
                 }
             } catch (error) {
@@ -2551,8 +2576,6 @@
             if(!currentUser || currentUser.email !== 'gimdong2804@gmail.com') return;
             try {
                 await db.collection('posts').doc(id).update({ pinned: !currentPinned });
-                // 고정 상태 반영을 위해 상세페이지 닫음
-                switchPage(postDetailPage, suggestionPage);
             } catch(e) { console.error(e); }
         };
 
@@ -2568,7 +2591,7 @@
             try {
                 await db.collection('posts').doc(id).delete();
                 alert('건의사항이 성공적으로 삭제되었습니다.');
-                switchPage(postDetailPage, suggestionPage);
+                closeSideDetail();
             } catch (error) {
                 console.error("Error deleting post: ", error);
                 alert('삭제 중 오류가 발생했습니다.');
@@ -2590,7 +2613,7 @@
                         console.error("Error deleting comment: ", error);
                         alert('댓글 삭제 실패');
                     }
-                }, 400); // fade out 대기
+                }, 400);
             } else {
                 try {
                     await db.collection('posts').doc(postId).collection('comments').doc(commentId).delete();
@@ -2602,32 +2625,42 @@
         };
 
         // 댓글 작성 로직
-        document.querySelector('.comment-submit-btn').addEventListener('click', async () => {
-            if (!currentUser) {
-                alert('댓글을 작성하시려면 먼저 Google 로그인을 해주세요!');
-                openDrawer();
-                return;
-            }
-            if(!currentPostId) return;
-            const input = document.querySelector('.comment-input');
-            const body = input.value.trim();
-            if(body === '') return;
+        const commentSubmitBtn = document.querySelector('.side-detail-container .comment-submit-btn');
+        const commentInput = document.querySelector('.side-detail-container .comment-input');
+        if (commentSubmitBtn && commentInput) {
+            commentSubmitBtn.addEventListener('click', async () => {
+                if (!currentUser) {
+                    alert('댓글을 작성하시려면 먼저 Google 로그인을 해주세요!');
+                    openDrawer();
+                    return;
+                }
+                if(!currentPostId) return;
+                const body = commentInput.value.trim();
+                if(body === '') return;
 
-            try {
-                await db.collection('posts').doc(currentPostId).collection('comments').add({
-                    author: currentUser.email === 'gimdong2804@gmail.com' ? "회장 김동현" : currentUser.displayName,
-                    uid: currentUser.uid,
-                    userPhoto: currentUser.photoURL || '',
-                    email: currentUser.email,
-                    body: body,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                input.value = '';
-            } catch(e) {
-                console.error(e);
-                alert('댓글 작성 실패');
-            }
-        });
+                try {
+                    await db.collection('posts').doc(currentPostId).collection('comments').add({
+                        author: currentUser.email === 'gimdong2804@gmail.com' ? "회장 김동현" : currentUser.displayName,
+                        uid: currentUser.uid,
+                        userPhoto: currentUser.photoURL || '',
+                        email: currentUser.email,
+                        body: body,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    commentInput.value = '';
+                } catch(e) {
+                    console.error(e);
+                    alert('댓글 작성 실패');
+                }
+            });
+            
+            // 엔터키 지원 추가
+            commentInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    commentSubmitBtn.click();
+                }
+            });
+        }
 
         // 사이드 메뉴 아이템 클릭 시 알림 및 드로어 닫기 (인사말, 목표, 건의방 제외)
         document.querySelectorAll('.drawer-menu a:not(#greetingLink):not(#goalLink):not(#suggestionLink)').forEach(item => {
