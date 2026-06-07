@@ -2430,7 +2430,7 @@
                     }
 
                     const pinBadge = post.pinned ? `<span style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; margin-bottom: 0.5rem; display: inline-block;"><i class="fa-solid fa-thumbtack"></i> 상단 고정</span><br>` : '';
-                    const isLiked = currentUser && post.likedUsers && post.likedUsers.includes(currentUser.uid);
+                    const isLiked = currentUser && Array.isArray(post.likedUsers) && post.likedUsers.includes(currentUser.uid);
                     const heartIcon = isLiked ? 'fa-solid fa-heart animate-heart' : 'fa-regular fa-heart';
                     const heartColor = isLiked ? 'color: #ff6b6b;' : '';
                     const cardStyle = post.pinned ? 'border: 1px solid var(--accent-color); background: rgba(59, 130, 246, 0.05);' : '';
@@ -2465,8 +2465,12 @@
                     db.collection('posts').doc(doc.id).collection('comments').onSnapshot(snap => {
                         const el = document.getElementById(`comment-cnt-${doc.id}`);
                         if(el) el.innerText = snap.size;
+                    }, (err) => {
+                        console.error("Comments onSnapshot error: ", err);
                     });
                 });
+            }, (error) => {
+                console.error("onSnapshot error: ", error);
             });
         }
 
