@@ -2875,15 +2875,21 @@
                 updateWriteButtonVisibility();
 
                 // 2. 애니메이션(0.4s)이 완료된 후 레이아웃을 정리합니다.
+                const closingPostId = currentPostId; // 현재 닫으려는 ID 백업
                 setTimeout(() => {
                     // 애니메이션이 진행되는 동안 다른 게시물이 열리지 않았을 때만 정리
-                    if (currentPostId === null || sideDetailContainer.classList.contains('detail-hidden')) {
+                    if (currentPostId === closingPostId || currentPostId === null) {
                         sideDetailContainer.classList.remove('fullscreen-detail');
                         const communityLayout = document.querySelector('.community-layout');
                         if (communityLayout && sideDetailContainer.parentElement !== communityLayout) {
                             communityLayout.appendChild(sideDetailContainer);
                         }
                         document.body.classList.remove('detail-open');
+
+                        // 애니메이션이 끝난 후 ID 초기화
+                        if (currentPostId === closingPostId) {
+                            currentPostId = null;
+                        }
                     }
                 }, 400);
             }
@@ -2896,7 +2902,8 @@
                 commentUnsubscribe();
                 commentUnsubscribe = null;
             }
-            currentPostId = null;
+            // 즉시 초기화하지 않고 애니메이션 종료 후 처리 (위의 setTimeout 내부)
+            // currentPostId = null;
             currentDetailMode = 'side';
         }
 
