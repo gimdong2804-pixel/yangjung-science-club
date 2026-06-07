@@ -1309,6 +1309,12 @@
             to { opacity: 0; transform: translateY(-10px); }
         }
 
+        .fab-hidden {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transform: scale(0.8) rotate(45deg) !important;
+        }
+
         .animate-heart {
             animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             color: #ff6b6b !important;
@@ -2813,9 +2819,14 @@
         // 상세 닫기 함수
         function closeSideDetail() {
             const sideDetailContainer = document.getElementById('sideDetailContainer');
+            const writePostBtn = document.getElementById('writePostBtn');
+
             if (sideDetailContainer) {
                 // 1. 먼저 애니메이션 클래스만 추가합니다. (포지션 변경은 뒤로 미룸)
                 sideDetailContainer.classList.add('detail-hidden');
+
+                // 작성 버튼 다시 표시
+                if (writePostBtn) writePostBtn.classList.remove('fab-hidden');
 
                 // 2. 애니메이션(0.6s)이 완전히 끝난 뒤에 레이아웃을 정리합니다.
                 setTimeout(() => {
@@ -2844,11 +2855,15 @@
             currentPostId = id;
             currentDetailMode = mode;
             const sideDetailContainer = document.getElementById('sideDetailContainer');
+            const writePostBtn = document.getElementById('writePostBtn');
 
             if (sideDetailContainer) {
                 const isFullscreen = currentDetailMode === 'fullscreen';
                 const isMobile = window.innerWidth <= 1023;
-                
+
+                // 작성 버튼 숨기기
+                if (writePostBtn) writePostBtn.classList.add('fab-hidden');
+
                 // 1. 먼저 부모 요소를 이동시키고 클래스를 설정합니다.
                 if (isFullscreen || isMobile) {
                     if (sideDetailContainer.parentElement !== document.body) {
