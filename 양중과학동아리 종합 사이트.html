@@ -1676,7 +1676,7 @@
             top: 90px;
             max-height: calc(100vh - 120px);
             overflow-y: auto;
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease, visibility 0.4s, width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), margin 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease, width 0.5s cubic-bezier(0.16, 1, 0.3, 1), margin 0.5s cubic-bezier(0.16, 1, 0.3, 1), padding 0.5s ease;
             display: flex;
             flex-direction: column;
             padding-bottom: 90px;
@@ -1686,10 +1686,11 @@
             transform: translateX(0);
         }
 
-        .side-detail-container.hidden {
+        /* 전용 숨김 클래스 사용 (display: none 제거) */
+        .side-detail-container.detail-hidden {
             opacity: 0;
             visibility: hidden;
-            transform: translateX(50px); /* 살짝 옆에서 밀려오는 느낌 */
+            transform: translateX(100%); /* 확실히 오른쪽 밖으로 */
             pointer-events: none;
             width: 0;
             padding-left: 0;
@@ -1768,9 +1769,9 @@
                 top: 0 !important;
                 padding-bottom: 80px;
                 transform: translateX(0);
-                transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+                transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
             }
-            .side-detail-container.hidden {
+            .side-detail-container.detail-hidden {
                 transform: translateX(100%);
                 width: 100vw;
                 margin-left: 0;
@@ -2045,7 +2046,7 @@
             </div>
 
             <!-- 우측 상세 보기 창 (데스크탑에선 옆에 붙고, 모바일에선 전체화면) -->
-            <div class="side-detail-container hidden" id="sideDetailContainer">
+            <div class="side-detail-container detail-hidden" id="sideDetailContainer">
                 <div class="side-detail-header">
                     <span class="side-detail-title" style="color: var(--accent-color); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-file-lines"></i> 건의글 상세</span>
                     <button class="close-btn" id="closeSideDetailBtn" aria-label="상세 닫기" style="background: none; border: none; color: var(--text-primary); font-size: 1.2rem; cursor: pointer;">
@@ -2808,16 +2809,16 @@
         function closeSideDetail() {
             const sideDetailContainer = document.getElementById('sideDetailContainer');
             if (sideDetailContainer) {
-                sideDetailContainer.classList.add('hidden');
+                sideDetailContainer.classList.add('detail-hidden');
                 sideDetailContainer.classList.remove('fullscreen-detail');
                 
-                // 애니메이션이 끝난 후(0.4s)에 부모 요소를 이동시켜 끊김을 방지합니다.
+                // 애니메이션이 끝난 후(0.5s)에 부모 요소를 이동시켜 끊김을 방지합니다.
                 setTimeout(() => {
                     const communityLayout = document.querySelector('.community-layout');
-                    if (communityLayout && sideDetailContainer.parentElement !== communityLayout && sideDetailContainer.classList.contains('hidden')) {
+                    if (communityLayout && sideDetailContainer.parentElement !== communityLayout && sideDetailContainer.classList.contains('detail-hidden')) {
                         communityLayout.appendChild(sideDetailContainer);
                     }
-                }, 400);
+                }, 500);
             }
             document.body.classList.remove('detail-open');
             if (postUnsubscribe) {
@@ -2868,7 +2869,7 @@
                 // 3. 브라우저가 레이아웃을 계산할 시간을 준 뒤 hidden을 제거하여 애니메이션을 작동시킵니다.
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
-                        sideDetailContainer.classList.remove('hidden');
+                        sideDetailContainer.classList.remove('detail-hidden');
                         sideDetailContainer.scrollTop = 0;
                     });
                 });
