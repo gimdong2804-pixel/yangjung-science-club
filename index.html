@@ -1676,19 +1676,30 @@
             top: 90px;
             max-height: calc(100vh - 120px);
             overflow-y: auto;
-            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease, visibility 0.4s;
             display: flex;
             flex-direction: column;
             padding-bottom: 90px; /* 댓글 입력 영역 공간 */
             z-index: 10;
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
         }
 
         .side-detail-container.hidden {
-            display: none !important;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(30px);
+            pointer-events: none;
+            width: 0;
+            padding-left: 0;
+            padding-right: 0;
+            margin-left: -2rem; /* gap 보정 */
+            border: none;
         }
 
         .side-detail-container::-webkit-scrollbar {
-            width: 4px;
+            width: 6px;
         }
 
         .side-detail-container::-webkit-scrollbar-track {
@@ -1696,8 +1707,17 @@
         }
 
         .side-detail-container::-webkit-scrollbar-thumb {
-            background: var(--glass-border);
-            border-radius: 99px;
+            background: rgba(59, 130, 246, 0.3);
+            border-radius: 10px;
+            transition: background 0.3s;
+        }
+
+        .side-detail-container:hover::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.5);
+        }
+
+        .side-detail-container::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
         }
 
         .side-detail-header {
@@ -1746,6 +1766,12 @@
                 border: none;
                 top: 0 !important;
                 padding-bottom: 80px;
+                transform: translateX(0);
+            }
+            .side-detail-container.hidden {
+                transform: translateX(100%);
+                width: 100vw;
+                margin-left: 0;
             }
             .side-detail-container .comment-input-area {
                 position: fixed;
