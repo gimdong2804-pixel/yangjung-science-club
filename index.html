@@ -938,6 +938,18 @@
         .board-action-btn:active {
             transform: scale(0.96);
         }
+
+        .pin-toggle-btn.active {
+            color: var(--accent-color) !important;
+            background: rgba(59, 130, 246, 0.15) !important;
+        }
+        .pin-toggle-btn i {
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .pin-toggle-btn.active i {
+            transform: rotate(-45deg) scale(1.2);
+        }
+
         .fab {
             position: fixed;
             bottom: 2rem;
@@ -2592,6 +2604,10 @@
                     postAuthorInput.value = isPresident ? "회장 김동현" : user.displayName;
                     postAuthorInput.placeholder = "작성자 이름";
                 }
+
+                // [추가] 로그인 상태에 따라 게시글 목록 리로드 (고정 버튼 표시/숨김용)
+                const currentSort = document.querySelector('.custom-dropdown-option.active')?.getAttribute('data-value') || 'latest';
+                loadPosts(currentSort);
             } else {
                 currentUser = null;
                 // UI 업데이트 (애니메이션 적용)
@@ -2611,6 +2627,10 @@
                     postAuthorInput.value = '';
                     postAuthorInput.placeholder = "로그인이 필요합니다";
                 }
+
+                // [추가] 로그아웃 시에도 목록 리로드 (고정 버튼 숨김용)
+                const currentSort = document.querySelector('.custom-dropdown-option.active')?.getAttribute('data-value') || 'latest';
+                loadPosts(currentSort);
             }
         });
 
@@ -2721,6 +2741,13 @@
             let query = db.collection('posts').orderBy('createdAt', 'desc');
 
             postsUnsubscribe = query.onSnapshot((snapshot) => {
+                // [추가] 애니메이션을 위한 이전 위치 저장
+                const oldPositions = new Map();
+                boardContainer.querySelectorAll('.board-card').forEach(card => {
+                    const id = card.getAttribute('data-id');
+                    oldPositions.set(id, card.getBoundingClientRect());
+                });
+
                 // 기존 카드 모두 지우기
                 const cards = boardContainer.querySelectorAll('.board-card');
                 cards.forEach(card => card.remove());
@@ -2774,6 +2801,16 @@
                     const heartColor = isLiked ? 'color: #ff6b6b;' : '';
                     const cardStyle = post.pinned ? 'border: 1px solid var(--accent-color); background: rgba(59, 130, 246, 0.05);' : '';
 
+                    // [추가] 회장 전용 고정 버튼 (리스트 뷰에서도 바로 고정 가능)
+                    const isPresident = currentUser && currentUser.email === 'gimdong2804@gmail.com';
+                    const pinToggleHtml = isPresident ? `
+                        <button type="button" class="board-action-btn pin-toggle-btn ${post.pinned ? 'active' : ''}"
+                                onclick="event.stopPropagation(); togglePin('${doc.id}', ${post.pinned || false})"
+                                title="${post.pinned ? '고정 해제' : '상단 고정'}">
+                            <i class="fa-solid fa-thumbtack"></i>
+                        </button>
+                    ` : '';
+
                     const cardHtml = `
                         <div class="board-card" data-id="${doc.id}" style="${cardStyle}">
                             ${pinBadge}
@@ -2782,7 +2819,10 @@
                                     ${avatarHtml}
                                     <span class="board-author-name">${post.author}</span>
                                 </div>
-                                <span class="board-time">${timeStr}</span>
+                                <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                    ${pinToggleHtml}
+                                    <span class="board-time">${timeStr}</span>
+                                </div>
                             </div>
                             <h3 class="board-title">${post.title}</h3>
                             <p class="board-preview">${post.body}</p>
@@ -2819,6 +2859,34 @@
                     }, (err) => {
                         console.error("Comments onSnapshot error: ", err);
                     });
+                });
+
+                // [추가] FLIP 애니메이션 실행 (리스트 재정렬 부드럽게)
+                const newCards = boardContainer.querySelectorAll('.board-card');
+                newCards.forEach(card => {
+                    const id = card.getAttribute('data-id');
+                    const oldPos = oldPositions.get(id);
+                    if (oldPos) {
+                        const newPos = card.getBoundingClientRect();
+                        const dy = oldPos.top - newPos.top;
+                        const dx = oldPos.left - newPos.left;
+                        if (dx !== 0 || dy !== 0) {
+                            card.style.transition = 'none';
+                            card.style.transform = `translate(${dx}px, ${dy}px)`;
+                            // 강제 리플로우
+                            card.offsetHeight;
+                            card.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.6s ease';
+                            card.style.transform = 'translate(0, 0)';
+                        }
+                    } else {
+                        // 새 카드 등장 효과
+                        card.style.opacity = '0';
+                        card.style.transform = 'translateY(20px)';
+                        card.offsetHeight;
+                        card.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.6s ease';
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }
                 });
             }, (error) => {
                 console.error("onSnapshot error: ", error);
