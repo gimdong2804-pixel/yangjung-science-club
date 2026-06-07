@@ -967,6 +967,15 @@
             border-color: var(--accent-color) !important;
         }
 
+        @keyframes unpinFade {
+            0% { background: rgba(59, 130, 246, 0.1); transform: scale(1.02); }
+            100% { background: var(--glass-bg); transform: scale(1); }
+        }
+
+        .board-card.just-unpinned {
+            animation: unpinFade 0.6s ease-out;
+        }
+
         .fab {
             position: fixed;
             bottom: 2rem;
@@ -2891,6 +2900,13 @@
                             card.classList.remove('just-pinned');
                             card.classList.remove('pin-animating');
                         }, 800);
+                    } else if (wasPinned && !post.pinned) {
+                        card.classList.add('just-unpinned');
+                        card.classList.add('pin-animating'); // 이동 중 z-index 보장
+                        setTimeout(() => {
+                            card.classList.remove('just-unpinned');
+                            card.classList.remove('pin-animating');
+                        }, 600);
                     }
                 });
 
