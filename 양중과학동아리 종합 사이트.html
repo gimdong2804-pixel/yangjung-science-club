@@ -2246,7 +2246,8 @@
 
             postsUnsubscribe = query.onSnapshot((snapshot) => {
                 // 기존 카드 모두 지우기
-                boardContainer.innerHTML = '';
+                const cards = boardContainer.querySelectorAll('.board-card');
+                cards.forEach(card => card.remove());
 
                 // 총 글 개수 업데이트
                 const headerSpan = document.querySelector('.board-header span');
