@@ -950,31 +950,29 @@
             transform: rotate(-45deg) scale(1.2);
         }
 
-        /* 고정 애니메이션 고도화 (사이즈 변화 대신 깊이감 강조) */
-        @keyframes pinGlow {
-            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); border-color: var(--glass-border); }
-            50% { box-shadow: 0 5px 25px rgba(59, 130, 246, 0.3); border-color: var(--accent-color); }
-            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); border-color: var(--accent-color); }
+        /* 고정 애니메이션 고도화 (미니멀하고 깔끔한 슬라이드 중심) */
+        @keyframes pinPulse {
+            0% { border-color: var(--glass-border); background: var(--glass-bg); }
+            50% { border-color: var(--accent-color); background: rgba(59, 130, 246, 0.05); }
+            100% { border-color: var(--accent-color); background: rgba(59, 130, 246, 0.05); }
         }
 
         .board-card.pin-animating {
             z-index: 50 !important;
             pointer-events: none;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important; /* 위로 떠오르는 효과 */
         }
 
         .board-card.just-pinned {
-            animation: pinGlow 0.8s cubic-bezier(0.25, 1, 0.5, 1);
-            border-color: var(--accent-color) !important;
+            animation: pinPulse 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
 
         @keyframes unpinFade {
-            0% { background: rgba(59, 130, 246, 0.1); border-color: var(--accent-color); }
+            0% { background: rgba(59, 130, 246, 0.05); border-color: var(--accent-color); }
             100% { background: var(--glass-bg); border-color: var(--glass-border); }
         }
 
         .board-card.just-unpinned {
-            animation: unpinFade 0.6s ease-out;
+            animation: unpinFade 0.5s ease-out forwards;
         }
 
         .fab {
@@ -2922,17 +2920,18 @@
                         const dx = oldPos.left - newPos.left;
                         if (dx !== 0 || dy !== 0) {
                             card.style.transition = 'none';
-                            card.style.transform = `translate(${dx}px, ${dy}px)`; // scale 제거
+                            card.style.transform = `translate(${dx}px, ${dy}px)`;
                             card.offsetHeight; // 리플로우
-                            card.style.transition = 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease';
+                            // 베지어 곡선을 더 깔끔하고 일관성 있게 조정
+                            card.style.transition = 'transform 0.5s cubic-bezier(0.2, 0, 0, 1), opacity 0.5s ease';
                             card.style.transform = 'translate(0, 0)';
                         }
                     } else {
                         // 새 카드 등장
                         card.style.opacity = '0';
-                        card.style.transform = 'translateY(20px)'; // scale 제거
+                        card.style.transform = 'translateY(15px)';
                         card.offsetHeight;
-                        card.style.transition = 'transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.6s ease';
+                        card.style.transition = 'transform 0.5s cubic-bezier(0.2, 0, 0, 1), opacity 0.5s ease';
                         card.style.opacity = '1';
                         card.style.transform = 'translateY(0)';
                     }
