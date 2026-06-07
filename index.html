@@ -950,6 +950,23 @@
             transform: rotate(-45deg) scale(1.2);
         }
 
+        /* 고정 애니메이션 고도화 */
+        @keyframes pinGlow {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); transform: scale(1); }
+            50% { box-shadow: 0 0 20px 10px rgba(59, 130, 246, 0.2); transform: scale(1.02); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); transform: scale(1); }
+        }
+
+        .board-card.pin-animating {
+            z-index: 50 !important;
+            pointer-events: none;
+        }
+
+        .board-card.just-pinned {
+            animation: pinGlow 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+            border-color: var(--accent-color) !important;
+        }
+
         .fab {
             position: fixed;
             bottom: 2rem;
@@ -2737,20 +2754,28 @@
                 postsUnsubscribe();
             }
 
-            // 복합 인덱스 에러 방지 및 클라이언트 측 정렬을 위해 단일 필드로 조회합니다.
             let query = db.collection('posts').orderBy('createdAt', 'desc');
 
             postsUnsubscribe = query.onSnapshot((snapshot) => {
-                // [추가] 애니메이션을 위한 이전 위치 저장
+                // 1. 이전 위치 및 데이터 스냅샷 저장
                 const oldPositions = new Map();
+                const oldData = new Map();
                 boardContainer.querySelectorAll('.board-card').forEach(card => {
                     const id = card.getAttribute('data-id');
                     oldPositions.set(id, card.getBoundingClientRect());
+                    // 현재 상태 백업 (고정 여부 확인용)
+                    oldData.set(id, { pinned: card.classList.contains('pinned-state') });
                 });
 
-                // 기존 카드 모두 지우기
-                const cards = boardContainer.querySelectorAll('.board-card');
-                cards.forEach(card => card.remove());
+                // 2. 현재 스냅샷의 ID 목록
+                const currentIds = new Set(snapshot.docs.map(doc => doc.id));
+
+                // 3. 삭제된 카드 제거 (애니메이션 없이 즉시 제거하거나 필요시 페이드아웃 추가 가능)
+                boardContainer.querySelectorAll('.board-card').forEach(card => {
+                    if (!currentIds.has(card.getAttribute('data-id'))) {
+                        card.remove();
+                    }
+                });
 
                 // 총 글 개수 업데이트
                 const headerSpan = document.querySelector('.board-header span');
@@ -2758,112 +2783,120 @@
                     headerSpan.innerHTML = `전체 게시글 <span style="color: var(--accent-color); font-weight: bold;">${snapshot.size}</span>개`;
                 }
 
-                // 정렬 로직 (pinned 우선, 그 다음 sortBy 기준)
+                // 4. 정렬 로직 (기존과 동일)
                 const docs = [...snapshot.docs].sort((a, b) => {
                     const dataA = a.data();
                     const dataB = b.data();
-
                     const pinA = dataA.pinned ? 1 : 0;
                     const pinB = dataB.pinned ? 1 : 0;
-                    
-                    // 1. 상단 고정(pinned) 게시물 우선 정렬 (고정한 게시물이 항상 위)
-                    if (pinB !== pinA) {
-                        return pinB - pinA;
-                    }
-
-                    // 2. 고정 상태가 같은 경우 인기순(조회수 views 내림차순) 또는 최신순(작성일 createdAt 내림차순) 정렬
+                    if (pinB !== pinA) return pinB - pinA;
                     if (sortBy === 'popular') {
                         const viewsA = dataA.views || 0;
                         const viewsB = dataB.views || 0;
-                        if (viewsB !== viewsA) {
-                            return viewsB - viewsA;
-                        }
+                        if (viewsB !== viewsA) return viewsB - viewsA;
                     }
-
-                    // 최신순 (또는 인기순인데 조회수가 같을 때) 작성일 기준 내림차순
                     const timeA = (dataA.createdAt && typeof dataA.createdAt.toMillis === 'function') ? dataA.createdAt.toMillis() : (dataA.createdAt instanceof Date ? dataA.createdAt.getTime() : 0);
                     const timeB = (dataB.createdAt && typeof dataB.createdAt.toMillis === 'function') ? dataB.createdAt.toMillis() : (dataB.createdAt instanceof Date ? dataB.createdAt.getTime() : 0);
                     return timeB - timeA;
                 });
 
-                docs.forEach((doc) => {
+                // 5. 스마트 리렌더링: 기존 카드는 업데이트하고 위치만 이동
+                docs.forEach((doc, index) => {
                     const post = doc.data();
+                    const id = doc.id;
                     const timeStr = formatDate(post.createdAt);
-                    const avatar = post.author ? post.author.substring(0, 1) : '?';
-                    let avatarHtml = `<div class="board-author-avatar" style="background: hsl(${Math.random() * 360}, 60%, 50%)">${avatar}</div>`;
-                    if (post.userPhoto) {
-                        avatarHtml = `<img class="board-author-avatar" src="${post.userPhoto}" alt="${post.author}" style="object-fit: cover; border: 1px solid var(--glass-border);">`;
-                    }
-
-                    const pinBadge = post.pinned ? `<span style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; margin-bottom: 0.5rem; display: inline-block;"><i class="fa-solid fa-thumbtack"></i> 상단 고정</span><br>` : '';
-                    const isLiked = currentUser && Array.isArray(post.likedUsers) && post.likedUsers.includes(currentUser.uid);
-                    const heartIcon = isLiked ? 'fa-solid fa-heart animate-heart' : 'fa-regular fa-heart';
-                    const heartColor = isLiked ? 'color: #ff6b6b;' : '';
-                    const cardStyle = post.pinned ? 'border: 1px solid var(--accent-color); background: rgba(59, 130, 246, 0.05);' : '';
-
-                    // [추가] 회장 전용 고정 버튼 (리스트 뷰에서도 바로 고정 가능)
                     const isPresident = currentUser && currentUser.email === 'gimdong2804@gmail.com';
-                    const pinToggleHtml = isPresident ? `
-                        <button type="button" class="board-action-btn pin-toggle-btn ${post.pinned ? 'active' : ''}"
-                                onclick="event.stopPropagation(); togglePin('${doc.id}', ${post.pinned || false})"
-                                title="${post.pinned ? '고정 해제' : '상단 고정'}">
-                            <i class="fa-solid fa-thumbtack"></i>
-                        </button>
-                    ` : '';
+                    const isLiked = currentUser && Array.isArray(post.likedUsers) && post.likedUsers.includes(currentUser.uid);
 
-                    const cardHtml = `
-                        <div class="board-card" data-id="${doc.id}" style="${cardStyle}">
-                            ${pinBadge}
-                            <div class="board-card-header">
-                                <div class="board-author">
-                                    ${avatarHtml}
-                                    <span class="board-author-name">${post.author}</span>
-                                </div>
-                                <div style="display: flex; align-items: center; gap: 0.8rem;">
-                                    ${pinToggleHtml}
-                                    <span class="board-time">${timeStr}</span>
-                                </div>
+                    let card = boardContainer.querySelector(`.board-card[data-id="${id}"]`);
+                    const isNew = !card;
+
+                    const avatar = post.author ? post.author.substring(0, 1) : '?';
+                    let avatarHtml = post.userPhoto
+                        ? `<img class="board-author-avatar" src="${post.userPhoto}" alt="${post.author}" style="object-fit: cover; border: 1px solid var(--glass-border);">`
+                        : `<div class="board-author-avatar" style="background: hsl(${(id.charCodeAt(0) * 137) % 360}, 60%, 50%)">${avatar}</div>`;
+
+                    const pinBadge = post.pinned ? `<span class="pin-badge-ui" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; margin-bottom: 0.5rem; display: inline-block;"><i class="fa-solid fa-thumbtack"></i> 상단 고정</span><br>` : '';
+
+                    const innerHtml = `
+                        ${pinBadge}
+                        <div class="board-card-header">
+                            <div class="board-author">
+                                ${avatarHtml}
+                                <span class="board-author-name">${post.author}</span>
                             </div>
-                            <h3 class="board-title">${post.title}</h3>
-                            <p class="board-preview">${post.body}</p>
-                            <div class="board-footer">
-                                <span>조회 ${post.views}회</span>
-                                <div class="board-stats">
-                                    <button type="button" class="board-action-btn board-comment-btn" title="댓글 보기" aria-label="댓글 보기">
-                                        <i class="fa-regular fa-comment"></i> <span id="comment-cnt-${doc.id}">0</span>
-                                    </button>
-                                    <button type="button" class="board-action-btn" onclick="event.stopPropagation(); likePost('${doc.id}')" title="좋아요" aria-label="좋아요">
-                                        <i class="${heartIcon}" style="${heartColor}"></i> ${post.likes || 0}
-                                    </button>
-                                </div>
+                            <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                ${isPresident ? `
+                                    <button type="button" class="board-action-btn pin-toggle-btn ${post.pinned ? 'active' : ''}"
+                                            onclick="event.stopPropagation(); togglePin('${id}', ${post.pinned || false})"
+                                            title="${post.pinned ? '고정 해제' : '상단 고정'}">
+                                        <i class="fa-solid fa-thumbtack"></i>
+                                    </button>` : ''}
+                                <span class="board-time">${timeStr}</span>
+                            </div>
+                        </div>
+                        <h3 class="board-title">${post.title}</h3>
+                        <p class="board-preview">${post.body}</p>
+                        <div class="board-footer">
+                            <span>조회 ${post.views}회</span>
+                            <div class="board-stats">
+                                <button type="button" class="board-action-btn board-comment-btn" title="댓글 보기">
+                                    <i class="fa-regular fa-comment"></i> <span id="comment-cnt-${id}">0</span>
+                                </button>
+                                <button type="button" class="board-action-btn" onclick="event.stopPropagation(); likePost('${id}')">
+                                    <i class="${isLiked ? 'fa-solid fa-heart animate-heart' : 'fa-regular fa-heart'}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> ${post.likes || 0}
+                                </button>
                             </div>
                         </div>
                     `;
-                    boardContainer.insertAdjacentHTML('beforeend', cardHtml);
 
-                    const newCard = boardContainer.lastElementChild;
-                    newCard.addEventListener('click', () => openPostDetail(doc.id, post, avatarHtml, timeStr, 'fullscreen'));
+                    if (isNew) {
+                        const cardElement = document.createElement('div');
+                        cardElement.className = `board-card ${post.pinned ? 'pinned-state' : ''}`;
+                        cardElement.setAttribute('data-id', id);
+                        cardElement.innerHTML = innerHtml;
+                        cardElement.style.order = index; // CSS Order를 사용하여 시각적 순서 제어 (또는 appendChild)
+                        boardContainer.appendChild(cardElement);
+                        card = cardElement;
 
-                    const commentBtn = newCard.querySelector('.board-comment-btn');
-                    if (commentBtn) {
-                        commentBtn.addEventListener('click', (event) => {
-                            event.stopPropagation();
-                            openPostDetail(doc.id, post, avatarHtml, timeStr, 'side');
-                        });
+                        // 이벤트 바인딩
+                        card.addEventListener('click', () => openPostDetail(id, post, avatarHtml, timeStr, 'fullscreen'));
+                        const commentBtn = card.querySelector('.board-comment-btn');
+                        if (commentBtn) {
+                            commentBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                openPostDetail(id, post, avatarHtml, timeStr, 'side');
+                            });
+                        }
+                    } else {
+                        // 내용 업데이트 및 클래스 갱신
+                        card.innerHTML = innerHtml;
+                        card.classList.toggle('pinned-state', post.pinned);
+                        // 순서 유지를 위해 다시 append (기존 위치에서 빠져나와 맨 뒤로 이동)
+                        boardContainer.appendChild(card);
                     }
 
-                    // 댓글 수 불러오기
-                    db.collection('posts').doc(doc.id).collection('comments').onSnapshot(snap => {
-                        const el = document.getElementById(`comment-cnt-${doc.id}`);
+                    // 댓글 수 실시간 업데이트
+                    db.collection('posts').doc(id).collection('comments').onSnapshot(snap => {
+                        const el = card.querySelector(`#comment-cnt-${id}`);
                         if(el) el.innerText = snap.size;
-                    }, (err) => {
-                        console.error("Comments onSnapshot error: ", err);
                     });
+
+                    // 고정 상태 변화 감지 및 효과 적용
+                    const wasPinned = oldData.get(id)?.pinned || false;
+                    if (!wasPinned && post.pinned) {
+                        card.classList.add('just-pinned');
+                        card.classList.add('pin-animating'); // z-index 상승
+                        setTimeout(() => {
+                            card.classList.remove('just-pinned');
+                            card.classList.remove('pin-animating');
+                        }, 800);
+                    }
                 });
 
-                // [추가] FLIP 애니메이션 실행 (리스트 재정렬 부드럽게)
-                const newCards = boardContainer.querySelectorAll('.board-card');
-                newCards.forEach(card => {
+                // 6. FLIP 애니메이션 실행 (부드러운 이동)
+                const finalCards = boardContainer.querySelectorAll('.board-card');
+                finalCards.forEach(card => {
                     const id = card.getAttribute('data-id');
                     const oldPos = oldPositions.get(id);
                     if (oldPos) {
@@ -2872,20 +2905,19 @@
                         const dx = oldPos.left - newPos.left;
                         if (dx !== 0 || dy !== 0) {
                             card.style.transition = 'none';
-                            card.style.transform = `translate(${dx}px, ${dy}px)`;
-                            // 강제 리플로우
-                            card.offsetHeight;
-                            card.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.6s ease';
-                            card.style.transform = 'translate(0, 0)';
+                            card.style.transform = `translate(${dx}px, ${dy}px) scale(0.98)`; // 이동 중 약간 축소하여 겹침 방지
+                            card.offsetHeight; // 리플로우
+                            card.style.transition = 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease';
+                            card.style.transform = 'translate(0, 0) scale(1)';
                         }
                     } else {
-                        // 새 카드 등장 효과
+                        // 새 카드 등장
                         card.style.opacity = '0';
-                        card.style.transform = 'translateY(20px)';
+                        card.style.transform = 'translateY(20px) scale(0.95)';
                         card.offsetHeight;
-                        card.style.transition = 'transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.6s ease';
+                        card.style.transition = 'transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.6s ease';
                         card.style.opacity = '1';
-                        card.style.transform = 'translateY(0)';
+                        card.style.transform = 'translateY(0) scale(1)';
                     }
                 });
             }, (error) => {
