@@ -1246,8 +1246,10 @@
             font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), background 0.3s, border-color 0.3s, box-shadow 0.3s;
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .google-login-btn img {
@@ -1271,6 +1273,15 @@
             border: 1px solid var(--glass-border);
             padding: 0.75rem 1rem;
             border-radius: 12px;
+            transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .google-login-btn.fade-out, .user-profile-info.fade-out {
+            opacity: 0 !important;
+            transform: translateY(8px) !important;
+            pointer-events: none;
         }
 
         .user-avatar {
@@ -1971,9 +1982,18 @@
             const postAuthorInput = document.getElementById('postAuthor');
             if (user) {
                 currentUser = user;
-                // UI 업데이트
-                googleLoginBtn.classList.add('hidden');
-                userProfileInfo.classList.remove('hidden');
+                // UI 업데이트 (애니메이션 적용)
+                googleLoginBtn.classList.add('fade-out');
+                setTimeout(() => {
+                    googleLoginBtn.classList.add('hidden');
+                    googleLoginBtn.classList.remove('fade-out');
+                    
+                    userProfileInfo.classList.remove('hidden');
+                    userProfileInfo.classList.add('fade-out');
+                    // 강제 리플로우
+                    userProfileInfo.offsetHeight;
+                    userProfileInfo.classList.remove('fade-out');
+                }, 300);
 
                 const isPresident = user.email === 'gimdong2804@gmail.com';
                 userName.innerText = isPresident ? "회장 김동현" : user.displayName;
@@ -1986,9 +2006,18 @@
                 }
             } else {
                 currentUser = null;
-                // UI 업데이트
-                googleLoginBtn.classList.remove('hidden');
-                userProfileInfo.classList.add('hidden');
+                // UI 업데이트 (애니메이션 적용)
+                userProfileInfo.classList.add('fade-out');
+                setTimeout(() => {
+                    userProfileInfo.classList.add('hidden');
+                    userProfileInfo.classList.remove('fade-out');
+                    
+                    googleLoginBtn.classList.remove('hidden');
+                    googleLoginBtn.classList.add('fade-out');
+                    // 강제 리플로우
+                    googleLoginBtn.offsetHeight;
+                    googleLoginBtn.classList.remove('fade-out');
+                }, 300);
                 
                 if (postAuthorInput) {
                     postAuthorInput.value = '';
