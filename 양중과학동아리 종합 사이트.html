@@ -2237,12 +2237,8 @@
                 postsUnsubscribe();
             }
 
-            let query = db.collection('posts');
-            if (sortBy === 'popular') {
-                query = query.orderBy('likes', 'desc').orderBy('createdAt', 'desc');
-            } else {
-                query = query.orderBy('createdAt', 'desc');
-            }
+            // 복합 인덱스 에러 방지 및 클라이언트 측 정렬을 위해 단일 필드로 조회합니다.
+            let query = db.collection('posts').orderBy('createdAt', 'desc');
 
             postsUnsubscribe = query.onSnapshot((snapshot) => {
                 // 기존 카드 모두 지우기
@@ -2255,11 +2251,32 @@
                     headerSpan.innerHTML = `전체 게시글 <span style="color: var(--accent-color); font-weight: bold;">${snapshot.size}</span>개`;
                 }
 
-                // pinned 항목 우선 정렬
+                // 정렬 로직 (pinned 우선, 그 다음 sortBy 기준)
                 const docs = [...snapshot.docs].sort((a, b) => {
-                    const pinA = a.data().pinned ? 1 : 0;
-                    const pinB = b.data().pinned ? 1 : 0;
-                    return pinB - pinA; // 내림차순
+                    const dataA = a.data();
+                    const dataB = b.data();
+
+                    const pinA = dataA.pinned ? 1 : 0;
+                    const pinB = dataB.pinned ? 1 : 0;
+                    
+                    // 1. 상단 고정(pinned) 게시물 우선 정렬 (고정한 게시물이 항상 위)
+                    if (pinB !== pinA) {
+                        return pinB - pinA;
+                    }
+
+                    // 2. 고정 상태가 같은 경우 인기순(조회수 views 내림차순) 또는 최신순(작성일 createdAt 내림차순) 정렬
+                    if (sortBy === 'popular') {
+                        const viewsA = dataA.views || 0;
+                        const viewsB = dataB.views || 0;
+                        if (viewsB !== viewsA) {
+                            return viewsB - viewsA;
+                        }
+                    }
+
+                    // 최신순 (또는 인기순인데 조회수가 같을 때) 작성일 기준 내림차순
+                    const timeA = dataA.createdAt ? dataA.createdAt.toMillis() : 0;
+                    const timeB = dataB.createdAt ? dataB.createdAt.toMillis() : 0;
+                    return timeB - timeA;
                 });
 
                 docs.forEach((doc) => {
@@ -2414,15 +2431,30 @@
 
             // 댓글 실시간 렌더링
             const commentArea = document.getElementById('detailCommentArea');
-            db.collection('posts').doc(id).collection('comments').orderBy('createdAt', 'asc').onSnapshot(snap => {
+            db.collection('posts').doc(id).collection('comments').onSnapshot(snap => {
                 const topCountEl = document.getElementById('detailTopCommentCount');
                 if (topCountEl) topCountEl.innerText = snap.size;
 
-                const commentsHtml = snap.docs.map(cDoc => {
+                // 클라이언트 단에서 정렬: pinned가 참이면 위로, 그 다음 작성일 순 정렬
+                const sortedDocs = [...snap.docs].sort((a, b) => {
+                    const pinA = a.data().pinned ? 1 : 0;
+                    const pinB = b.data().pinned ? 1 : 0;
+                    if (pinB !== pinA) {
+                        return pinB - pinA; // 고정이 위로
+                    }
+                    const timeA = a.data().createdAt ? a.data().createdAt.toMillis() : 0;
+                    const timeB = b.data().createdAt ? b.data().createdAt.toMillis() : 0;
+                    return timeA - timeB; // 작성일 오름차순
+                });
+
+                const commentsHtml = sortedDocs.map(cDoc => {
                     const c = cDoc.data();
                     const cTime = formatDate(c.createdAt);
                     const isPresidentComment = c.author.includes('회장') || (c.email && c.email === 'gimdong2804@gmail.com');
                     const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem;">공식 답변</span>' : '';
+                    
+                    // 고정 댓글 뱃지
+                    const cPinBadge = c.pinned ? '<span style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.1rem 0.3rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem;"><i class="fa-solid fa-thumbtack"></i> 고정됨</span>' : '';
                     
                     let cAvatarHtml = `<div class="board-author-avatar" style="background: ${isPresidentComment ? 'var(--accent-color)' : '#9ca3af'}; width: 32px; height: 32px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;">${isPresidentComment ? '<i class="fa-solid fa-crown" style="font-size: 0.6rem;"></i>' : c.author.substring(0,1)}</div>`;
                     if (c.userPhoto) {
@@ -2431,19 +2463,32 @@
 
                     const isCommentAuthor = currentUser && (c.uid === currentUser.uid || currentUser.email === 'gimdong2804@gmail.com');
                     const cDeleteBtn = isCommentAuthor ? `
-                        <button onclick="deleteComment('${id}', '${cDoc.id}')" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.8rem; margin-left: auto; display: flex; align-items: center; padding: 0.25rem;" title="댓글 삭제">
+                        <button onclick="deleteComment('${id}', '${cDoc.id}')" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.8rem; margin-left: 0.5rem; display: flex; align-items: center; padding: 0.25rem;" title="댓글 삭제">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     ` : '';
 
+                    // 회장 전용 댓글 고정 버튼
+                    const isPresident = currentUser && currentUser.email === 'gimdong2804@gmail.com';
+                    const cPinBtn = isPresident ? `
+                        <button onclick="togglePinComment('${id}', '${cDoc.id}', ${c.pinned || false})" style="background: none; border: none; color: ${c.pinned ? 'var(--accent-color)' : 'var(--text-secondary)'}; cursor: pointer; font-size: 0.8rem; margin-left: auto; display: flex; align-items: center; padding: 0.25rem;" title="${c.pinned ? '댓글 고정 해제' : '댓글 고정'}">
+                            <i class="fa-solid fa-thumbtack"></i>
+                        </button>
+                    ` : '';
+
+                    // 고정 댓글 전용 배경 및 테두리 스타일
+                    const cItemStyle = c.pinned ? 'border: 1px solid var(--accent-color); background: rgba(59, 130, 246, 0.05); border-radius: 12px; padding: 1rem;' : 'border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 1rem;';
+
                     return `
-                        <div class="comment-item comment-slide-in" id="comment-${cDoc.id}" style="display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <div class="comment-item comment-slide-in" id="comment-${cDoc.id}" style="display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.25rem; ${cItemStyle}">
                             ${cAvatarHtml}
                             <div class="comment-content" style="flex: 1; min-width: 0; padding-top: 0.2rem;">
                                 <div class="comment-header" style="display: flex; align-items: center; gap: 0.5rem;">
                                     <span class="board-author-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">${c.author}</span>
                                     ${badge}
-                                    <span class="comment-time" style="font-size: 0.75rem; color: var(--text-secondary);">${cTime}</span>
+                                    ${cPinBadge}
+                                    <span class="comment-time" style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 0.5rem;">${cTime}</span>
+                                    ${cPinBtn}
                                     ${cDeleteBtn}
                                 </div>
                                 <div class="comment-text" style="margin-top: 0.3rem; font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all;">${c.body}</div>
@@ -2508,6 +2553,13 @@
                 await db.collection('posts').doc(id).update({ pinned: !currentPinned });
                 // 고정 상태 반영을 위해 상세페이지 닫음
                 switchPage(postDetailPage, suggestionPage);
+            } catch(e) { console.error(e); }
+        };
+
+        window.togglePinComment = async function(postId, commentId, currentPinned) {
+            if(!currentUser || currentUser.email !== 'gimdong2804@gmail.com') return;
+            try {
+                await db.collection('posts').doc(postId).collection('comments').doc(commentId).update({ pinned: !currentPinned });
             } catch(e) { console.error(e); }
         };
 
