@@ -2131,7 +2131,7 @@
         <img src="" alt="확대 이미지" id="imageLightboxImg">
     </div>
 
-    <button class="fab fab-hidden" id="writePostBtn" aria-label="글쓰기">
+    <button class="fab fab-hidden" id="writePostBtn" aria-label="글쓰기" style="opacity: 0; pointer-events: none; visibility: hidden;">
         <i class="fa-solid fa-pen"></i>
     </button>
 
@@ -2411,8 +2411,14 @@
                     if (writePostBtn) {
                         if (toPage === suggestionPage) {
                             writePostBtn.classList.remove('fab-hidden');
+                            writePostBtn.style.opacity = '1';
+                            writePostBtn.style.pointerEvents = 'auto';
+                            writePostBtn.style.visibility = 'visible';
                         } else {
                             writePostBtn.classList.add('fab-hidden');
+                            writePostBtn.style.opacity = '0';
+                            writePostBtn.style.pointerEvents = 'none';
+                            writePostBtn.style.visibility = 'hidden';
                         }
                     }
                     
