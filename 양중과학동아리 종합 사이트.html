@@ -1163,60 +1163,101 @@
             background: #2563eb;
         }
 
-        /* Custom Select Styles */
-        .custom-select-wrapper {
+        /* Custom Dropdown Styles */
+        .custom-dropdown-container {
             position: relative;
             display: inline-block;
+            user-select: none;
         }
 
-        .custom-select {
-            appearance: none;
-            -webkit-appearance: none;
-            -moz-appearance: none;
+        .custom-dropdown-selected {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
             background: rgba(255, 255, 255, 0.03);
             color: var(--text-primary);
             border: 1px solid var(--glass-border);
             border-radius: 20px;
-            padding: 0.5rem 2.5rem 0.5rem 1.2rem;
+            padding: 0.5rem 1.2rem;
             font-size: 0.9rem;
-            font-family: inherit;
             cursor: pointer;
-            outline: none;
             transition: all 0.3s ease;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
         }
 
-        .custom-select:hover, .custom-select:focus {
+        .custom-dropdown-selected:hover {
             background: rgba(255, 255, 255, 0.08);
             border-color: var(--accent-color);
             box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
         }
 
-        .custom-select-wrapper::after {
-            content: '\f160'; /* FontAwesome sort icon */
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
-            position: absolute;
-            right: 1.2rem;
-            top: 50%;
-            transform: translateY(-50%);
+        .custom-dropdown-selected i.arrow-icon {
+            font-size: 0.8rem;
             color: var(--text-secondary);
-            pointer-events: none;
-            font-size: 0.85rem;
-            transition: color 0.3s ease;
+            transition: transform 0.3s ease, color 0.3s ease;
         }
 
-        .custom-select:hover + .custom-select-wrapper::after,
-        .custom-select:focus + .custom-select-wrapper::after {
+        .custom-dropdown-container.open .custom-dropdown-selected {
+            border-color: var(--accent-color);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+        }
+
+        .custom-dropdown-container.open .custom-dropdown-selected i.arrow-icon {
+            transform: rotate(180deg);
             color: var(--accent-color);
         }
-        
-        .custom-select option {
-            background: var(--bg-color);
-            color: var(--text-primary);
+
+        .custom-dropdown-options {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
             padding: 0.5rem;
+            list-style: none;
+            margin: 0;
+            width: max-content;
+            min-width: 120px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+
+        .custom-dropdown-container.open .custom-dropdown-options {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .custom-dropdown-option {
+            padding: 0.6rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .custom-dropdown-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        .custom-dropdown-option.active {
+            color: var(--accent-color);
+            font-weight: 600;
+            background: rgba(59, 130, 246, 0.1);
         }
 
         /* Animations */
@@ -1606,11 +1647,15 @@
         <div class="board-container">
             <div class="board-header">
                 <span style="color: var(--text-secondary); font-size: 0.9rem;">전체 게시글 <span style="color: var(--accent-color); font-weight: bold;">3</span>개</span>
-                <div class="custom-select-wrapper">
-                    <select id="sortFilter" class="custom-select">
-                        <option value="latest">최신순</option>
-                        <option value="popular">인기순</option>
-                    </select>
+                <div class="custom-dropdown-container" id="customSortDropdown">
+                    <div class="custom-dropdown-selected" id="customSortSelected">
+                        <span><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</span>
+                        <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                    </div>
+                    <ul class="custom-dropdown-options" id="customSortOptions">
+                        <li class="custom-dropdown-option active" data-value="latest"><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</li>
+                        <li class="custom-dropdown-option" data-value="popular"><i class="fa-solid fa-fire"></i> 인기순</li>
+                    </ul>
                 </div>
             </div>
 
@@ -2225,11 +2270,42 @@
         // 초기 로드
         loadPosts('latest');
 
-        // 필터 변경 시 새로 로드
-        const sortFilter = document.getElementById('sortFilter');
-        if (sortFilter) {
-            sortFilter.addEventListener('change', (e) => {
-                loadPosts(e.target.value);
+        // 커스텀 드롭다운 로직
+        const customDropdownContainer = document.getElementById('customSortDropdown');
+        const customSortSelected = document.getElementById('customSortSelected');
+        const customSortOptions = document.getElementById('customSortOptions');
+        const customSortOptionItems = document.querySelectorAll('.custom-dropdown-option');
+
+        if (customSortSelected && customSortOptions) {
+            customSortSelected.addEventListener('click', (e) => {
+                e.stopPropagation();
+                customDropdownContainer.classList.toggle('open');
+            });
+
+            customSortOptionItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const value = item.getAttribute('data-value');
+                    const textHTML = item.innerHTML;
+                    
+                    // 활성화 표시 업데이트
+                    customSortOptionItems.forEach(opt => opt.classList.remove('active'));
+                    item.classList.add('active');
+                    
+                    // 선택된 텍스트 및 아이콘 업데이트
+                    customSortSelected.innerHTML = `<span>${textHTML}</span> <i class="fa-solid fa-chevron-down arrow-icon"></i>`;
+                    customDropdownContainer.classList.remove('open');
+
+                    // 데이터 새로고침
+                    loadPosts(value);
+                });
+            });
+
+            // 바깥 영역 클릭 시 드롭다운 닫기
+            document.addEventListener('click', (e) => {
+                if (!customDropdownContainer.contains(e.target)) {
+                    customDropdownContainer.classList.remove('open');
+                }
             });
         }
 
