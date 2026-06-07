@@ -1703,13 +1703,19 @@
             opacity: 0 !important;
             visibility: hidden !important;
             transform: translateX(100%) !important;
-            width: 0 !important;
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            margin-left: -2rem !important;
+            pointer-events: none !important;
             border: none !important;
             overflow: hidden !important;
-            pointer-events: none !important;
+        }
+
+        /* 데스크탑 사이드 모드에서만 너비 애니메이션 적용하여 본문 밀어내기 */
+        @media (min-width: 1024px) {
+            .side-detail-container:not(.fullscreen-detail).detail-hidden {
+                width: 0 !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                margin-left: -2rem !important;
+            }
         }
 
         .side-detail-container::-webkit-scrollbar {
