@@ -1676,7 +1676,13 @@
             top: 90px;
             max-height: calc(100vh - 120px);
             overflow-y: auto;
-            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease, width 0.5s cubic-bezier(0.16, 1, 0.3, 1), margin 0.5s cubic-bezier(0.16, 1, 0.3, 1), padding 0.5s ease;
+            /* 애니메이션 성능 최적화 및 속도 조절 */
+            will-change: transform, opacity, width, margin;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                        opacity 0.5s ease,
+                        width 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                        margin 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                        padding 0.6s ease;
             display: flex;
             flex-direction: column;
             padding-bottom: 90px;
@@ -1686,18 +1692,17 @@
             transform: translateX(0);
         }
 
-        /* 전용 숨김 클래스 사용 (display: none 제거) */
         .side-detail-container.detail-hidden {
-            opacity: 0;
-            visibility: hidden;
-            transform: translateX(100%); /* 확실히 오른쪽 밖으로 */
-            pointer-events: none;
-            width: 0;
-            padding-left: 0;
-            padding-right: 0;
-            margin-left: -2rem;
-            border: none;
-            overflow: hidden;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            transform: translateX(100%) !important;
+            width: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin-left: -2rem !important;
+            border: none !important;
+            overflow: hidden !important;
+            pointer-events: none !important;
         }
 
         .side-detail-container::-webkit-scrollbar {
@@ -2809,16 +2814,17 @@
         function closeSideDetail() {
             const sideDetailContainer = document.getElementById('sideDetailContainer');
             if (sideDetailContainer) {
+                // 1. 먼저 애니메이션 클래스만 추가합니다. (포지션 변경은 뒤로 미룸)
                 sideDetailContainer.classList.add('detail-hidden');
-                sideDetailContainer.classList.remove('fullscreen-detail');
-                
-                // 애니메이션이 끝난 후(0.5s)에 부모 요소를 이동시켜 끊김을 방지합니다.
+
+                // 2. 애니메이션(0.6s)이 완전히 끝난 뒤에 레이아웃을 정리합니다.
                 setTimeout(() => {
+                    sideDetailContainer.classList.remove('fullscreen-detail');
                     const communityLayout = document.querySelector('.community-layout');
                     if (communityLayout && sideDetailContainer.parentElement !== communityLayout && sideDetailContainer.classList.contains('detail-hidden')) {
                         communityLayout.appendChild(sideDetailContainer);
                     }
-                }, 500);
+                }, 600);
             }
             document.body.classList.remove('detail-open');
             if (postUnsubscribe) {
@@ -2843,7 +2849,7 @@
                 const isFullscreen = currentDetailMode === 'fullscreen';
                 const isMobile = window.innerWidth <= 1023;
                 
-                // 1. 먼저 부모 요소를 이동시킵니다. (애니메이션 시작 전)
+                // 1. 먼저 부모 요소를 이동시키고 클래스를 설정합니다.
                 if (isFullscreen || isMobile) {
                     if (sideDetailContainer.parentElement !== document.body) {
                         document.body.appendChild(sideDetailContainer);
@@ -2855,7 +2861,6 @@
                     }
                 }
                 
-                // 2. 클래스를 설정합니다.
                 sideDetailContainer.classList.toggle('fullscreen-detail', isFullscreen);
                 document.body.classList.toggle('detail-open', isFullscreen || isMobile);
 
@@ -2866,13 +2871,14 @@
                         : '<i class="fa-regular fa-comments"></i> 댓글 보기';
                 }
 
-                // 3. 브라우저가 레이아웃을 계산할 시간을 준 뒤 hidden을 제거하여 애니메이션을 작동시킵니다.
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        sideDetailContainer.classList.remove('detail-hidden');
-                        sideDetailContainer.scrollTop = 0;
-                    });
-                });
+                // 2. 강제로 브라우저 리플로우를 발생시켜 현재 상태(hidden)를 인지하게 합니다.
+                void sideDetailContainer.offsetWidth;
+
+                // 3. 약간의 시간차(50ms)를 두어 브라우저가 위치 이동을 마친 뒤 애니메이션을 시작하게 합니다.
+                setTimeout(() => {
+                    sideDetailContainer.classList.remove('detail-hidden');
+                    sideDetailContainer.scrollTop = 0;
+                }, 50);
             }
 
             const area = document.getElementById('detailPostArea');
