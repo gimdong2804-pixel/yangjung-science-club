@@ -1550,27 +1550,10 @@
         <div class="board-container">
             <div class="board-header">
                 <span style="color: var(--text-secondary); font-size: 0.9rem;">전체 게시글 <span style="color: var(--accent-color); font-weight: bold;">3</span>개</span>
-                <span style="color: var(--text-secondary); font-size: 0.9rem;"><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</span>
-            </div>
-
-            <!-- 고정된 게시글 (회장 전용) -->
-            <div class="board-card pinned" id="postCard1">
-                <div class="board-card-header">
-                    <div class="board-author">
-                        <div class="board-author-avatar" style="background: var(--accent-color);"><i class="fa-solid fa-crown" style="font-size: 0.7rem;"></i></div>
-                        <span class="board-author-name">회장 김동현</span>
-                    </div>
-                    <span class="board-time">오전 9:00</span>
-                </div>
-                <h3 class="board-title"><i class="fa-solid fa-thumbtack pin-icon"></i> [공지] 커뮤니티(건의방) 운영 안내</h3>
-                <p class="board-preview">동아리 부원 여러분 안녕하세요! 자유롭게 의견을 나누고 건의사항을 올릴 수 있는 공간입니다. 욕설 및 비방은 금지되며, 운영과 관련된 좋은 아이디어가 있다면 언제든 편하게 남겨주세요.</p>
-                <div class="board-footer">
-                    <span>조회 42회</span>
-                    <div class="board-stats">
-                        <span><i class="fa-regular fa-comment"></i> 2</span>
-                        <span><i class="fa-regular fa-heart"></i> 5</span>
-                    </div>
-                </div>
+                <select id="sortFilter" style="background: transparent; color: var(--text-secondary); border: none; font-size: 0.9rem; outline: none; cursor: pointer; font-family: inherit;">
+                    <option value="latest">최신순</option>
+                    <option value="popular">인기순</option>
+                </select>
             </div>
 
 
@@ -2116,13 +2099,27 @@
 
         let currentPostId = null; // 상세 페이지용 전역 변수
 
-        db.collection('posts').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
-            // 기존 일반 카드 모두 지우기
-            const cards = boardContainer.querySelectorAll('.board-card:not(.pinned)');
-            cards.forEach(card => card.remove());
+        let postsUnsubscribe = null;
 
-            // 총 글 개수 업데이트 (고정글 제외)
-            document.querySelector('.board-header span').innerHTML = `전체 게시글 <span style="color: var(--accent-color); font-weight: bold;">${snapshot.size}</span>개`;
+        function loadPosts(sortBy = 'latest') {
+            if (postsUnsubscribe) {
+                postsUnsubscribe();
+            }
+
+            let query = db.collection('posts');
+            if (sortBy === 'popular') {
+                query = query.orderBy('likes', 'desc').orderBy('createdAt', 'desc');
+            } else {
+                query = query.orderBy('createdAt', 'desc');
+            }
+
+            postsUnsubscribe = query.onSnapshot((snapshot) => {
+                // 기존 일반 카드 모두 지우기
+                const cards = boardContainer.querySelectorAll('.board-card:not(.pinned)');
+                cards.forEach(card => card.remove());
+
+                // 총 글 개수 업데이트 (고정글 제외)
+                document.querySelector('.board-header span').innerHTML = `전체 게시글 <span style="color: var(--accent-color); font-weight: bold;">${snapshot.size}</span>개`;
 
             snapshot.forEach((doc) => {
                 const post = doc.data();
@@ -2164,7 +2161,19 @@
                     if(el) el.innerText = snap.size;
                 });
             });
-        });
+            });
+        }
+
+        // 초기 로드
+        loadPosts('latest');
+
+        // 필터 변경 시 새로 로드
+        const sortFilter = document.getElementById('sortFilter');
+        if (sortFilter) {
+            sortFilter.addEventListener('change', (e) => {
+                loadPosts(e.target.value);
+            });
+        }
 
         // 상세 페이지 렌더링
         function openPostDetail(id, post, avatar, timeStr) {
