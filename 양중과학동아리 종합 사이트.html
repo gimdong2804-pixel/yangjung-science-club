@@ -2222,11 +2222,31 @@
         // Firebase 데이터 실시간 불러오기
         function formatDate(timestamp) {
             if (!timestamp) return '방금 전';
-            const d = timestamp.toDate();
-            const ampm = d.getHours() < 12 ? '오전' : '오후';
-            const h = d.getHours() % 12 || 12;
-            const m = String(d.getMinutes()).padStart(2, '0');
-            return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}. ${ampm} ${h}:${m}`;
+            try {
+                if (typeof timestamp.toDate === 'function') {
+                    const d = timestamp.toDate();
+                    const ampm = d.getHours() < 12 ? '오전' : '오후';
+                    const h = d.getHours() % 12 || 12;
+                    const m = String(d.getMinutes()).padStart(2, '0');
+                    return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}. ${ampm} ${h}:${m}`;
+                }
+                if (timestamp instanceof Date) {
+                    const ampm = timestamp.getHours() < 12 ? '오전' : '오후';
+                    const h = timestamp.getHours() % 12 || 12;
+                    const m = String(timestamp.getMinutes()).padStart(2, '0');
+                    return `${timestamp.getFullYear()}. ${timestamp.getMonth() + 1}. ${timestamp.getDate()}. ${ampm} ${h}:${m}`;
+                }
+                if (typeof timestamp.toMillis === 'function') {
+                    const d = new Date(timestamp.toMillis());
+                    const ampm = d.getHours() < 12 ? '오전' : '오후';
+                    const h = d.getHours() % 12 || 12;
+                    const m = String(d.getMinutes()).padStart(2, '0');
+                    return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}. ${ampm} ${h}:${m}`;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+            return String(timestamp);
         }
 
         let currentPostId = null; // 상세 페이지용 전역 변수
@@ -2276,8 +2296,8 @@
                     }
 
                     // 최신순 (또는 인기순인데 조회수가 같을 때) 작성일 기준 내림차순
-                    const timeA = dataA.createdAt ? dataA.createdAt.toMillis() : 0;
-                    const timeB = dataB.createdAt ? dataB.createdAt.toMillis() : 0;
+                    const timeA = (dataA.createdAt && typeof dataA.createdAt.toMillis === 'function') ? dataA.createdAt.toMillis() : (dataA.createdAt instanceof Date ? dataA.createdAt.getTime() : 0);
+                    const timeB = (dataB.createdAt && typeof dataB.createdAt.toMillis === 'function') ? dataB.createdAt.toMillis() : (dataB.createdAt instanceof Date ? dataB.createdAt.getTime() : 0);
                     return timeB - timeA;
                 });
 
@@ -2470,8 +2490,8 @@
                     if (pinB !== pinA) {
                         return pinB - pinA; // 고정이 위로
                     }
-                    const timeA = a.data().createdAt ? a.data().createdAt.toMillis() : 0;
-                    const timeB = b.data().createdAt ? b.data().createdAt.toMillis() : 0;
+                    const timeA = (a.data().createdAt && typeof a.data().createdAt.toMillis === 'function') ? a.data().createdAt.toMillis() : (a.data().createdAt instanceof Date ? a.data().createdAt.getTime() : 0);
+                    const timeB = (b.data().createdAt && typeof b.data().createdAt.toMillis === 'function') ? b.data().createdAt.toMillis() : (b.data().createdAt instanceof Date ? b.data().createdAt.getTime() : 0);
                     return timeA - timeB; // 작성일 오름차순
                 });
 
