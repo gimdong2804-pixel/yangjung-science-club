@@ -1163,6 +1163,62 @@
             background: #2563eb;
         }
 
+        /* Custom Select Styles */
+        .custom-select-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .custom-select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 0.5rem 2.5rem 0.5rem 1.2rem;
+            font-size: 0.9rem;
+            font-family: inherit;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .custom-select:hover, .custom-select:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-color);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15);
+        }
+
+        .custom-select-wrapper::after {
+            content: '\f160'; /* FontAwesome sort icon */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            right: 1.2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+            font-size: 0.85rem;
+            transition: color 0.3s ease;
+        }
+
+        .custom-select:hover + .custom-select-wrapper::after,
+        .custom-select:focus + .custom-select-wrapper::after {
+            color: var(--accent-color);
+        }
+        
+        .custom-select option {
+            background: var(--bg-color);
+            color: var(--text-primary);
+            padding: 0.5rem;
+        }
+
         /* Animations */
         @keyframes fadeInDown {
             from { opacity: 0; transform: translateY(-20px); }
@@ -1550,10 +1606,12 @@
         <div class="board-container">
             <div class="board-header">
                 <span style="color: var(--text-secondary); font-size: 0.9rem;">전체 게시글 <span style="color: var(--accent-color); font-weight: bold;">3</span>개</span>
-                <select id="sortFilter" style="background: transparent; color: var(--text-secondary); border: none; font-size: 0.9rem; outline: none; cursor: pointer; font-family: inherit;">
-                    <option value="latest">최신순</option>
-                    <option value="popular">인기순</option>
-                </select>
+                <div class="custom-select-wrapper">
+                    <select id="sortFilter" class="custom-select">
+                        <option value="latest">최신순</option>
+                        <option value="popular">인기순</option>
+                    </select>
+                </div>
             </div>
 
 
