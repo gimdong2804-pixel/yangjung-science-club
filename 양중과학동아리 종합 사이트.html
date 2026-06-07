@@ -2131,7 +2131,7 @@
         <img src="" alt="확대 이미지" id="imageLightboxImg">
     </div>
 
-    <button class="fab" id="writePostBtn" aria-label="글쓰기">
+    <button class="fab fab-hidden" id="writePostBtn" aria-label="글쓰기">
         <i class="fa-solid fa-pen"></i>
     </button>
 
@@ -2404,6 +2404,16 @@
                     } else {
                         // 서브 페이지로 전환 완료 시점에는 푸터를 완전히 숨김
                         siteFooter.style.display = 'none';
+                    }
+
+                    // [추가] 커뮤니티 페이지(suggestionPage)인 경우에만 작성 버튼 표시
+                    const writePostBtn = document.getElementById('writePostBtn');
+                    if (writePostBtn) {
+                        if (toPage === suggestionPage) {
+                            writePostBtn.classList.remove('fab-hidden');
+                        } else {
+                            writePostBtn.classList.add('fab-hidden');
+                        }
                     }
                     
                     // 인사말 페이지로 왔을 때만 페이드 인으로 스크롤바 노출
