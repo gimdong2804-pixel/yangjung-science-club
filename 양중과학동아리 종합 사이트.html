@@ -1676,7 +1676,7 @@
             top: 90px;
             max-height: calc(100vh - 120px);
             overflow-y: auto;
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease, visibility 0.4s;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease, visibility 0.4s, width 0.4s cubic-bezier(0.4, 0, 0.2, 1), margin 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             flex-direction: column;
             padding-bottom: 90px; /* 댓글 입력 영역 공간 */
@@ -1689,13 +1689,14 @@
         .side-detail-container.hidden {
             opacity: 0;
             visibility: hidden;
-            transform: translateX(30px);
+            transform: translateX(100%);
             pointer-events: none;
             width: 0;
             padding-left: 0;
             padding-right: 0;
             margin-left: -2rem; /* gap 보정 */
             border: none;
+            overflow: hidden;
         }
 
         .side-detail-container::-webkit-scrollbar {
@@ -2808,11 +2809,13 @@
                 sideDetailContainer.classList.add('hidden');
                 sideDetailContainer.classList.remove('fullscreen-detail');
                 
-                // 원래 위치인 community-layout 내부로 복귀하여 Stacking Context 이동을 원복합니다.
-                const communityLayout = document.querySelector('.community-layout');
-                if (communityLayout && sideDetailContainer.parentElement !== communityLayout) {
-                    communityLayout.appendChild(sideDetailContainer);
-                }
+                // 애니메이션이 끝난 후(0.4s)에 부모 요소를 이동시켜 끊김을 방지합니다.
+                setTimeout(() => {
+                    const communityLayout = document.querySelector('.community-layout');
+                    if (communityLayout && sideDetailContainer.parentElement !== communityLayout && sideDetailContainer.classList.contains('hidden')) {
+                        communityLayout.appendChild(sideDetailContainer);
+                    }
+                }, 400);
             }
             document.body.classList.remove('detail-open');
             if (postUnsubscribe) {
