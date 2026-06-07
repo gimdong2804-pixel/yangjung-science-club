@@ -1478,6 +1478,123 @@
         .hidden {
             display: none !important;
         }
+
+        /* 커뮤니티 2분할 레이아웃 스타일 */
+        .community-layout {
+            display: flex;
+            gap: 2rem;
+            position: relative;
+            align-items: flex-start;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            width: 100%;
+        }
+
+        .community-layout .board-container {
+            flex: 1;
+            min-width: 0;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            padding-bottom: 2rem;
+        }
+
+        .side-detail-container {
+            width: 480px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            position: sticky;
+            top: 90px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 90px; /* 댓글 입력 영역 공간 */
+            z-index: 10;
+        }
+
+        .side-detail-container.hidden {
+            display: none !important;
+        }
+
+        .side-detail-container::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .side-detail-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .side-detail-container::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 99px;
+        }
+
+        .side-detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 1rem;
+        }
+
+        /* 데스크탑에서 댓글 창이 사이드바 내부에 고정되도록 조정 */
+        @media (min-width: 1024px) {
+            .side-detail-container .comment-input-area {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                background: var(--bg-color);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border-top: 1px solid var(--glass-border);
+                border-radius: 0 0 16px 16px;
+                padding: 1rem;
+            }
+            .side-detail-container .comment-input-container {
+                max-width: 100%;
+            }
+        }
+
+        /* 모바일 반응형 처리 */
+        @media (max-width: 1023px) {
+            .community-layout {
+                flex-direction: column;
+                gap: 0;
+            }
+            .side-detail-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                max-height: 100vh;
+                border-radius: 0;
+                z-index: 150;
+                border: none;
+                top: 0 !important;
+                padding-bottom: 80px;
+            }
+            .side-detail-container .comment-input-area {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                background: var(--bg-color);
+                border-top: 1px solid var(--glass-border);
+                padding: 1rem;
+                z-index: 100;
+            }
+            .side-detail-container .comment-input-container {
+                max-width: 800px;
+                margin: 0 auto;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1672,22 +1789,47 @@
         </button>
         <h1 class="greeting-title">커뮤니티</h1>
         
-        <div class="board-container">
-            <div class="board-header">
-                <span style="color: var(--text-secondary); font-size: 0.9rem;">전체 게시글 <span style="color: var(--accent-color); font-weight: bold;">3</span>개</span>
-                <div class="custom-dropdown-container" id="customSortDropdown">
-                    <div class="custom-dropdown-selected" id="customSortSelected">
-                        <span><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</span>
-                        <i class="fa-solid fa-chevron-down arrow-icon"></i>
+        <div class="community-layout">
+            <div class="board-container">
+                <div class="board-header">
+                    <span style="color: var(--text-secondary); font-size: 0.9rem;">전체 게시글 <span style="color: var(--accent-color); font-weight: bold;">3</span>개</span>
+                    <div class="custom-dropdown-container" id="customSortDropdown">
+                        <div class="custom-dropdown-selected" id="customSortSelected">
+                            <span><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</span>
+                            <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                        </div>
+                        <ul class="custom-dropdown-options" id="customSortOptions">
+                            <li class="custom-dropdown-option active" data-value="latest"><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</li>
+                            <li class="custom-dropdown-option" data-value="popular"><i class="fa-solid fa-fire"></i> 인기순</li>
+                        </ul>
                     </div>
-                    <ul class="custom-dropdown-options" id="customSortOptions">
-                        <li class="custom-dropdown-option active" data-value="latest"><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</li>
-                        <li class="custom-dropdown-option" data-value="popular"><i class="fa-solid fa-fire"></i> 인기순</li>
-                    </ul>
                 </div>
             </div>
 
+            <!-- 우측 상세 보기 창 (데스크탑에선 옆에 붙고, 모바일에선 전체화면) -->
+            <div class="side-detail-container hidden" id="sideDetailContainer">
+                <div class="side-detail-header">
+                    <span style="color: var(--accent-color); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-file-lines"></i> 건의글 상세</span>
+                    <button class="close-btn" id="closeSideDetailBtn" aria-label="상세 닫기" style="background: none; border: none; color: var(--text-primary); font-size: 1.2rem; cursor: pointer;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                
+                <div class="post-content-area" id="detailPostArea" style="border: none; background: none; padding: 0; margin-bottom: 1.5rem;">
+                    <!-- 자바스크립트로 렌더링됩니다 -->
+                </div>
 
+                <div class="comment-section" id="detailCommentArea">
+                    <!-- 자바스크립트로 렌더링됩니다 -->
+                </div>
+
+                <div class="comment-input-area">
+                    <div class="comment-input-container">
+                        <input type="text" class="comment-input" placeholder="댓글을 입력하세요...">
+                        <button class="comment-submit-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <button class="fab" id="writePostBtn" aria-label="글쓰기">
@@ -1695,30 +1837,7 @@
         </button>
     </div>
 
-    <!-- 게시글 상세 페이지 -->
-    <div id="postDetailPage" class="page hidden fade-out">
-        <button class="greeting-back-btn" id="postDetailBackBtn">
-            <i class="fa-solid fa-arrow-left"></i> 목록으로
-        </button>
-        <h1 class="greeting-title">게시글 보기</h1>
-        
-        <div class="post-detail-container">
-            <div class="post-content-area" id="detailPostArea">
-                <!-- 자바스크립트로 렌더링됩니다 -->
-            </div>
-
-            <div class="comment-section" id="detailCommentArea">
-                <!-- 자바스크립트로 렌더링됩니다 -->
-            </div>
-        </div>
-
-        <div class="comment-input-area">
-            <div class="comment-input-container">
-                <input type="text" class="comment-input" placeholder="댓글을 입력하세요...">
-                <button class="comment-submit-btn"><i class="fa-solid fa-paper-plane"></i></button>
-            </div>
-        </div>
-    </div>
+    <!-- 게시글 상세 페이지 (2분할 레이아웃 적용으로 제거) -->
 
     <!-- 글쓰기 페이지 -->
     <div id="writePostPage" class="page hidden fade-out">
@@ -2030,9 +2149,6 @@
         const suggestionLink = document.getElementById('suggestionLink');
         const suggestionPage = document.getElementById('suggestionPage');
         const suggestionBackBtn = document.getElementById('suggestionBackBtn');
-        const postDetailPage = document.getElementById('postDetailPage');
-        const postDetailBackBtn = document.getElementById('postDetailBackBtn');
-
         suggestionLink.addEventListener('click', (e) => {
             e.preventDefault();
             closeDrawer();
@@ -2042,10 +2158,6 @@
         suggestionBackBtn.addEventListener('click', () => {
             closeSideDetail();
             switchPage(currentPage, mainPage);
-        });
-
-        postDetailBackBtn.addEventListener('click', () => {
-            switchPage(currentPage, suggestionPage);
         });
 
         // Firebase 연동 로직

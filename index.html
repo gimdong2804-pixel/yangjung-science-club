@@ -2149,9 +2149,6 @@
         const suggestionLink = document.getElementById('suggestionLink');
         const suggestionPage = document.getElementById('suggestionPage');
         const suggestionBackBtn = document.getElementById('suggestionBackBtn');
-        const postDetailPage = document.getElementById('postDetailPage');
-        const postDetailBackBtn = document.getElementById('postDetailBackBtn');
-
         suggestionLink.addEventListener('click', (e) => {
             e.preventDefault();
             closeDrawer();
@@ -2161,10 +2158,6 @@
         suggestionBackBtn.addEventListener('click', () => {
             closeSideDetail();
             switchPage(currentPage, mainPage);
-        });
-
-        postDetailBackBtn.addEventListener('click', () => {
-            switchPage(currentPage, suggestionPage);
         });
 
         // Firebase 연동 로직
