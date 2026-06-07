@@ -1687,7 +1687,11 @@
             backface-visibility: hidden;
             will-change: transform, opacity;
             transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                        opacity 0.4s ease;
+                        opacity 0.4s ease,
+                        visibility 0.4s,
+                        width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                        margin 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                        padding 0.4s ease;
             display: flex;
             flex-direction: column;
             padding-bottom: 90px;
@@ -1700,7 +1704,8 @@
         /* 전체화면일 때는 아래에서 위로 올라오는 애니메이션 적용 */
         .side-detail-container.fullscreen-detail {
             transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                        opacity 0.4s ease;
+                        opacity 0.4s ease,
+                        visibility 0.4s;
             width: 100vw !important;
             margin: 0 !important;
             transform: translateY(0);
@@ -1708,25 +1713,25 @@
 
         /* 사이드 모드에서 숨겨진 상태: 오른쪽으로 이동 */
         .side-detail-container.detail-hidden {
-            opacity: 0 !important;
-            visibility: hidden !important;
-            transform: translateX(30px) !important;
-            pointer-events: none !important;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(30px);
+            pointer-events: none;
         }
 
         /* 전체화면 모드에서 숨겨진 상태: 아래로 이동 */
         .side-detail-container.fullscreen-detail.detail-hidden {
-            transform: translateY(30px) !important;
+            transform: translateY(30px);
         }
 
-        /* 데스크탑 사이드 모드에서 본문 영역 확보를 위한 너비 조절 (애니메이션 제외) */
+        /* 데스크탑 사이드 모드에서 본문 영역 확보를 위한 너비 조절 */
         @media (min-width: 1024px) {
             .side-detail-container:not(.fullscreen-detail).detail-hidden {
-                width: 0 !important;
-                padding-left: 0 !important;
-                padding-right: 0 !important;
-                margin-left: -2rem !important;
-                border: none !important;
+                width: 0;
+                padding-left: 0;
+                padding-right: 0;
+                margin-left: -2rem;
+                border: none;
             }
         }
 
@@ -1800,11 +1805,14 @@
                 padding-bottom: 80px;
                 transform: translateY(0);
                 /* 모바일에서는 아래에서 위로 올라오는 애니메이션 */
-                transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+                transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                            opacity 0.4s ease,
+                            visibility 0.4s;
             }
             .side-detail-container.detail-hidden {
                 transform: translateY(30px);
                 opacity: 0;
+                visibility: hidden;
             }
             .side-detail-container .comment-input-area {
                 position: fixed;
