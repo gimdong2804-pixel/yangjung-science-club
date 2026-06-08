@@ -2830,9 +2830,11 @@
                 boardContainer.querySelectorAll('.board-card').forEach(card => {
                     const id = card.getAttribute('data-id');
                     oldPositions.set(id, card.getBoundingClientRect());
-                    // 현재 상태 백업 (고정 여부 확인용)
-                    oldData.set(id, { pinned: card.classList.contains('pinned-state') });
-                });
+                    // 현재 상태 백업 (고정 및 좋아요 여부 확인용)
+                    oldData.set(id, { 
+                        pinned: card.classList.contains('pinned-state'),
+                        liked: card.querySelector('.fa-heart') ? card.querySelector('.fa-heart').classList.contains('fa-solid') : false
+                    });
 
                 // 2. 현재 스냅샷의 ID 목록
                 const currentIds = new Set(snapshot.docs.map(doc => doc.id));
@@ -2879,6 +2881,7 @@
                     const isNew = !card;
 
                     const wasPinned = oldData.get(id) ? oldData.get(id).pinned : false;
+                    const wasLiked = oldData.get(id) ? oldData.get(id).liked : false;
 
                     const avatar = post.author ? post.author.substring(0, 1) : '?';
                     let avatarHtml = post.userPhoto
@@ -2919,7 +2922,7 @@
                                     <i class="fa-regular fa-comment"></i> <span id="comment-cnt-${id}">0</span>
                                 </button>
                                 <button type="button" class="board-action-btn" onclick="event.stopPropagation(); likePost('${id}')">
-                                    <i class="${isLiked ? 'fa-solid fa-heart animate-heart' : 'fa-regular fa-heart'}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> ${post.likes || 0}
+                                    <i class="${isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'} ${wasLiked !== isLiked ? (isLiked ? 'animate-heart' : 'animate-heart-cancel') : (isLiked ? 'animate-heart' : '')}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> ${post.likes || 0}
                                 </button>
                             </div>
                         </div>
@@ -3180,8 +3183,16 @@
                     </button>
                 ` : '';
 
+                const existingHeart = area.querySelector('.fa-heart');
+                const wasLiked = existingHeart ? existingHeart.classList.contains('fa-solid') : false;
                 const isLiked = currentUser && currentPost.likedUsers && currentPost.likedUsers.includes(currentUser.uid);
-                const heartIcon = isLiked ? 'fa-solid fa-heart animate-heart' : 'fa-regular fa-heart';
+                
+                const heartClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+                const heartAnimClass = (existingHeart && wasLiked !== isLiked) 
+                    ? (isLiked ? 'animate-heart' : 'animate-heart-cancel') 
+                    : (isLiked ? 'animate-heart' : '');
+                
+                const heartIcon = `${heartClass} ${heartAnimClass}`;
                 const heartColor = isLiked ? 'color: #ff6b6b;' : 'color: var(--text-primary);';
 
                 area.innerHTML = `
