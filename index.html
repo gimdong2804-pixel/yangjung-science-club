@@ -2835,6 +2835,7 @@
                         pinned: card.classList.contains('pinned-state'),
                         liked: card.querySelector('.fa-heart') ? card.querySelector('.fa-heart').classList.contains('fa-solid') : false
                     });
+                });
 
                 // 2. 현재 스냅샷의 ID 목록
                 const currentIds = new Set(snapshot.docs.map(doc => doc.id));
