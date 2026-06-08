@@ -2940,13 +2940,6 @@
 
                         // 이벤트 바인딩
                         card.addEventListener('click', () => openPostDetail(id, post, avatarHtml, timeStr, 'fullscreen'));
-                        const commentBtn = card.querySelector('.board-comment-btn');
-                        if (commentBtn) {
-                            commentBtn.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                openPostDetail(id, post, avatarHtml, timeStr, 'side');
-                            });
-                        }
                         
                         if (post.pinned) {
                             requestAnimationFrame(() => {
@@ -2974,6 +2967,14 @@
                         }
                         // 순서 유지를 위해 다시 append (기존 위치에서 빠져나와 맨 뒤로 이동)
                         boardContainer.appendChild(card);
+                    }
+
+                    const commentBtn = card.querySelector('.board-comment-btn');
+                    if (commentBtn) {
+                        commentBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            openPostDetail(id, post, avatarHtml, timeStr, 'side');
+                        });
                     }
 
                     // 댓글 수 실시간 업데이트
