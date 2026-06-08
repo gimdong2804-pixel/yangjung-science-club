@@ -2878,13 +2878,15 @@
                     let card = boardContainer.querySelector(`.board-card[data-id="${id}"]`);
                     const isNew = !card;
 
+                    const wasPinned = oldData.get(id) ? oldData.get(id).pinned : false;
+
                     const avatar = post.author ? post.author.substring(0, 1) : '?';
                     let avatarHtml = post.userPhoto
                         ? `<img class="board-author-avatar" src="${post.userPhoto}" alt="${post.author}" style="object-fit: cover; border: 1px solid var(--glass-border);">`
                         : `<div class="board-author-avatar" style="background: hsl(${(id.charCodeAt(0) * 137) % 360}, 60%, 50%)">${avatar}</div>`;
 
                     const pinBadgeHtml = `
-                        <div class="pin-badge-wrapper ${post.pinned ? 'active' : ''}">
+                        <div class="pin-badge-wrapper ${wasPinned ? 'active' : ''}">
                             <span class="pin-badge-ui" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; display: inline-block;">
                                 <i class="fa-solid fa-thumbtack"></i> 상단 고정
                             </span>
@@ -2900,7 +2902,7 @@
                             </div>
                             <div style="display: flex; align-items: center; gap: 0.8rem;">
                                 ${isPresident ? `
-                                    <button type="button" class="board-action-btn pin-toggle-btn ${post.pinned ? 'active' : ''}"
+                                    <button type="button" class="board-action-btn pin-toggle-btn ${wasPinned ? 'active' : ''}"
                                             onclick="event.stopPropagation(); togglePin('${id}', ${post.pinned || false})"
                                             title="${post.pinned ? '고정 해제' : '상단 고정'}">
                                         <i class="fa-solid fa-thumbtack"></i>
@@ -2941,10 +2943,31 @@
                                 openPostDetail(id, post, avatarHtml, timeStr, 'side');
                             });
                         }
+                        
+                        if (post.pinned) {
+                            requestAnimationFrame(() => {
+                                const badge = card.querySelector('.pin-badge-wrapper');
+                                if (badge) badge.classList.add('active');
+                            });
+                        }
                     } else {
                         // 내용 업데이트 및 클래스 갱신
                         card.innerHTML = innerHtml;
                         card.classList.toggle('pinned-state', post.pinned);
+                        
+                        if (wasPinned !== post.pinned) {
+                            requestAnimationFrame(() => {
+                                const badge = card.querySelector('.pin-badge-wrapper');
+                                const btn = card.querySelector('.pin-toggle-btn');
+                                if (post.pinned) {
+                                    if (badge) badge.classList.add('active');
+                                    if (btn) btn.classList.add('active');
+                                } else {
+                                    if (badge) badge.classList.remove('active');
+                                    if (btn) btn.classList.remove('active');
+                                }
+                            });
+                        }
                         // 순서 유지를 위해 다시 append (기존 위치에서 빠져나와 맨 뒤로 이동)
                         boardContainer.appendChild(card);
                     }
