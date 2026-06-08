@@ -941,109 +941,30 @@
 
         .pin-toggle-btn {
             position: relative;
-            overflow: visible;
+            transition: background-color 0.2s ease, color 0.2s ease;
         }
         .pin-toggle-btn i {
             display: inline-block;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.5);
-            transform-origin: center bottom;
+            transition: transform 0.2s ease;
         }
         .pin-toggle-btn:hover i {
-            transform: scale(1.1) translateY(-2px);
+            transform: translateY(-1px);
         }
         .pin-toggle-btn.active {
             color: var(--accent-color) !important;
-            background: rgba(59, 130, 246, 0.12) !important;
-        }
-        .pin-toggle-btn.active i {
-            animation: pinDrop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.5) forwards;
-        }
-        @keyframes pinDrop {
-            0% { transform: scale(1) rotate(0deg) translateY(0); }
-            30% { transform: scale(0.8) rotate(-30deg) translateY(-6px); }
-            70% { transform: scale(1.2) rotate(15deg) translateY(2px); }
-            100% { transform: scale(1.15) rotate(0deg) translateY(0); }
-        }
-
-        .pin-toggle-btn::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 32px;
-            height: 32px;
-            margin-left: -16px;
-            margin-top: -16px;
-            border: 2px solid var(--accent-color);
-            border-radius: 50%;
-            opacity: 0;
-            pointer-events: none;
-        }
-        .pin-toggle-btn.active::after {
-            animation: pinRipple 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
-        }
-        @keyframes pinRipple {
-            0% { transform: scale(0.5); opacity: 1; }
-            100% { transform: scale(2.2); opacity: 0; }
+            background: rgba(59, 130, 246, 0.1) !important;
         }
 
         .board-card.pinned-state {
-            background: rgba(59, 130, 246, 0.05);
-            border-color: rgba(59, 130, 246, 0.4);
-            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.08);
+            background: rgba(59, 130, 246, 0.04);
+            border-color: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.05);
         }
 
         .board-card.flipping {
             z-index: 10 !important;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25), 0 5px 15px rgba(59, 130, 246, 0.1) !important;
-            border-color: rgba(59, 130, 246, 0.4) !important;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
             pointer-events: none;
-        }
-
-        .board-card.pin-animating {
-            z-index: 50 !important;
-            pointer-events: none;
-        }
-
-        .board-card.just-pinned {
-            transform-origin: top center;
-            animation: cardPinGlow 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-        }
-        @keyframes cardPinGlow {
-            0% {
-                transform: scaleY(1);
-                box-shadow: 0 0 0 rgba(59, 130, 246, 0);
-            }
-            40% {
-                transform: scaleY(1.04);
-                box-shadow: 0 10px 30px rgba(59, 130, 246, 0.25);
-                border-color: rgba(59, 130, 246, 0.8);
-            }
-            100% {
-                transform: scaleY(1);
-                box-shadow: 0 4px 20px rgba(59, 130, 246, 0.08);
-                border-color: rgba(59, 130, 246, 0.4);
-            }
-        }
-
-        .board-card.just-unpinned {
-            transform-origin: top center;
-            animation: cardUnpinGlow 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-        }
-        @keyframes cardUnpinGlow {
-            0% {
-                transform: scaleY(1);
-                background: rgba(59, 130, 246, 0.05);
-                border-color: rgba(59, 130, 246, 0.4);
-            }
-            40% {
-                transform: scaleY(1.02);
-            }
-            100% {
-                transform: scaleY(1);
-                background: var(--glass-bg);
-                border-color: var(--glass-border);
-            }
         }
 
         .fab {
@@ -2961,23 +2882,6 @@
                         if(el) el.innerText = snap.size;
                     });
 
-                    // 고정 상태 변화 감지 및 효과 적용
-                    const wasPinned = oldData.get(id)?.pinned || false;
-                    if (!wasPinned && post.pinned) {
-                        card.classList.add('just-pinned');
-                        card.classList.add('pin-animating'); // z-index 상승
-                        setTimeout(() => {
-                            card.classList.remove('just-pinned');
-                            card.classList.remove('pin-animating');
-                        }, 800);
-                    } else if (wasPinned && !post.pinned) {
-                        card.classList.add('just-unpinned');
-                        card.classList.add('pin-animating'); // 이동 중 z-index 보장
-                        setTimeout(() => {
-                            card.classList.remove('just-unpinned');
-                            card.classList.remove('pin-animating');
-                        }, 600);
-                    }
                 });
 
                 // 6. FLIP 애니메이션 실행 (부드러운 이동)
@@ -2991,14 +2895,14 @@
                         const dx = oldPos.left - newPos.left;
                         if (dx !== 0 || dy !== 0) {
                             card.style.transition = 'none';
-                            card.style.transform = `translate(${dx}px, ${dy}px) scale(0.98)`;
+                            card.style.transform = `translate(${dx}px, ${dy}px)`;
                             card.classList.add('flipping');
                             card.offsetHeight; // 리플로우
-                            card.style.transition = 'transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.6s ease';
-                            card.style.transform = 'translate(0, 0) scale(1)';
+                            card.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease';
+                            card.style.transform = 'translate(0, 0)';
                             setTimeout(() => {
                                 card.classList.remove('flipping');
-                            }, 600);
+                            }, 500);
                         }
                     } else {
                         // 새 카드 등장
