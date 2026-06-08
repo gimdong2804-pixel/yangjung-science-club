@@ -961,6 +961,50 @@
             box-shadow: 0 4px 16px rgba(59, 130, 246, 0.05);
         }
 
+        /* 핀 뱃지 부드러운 전환 효과 */
+        .pin-badge-wrapper {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transform: translateY(-8px);
+            transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), margin-bottom 0.35s ease;
+            margin-bottom: 0;
+        }
+        .pin-badge-wrapper.active {
+            max-height: 30px;
+            opacity: 1;
+            transform: translateY(0);
+            margin-bottom: 0.6rem;
+        }
+
+        /* 카드 내부 요소 개별 트랜지션 (지연 정렬 효과) */
+        .board-card .board-author {
+            transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .board-card .board-title {
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
+        }
+        .board-card .board-preview {
+            transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
+        }
+        .board-card .board-footer {
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
+        }
+
+        /* 이동 중 내부 레이어의 시간차 정렬 모션 */
+        .board-card.flipping .board-author {
+            transform: translateY(-3px);
+        }
+        .board-card.flipping .board-title {
+            transform: translateY(-1px);
+        }
+        .board-card.flipping .board-preview {
+            transform: translateY(1px);
+        }
+        .board-card.flipping .board-footer {
+            transform: translateY(3px);
+        }
+
         .board-card.flipping {
             z-index: 10 !important;
             box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
@@ -2816,10 +2860,16 @@
                         ? `<img class="board-author-avatar" src="${post.userPhoto}" alt="${post.author}" style="object-fit: cover; border: 1px solid var(--glass-border);">`
                         : `<div class="board-author-avatar" style="background: hsl(${(id.charCodeAt(0) * 137) % 360}, 60%, 50%)">${avatar}</div>`;
 
-                    const pinBadge = post.pinned ? `<span class="pin-badge-ui" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; margin-bottom: 0.5rem; display: inline-block;"><i class="fa-solid fa-thumbtack"></i> 상단 고정</span><br>` : '';
+                    const pinBadgeHtml = `
+                        <div class="pin-badge-wrapper ${post.pinned ? 'active' : ''}">
+                            <span class="pin-badge-ui" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; display: inline-block;">
+                                <i class="fa-solid fa-thumbtack"></i> 상단 고정
+                            </span>
+                        </div>
+                    `;
 
                     const innerHtml = `
-                        ${pinBadge}
+                        ${pinBadgeHtml}
                         <div class="board-card-header">
                             <div class="board-author">
                                 ${avatarHtml}
