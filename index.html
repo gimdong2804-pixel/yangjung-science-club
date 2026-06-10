@@ -154,7 +154,12 @@
             align-items: center;
             gap: 0.5rem;
             letter-spacing: -0.5px;
-            transition: color 0.5s ease;
+            transition: color 0.5s ease, transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            cursor: pointer;
+        }
+
+        .logo.clicked {
+            transform: scale(0.85);
         }
 
         .logo i {
@@ -1976,7 +1981,7 @@
     </div>
 
     <header>
-        <div class="logo" style="cursor: pointer;" onclick="location.href='index.html'">
+        <div id="logoHomeBtn" class="logo">
             <i class="fa-solid fa-flask"></i>
             양중과학동아리
         </div>
@@ -2571,6 +2576,18 @@
             e.preventDefault();
             closeDrawer();
             switchPage(currentPage, greetingPage);
+        });
+
+        const logoHomeBtn = document.getElementById('logoHomeBtn');
+        logoHomeBtn.addEventListener('click', () => {
+            logoHomeBtn.classList.add('clicked');
+            setTimeout(() => {
+                logoHomeBtn.classList.remove('clicked');
+            }, 200);
+            
+            if (currentPage !== mainPage) {
+                switchPage(currentPage, mainPage);
+            }
         });
 
         backBtn.addEventListener('click', () => {
