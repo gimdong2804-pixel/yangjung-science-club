@@ -2051,7 +2051,7 @@
                     <div class="menu-items">
                         <a href="#" id="greetingLink"><i class="fa-solid fa-user"></i> 인사말</a>
                         <a href="#" id="goalLink"><i class="fa-solid fa-bullseye"></i> 목표</a>
-                        <a href="#" id="suggestionLink"><i class="fa-solid fa-chalkboard-user"></i> 커뮤니티(건의방)</a>
+                        <a href="#" id="suggestionLink"><i class="fa-solid fa-chalkboard-user"></i> 커뮤니티</a>
                     </div>
                 </div>
             </div>
@@ -2239,7 +2239,7 @@
                 <div class="image-preview-container" id="imagePreviewContainer"></div>
 
                 <div class="modal-actions" style="margin-top: 1rem;">
-                    <button id="submitPostBtn" class="modal-btn submit" style="width: 100%;">건의사항 등록하기</button>
+                    <button id="submitPostBtn" class="modal-btn submit" style="width: 100%;">게시글 등록하기</button>
                 </div>
             </div>
         </div>
@@ -2631,6 +2631,7 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
+        const storage = firebase.storage();
 
         // 로그인 상태 변수
         let currentUser = null;
@@ -2758,6 +2759,68 @@
         }
         writePostBackBtn.addEventListener('click', closeWritePage);
 
+        // 이미지 업로드 로직
+        let selectedImages = [];
+        const imageFileInput = document.getElementById('imageFileInput');
+        const imageUploadArea = document.getElementById('imageUploadArea');
+        const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+        const imageCountInfo = document.getElementById('imageCountInfo');
+        const MAX_IMAGES = 10;
+
+        if(imageUploadArea) {
+            imageUploadArea.addEventListener('click', () => {
+                if(imageFileInput) imageFileInput.click();
+            });
+        }
+        if(imageFileInput) {
+            imageFileInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                if (selectedImages.length + files.length > MAX_IMAGES) {
+                    alert(`사진은 최대 ${MAX_IMAGES}장까지만 추가할 수 있습니다.`);
+                    return;
+                }
+                files.forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        selectedImages.push(file);
+                    }
+                });
+                updateImagePreview();
+                imageFileInput.value = '';
+            });
+        }
+
+        function updateImagePreview() {
+            if (!imagePreviewContainer) return;
+            imagePreviewContainer.innerHTML = '';
+            if (imageCountInfo) {
+                imageCountInfo.textContent = `${selectedImages.length} / ${MAX_IMAGES}장`;
+                if (selectedImages.length >= MAX_IMAGES) {
+                    imageCountInfo.classList.add('warning');
+                } else {
+                    imageCountInfo.classList.remove('warning');
+                }
+            }
+            
+            selectedImages.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const div = document.createElement('div');
+                    div.className = 'image-preview-item';
+                    div.innerHTML = `
+                        <img src="${e.target.result}" alt="미리보기" style="cursor: pointer;" onclick="openLightbox('${e.target.result}')">
+                        <button class="image-preview-remove" onclick="removeImage(${index})"><i class="fa-solid fa-xmark"></i></button>
+                    `;
+                    imagePreviewContainer.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        window.removeImage = function(index) {
+            selectedImages.splice(index, 1);
+            updateImagePreview();
+        };
+
         // Firebase 데이터 등록 (글쓰기)
         submitPostBtn.addEventListener('click', async () => {
             if (!currentUser) {
@@ -2777,6 +2840,19 @@
             submitPostBtn.disabled = true;
 
             try {
+                const imageUrls = [];
+                if (selectedImages.length > 0) {
+                    submitPostBtn.innerText = '이미지 업로드 중...';
+                    for (const file of selectedImages) {
+                        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}_${file.name}`;
+                        const storageRef = storage.ref(`post_images/${currentUser.uid}/${fileName}`);
+                        const snapshot = await storageRef.put(file);
+                        const downloadURL = await snapshot.ref.getDownloadURL();
+                        imageUrls.push(downloadURL);
+                    }
+                }
+                
+                submitPostBtn.innerText = '게시물 저장 중...';
                 await db.collection('posts').add({
                     title: title,
                     author: author,
@@ -2784,16 +2860,19 @@
                     userPhoto: currentUser.photoURL || '',
                     email: currentUser.email,
                     body: body,
+                    images: imageUrls,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     views: 0,
                     likes: 0
                 });
+                selectedImages = [];
+                updateImagePreview();
                 closeWritePage();
             } catch (error) {
                 console.error("Error adding post: ", error);
                 alert('등록 중 오류가 발생했습니다.');
             } finally {
-                submitPostBtn.innerText = '건의사항 등록하기';
+                submitPostBtn.innerText = '게시글 등록하기';
                 submitPostBtn.disabled = false;
             }
         });
@@ -3216,7 +3295,7 @@
 
                 area.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <div style="color: var(--accent-color); font-size: 0.85rem; font-weight: 600;">건의방 · 제안</div>
+                        <div style="color: var(--accent-color); font-size: 0.85rem; font-weight: 600;">커뮤니티 · 게시글</div>
                         <div style="display: flex; align-items: center;">
                             ${pinBtnHtml}
                             ${deleteBtnHtml}
@@ -3241,6 +3320,11 @@
                     <div class="post-body" style="font-size: 1.05rem; line-height: 1.7; color: var(--text-primary); padding-bottom: 1rem;">
                         ${currentPost.body.replace(/\n/g, '<br>')}
                     </div>
+                    ${currentPost.images && currentPost.images.length > 0 ? `
+                        <div class="post-image-gallery">
+                            ${currentPost.images.map(url => `<img src="${url}" alt="게시글 첨부 사진" style="cursor: pointer;" onclick="openLightbox('${url}')">`).join('')}
+                        </div>
+                    ` : ''}
                 `;
             });
 
@@ -3371,10 +3455,10 @@
         };
 
         window.deletePost = async function(id) {
-            if (!confirm('정말로 이 건의사항을 삭제하시겠습니까?')) return;
+            if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) return;
             try {
                 await db.collection('posts').doc(id).delete();
-                alert('건의사항이 성공적으로 삭제되었습니다.');
+                alert('게시글이 성공적으로 삭제되었습니다.');
                 closeSideDetail();
             } catch (error) {
                 console.error("Error deleting post: ", error);
