@@ -2870,7 +2870,7 @@
                 closeWritePage();
             } catch (error) {
                 console.error("Error adding post: ", error);
-                alert('등록 중 오류가 발생했습니다.');
+                alert('업로드 중 오류가 발생했습니다: ' + error.message);
             } finally {
                 submitPostBtn.innerText = '게시글 등록하기';
                 submitPostBtn.disabled = false;
