@@ -838,6 +838,13 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
+        @keyframes slideOutAndFade {
+            to { transform: scale(0.9); opacity: 0; }
+        }
+        .board-card.deleting {
+            animation: slideOutAndFade 0.3s ease-out forwards;
+            pointer-events: none;
+        }
         .board-card:hover {
             transform: translateY(-2px);
             border-color: var(--accent-color);
@@ -3036,16 +3043,24 @@
                     const innerHtml = `
                         ${pinBadgeHtml}
                         <div class="board-card-header">
-                            <div class="board-author">
+                            <div class="board-author" style="display: flex; align-items: center; gap: 0.5rem;">
                                 ${avatarHtml}
                                 <span class="board-author-name">${post.author}</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 0.8rem;">
                                 ${isPresident ? `
                                     <button type="button" class="board-action-btn pin-toggle-btn ${wasPinned ? 'active' : ''}"
                                             onclick="event.stopPropagation(); togglePin('${id}', ${post.pinned || false})"
-                                            title="${post.pinned ? '고정 해제' : '상단 고정'}">
+                                            title="${post.pinned ? '고정 해제' : '상단 고정'}"
+                                            style="margin-left: 0.25rem;">
                                         <i class="fa-solid fa-thumbtack"></i>
+                                    </button>` : ''}
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                ${isAuthor ? `
+                                    <button type="button" 
+                                            onclick="event.stopPropagation(); deletePostWithAnim('${id}', this)"
+                                            style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem;" 
+                                            title="게시글 삭제">
+                                        <i class="fa-solid fa-trash-can"></i> 삭제
                                     </button>` : ''}
                                 <span class="board-time">${timeStr}</span>
                             </div>
@@ -3492,6 +3507,24 @@
             try {
                 await db.collection('posts').doc(postId).collection('comments').doc(commentId).update({ pinned: !currentPinned });
             } catch(e) { console.error(e); }
+        };
+
+        window.deletePostWithAnim = async function(id, btn) {
+            if (!confirm('정말 이 게시글을 삭제하시겠습니까?')) return;
+            const card = btn.closest('.board-card');
+            if (card) {
+                card.classList.add('deleting');
+                setTimeout(async () => {
+                    try {
+                        await db.collection('posts').doc(id).delete();
+                    } catch (error) {
+                        console.error("Error deleting post: ", error);
+                        alert('삭제 중 오류가 발생했습니다.');
+                    }
+                }, 300);
+            } else {
+                deletePost(id);
+            }
         };
 
         window.deletePost = async function(id) {
