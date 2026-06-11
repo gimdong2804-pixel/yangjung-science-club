@@ -1515,11 +1515,26 @@
             font-size: 2rem;
             color: var(--accent-color);
         }
+        .image-preview-wrapper {
+            height: 0;
+            overflow: hidden;
+            transition: height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), margin-top 0.4s ease;
+            margin-top: 0;
+        }
+        .image-preview-wrapper.has-images {
+            margin-top: 1rem;
+        }
         .image-preview-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 0.75rem;
-            margin-top: 1rem;
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .image-preview-item {
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
         .image-preview-item {
             position: relative;
@@ -2236,7 +2251,11 @@
                     <input type="file" id="imageFileInput" accept="image/*" multiple>
                 </div>
                 <div class="image-count-info" id="imageCountInfo">0 / 10장</div>
-                <div class="image-preview-container" id="imagePreviewContainer"></div>
+                <div class="image-preview-wrapper" id="imagePreviewWrapper">
+                    <div class="image-preview-inner" id="imagePreviewInner">
+                        <div class="image-preview-container" id="imagePreviewContainer"></div>
+                    </div>
+                </div>
 
                 <div class="modal-actions" style="margin-top: 1rem;">
                     <button id="submitPostBtn" class="modal-btn submit" style="width: 100%;">게시글 등록하기</button>
@@ -2764,7 +2783,19 @@
         const imageUploadArea = document.getElementById('imageUploadArea');
         const imagePreviewContainer = document.getElementById('imagePreviewContainer');
         const imageCountInfo = document.getElementById('imageCountInfo');
+        const imagePreviewWrapper = document.getElementById('imagePreviewWrapper');
+        const imagePreviewInner = document.getElementById('imagePreviewInner');
         const MAX_IMAGES = 10;
+        
+        if (imagePreviewWrapper && imagePreviewInner) {
+            new ResizeObserver(() => {
+                if (selectedImages.length > 0) {
+                    imagePreviewWrapper.style.height = imagePreviewInner.offsetHeight + 'px';
+                } else {
+                    imagePreviewWrapper.style.height = '0px';
+                }
+            }).observe(imagePreviewInner);
+        }
 
         if(imageFileInput) {
             imageFileInput.addEventListener('change', (e) => {
@@ -2786,6 +2817,14 @@
         function updateImagePreview() {
             if (!imagePreviewContainer) return;
             imagePreviewContainer.innerHTML = '';
+            
+            if (imagePreviewWrapper) {
+                if (selectedImages.length > 0) {
+                    imagePreviewWrapper.classList.add('has-images');
+                } else {
+                    imagePreviewWrapper.classList.remove('has-images');
+                }
+            }
             if (imageCountInfo) {
                 imageCountInfo.textContent = `${selectedImages.length} / ${MAX_IMAGES}장`;
                 if (selectedImages.length >= MAX_IMAGES) {
