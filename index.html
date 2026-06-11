@@ -3047,21 +3047,20 @@
                             <div class="board-author" style="display: flex; align-items: center; gap: 0.5rem;">
                                 ${avatarHtml}
                                 <span class="board-author-name">${post.author}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 ${isPresident ? `
                                     <button type="button" class="board-action-btn pin-toggle-btn ${wasPinned ? 'active' : ''}"
                                             onclick="event.stopPropagation(); togglePin('${id}', ${post.pinned || false})"
-                                            title="${post.pinned ? '고정 해제' : '상단 고정'}"
-                                            style="margin-left: 0.25rem;">
+                                            title="${post.pinned ? '고정 해제' : '상단 고정'}">
                                         <i class="fa-solid fa-thumbtack"></i>
                                     </button>` : ''}
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 0.8rem;">
                                 ${isAuthor ? `
                                     <button type="button" 
                                             onclick="event.stopPropagation(); deletePostWithAnim('${id}', this)"
-                                            style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem;" 
+                                            style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; padding: 0.25rem;" 
                                             title="게시글 삭제">
-                                        <i class="fa-solid fa-trash-can"></i> 삭제
+                                        <i class="fa-solid fa-trash-can"></i>
                                     </button>` : ''}
                                 <span class="board-time">${timeStr}</span>
                             </div>
