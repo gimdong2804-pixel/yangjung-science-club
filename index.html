@@ -3056,9 +3056,9 @@
                                         <i class="fa-solid fa-thumbtack"></i>
                                     </button>` : ''}
                                 ${isAuthor ? `
-                                    <button type="button" 
+                                    <button type="button" class="board-action-btn"
                                             onclick="event.stopPropagation(); deletePostWithAnim('${id}', this)"
-                                            style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; padding: 0.25rem;" 
+                                            style="color: #ff6b6b;"
                                             title="게시글 삭제">
                                         <i class="fa-solid fa-trash-can"></i>
                                     </button>` : ''}
@@ -3324,7 +3324,7 @@
                 
                 // 삭제 버튼 (작성자 또는 회장)
                 const deleteBtnHtml = isAuthor ? `
-                    <button onclick="deletePost('${id}')" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem;" title="삭제하기">
+                    <button class="board-action-btn" onclick="deletePost('${id}')" style="color: #ff6b6b;" title="삭제하기">
                         <i class="fa-solid fa-trash-can"></i> 삭제
                     </button>
                 ` : '';
