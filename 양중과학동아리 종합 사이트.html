@@ -3332,14 +3332,14 @@
                 // 삭제 버튼 (작성자 또는 회장)
                 const deleteBtnHtml = isAuthor ? `
                     <button class="board-action-btn delete-btn" onclick="deletePost('${id}')" title="삭제하기">
-                        <i class="fa-solid fa-trash-can"></i> 삭제
+                        <i class="fa-solid fa-trash-can"></i>
                     </button>
                 ` : '';
                 
                 // 고정 버튼 (회장 전용)
                 const pinBtnHtml = isPresident ? `
-                    <button onclick="togglePin('${id}', ${currentPost.pinned || false})" style="background: none; border: none; color: ${currentPost.pinned ? 'var(--accent-color)' : 'var(--text-secondary)'}; cursor: pointer; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.25rem; margin-right: 1rem; transition: color 0.3s ease;" title="${currentPost.pinned ? '고정 해제' : '상단 고정'}">
-                        <i class="fa-solid fa-thumbtack" style="transition: transform 0.2s ease;"></i> ${currentPost.pinned ? '고정됨' : '고정하기'}
+                    <button class="board-action-btn pin-toggle-btn ${currentPost.pinned ? 'active' : ''}" onclick="togglePin('${id}', ${currentPost.pinned || false})" title="${currentPost.pinned ? '고정 해제' : '상단 고정'}">
+                        <i class="fa-solid fa-thumbtack"></i>
                     </button>
                 ` : '';
 
@@ -3358,7 +3358,7 @@
                 area.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                         <div style="color: var(--accent-color); font-size: 0.85rem; font-weight: 600;">커뮤니티 · 게시글</div>
-                        <div style="display: flex; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
                             ${pinBtnHtml}
                             ${deleteBtnHtml}
                         </div>
