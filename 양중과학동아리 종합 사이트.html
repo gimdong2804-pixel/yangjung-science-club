@@ -972,9 +972,11 @@
             position: relative;
             transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
             transform-origin: center;
+            overflow: hidden;
         }
         .pin-toggle-btn i {
             display: inline-block;
+            font-size: 0.85rem;
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             transform-origin: bottom center;
         }
@@ -988,6 +990,12 @@
         }
         .pin-toggle-btn.active i {
             animation: pinPress 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        .board-action-btn.delete-btn {
+            color: #ff6b6b;
+        }
+        .board-action-btn.delete-btn i {
+            font-size: 0.85rem;
         }
 
         .board-card.pinned-state {
@@ -3056,9 +3064,8 @@
                                         <i class="fa-solid fa-thumbtack"></i>
                                     </button>` : ''}
                                 ${isAuthor ? `
-                                    <button type="button" class="board-action-btn"
+                                    <button type="button" class="board-action-btn delete-btn"
                                             onclick="event.stopPropagation(); deletePostWithAnim('${id}', this)"
-                                            style="color: #ff6b6b;"
                                             title="게시글 삭제">
                                         <i class="fa-solid fa-trash-can"></i>
                                     </button>` : ''}
@@ -3324,7 +3331,7 @@
                 
                 // 삭제 버튼 (작성자 또는 회장)
                 const deleteBtnHtml = isAuthor ? `
-                    <button class="board-action-btn" onclick="deletePost('${id}')" style="color: #ff6b6b;" title="삭제하기">
+                    <button class="board-action-btn delete-btn" onclick="deletePost('${id}')" title="삭제하기">
                         <i class="fa-solid fa-trash-can"></i> 삭제
                     </button>
                 ` : '';
