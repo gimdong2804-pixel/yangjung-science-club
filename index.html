@@ -3019,6 +3019,7 @@
                     const id = doc.id;
                     const timeStr = formatDate(post.createdAt);
                     const isPresident = currentUser && currentUser.email === 'gimdong2804@gmail.com';
+                    const isAuthor = currentUser && (post.uid === currentUser.uid || isPresident);
                     const isLiked = currentUser && Array.isArray(post.likedUsers) && post.likedUsers.includes(currentUser.uid);
 
                     let card = boardContainer.querySelector(`.board-card[data-id="${id}"]`);
