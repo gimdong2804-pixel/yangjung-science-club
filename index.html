@@ -1764,7 +1764,43 @@
         }
 
         /* 로그인 상태에서의 글쓰기 제한/안내 팁 */
-        .login-required-notic        .side-detail-container {
+        .login-required-notice {
+            background: var(--glass-bg);
+            border: 1px dashed var(--glass-border);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 1rem;
+        }
+        
+        .login-required-notice p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* 커뮤니티 2분할 레이아웃 스타일 */
+        .community-layout {
+            display: flex;
+            gap: 2rem;
+            position: relative;
+            align-items: flex-start;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            width: 100%;
+        }
+
+        .community-layout .board-container {
+            flex: 1;
+            min-width: 0;
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            padding-bottom: 2rem;
+        }
+
+        .side-detail-container {
             width: 480px;
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
@@ -1790,6 +1826,7 @@
             z-index: 10;
             opacity: 1;
             visibility: visible;
+            transform: translateX(0);
         }
 
         .side-detail-scroll-area {
@@ -1797,32 +1834,6 @@
             min-height: 0;
             overflow-y: auto;
             padding: 1.5rem;
-        }er);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 16px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            position: sticky;
-            top: 90px;
-            max-height: calc(100vh - 120px);
-            overflow-y: auto;
-            /* 하드웨어 가속 및 성능 최적화 */
-            backface-visibility: hidden;
-            will-change: transform, opacity;
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                        opacity 0.4s ease,
-                        visibility 0.4s,
-                        width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                        margin 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                        padding 0.4s ease;
-            display: flex;
-            flex-direction: column;
-            padding-bottom: 90px;
-            z-index: 10;
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(0);
         }
 
         /* 전체화면일 때는 아래에서 위로 올라오는 애니메이션 적용 */
@@ -2687,6 +2698,9 @@
 
         function showLoginError(error) {
             console.error("Google Sign-In Error: ", error);
+            if (error && (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request')) {
+                return;
+            }
             if (error && error.code === 'auth/unauthorized-domain') {
                 alert("로그인 중 오류가 발생했습니다: Firebase 인증 설정에서 현재 사이트 주소를 승인된 도메인에 추가해야 합니다.");
                 return;
