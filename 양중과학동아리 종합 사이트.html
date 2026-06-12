@@ -936,8 +936,8 @@
             color: inherit;
             font: inherit;
             line-height: 1;
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
+            padding: 0.4rem 0.6rem;
+            border-radius: 8px;
             cursor: pointer;
             transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
         }
@@ -972,7 +972,6 @@
             position: relative;
             transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
             transform-origin: center;
-            overflow: hidden;
         }
         .pin-toggle-btn i {
             display: inline-block;
@@ -1191,32 +1190,35 @@
             display: flex;
             gap: 0.8rem;
             align-items: center;
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.02);
             backdrop-filter: blur(40px) saturate(200%) brightness(1.15) contrast(110%);
             -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.15) contrast(110%);
-            border-top: 1px solid rgba(255, 255, 255, 0.4);
-            border-left: 1px solid rgba(255, 255, 255, 0.2);
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            border-top-color: rgba(255, 255, 255, 0.3);
+            border-left-color: rgba(255, 255, 255, 0.15);
+            box-sizing: border-box;
             border-radius: 9999px;
             padding: 0.6rem 0.6rem 0.6rem 1.5rem;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.6), inset 0 -1px 3px rgba(255, 255, 255, 0.1);
-            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(255, 255, 255, 0.3), inset 0 -1px 3px rgba(255, 255, 255, 0.05);
+            transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+                        box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+                        border-color 0.3s linear;
             position: relative;
             overflow: hidden;
         }
         [data-theme="light"] .comment-input-container {
-            background: rgba(255, 255, 255, 0.1);
-            border-top: 1px solid rgba(255, 255, 255, 0.6);
-            border-left: 1px solid rgba(255, 255, 255, 0.4);
-            border-right: 1px solid rgba(255, 255, 255, 0.2);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08), inset 0 2px 4px rgba(255, 255, 255, 0.7), inset 0 -1px 2px rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(30px) saturate(150%) brightness(1.02);
+            -webkit-backdrop-filter: blur(30px) saturate(150%) brightness(1.02);
+            border: 2px solid rgba(0, 0, 0, 0.08);
+            border-top-color: rgba(255, 255, 255, 0.8);
+            border-left-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12), inset 0 2px 4px rgba(255, 255, 255, 0.8), inset 0 -1px 2px rgba(0, 0, 0, 0.05);
         }
         .comment-input-container:focus-within {
             transform: scale(1.01) translateY(-3px);
             border-color: rgba(59, 130, 246, 0.45);
-            box-shadow: 0 20px 50px rgba(59, 130, 246, 0.2), inset 0 1.5px 2px rgba(255, 255, 255, 0.45), inset 0 -1.5px 2px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 20px 50px rgba(59, 130, 246, 0.15), inset 0 1.5px 2px rgba(255, 255, 255, 0.3), inset 0 -1.5px 2px rgba(0, 0, 0, 0.05);
         }
         .comment-input {
             flex: 1;
@@ -1225,6 +1227,19 @@
             color: var(--text-primary);
             font-size: 1rem;
             outline: none;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        .comment-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.8;
+        }
+        [data-theme="light"] .comment-input {
+            color: #111827;
+            text-shadow: 0 1px 4px rgba(255, 255, 255, 0.9), 0 0 1px rgba(255, 255, 255, 1);
+        }
+        [data-theme="light"] .comment-input::placeholder {
+            color: #4b5563;
         }
         .comment-submit-btn {
             width: 44px;
@@ -1840,12 +1855,11 @@
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-radius: 16px;
-            padding: 1.5rem;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
             position: sticky;
             top: 90px;
             max-height: calc(100vh - 120px);
-            overflow-y: auto;
+            overflow: hidden;
             /* 하드웨어 가속 및 성능 최적화 */
             backface-visibility: hidden;
             will-change: transform, opacity;
@@ -1857,11 +1871,17 @@
                         padding 0.4s ease;
             display: flex;
             flex-direction: column;
-            padding-bottom: 90px;
             z-index: 10;
             opacity: 1;
             visibility: visible;
             transform: translateX(0);
+        }
+
+        .side-detail-scroll-area {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 1.5rem 1.5rem 85px 1.5rem; /* 75px(좁음)과 95px(넓음)의 정확한 중간값 85px로 설정 */
         }
 
         /* 전체화면일 때는 아래에서 위로 올라오는 애니메이션 적용 */
@@ -1898,25 +1918,25 @@
             }
         }
 
-        .side-detail-container::-webkit-scrollbar {
+        .side-detail-scroll-area::-webkit-scrollbar {
             width: 6px;
         }
 
-        .side-detail-container::-webkit-scrollbar-track {
+        .side-detail-scroll-area::-webkit-scrollbar-track {
             background: transparent;
         }
 
-        .side-detail-container::-webkit-scrollbar-thumb {
+        .side-detail-scroll-area::-webkit-scrollbar-thumb {
             background: rgba(59, 130, 246, 0.3);
             border-radius: 10px;
             transition: background 0.3s;
         }
 
-        .side-detail-container:hover::-webkit-scrollbar-thumb {
+        .side-detail-scroll-area:hover::-webkit-scrollbar-thumb {
             background: rgba(59, 130, 246, 0.5);
         }
 
-        .side-detail-container::-webkit-scrollbar-thumb:hover {
+        .side-detail-scroll-area::-webkit-scrollbar-thumb:hover {
             background: var(--accent-color);
         }
 
@@ -1959,18 +1979,21 @@
                 top: 0;
                 left: 0;
                 width: 100vw;
-                height: 100vh;
-                max-height: 100vh;
+                height: 100dvh;
+                max-height: 100dvh;
                 border-radius: 0;
                 z-index: 150;
                 border: none;
                 top: 0 !important;
-                padding-bottom: 80px;
                 transform: translateY(0);
                 /* 모바일에서는 아래에서 위로 올라오는 애니메이션 */
                 transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
                             opacity 0.4s ease,
                             visibility 0.4s;
+            }
+            .side-detail-scroll-area {
+                padding: clamp(1rem, 3vw, 2rem);
+                padding-bottom: 75px; /* 모바일 하단 여백 비율 맞춤 65px -> 75px */
             }
             .side-detail-container.detail-hidden {
                 transform: translateY(30px);
@@ -2002,14 +2025,17 @@
             top: 0 !important;
             left: 0;
             width: 100vw;
-            height: 100vh;
+            height: 100dvh;
             max-height: none;
             border: none;
             border-radius: 0;
             background: var(--bg-color);
-            padding: clamp(1rem, 3vw, 2rem);
-            padding-bottom: 96px;
             z-index: 180;
+        }
+
+        .side-detail-container.fullscreen-detail .side-detail-scroll-area {
+            padding: clamp(1rem, 3vw, 2rem);
+            padding-bottom: 75px;
         }
 
         .side-detail-container.fullscreen-detail .side-detail-header,
@@ -2022,15 +2048,16 @@
         }
 
         .side-detail-container.fullscreen-detail .comment-input-area {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: transparent;
+            position: absolute;
+            bottom: calc(1.5rem + env(safe-area-inset-bottom));
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            background: transparent !important;
+            padding: 0 !important;
             border-top: none;
-            border-radius: 0;
-            padding: 1rem;
-            z-index: 181;
+            z-index: 1000;
+            pointer-events: none;
         }
 
         .side-detail-container.fullscreen-detail .comment-input-container {
@@ -2255,19 +2282,21 @@
 
             <!-- 우측 상세 보기 창 (데스크탑에선 옆에 붙고, 모바일에선 전체화면) -->
             <div class="side-detail-container detail-hidden" id="sideDetailContainer">
-                <div class="side-detail-header">
-                    <span class="side-detail-title" style="color: var(--accent-color); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-file-lines"></i> 건의글 상세</span>
-                    <button class="close-btn" id="closeSideDetailBtn" aria-label="상세 닫기" style="background: none; border: none; color: var(--text-primary); font-size: 1.2rem; cursor: pointer;">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
-                
-                <div class="post-content-area" id="detailPostArea" style="border: none; background: none; padding: 0; margin-bottom: 1.5rem;">
-                    <!-- 자바스크립트로 렌더링됩니다 -->
-                </div>
+                <div class="side-detail-scroll-area">
+                    <div class="side-detail-header">
+                        <span class="side-detail-title" style="color: var(--accent-color); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-file-lines"></i> 건의글 상세</span>
+                        <button class="close-btn" id="closeSideDetailBtn" aria-label="상세 닫기" style="background: none; border: none; color: var(--text-primary); font-size: 1.2rem; cursor: pointer;">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="post-content-area" id="detailPostArea" style="border: none; background: none; padding: 0; margin-bottom: 1.5rem;">
+                        <!-- 자바스크립트로 렌더링됩니다 -->
+                    </div>
 
-                <div class="comment-section" id="detailCommentArea">
-                    <!-- 자바스크립트로 렌더링됩니다 -->
+                    <div class="comment-section" id="detailCommentArea">
+                        <!-- 자바스크립트로 렌더링됩니다 -->
+                    </div>
                 </div>
 
                 <div class="comment-input-area">
@@ -2724,6 +2753,9 @@
 
         function showLoginError(error) {
             console.error("Google Sign-In Error: ", error);
+            if (error && (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request')) {
+                return;
+            }
             if (error && error.code === 'auth/unauthorized-domain') {
                 alert("로그인 중 오류가 발생했습니다: Firebase 인증 설정에서 현재 사이트 주소를 승인된 도메인에 추가해야 합니다.");
                 return;
@@ -2753,13 +2785,15 @@
         });
 
         // Auth 상태 리스너
+        let authUITimeout;
         auth.onAuthStateChanged((user) => {
+            clearTimeout(authUITimeout);
             const postAuthorInput = document.getElementById('postAuthor');
             if (user) {
                 currentUser = user;
                 // UI 업데이트 (애니메이션 적용)
                 googleLoginBtn.classList.add('fade-out');
-                setTimeout(() => {
+                authUITimeout = setTimeout(() => {
                     googleLoginBtn.classList.add('hidden');
                     googleLoginBtn.classList.remove('fade-out');
                     
@@ -2787,7 +2821,7 @@
                 currentUser = null;
                 // UI 업데이트 (애니메이션 적용)
                 userProfileInfo.classList.add('fade-out');
-                setTimeout(() => {
+                authUITimeout = setTimeout(() => {
                     userProfileInfo.classList.add('hidden');
                     userProfileInfo.classList.remove('fade-out');
                     
@@ -3132,7 +3166,7 @@
                         cardElement.className = `board-card ${post.pinned ? 'pinned-state' : ''}`;
                         cardElement.setAttribute('data-id', id);
                         cardElement.innerHTML = innerHtml;
-                        cardElement.style.order = index; // CSS Order를 사용하여 시각적 순서 제어 (또는 appendChild)
+                        cardElement.style.order = index; // CSS Order를 사용하여 시각적 순서 제어
                         boardContainer.appendChild(cardElement);
                         card = cardElement;
 
@@ -3140,31 +3174,31 @@
                         card.addEventListener('click', () => openPostDetail(id, post, avatarHtml, timeStr, 'fullscreen'));
                         
                         if (post.pinned) {
-                            requestAnimationFrame(() => {
-                                const badge = card.querySelector('.pin-badge-wrapper');
-                                if (badge) badge.classList.add('active');
-                            });
+                            card.offsetHeight; // 강제 리플로우로 렌더링 타이밍 보장
+                            const badge = card.querySelector('.pin-badge-wrapper');
+                            const btn = card.querySelector('.pin-toggle-btn');
+                            if (badge) badge.classList.add('active');
+                            if (btn) btn.classList.add('active');
                         }
                     } else {
                         // 내용 업데이트 및 클래스 갱신
                         card.innerHTML = innerHtml;
                         card.classList.toggle('pinned-state', post.pinned);
+                        card.style.order = index; // appendChild 대신 order 업데이트 (DOM 분리 방지)
                         
                         if (wasPinned !== post.pinned) {
-                            requestAnimationFrame(() => {
-                                const badge = card.querySelector('.pin-badge-wrapper');
-                                const btn = card.querySelector('.pin-toggle-btn');
-                                if (post.pinned) {
-                                    if (badge) badge.classList.add('active');
-                                    if (btn) btn.classList.add('active');
-                                } else {
-                                    if (badge) badge.classList.remove('active');
-                                    if (btn) btn.classList.remove('active');
-                                }
-                            });
+                            card.offsetHeight; // 강제 리플로우 발생시켜 애니메이션 시작점(변경 전 상태) 인지시킴
+                            
+                            const badge = card.querySelector('.pin-badge-wrapper');
+                            const btn = card.querySelector('.pin-toggle-btn');
+                            if (post.pinned) {
+                                if (badge) badge.classList.add('active');
+                                if (btn) btn.classList.add('active');
+                            } else {
+                                if (badge) badge.classList.remove('active');
+                                if (btn) btn.classList.remove('active');
+                            }
                         }
-                        // 순서 유지를 위해 다시 append (기존 위치에서 빠져나와 맨 뒤로 이동)
-                        boardContainer.appendChild(card);
                     }
 
                     const commentBtn = card.querySelector('.board-comment-btn');
