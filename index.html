@@ -1794,6 +1794,7 @@
 
         .side-detail-scroll-area {
             flex: 1;
+            min-height: 0;
             overflow-y: auto;
             padding: 1.5rem;
         }er);
@@ -2715,13 +2716,15 @@
         });
 
         // Auth 상태 리스너
+        let authUITimeout;
         auth.onAuthStateChanged((user) => {
+            clearTimeout(authUITimeout);
             const postAuthorInput = document.getElementById('postAuthor');
             if (user) {
                 currentUser = user;
                 // UI 업데이트 (애니메이션 적용)
                 googleLoginBtn.classList.add('fade-out');
-                setTimeout(() => {
+                authUITimeout = setTimeout(() => {
                     googleLoginBtn.classList.add('hidden');
                     googleLoginBtn.classList.remove('fade-out');
                     
@@ -2749,7 +2752,7 @@
                 currentUser = null;
                 // UI 업데이트 (애니메이션 적용)
                 userProfileInfo.classList.add('fade-out');
-                setTimeout(() => {
+                authUITimeout = setTimeout(() => {
                     userProfileInfo.classList.add('hidden');
                     userProfileInfo.classList.remove('fade-out');
                     
