@@ -3097,7 +3097,7 @@
                         cardElement.className = `board-card ${post.pinned ? 'pinned-state' : ''}`;
                         cardElement.setAttribute('data-id', id);
                         cardElement.innerHTML = innerHtml;
-                        cardElement.style.order = index; // CSS Order를 사용하여 시각적 순서 제어 (또는 appendChild)
+                        cardElement.style.order = index; // CSS Order를 사용하여 시각적 순서 제어
                         boardContainer.appendChild(cardElement);
                         card = cardElement;
 
@@ -3105,31 +3105,31 @@
                         card.addEventListener('click', () => openPostDetail(id, post, avatarHtml, timeStr, 'fullscreen'));
                         
                         if (post.pinned) {
-                            requestAnimationFrame(() => {
-                                const badge = card.querySelector('.pin-badge-wrapper');
-                                if (badge) badge.classList.add('active');
-                            });
+                            card.offsetHeight; // 강제 리플로우로 렌더링 타이밍 보장
+                            const badge = card.querySelector('.pin-badge-wrapper');
+                            const btn = card.querySelector('.pin-toggle-btn');
+                            if (badge) badge.classList.add('active');
+                            if (btn) btn.classList.add('active');
                         }
                     } else {
                         // 내용 업데이트 및 클래스 갱신
                         card.innerHTML = innerHtml;
                         card.classList.toggle('pinned-state', post.pinned);
+                        card.style.order = index; // appendChild 대신 order 업데이트 (DOM 분리 방지)
                         
                         if (wasPinned !== post.pinned) {
-                            requestAnimationFrame(() => {
-                                const badge = card.querySelector('.pin-badge-wrapper');
-                                const btn = card.querySelector('.pin-toggle-btn');
-                                if (post.pinned) {
-                                    if (badge) badge.classList.add('active');
-                                    if (btn) btn.classList.add('active');
-                                } else {
-                                    if (badge) badge.classList.remove('active');
-                                    if (btn) btn.classList.remove('active');
-                                }
-                            });
+                            card.offsetHeight; // 강제 리플로우 발생시켜 애니메이션 시작점(변경 전 상태) 인지시킴
+                            
+                            const badge = card.querySelector('.pin-badge-wrapper');
+                            const btn = card.querySelector('.pin-toggle-btn');
+                            if (post.pinned) {
+                                if (badge) badge.classList.add('active');
+                                if (btn) btn.classList.add('active');
+                            } else {
+                                if (badge) badge.classList.remove('active');
+                                if (btn) btn.classList.remove('active');
+                            }
                         }
-                        // 순서 유지를 위해 다시 append (기존 위치에서 빠져나와 맨 뒤로 이동)
-                        boardContainer.appendChild(card);
                     }
 
                     const commentBtn = card.querySelector('.board-comment-btn');
