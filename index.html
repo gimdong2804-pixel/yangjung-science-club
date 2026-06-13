@@ -3636,7 +3636,11 @@
                     const isPresidentComment = c.author.includes('회장') || (c.email && c.email === 'gimdong2804@gmail.com');
                     const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem;">공식 답변</span>' : '';
                     
-                    const cPinBadge = `<span class="c-pin-badge" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.1rem 0.3rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem; transition: opacity 0.3s ease; opacity: ${c.pinned ? '1' : '0'}; display: ${c.pinned ? 'inline-block' : 'none'};"><i class="fa-solid fa-thumbtack"></i> 고정됨</span>`;
+                    const cPinBadge = `<div class="pin-badge-wrapper ${c.pinned ? 'active' : ''}">
+                                        <span class="pin-badge-ui" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; display: inline-block;">
+                                            <i class="fa-solid fa-thumbtack"></i> 상단 고정
+                                        </span>
+                                    </div>`;
                     
                     let cAvatarHtml = `<div class="board-author-avatar" style="background: ${isPresidentComment ? 'var(--accent-color)' : '#9ca3af'}; width: 32px; height: 32px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;">${isPresidentComment ? '<i class="fa-solid fa-crown" style="font-size: 0.6rem;"></i>' : c.author.substring(0,1)}</div>`;
                     if (c.userPhoto) {
@@ -3683,11 +3687,11 @@
                             ${cCheckbox}
                             ${cAvatarHtml}
                             <div class="comment-content" style="flex: 1; min-width: 0; padding-top: 0.2rem;">
+                                ${cPinBadge}
                                 <div class="comment-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 0.4rem;">
                                     <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                                         <span class="board-author-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">${c.author}</span>
                                         ${badge}
-                                        ${cPinBadge}
                                     </div>
                                     <div class="comment-actions" style="display: flex; align-items: center; gap: 0.5rem;">
                                         ${cPinBtn}
@@ -3736,10 +3740,9 @@
                             item.style.order = index;
                         }
                         
-                        const pinBadgeEl = item.querySelector('.c-pin-badge');
+                        const pinBadgeEl = item.querySelector('.pin-badge-wrapper');
                         if (pinBadgeEl) {
-                            pinBadgeEl.style.opacity = c.pinned ? '1' : '0';
-                            pinBadgeEl.style.display = c.pinned ? 'inline-block' : 'none';
+                            pinBadgeEl.className = 'pin-badge-wrapper ' + (c.pinned ? 'active' : '');
                         }
                         
                         const pinBtnEl = item.querySelector('.pin-toggle-btn');
