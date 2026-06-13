@@ -938,18 +938,19 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 58px;
+            width: auto;
+            min-width: 32px;
+            padding: 0 0.4rem;
             height: 32px;
             gap: 0.3rem;
             border: 0;
             background: transparent;
             color: inherit;
             font: inherit;
-            line-height: 1;
-            padding: 0;
-            border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.1s ease;
+            border-radius: 6px;
+            font-variant-numeric: tabular-nums;
+            transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .board-action-btn:hover,
         .board-action-btn:focus-visible {
@@ -957,9 +958,7 @@
             background: rgba(59, 130, 246, 0.08);
             outline: none;
         }
-        .board-action-btn:active {
-            transform: scale(0.96);
-        }
+
 
         @keyframes pinBounce {
             0%, 100% { transform: translateY(0); }
@@ -3472,7 +3471,7 @@
                         </div>
                         <div class="board-stats" style="font-size: 0.95rem;">
                             <span><i class="fa-regular fa-comment"></i> <span id="detailTopCommentCount">0</span></span>
-                            <span style="cursor: pointer; transition: color 0.3s; ${heartColor}" onclick="likePost('${id}', this)" id="detailLikeBtn"><i class="${heartClass}"></i> <span id="detailLikeCnt">${currentPost.likes || 0}</span></span>
+                            <span style="cursor: pointer; transition: color 0.3s; font-variant-numeric: tabular-nums; ${heartColor}" onclick="likePost('${id}', this)" id="detailLikeBtn"><i class="${heartClass}"></i> <span id="detailLikeCnt">${currentPost.likes || 0}</span></span>
                         </div>
                     </div>
                     
