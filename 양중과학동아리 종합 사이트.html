@@ -3124,7 +3124,7 @@
                         : `<div class="board-author-avatar" style="background: hsl(${(id.charCodeAt(0) * 137) % 360}, 60%, 50%)">${avatar}</div>`;
 
                     const pinBadgeHtml = `
-                        <div class="pin-badge-wrapper ${wasPinned ? 'active' : ''}">
+                        <div class="pin-badge-wrapper ${post.pinned ? 'active' : ''}">
                             <span class="pin-badge-ui" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; display: inline-block;">
                                 <i class="fa-solid fa-thumbtack"></i> 상단 고정
                             </span>
@@ -3140,7 +3140,7 @@
                             </div>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 ${isPresident ? `
-                                    <button type="button" class="board-action-btn pin-toggle-btn ${wasPinned ? 'active' : ''}"
+                                    <button type="button" class="board-action-btn pin-toggle-btn ${post.pinned ? 'active' : ''}"
                                             onclick="event.stopPropagation(); togglePin('${id}', ${post.pinned || false})"
                                             title="${post.pinned ? '고정 해제' : '상단 고정'}">
                                         <i class="fa-solid fa-thumbtack"></i>
