@@ -838,8 +838,15 @@
                             const heartIcon = likeBtn.querySelector('i');
                             if (heartIcon) {
                                 const isSolid = isLiked;
-                                heartIcon.className = (isSolid ? 'fa-solid' : 'fa-regular') + ' fa-heart fa-fw';
-                                heartIcon.style.color = isSolid ? '#ff6b6b' : 'var(--text-primary)';
+                                if (isSolid) {
+                                    heartIcon.classList.remove('fa-regular');
+                                    heartIcon.classList.add('fa-solid');
+                                    heartIcon.style.color = '#ff6b6b';
+                                } else {
+                                    heartIcon.classList.remove('fa-solid');
+                                    heartIcon.classList.add('fa-regular');
+                                    heartIcon.style.color = 'var(--text-primary)';
+                                }
                             }
                             const likeCountEl = likeBtn.querySelector('.like-count');
                             if (likeCountEl) {
@@ -1191,18 +1198,23 @@
                 if (heartIcon) {
                     const currentlyLiked = heartIcon.classList.contains('fa-solid');
                     
+                    // 기존 애니메이션 클래스 깔끔히 제거 후 강제 리플로우
                     heartIcon.classList.remove('animate-heart', 'animate-heart-cancel');
                     void heartIcon.offsetWidth; 
                     
                     if (currentlyLiked) {
-                        heartIcon.className = 'fa-regular fa-heart fa-fw animate-heart-cancel';
+                        // 취소 시: regular로 변경 및 cancel 애니메이션 부여
+                        heartIcon.classList.remove('fa-solid');
+                        heartIcon.classList.add('fa-regular', 'animate-heart-cancel');
                         heartIcon.style.color = 'var(--text-primary)';
                         if (likeCountEl) {
                             const cur = parseInt(likeCountEl.textContent) || 0;
                             likeCountEl.textContent = Math.max(0, cur - 1);
                         }
                     } else {
-                        heartIcon.className = 'fa-solid fa-heart fa-fw animate-heart';
+                        // 추가 시: solid로 변경 및 heart 애니메이션 부여
+                        heartIcon.classList.remove('fa-regular');
+                        heartIcon.classList.add('fa-solid', 'animate-heart');
                         heartIcon.style.color = '#ff6b6b';
                         if (likeCountEl) {
                             const cur = parseInt(likeCountEl.textContent) || 0;
@@ -1210,9 +1222,11 @@
                         }
                     }
                     
-                    heartIcon.addEventListener('animationend', () => {
+                    const onAnimEnd = () => {
                         heartIcon.classList.remove('animate-heart', 'animate-heart-cancel');
-                    }, { once: true });
+                        heartIcon.removeEventListener('animationend', onAnimEnd);
+                    };
+                    heartIcon.addEventListener('animationend', onAnimEnd);
                 }
             }
             
