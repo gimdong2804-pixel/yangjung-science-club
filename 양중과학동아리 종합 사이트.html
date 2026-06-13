@@ -2303,7 +2303,8 @@
                     </div>
 
                     <div class="comment-section" id="detailCommentArea">
-                        <!-- 자바스크립트로 렌더링됩니다 -->
+                        <h3 style="margin-bottom: 1.5rem; color: var(--text-primary); font-size: 1.1rem;">댓글 <span style="color: var(--accent-color);" id="detailCommentCount">0</span></h3>
+                        <div id="detailCommentList" style="display: flex; flex-direction: column;"></div>
                     </div>
                 </div>
 
@@ -3496,6 +3497,31 @@
             commentUnsubscribe = db.collection('posts').doc(id).collection('comments').onSnapshot(snap => {
                 const topCountEl = document.getElementById('detailTopCommentCount');
                 if (topCountEl) topCountEl.innerText = snap.size;
+                const detailCommentCount = document.getElementById('detailCommentCount');
+                if (detailCommentCount) detailCommentCount.innerText = snap.size;
+
+                const commentList = document.getElementById('detailCommentList');
+                if (!commentList) return;
+
+                // 1. 이전 위치 백업
+                const oldPositions = new Map();
+                commentList.querySelectorAll('.comment-item').forEach(item => {
+                    const cid = item.getAttribute('data-id');
+                    oldPositions.set(cid, item.getBoundingClientRect());
+                });
+
+                // 2. 현재 스냅샷 ID 목록
+                const currentIds = new Set(snap.docs.map(doc => doc.id));
+
+                // 3. 삭제된 댓글 제거 (애니메이션)
+                commentList.querySelectorAll('.comment-item').forEach(item => {
+                    if (!currentIds.has(item.getAttribute('data-id'))) {
+                        item.style.transition = 'all 0.3s ease';
+                        item.style.opacity = '0';
+                        item.style.transform = 'scale(0.95)';
+                        setTimeout(() => item.remove(), 300);
+                    }
+                });
 
                 // 클라이언트 단에서 정렬: pinned가 참이면 위로, 그 다음 작성일 순 정렬
                 const sortedDocs = [...snap.docs].sort((a, b) => {
@@ -3509,14 +3535,14 @@
                     return timeA - timeB; // 작성일 오름차순
                 });
 
-                const commentsHtml = sortedDocs.map(cDoc => {
+                sortedDocs.forEach((cDoc, index) => {
                     const c = cDoc.data();
+                    const cid = cDoc.id;
                     const cTime = formatDate(c.createdAt);
                     const isPresidentComment = c.author.includes('회장') || (c.email && c.email === 'gimdong2804@gmail.com');
                     const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem;">공식 답변</span>' : '';
                     
-                    // 고정 댓글 뱃지
-                    const cPinBadge = c.pinned ? '<span style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.1rem 0.3rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem; transition: opacity 0.3s ease;"><i class="fa-solid fa-thumbtack"></i> 고정됨</span>' : '';
+                    const cPinBadge = c.pinned ? '<span class="c-pin-badge" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.1rem 0.3rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem; transition: opacity 0.3s ease;"><i class="fa-solid fa-thumbtack"></i> 고정됨</span>' : '';
                     
                     let cAvatarHtml = `<div class="board-author-avatar" style="background: ${isPresidentComment ? 'var(--accent-color)' : '#9ca3af'}; width: 32px; height: 32px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;">${isPresidentComment ? '<i class="fa-solid fa-crown" style="font-size: 0.6rem;"></i>' : c.author.substring(0,1)}</div>`;
                     if (c.userPhoto) {
@@ -3525,40 +3551,74 @@
 
                     const isCommentAuthor = currentUser && (c.uid === currentUser.uid || currentUser.email === 'gimdong2804@gmail.com');
                     const cDeleteBtn = isCommentAuthor ? `
-                        <button onclick="deleteComment('${id}', '${cDoc.id}')" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.8rem; margin-left: 0.5rem; display: flex; align-items: center; padding: 0.25rem;" title="댓글 삭제">
+                        <button onclick="deleteComment('${id}', '${cid}')" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.8rem; margin-left: 0.5rem; display: flex; align-items: center; padding: 0.25rem;" title="댓글 삭제">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     ` : '';
 
-                    // 회장 전용 댓글 고정 버튼
                     const isPresident = currentUser && currentUser.email === 'gimdong2804@gmail.com';
                     const cPinBtn = isPresident ? `
-                        <button onclick="togglePinComment('${id}', '${cDoc.id}', ${c.pinned || false})" style="background: none; border: none; color: ${c.pinned ? 'var(--accent-color)' : 'var(--text-secondary)'}; cursor: pointer; font-size: 0.8rem; margin-left: auto; display: flex; align-items: center; padding: 0.25rem; transition: color 0.3s ease;" title="${c.pinned ? '댓글 고정 해제' : '댓글 고정'}">
+                        <button onclick="togglePinComment('${id}', '${cid}', ${c.pinned || false})" style="background: none; border: none; color: ${c.pinned ? 'var(--accent-color)' : 'var(--text-secondary)'}; cursor: pointer; font-size: 0.8rem; margin-left: auto; display: flex; align-items: center; padding: 0.25rem; transition: color 0.3s ease;" title="${c.pinned ? '댓글 고정 해제' : '댓글 고정'}">
                             <i class="fa-solid fa-thumbtack" style="transition: transform 0.2s ease;"></i>
                         </button>
                     ` : '';
 
-                    // 고정 댓글 전용 배경 및 테두리 스타일
-                    const cItemStyle = c.pinned ? 'border: 1px solid var(--accent-color); background: rgba(59, 130, 246, 0.05); border-radius: 12px; padding: 1rem; transition: background 0.3s ease, border-color 0.3s ease;' : 'border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 1rem; transition: background 0.3s ease, border-color 0.3s ease;';
+                    const cItemStyle = c.pinned ? 'border: 1px solid var(--accent-color); background: rgba(59, 130, 246, 0.05); border-radius: 12px; padding: 1rem; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease, border-color 0.3s ease;' : 'border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 1rem; border-radius: 0; background: transparent; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease, border-color 0.3s ease;';
 
-                    return `
-                        <div class="comment-item comment-slide-in" id="comment-${cDoc.id}" style="display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.25rem; ${cItemStyle}">
-                            ${cAvatarHtml}
-                            <div class="comment-content" style="flex: 1; min-width: 0; padding-top: 0.2rem;">
-                                <div class="comment-header" style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <span class="board-author-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">${c.author}</span>
-                                    ${badge}
-                                    ${cPinBadge}
-                                    <span class="comment-time" style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 0.5rem;">${cTime}</span>
-                                    ${cPinBtn}
-                                    ${cDeleteBtn}
-                                </div>
-                                <div class="comment-text" style="margin-top: 0.3rem; font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all;">${c.body}</div>
+                    const innerHtml = `
+                        ${cAvatarHtml}
+                        <div class="comment-content" style="flex: 1; min-width: 0; padding-top: 0.2rem;">
+                            <div class="comment-header" style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span class="board-author-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">${c.author}</span>
+                                ${badge}
+                                ${cPinBadge}
+                                <span class="comment-time" style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 0.5rem;">${cTime}</span>
+                                ${cPinBtn}
+                                ${cDeleteBtn}
                             </div>
+                            <div class="comment-text" style="margin-top: 0.3rem; font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all;">${c.body}</div>
                         </div>
                     `;
-                }).join('');
-                commentArea.innerHTML = `<h3 style="margin-bottom: 1.5rem; color: var(--text-primary); font-size: 1.1rem;">댓글 <span style="color: var(--accent-color);" id="detailCommentCount">${snap.size}</span></h3>` + commentsHtml;
+
+                    let item = commentList.querySelector(`.comment-item[data-id="${cid}"]`);
+                    const isNew = !item;
+
+                    if (isNew) {
+                        item = document.createElement('div');
+                        item.className = 'comment-item comment-slide-in';
+                        item.setAttribute('data-id', cid);
+                        item.style.cssText = `display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.25rem; ${cItemStyle}`;
+                        item.innerHTML = innerHtml;
+                        item.style.order = index;
+                        commentList.appendChild(item);
+                    } else {
+                        item.innerHTML = innerHtml;
+                        item.style.cssText = `display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.25rem; ${cItemStyle}`;
+                        item.style.order = index;
+                    }
+                });
+
+                // 5. FLIP 애니메이션 실행
+                requestAnimationFrame(() => {
+                    commentList.querySelectorAll('.comment-item').forEach(item => {
+                        const cid = item.getAttribute('data-id');
+                        const oldRect = oldPositions.get(cid);
+                        if (oldRect) {
+                            const newRect = item.getBoundingClientRect();
+                            const deltaY = oldRect.top - newRect.top;
+                            
+                            if (deltaY !== 0) {
+                                item.style.transform = `translateY(${deltaY}px)`;
+                                item.style.transition = 'none';
+                                
+                                requestAnimationFrame(() => {
+                                    item.style.transform = '';
+                                    item.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease, border-color 0.3s ease';
+                                });
+                            }
+                        }
+                    });
+                });
             });
 
             // openPostDetail 하단에 있던 중복 hidden 제거 로직은 함수 내부(상단)로 옮겼으므로 여기서는 삭제합니다.
