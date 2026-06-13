@@ -2662,12 +2662,25 @@
             }
         });
 
-        function switchPage(fromPage, toPage, skipHistory = false) {
+        function handlePageBack() {
+            if (history.length > 1) {
+                history.back();
+            } else {
+                history.replaceState({ page: 'mainPage' }, '', '#mainPage');
+                switchPage(currentPage, mainPage, true);
+            }
+        }
+
+        function switchPage(fromPage, toPage, skipHistory = false, replaceState = false) {
             if (fromPage === toPage) return; // 동일한 페이지로의 전환은 무시
             
             if (!skipHistory) {
                 const pageId = toPage.id || 'mainPage';
-                history.pushState({ page: pageId }, '', '#' + pageId);
+                if (replaceState) {
+                    history.replaceState({ page: pageId }, '', '#' + pageId);
+                } else {
+                    history.pushState({ page: pageId }, '', '#' + pageId);
+                }
             }
             
             // 현재 페이지 fade out
@@ -2748,7 +2761,7 @@
         greetingLink.addEventListener('click', (e) => {
             e.preventDefault();
             closeDrawer(true);
-            switchPage(currentPage, greetingPage);
+            switchPage(currentPage, greetingPage, false, true);
         });
 
         const logoHomeBtn = document.getElementById('logoHomeBtn');
@@ -2763,19 +2776,15 @@
             }
         });
 
-        backBtn.addEventListener('click', () => {
-            switchPage(currentPage, mainPage);
-        });
+        backBtn.addEventListener('click', handlePageBack);
 
         goalLink.addEventListener('click', (e) => {
             e.preventDefault();
             closeDrawer(true);
-            switchPage(currentPage, goalPage);
+            switchPage(currentPage, goalPage, false, true);
         });
 
-        goalBackBtn.addEventListener('click', () => {
-            switchPage(currentPage, mainPage);
-        });
+        goalBackBtn.addEventListener('click', handlePageBack);
 
         // 커뮤니티 라우팅
         const suggestionLink = document.getElementById('suggestionLink');
@@ -2784,12 +2793,12 @@
         suggestionLink.addEventListener('click', (e) => {
             e.preventDefault();
             closeDrawer(true);
-            switchPage(currentPage, suggestionPage);
+            switchPage(currentPage, suggestionPage, false, true);
         });
 
         suggestionBackBtn.addEventListener('click', () => {
             closeSideDetail();
-            switchPage(currentPage, mainPage);
+            handlePageBack();
         });
 
         // Firebase 연동 로직
