@@ -1027,6 +1027,9 @@
             transform: translateY(0);
             margin-bottom: 0.6rem;
         }
+        .comment-item .pin-badge-wrapper.active {
+            margin-bottom: 1rem;
+        }
 
         /* 카드 내부 요소 개별 트랜지션 (지연 정렬 효과) */
         .board-card .board-author {
@@ -3691,7 +3694,7 @@
                     const canDelete = isPresident || isCommentAuthor;
                     
                     const cCheckbox = canDelete ? `
-                        <label class="comment-checkbox-wrapper" style="align-items: center; margin-top: 0.2rem; padding-right: 0.2rem;">
+                        <label class="comment-checkbox-wrapper" style="align-items: center; margin-top: 0.2rem; padding-right: 0;">
                             <input type="checkbox" class="comment-select-cb" value="${cid}" onchange="updateMultiDeleteUI()" style="width: 1.1rem; height: 1.1rem; accent-color: var(--accent-color); cursor: pointer;">
                         </label>
                     ` : '';
