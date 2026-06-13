@@ -3648,10 +3648,9 @@
 
                     const isLiked = c.likedUsers && currentUser ? c.likedUsers.includes(currentUser.uid) : false;
                     const cLikeClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-                    const cLikeColor = isLiked ? 'color: #ff6b6b;' : 'color: var(--text-primary);';
                     const cLikeBtn = `
-                        <button type="button" class="board-action-btn c-like-btn" onclick="toggleLikeComment('${id}', '${cid}', this, ${isLiked})" style="${cLikeColor}" title="좋아요">
-                            <i class="${cLikeClass} fa-fw"></i> <span class="c-like-cnt like-count" style="margin-left: 0.1rem;">${c.likes || 0}</span>
+                        <button type="button" class="board-action-btn c-like-btn" onclick="toggleLikeComment('${id}', '${cid}', this, ${isLiked})" title="좋아요">
+                            <i class="${cLikeClass} fa-fw" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="c-like-cnt like-count" style="margin-left: 0.1rem;">${c.likes || 0}</span>
                         </button>
                     `;
 
@@ -3736,8 +3735,17 @@
                             const isLiked = c.likedUsers && currentUser ? c.likedUsers.includes(currentUser.uid) : false;
                             const icon = likeBtnEl.querySelector('i');
                             const cnt = likeBtnEl.querySelector('.c-like-cnt');
-                            if (icon) icon.className = isLiked ? 'fa-solid fa-heart fa-fw' : 'fa-regular fa-heart fa-fw';
-                            likeBtnEl.style.color = isLiked ? '#ff6b6b' : 'var(--text-primary)';
+                            if (icon) {
+                                if (isLiked) {
+                                    icon.classList.remove('fa-regular');
+                                    icon.classList.add('fa-solid');
+                                    icon.style.color = '#ff6b6b';
+                                } else {
+                                    icon.classList.remove('fa-solid');
+                                    icon.classList.add('fa-regular');
+                                    icon.style.color = 'var(--text-primary)';
+                                }
+                            }
                             if (cnt) cnt.textContent = c.likes || 0;
                             likeBtnEl.setAttribute('onclick', `toggleLikeComment('${id}', '${cid}', this, ${isLiked})`);
                         }
