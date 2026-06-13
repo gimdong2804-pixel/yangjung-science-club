@@ -2456,13 +2456,18 @@
         const drawerCloseBtn = document.getElementById('drawerCloseBtn');
 
         function openDrawer() {
+            history.pushState({ modal: 'drawer' }, '');
             sideDrawer.classList.add('active');
             drawerOverlay.classList.add('active');
         }
 
-        function closeDrawer() {
+        function closeDrawer(e) {
+            const fromPopState = (e === true);
             sideDrawer.classList.remove('active');
             drawerOverlay.classList.remove('active');
+            if (fromPopState !== true && history.state && history.state.modal === 'drawer') {
+                history.back();
+            }
         }
 
         menuBtn.addEventListener('click', (e) => {
@@ -2913,13 +2918,18 @@
                 openDrawer();
                 return;
             }
+            history.pushState({ modal: 'writePage' }, '');
             switchPage(currentPage, writePostPage);
         });
 
-        function closeWritePage() {
+        function closeWritePage(e) {
+            const fromPopState = (e === true);
             switchPage(currentPage, suggestionPage);
             document.getElementById('postTitle').value = '';
             document.getElementById('postBody').value = '';
+            if (fromPopState !== true && history.state && history.state.modal === 'writePage') {
+                history.back();
+            }
         }
         writePostBackBtn.addEventListener('click', closeWritePage);
 
@@ -3424,7 +3434,8 @@
         let currentDetailMode = 'side';
 
         // 상세 닫기 함수
-        function closeSideDetail() {
+        function closeSideDetail(e) {
+            const fromPopState = (e === true);
             const sideDetailContainer = document.getElementById('sideDetailContainer');
             const writePostBtn = document.getElementById('writePostBtn');
 
@@ -3434,7 +3445,10 @@
 
                 // 작성 버튼 다시 표시 여부 판단 (통합 함수 호출)
                 updateWriteButtonVisibility();
-
+                
+                if (fromPopState !== true && history.state && history.state.modal === 'postDetail') {
+                    history.back();
+                }
                 // 2. 애니메이션(0.4s)이 완료된 후 레이아웃을 정리합니다.
                 const closingPostId = currentPostId; // 현재 닫으려는 ID 백업
                 setTimeout(() => {
@@ -3470,6 +3484,7 @@
 
         // 상세 페이지 렌더링
         function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
+            history.pushState({ modal: 'postDetail' }, '');
             const sideDetailContainer = document.getElementById('sideDetailContainer');
             if (!sideDetailContainer) return;
 
@@ -4262,15 +4277,20 @@
         }
 
         window.openLightbox = function(url) {
+            history.pushState({ modal: 'lightbox' }, '');
             imageLightboxImg.src = url;
             imageLightbox.classList.add('active');
             currentZoom = 1; currentPanX = 0; currentPanY = 0;
             updateTransform(true);
         };
 
-        function closeLightbox() {
+        function closeLightbox(e) {
+            const fromPopState = (e === true);
             imageLightbox.classList.remove('active');
             setTimeout(() => { imageLightboxImg.src = ''; }, 300);
+            if (fromPopState !== true && history.state && history.state.modal === 'lightbox') {
+                history.back();
+            }
         }
 
         imageLightboxClose.addEventListener('click', closeLightbox);
@@ -4462,6 +4482,32 @@
                 alert('게시물 삭제 중 오류가 발생했습니다.');
             }
         };
+
+        window.addEventListener('popstate', (e) => {
+            const lightbox = document.getElementById('imageLightbox');
+            if (lightbox && lightbox.classList.contains('active')) {
+                closeLightbox(true);
+                return;
+            }
+            const postDetailOverlay = document.getElementById('postDetailOverlay');
+            const sideDetailContainer = document.getElementById('sideDetailContainer');
+            if ((postDetailOverlay && postDetailOverlay.classList.contains('active')) || 
+                (sideDetailContainer && sideDetailContainer.classList.contains('active') && !sideDetailContainer.classList.contains('detail-hidden'))) {
+                closeSideDetail(true);
+                return;
+            }
+            const writePostPage = document.getElementById('writePostPage');
+            if (writePostPage && writePostPage.classList.contains('active')) {
+                closeWritePage(true);
+                return;
+            }
+            const sideDrawer = document.getElementById('sideDrawer');
+            if (sideDrawer && sideDrawer.classList.contains('active')) {
+                closeDrawer(true);
+                return;
+            }
+        });
+        
     </script>
 </body>
 
