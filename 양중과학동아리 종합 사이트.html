@@ -3528,8 +3528,8 @@
                     if (pinB !== pinA) {
                         return pinB - pinA; // 고정이 위로
                     }
-                    const timeA = (a.data().createdAt && typeof a.data().createdAt.toMillis === 'function') ? a.data().createdAt.toMillis() : (a.data().createdAt instanceof Date ? a.data().createdAt.getTime() : 0);
-                    const timeB = (b.data().createdAt && typeof b.data().createdAt.toMillis === 'function') ? b.data().createdAt.toMillis() : (b.data().createdAt instanceof Date ? b.data().createdAt.getTime() : 0);
+                    const timeA = (a.data().createdAt && typeof a.data().createdAt.toMillis === 'function') ? a.data().createdAt.toMillis() : (a.data().createdAt instanceof Date ? a.data().createdAt.getTime() : Date.now());
+                    const timeB = (b.data().createdAt && typeof b.data().createdAt.toMillis === 'function') ? b.data().createdAt.toMillis() : (b.data().createdAt instanceof Date ? b.data().createdAt.getTime() : Date.now());
                     return timeB - timeA; // 작성일 내림차순 (최신순)
                 });
 
@@ -3582,7 +3582,7 @@
                             </div>
                         `;
                         item = document.createElement('div');
-                        item.className = 'comment-item comment-slide-in';
+                        item.className = 'comment-item new-comment-flip';
                         item.setAttribute('data-id', cid);
                         item.setAttribute('data-pinned', c.pinned ? 'true' : 'false');
                         item.style.cssText = `display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.25rem; ${cItemStyle}`;
@@ -3633,6 +3633,19 @@
                                     item.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease, border-color 0.3s ease';
                                 });
                             }
+                        } else if (item.classList.contains('new-comment-flip')) {
+                            const rect = item.getBoundingClientRect();
+                            const offset = rect.height + 20; // height + margin
+                            item.style.transform = `translateY(-${offset}px)`;
+                            item.style.opacity = '0';
+                            item.style.transition = 'none';
+                            
+                            requestAnimationFrame(() => {
+                                item.style.transform = '';
+                                item.style.opacity = '1';
+                                item.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease';
+                                item.classList.remove('new-comment-flip');
+                            });
                         }
                     });
                 });
