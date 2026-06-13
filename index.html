@@ -3239,7 +3239,11 @@
                         if (pinBadge) pinBadge.className = 'pin-badge-wrapper ' + (post.pinned ? 'active' : '');
                         
                         const pinToggleBtn = card.querySelector('.pin-toggle-btn');
-                        if (pinToggleBtn) pinToggleBtn.className = 'board-action-btn pin-toggle-btn ' + (post.pinned ? 'active' : '');
+                        if (pinToggleBtn) {
+                            pinToggleBtn.className = 'board-action-btn pin-toggle-btn ' + (post.pinned ? 'active' : '');
+                            pinToggleBtn.setAttribute('onclick', `event.stopPropagation(); togglePin('${id}', ${post.pinned || false})`);
+                            pinToggleBtn.setAttribute('title', post.pinned ? '고정 해제' : '상단 고정');
+                        }
 
                         card.classList.toggle('pinned-state', post.pinned);
                         card.style.order = index;
