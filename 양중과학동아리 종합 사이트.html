@@ -3255,15 +3255,17 @@
                         if (likeBtn) {
                             const heartIcon = likeBtn.querySelector('i');
                             if (heartIcon) {
-                                const isSolid = isLiked;
-                                if (isSolid) {
-                                    heartIcon.classList.remove('fa-regular');
-                                    heartIcon.classList.add('fa-solid');
-                                    heartIcon.style.color = '#ff6b6b';
-                                } else {
-                                    heartIcon.classList.remove('fa-solid');
-                                    heartIcon.classList.add('fa-regular');
-                                    heartIcon.style.color = 'var(--text-primary)';
+                                if (!heartIcon.classList.contains('animate-heart') && !heartIcon.classList.contains('animate-heart-cancel')) {
+                                    const isSolid = isLiked;
+                                    if (isSolid) {
+                                        heartIcon.classList.remove('fa-regular');
+                                        heartIcon.classList.add('fa-solid');
+                                        heartIcon.style.color = '#ff6b6b';
+                                    } else {
+                                        heartIcon.classList.remove('fa-solid');
+                                        heartIcon.classList.add('fa-regular');
+                                        heartIcon.style.color = 'var(--text-primary)';
+                                    }
                                 }
                             }
                             const likeCountEl = likeBtn.querySelector('.like-count');
@@ -3736,14 +3738,16 @@
                             const icon = likeBtnEl.querySelector('i');
                             const cnt = likeBtnEl.querySelector('.c-like-cnt');
                             if (icon) {
-                                if (isLiked) {
-                                    icon.classList.remove('fa-regular');
-                                    icon.classList.add('fa-solid');
-                                    icon.style.color = '#ff6b6b';
-                                } else {
-                                    icon.classList.remove('fa-solid');
-                                    icon.classList.add('fa-regular');
-                                    icon.style.color = 'var(--text-primary)';
+                                if (!icon.classList.contains('animate-heart') && !icon.classList.contains('animate-heart-cancel')) {
+                                    if (isLiked) {
+                                        icon.classList.remove('fa-regular');
+                                        icon.classList.add('fa-solid');
+                                        icon.style.color = '#ff6b6b';
+                                    } else {
+                                        icon.classList.remove('fa-solid');
+                                        icon.classList.add('fa-regular');
+                                        icon.style.color = 'var(--text-primary)';
+                                    }
                                 }
                             }
                             if (cnt) cnt.textContent = c.likes || 0;
