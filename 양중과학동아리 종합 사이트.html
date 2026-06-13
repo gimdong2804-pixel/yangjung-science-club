@@ -2113,6 +2113,9 @@
             margin-right: 0.5rem;
         }
     </style>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c52ed">
+    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg">
 </head>
 <body>
 
@@ -2193,6 +2196,13 @@
             </div>
         </div>
         
+        <div class="drawer-auth-section" id="installAppSection" style="display: none; border-bottom: none; padding-top: 0; margin-top: 0;">
+            <button class="google-login-btn" id="installAppBtn" style="background: #2c52ed; color: white; border: none;">
+                <i class="fa-solid fa-download"></i>
+                <span>앱 설치하기 (홈 화면에 추가)</span>
+            </button>
+        </div>
+
         <nav class="drawer-menu">
             <!-- 카테고리 1: 안내 및 인사 -->
             <div class="menu-category">
@@ -2456,7 +2466,7 @@
         const drawerCloseBtn = document.getElementById('drawerCloseBtn');
 
         function openDrawer() {
-            history.pushState({ modal: 'drawer' }, '');
+            history.pushState({ modal: 'drawer' }, '', '#drawer');
             sideDrawer.classList.add('active');
             drawerOverlay.classList.add('active');
         }
@@ -2918,7 +2928,7 @@
                 openDrawer();
                 return;
             }
-            history.pushState({ modal: 'writePage' }, '');
+            history.pushState({ modal: 'writePage' }, '', '#write');
             switchPage(currentPage, writePostPage);
         });
 
@@ -3484,7 +3494,7 @@
 
         // 상세 페이지 렌더링
         function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
-            history.pushState({ modal: 'postDetail' }, '');
+            history.pushState({ modal: 'postDetail' }, '', '#post');
             const sideDetailContainer = document.getElementById('sideDetailContainer');
             if (!sideDetailContainer) return;
 
@@ -4277,7 +4287,7 @@
         }
 
         window.openLightbox = function(url) {
-            history.pushState({ modal: 'lightbox' }, '');
+            history.pushState({ modal: 'lightbox' }, '', '#lightbox');
             imageLightboxImg.src = url;
             imageLightbox.classList.add('active');
             currentZoom = 1; currentPanX = 0; currentPanY = 0;
@@ -4508,6 +4518,37 @@
             }
         });
         
+        // PWA 설정
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => {
+                    console.error('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+        
+        let deferredPrompt;
+        const installAppSection = document.getElementById('installAppSection');
+        const installAppBtn = document.getElementById('installAppBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (installAppSection) installAppSection.style.display = 'flex';
+        });
+
+        if (installAppBtn) {
+            installAppBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        installAppSection.style.display = 'none';
+                    }
+                    deferredPrompt = null;
+                }
+            });
+        }
     </script>
 </body>
 
