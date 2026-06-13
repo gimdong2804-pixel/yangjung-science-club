@@ -3629,29 +3629,29 @@
                     const canDelete = isPresident || isCommentAuthor;
                     
                     const cCheckbox = canDelete ? `
-                        <label class="comment-checkbox-wrapper" style="align-items: center; margin-top: 0.4rem; padding-right: 0.2rem;">
+                        <label class="comment-checkbox-wrapper" style="align-items: center; margin-top: 0.2rem; padding-right: 0.2rem;">
                             <input type="checkbox" class="comment-select-cb" value="${cid}" onchange="updateMultiDeleteUI()" style="width: 1.1rem; height: 1.1rem; accent-color: var(--accent-color); cursor: pointer;">
                         </label>
                     ` : '';
 
                     const cDeleteBtn = isCommentAuthor ? `
-                        <button onclick="deleteComment('${id}', '${cid}')" style="background: none; border: none; color: #ff6b6b; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; padding: 0.25rem;" title="댓글 삭제">
+                        <button type="button" class="board-action-btn delete-btn" onclick="deleteComment('${id}', '${cid}')" title="댓글 삭제">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     ` : '';
 
                     const cPinBtn = isPresident ? `
-                        <button class="c-pin-btn" onclick="togglePinComment('${id}', '${cid}', ${c.pinned || false})" style="background: none; border: none; color: ${c.pinned ? 'var(--accent-color)' : 'var(--text-secondary)'}; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; padding: 0.25rem; transition: color 0.3s ease;" title="${c.pinned ? '댓글 고정 해제' : '댓글 고정'}">
-                            <i class="fa-solid fa-thumbtack" style="transition: transform 0.2s ease;"></i>
+                        <button type="button" class="board-action-btn pin-toggle-btn ${c.pinned ? 'active' : ''}" onclick="togglePinComment('${id}', '${cid}', ${c.pinned || false})" title="${c.pinned ? '댓글 고정 해제' : '댓글 고정'}">
+                            <i class="fa-solid fa-thumbtack"></i>
                         </button>
                     ` : '';
 
                     const isLiked = c.likedUsers && currentUser ? c.likedUsers.includes(currentUser.uid) : false;
                     const cLikeClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-                    const cLikeColor = isLiked ? 'color: #ff6b6b;' : 'color: var(--text-secondary);';
+                    const cLikeColor = isLiked ? 'color: #ff6b6b;' : 'color: var(--text-primary);';
                     const cLikeBtn = `
-                        <button class="c-like-btn" onclick="toggleLikeComment('${id}', '${cid}', this, ${isLiked})" style="background: none; border: none; ${cLikeColor} cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; padding: 0.25rem; transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.2s;" title="좋아요">
-                            <i class="${cLikeClass}"></i> <span class="c-like-cnt" style="margin-left: 0.3rem; font-variant-numeric: tabular-nums;">${c.likes || 0}</span>
+                        <button type="button" class="board-action-btn c-like-btn" onclick="toggleLikeComment('${id}', '${cid}', this, ${isLiked})" style="${cLikeColor}" title="좋아요">
+                            <i class="${cLikeClass} fa-fw"></i> <span class="c-like-cnt like-count" style="margin-left: 0.1rem;">${c.likes || 0}</span>
                         </button>
                     `;
 
@@ -3665,18 +3665,24 @@
                             ${cCheckbox}
                             ${cAvatarHtml}
                             <div class="comment-content" style="flex: 1; min-width: 0; padding-top: 0.2rem;">
-                                <div class="comment-header" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                                    <span class="board-author-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">${c.author}</span>
-                                    ${badge}
-                                    ${cPinBadge}
-                                    <span class="comment-time" style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 0.2rem;">${cTime}</span>
-                                    <div class="comment-actions" style="margin-left: auto; display: flex; gap: 0.2rem; align-items: center;">
-                                        ${cLikeBtn}
+                                <div class="comment-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 0.4rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                        <span class="board-author-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">${c.author}</span>
+                                        ${badge}
+                                        ${cPinBadge}
+                                    </div>
+                                    <div class="comment-actions" style="display: flex; align-items: center; gap: 0.5rem;">
                                         ${cPinBtn}
                                         ${cDeleteBtn}
+                                        <span class="board-time" style="font-size: 0.85rem; color: var(--text-secondary);">${cTime}</span>
                                     </div>
                                 </div>
-                                <div class="comment-text" style="margin-top: 0.3rem; font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all;">${c.body}</div>
+                                <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${c.body}</div>
+                                <div class="comment-footer" style="display: flex; justify-content: flex-end; align-items: center;">
+                                    <div class="board-stats">
+                                        ${cLikeBtn}
+                                    </div>
+                                </div>
                             </div>
                         `;
                         item = document.createElement('div');
@@ -3718,9 +3724,9 @@
                             pinBadgeEl.style.display = c.pinned ? 'inline-block' : 'none';
                         }
                         
-                        const pinBtnEl = item.querySelector('.c-pin-btn');
+                        const pinBtnEl = item.querySelector('.pin-toggle-btn');
                         if (pinBtnEl) {
-                            pinBtnEl.style.color = c.pinned ? 'var(--accent-color)' : 'var(--text-secondary)';
+                            pinBtnEl.classList.toggle('active', c.pinned);
                             pinBtnEl.title = c.pinned ? '댓글 고정 해제' : '댓글 고정';
                             pinBtnEl.setAttribute('onclick', `togglePinComment('${id}', '${cid}', ${c.pinned || false})`);
                         }
@@ -3730,8 +3736,8 @@
                             const isLiked = c.likedUsers && currentUser ? c.likedUsers.includes(currentUser.uid) : false;
                             const icon = likeBtnEl.querySelector('i');
                             const cnt = likeBtnEl.querySelector('.c-like-cnt');
-                            if (icon) icon.className = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-                            likeBtnEl.style.color = isLiked ? '#ff6b6b' : 'var(--text-secondary)';
+                            if (icon) icon.className = isLiked ? 'fa-solid fa-heart fa-fw' : 'fa-regular fa-heart fa-fw';
+                            likeBtnEl.style.color = isLiked ? '#ff6b6b' : 'var(--text-primary)';
                             if (cnt) cnt.textContent = c.likes || 0;
                             likeBtnEl.setAttribute('onclick', `toggleLikeComment('${id}', '${cid}', this, ${isLiked})`);
                         }
