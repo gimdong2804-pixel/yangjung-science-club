@@ -3518,9 +3518,9 @@
                                 <span class="board-author-name" style="font-weight: 600; font-size: 1rem;">${currentPost.author}</span>
                             </div>
                             <div class="board-stats" style="font-size: 0.95rem;">
-                                <span><i class="fa-regular fa-comment"></i> <span id="detailTopCommentCount">0</span></span>
-                                <button type="button" class="board-action-btn" style="${heartColor}" onclick="likePost('${id}', this)" id="detailLikeBtn" title="좋아요">
-                                    <i class="${heartClass}"></i> <span id="detailLikeCnt" class="like-count">${currentPost.likes || 0}</span>
+                                <span style="cursor: default; user-select: none;"><i class="fa-regular fa-comment"></i> <span id="detailTopCommentCount">0</span></span>
+                                <button type="button" class="board-action-btn" onclick="likePost('${id}', this)" id="detailLikeBtn" title="좋아요">
+                                    <i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span id="detailLikeCnt" class="like-count" style="${isLiked ? 'color: var(--accent-color);' : 'color: var(--text-primary);'}">${currentPost.likes || 0}</span>
                                 </button>
                             </div>
                         </div>
@@ -3839,6 +3839,9 @@
                         if (likeCountEl) {
                             const cur = parseInt(likeCountEl.textContent) || 0;
                             likeCountEl.textContent = Math.max(0, cur - 1);
+                            if (btnEl.id === 'detailLikeBtn') {
+                                likeCountEl.style.color = 'var(--text-primary)';
+                            }
                         }
                     } else {
                         // 추가 시: solid로 변경 및 heart 애니메이션 부여
@@ -3848,6 +3851,9 @@
                         if (likeCountEl) {
                             const cur = parseInt(likeCountEl.textContent) || 0;
                             likeCountEl.textContent = cur + 1;
+                            if (btnEl.id === 'detailLikeBtn') {
+                                likeCountEl.style.color = 'var(--accent-color)';
+                            }
                         }
                     }
                     
