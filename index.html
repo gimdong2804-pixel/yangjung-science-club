@@ -3396,7 +3396,7 @@
                         
                         const pinToggleBtn = card.querySelector('.pin-toggle-btn');
                         if (pinToggleBtn) {
-                            pinToggleBtn.className = 'board-action-btn pin-toggle-btn ' + (post.pinned ? 'active' : '');
+                            pinToggleBtn.classList.toggle('active', !!post.pinned);
                             pinToggleBtn.setAttribute('onclick', `event.stopPropagation(); togglePin('${id}', ${post.pinned || false})`);
                             pinToggleBtn.setAttribute('title', post.pinned ? '고정 해제' : '상단 고정');
                         }
@@ -3671,7 +3671,7 @@
                 };
 
                 if (isAnimating) {
-                    setTimeout(updateUI, 300);
+                    setTimeout(updateUI, 600);
                 } else {
                     updateUI();
                 }
@@ -4058,7 +4058,12 @@
         window.togglePin = async function(id, currentPinned) {
             if(!currentUser || currentUser.email !== 'gimdong2804@gmail.com') return;
             const btn = window.event ? (window.event.currentTarget || window.event.target.closest('.pin-toggle-btn')) : null;
-            if (btn) btn.classList.add('animate-pin-action');
+            if (btn) {
+                btn.classList.toggle('active', !currentPinned);
+                btn.classList.remove('animate-pin-action');
+                void btn.offsetWidth;
+                btn.classList.add('animate-pin-action');
+            }
             try {
                 await db.collection('posts').doc(id).update({ pinned: !currentPinned });
             } catch(e) { console.error(e); }
@@ -4067,7 +4072,12 @@
         window.togglePinComment = async function(postId, commentId, currentPinned) {
             if(!currentUser || currentUser.email !== 'gimdong2804@gmail.com') return;
             const btn = window.event ? (window.event.currentTarget || window.event.target.closest('.pin-toggle-btn')) : null;
-            if (btn) btn.classList.add('animate-pin-action');
+            if (btn) {
+                btn.classList.toggle('active', !currentPinned);
+                btn.classList.remove('animate-pin-action');
+                void btn.offsetWidth;
+                btn.classList.add('animate-pin-action');
+            }
             try {
                 await db.collection('posts').doc(postId).collection('comments').doc(commentId).update({ pinned: !currentPinned });
             } catch(e) { console.error(e); }
