@@ -3882,12 +3882,12 @@
                             pinBadgeEl.className = 'pin-badge-wrapper ' + (c.pinned ? 'active' : '');
                         }
                         
-                        const pinBtnEl = item.querySelector('.pin-toggle-btn');
-                        if (pinBtnEl) {
+                        const pinBtnEls = item.querySelectorAll('.pin-toggle-btn');
+                        pinBtnEls.forEach(pinBtnEl => {
                             pinBtnEl.classList.toggle('active', !!c.pinned);
                             pinBtnEl.title = c.pinned ? '댓글 고정 해제' : '댓글 고정';
                             pinBtnEl.setAttribute('onclick', `togglePinComment('${id}', '${cid}', ${c.pinned || false})`);
-                        }
+                        });
                         
                         const likeBtnEl = item.querySelector('.c-like-btn');
                         if (likeBtnEl) {
