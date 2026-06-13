@@ -781,8 +781,8 @@
                                 <button type="button" class="board-action-btn board-comment-btn" title="?��? 보기">
                                     <i class="fa-regular fa-comment"></i> <span id="comment-cnt-${id}">0</span>
                                 </button>
-                                <button type="button" class="board-action-btn" onclick="event.stopPropagation(); likePost('${id}')">
-                                    <i class="${isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'} fa-fw ${wasLiked !== isLiked ? (isLiked ? 'animate-heart' : 'animate-heart-cancel') : ''}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> ${post.likes || 0}
+                                <button type="button" class="board-action-btn" onclick="event.stopPropagation(); likePost('${id}', this)">
+                                    <i class="${isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'} fa-fw" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="like-count">${post.likes || 0}</span>
                                 </button>
                             </div>
                         </div>
@@ -837,15 +837,14 @@
                         if (likeBtn) {
                             const heartIcon = likeBtn.querySelector('i');
                             if (heartIcon) {
-                                const heartAnimClass = (wasLiked !== isLiked) ? (isLiked ? 'animate-heart' : 'animate-heart-cancel') : '';
-                                heartIcon.className = (isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart') + ' fa-fw ' + heartAnimClass;
-                                heartIcon.style.color = isLiked ? '#ff6b6b' : 'var(--text-primary)';
+                                const isSolid = isLiked;
+                                heartIcon.className = (isSolid ? 'fa-solid' : 'fa-regular') + ' fa-heart fa-fw';
+                                heartIcon.style.color = isSolid ? '#ff6b6b' : 'var(--text-primary)';
                             }
-                            Array.from(likeBtn.childNodes).forEach(node => {
-                                if (node.nodeType === 3 && node.textContent.trim().length > 0) {
-                                    node.textContent = ' ' + (post.likes || 0);
-                                }
-                            });
+                            const likeCountEl = likeBtn.querySelector('.like-count');
+                            if (likeCountEl) {
+                                likeCountEl.textContent = post.likes || 0;
+                            }
                         }
                         
                         const pinBadge = card.querySelector('.pin-badge-wrapper');
@@ -1060,16 +1059,8 @@
                     </button>
                 ` : '';
 
-                const existingHeart = area.querySelector('.fa-heart');
-                const wasLiked = existingHeart ? existingHeart.classList.contains('fa-solid') : false;
                 const isLiked = currentUser && currentPost.likedUsers && currentPost.likedUsers.includes(currentUser.uid);
-                
                 const heartClass = isLiked ? 'fa-solid fa-heart fa-fw' : 'fa-regular fa-heart fa-fw';
-                const heartAnimClass = (existingHeart && wasLiked !== isLiked) 
-                    ? (isLiked ? 'animate-heart' : 'animate-heart-cancel') 
-                    : '';
-                
-                const heartIcon = `${heartClass} ${heartAnimClass}`;
                 const heartColor = isLiked ? 'color: #ff6b6b;' : 'color: var(--text-primary);';
 
                 area.innerHTML = `
@@ -1092,7 +1083,7 @@
                         </div>
                         <div class="board-stats" style="font-size: 0.95rem;">
                             <span><i class="fa-regular fa-comment"></i> <span id="detailTopCommentCount">0</span></span>
-                            <span style="cursor: pointer; transition: color 0.3s; ${heartColor}" onclick="likePost('${id}')" id="detailLikeBtn"><i class="${heartIcon}"></i> <span id="detailLikeCnt">${currentPost.likes || 0}</span></span>
+                            <span style="cursor: pointer; transition: color 0.3s; ${heartColor}" onclick="likePost('${id}', this)" id="detailLikeBtn"><i class="${heartClass}"></i> <span id="detailLikeCnt">${currentPost.likes || 0}</span></span>
                         </div>
                     </div>
                     
@@ -1187,11 +1178,42 @@
             closeSideDetailBtn.addEventListener('click', closeSideDetail);
         }
 
-        window.likePost = async function(id) {
+        window.likePost = async function(id, btnEl) {
             if (!currentUser) {
-                alert('좋아?��? ?�르?�려�?먼�? Google 로그?�을 ?�주?�요!');
+                alert('로그인이 필요한 기능입니다. Google 로그인 해주세요!');
                 openDrawer();
                 return;
+            }
+            
+            if (btnEl) {
+                const heartIcon = btnEl.querySelector('i');
+                const likeCountEl = btnEl.querySelector('.like-count') || btnEl.querySelector('#detailLikeCnt');
+                if (heartIcon) {
+                    const currentlyLiked = heartIcon.classList.contains('fa-solid');
+                    
+                    heartIcon.classList.remove('animate-heart', 'animate-heart-cancel');
+                    void heartIcon.offsetWidth; 
+                    
+                    if (currentlyLiked) {
+                        heartIcon.className = 'fa-regular fa-heart fa-fw animate-heart-cancel';
+                        heartIcon.style.color = 'var(--text-primary)';
+                        if (likeCountEl) {
+                            const cur = parseInt(likeCountEl.textContent) || 0;
+                            likeCountEl.textContent = Math.max(0, cur - 1);
+                        }
+                    } else {
+                        heartIcon.className = 'fa-solid fa-heart fa-fw animate-heart';
+                        heartIcon.style.color = '#ff6b6b';
+                        if (likeCountEl) {
+                            const cur = parseInt(likeCountEl.textContent) || 0;
+                            likeCountEl.textContent = cur + 1;
+                        }
+                    }
+                    
+                    heartIcon.addEventListener('animationend', () => {
+                        heartIcon.classList.remove('animate-heart', 'animate-heart-cancel');
+                    }, { once: true });
+                }
             }
             
             const postRef = db.collection('posts').doc(id);
