@@ -3200,7 +3200,7 @@
                                     <i class="fa-regular fa-comment"></i> <span id="comment-cnt-${id}">0</span>
                                 </button>
                                 <button type="button" class="board-action-btn" onclick="event.stopPropagation(); likePost('${id}', this)">
-                                    <i class="${isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'} fa-fw" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="like-count">${post.likes || 0}</span>
+                                    <i class="${isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="like-count">${post.likes || 0}</span>
                                 </button>
                             </div>
                         </div>
@@ -3496,7 +3496,10 @@
                     ` : '';
 
                     const isLiked = currentUser && currentPost.likedUsers && currentPost.likedUsers.includes(currentUser.uid);
-                    const heartClass = isLiked ? 'fa-solid fa-heart fa-fw' : 'fa-regular fa-heart fa-fw';
+                    const existingTopCountEl = document.getElementById('detailTopCommentCount');
+                    const currentTopCount = existingTopCountEl ? existingTopCountEl.innerText : '0';
+
+                    const heartClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
                     const heartColor = isLiked ? 'color: #ff6b6b;' : 'color: var(--text-primary);';
 
                     area.innerHTML = `
@@ -3518,7 +3521,7 @@
                                 <span class="board-author-name" style="font-weight: 600; font-size: 1rem;">${currentPost.author}</span>
                             </div>
                             <div class="board-stats" style="font-size: 0.95rem;">
-                                <span style="cursor: default; user-select: none;"><i class="fa-regular fa-comment"></i> <span id="detailTopCommentCount">0</span></span>
+                                <span style="cursor: default; user-select: none;"><i class="fa-regular fa-comment"></i> <span id="detailTopCommentCount">${currentTopCount}</span></span>
                                 <button type="button" class="board-action-btn" onclick="likePost('${id}', this)" id="detailLikeBtn" title="좋아요">
                                     <i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span id="detailLikeCnt" class="like-count" style="${isLiked ? 'color: var(--accent-color);' : 'color: var(--text-primary);'}">${currentPost.likes || 0}</span>
                                 </button>
@@ -3666,7 +3669,7 @@
                     const cLikeClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
                     const cLikeBtn = `
                         <button type="button" class="board-action-btn c-like-btn" onclick="toggleLikeComment('${id}', '${cid}', this, ${isLiked})" title="좋아요">
-                            <i class="${cLikeClass} fa-fw" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="c-like-cnt like-count" style="margin-left: 0.1rem;">${c.likes || 0}</span>
+                            <i class="${cLikeClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="c-like-cnt like-count" style="margin-left: 0.1rem;">${c.likes || 0}</span>
                         </button>
                     `;
 
