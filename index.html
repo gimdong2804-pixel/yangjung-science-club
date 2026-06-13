@@ -3513,6 +3513,11 @@
 
         // 상세 페이지 렌더링
         function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
+            const isMobile = window.innerWidth <= 1023;
+            if (isMobile) {
+                mode = 'fullscreen'; // 폰에서는 항상 전체화면 모드로 고정
+            }
+
             history.pushState({ modal: 'postDetail' }, '', '#post');
             const sideDetailContainer = document.getElementById('sideDetailContainer');
             if (!sideDetailContainer) return;
@@ -3524,7 +3529,6 @@
             currentDetailMode = mode;
 
             const isFullscreen = currentDetailMode === 'fullscreen';
-            const isMobile = window.innerWidth <= 1023;
 
             // 1. 현재 열려있는 상태라면 일단 숨김 상태로 시작하여 부드럽게 전환
             sideDetailContainer.classList.add('detail-hidden');
