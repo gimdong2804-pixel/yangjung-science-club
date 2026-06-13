@@ -3244,6 +3244,12 @@
                                 if (window.isPostMultiSelectMode) { e.preventDefault(); }
                             });
                             card.addEventListener('click', (e) => {
+                                if (window.ignoreNextPostClick) {
+                                    window.ignoreNextPostClick = false;
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    return;
+                                }
                                 if (window.isPostMultiSelectMode) {
                                     e.preventDefault();
                                     e.stopPropagation();
@@ -3770,6 +3776,23 @@
                                     e.preventDefault();
                                 }
                             });
+                            item.addEventListener('click', (e) => {
+                                if (window.ignoreNextCommentClick) {
+                                    window.ignoreNextCommentClick = false;
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    return;
+                                }
+                                if (window.isMultiSelectMode) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const cb = item.querySelector('.comment-select-cb');
+                                    if (cb && e.target !== cb && !e.target.closest('label')) {
+                                        cb.checked = !cb.checked;
+                                        updateMultiDeleteUI();
+                                    }
+                                }
+                            });
                         }
                         
                         commentList.appendChild(item);
@@ -4043,12 +4066,14 @@
 
         window.isMultiSelectMode = false;
         let pressTimer;
+        window.ignoreNextCommentClick = false;
 
         window.handleCommentPointerDown = function(e, cid) {
             if (window.isMultiSelectMode) return;
             if (e.target.closest('button') || e.target.closest('a') || e.target.tagName.toLowerCase() === 'input') return;
             
             pressTimer = setTimeout(() => {
+                window.ignoreNextCommentClick = true;
                 window.enterMultiSelectMode(cid);
             }, 500);
         };
@@ -4299,6 +4324,7 @@
         let isPostPressing = false;
         let postStartY = 0;
         let postStartX = 0;
+        window.ignoreNextPostClick = false;
 
         window.handlePostPointerDown = function(e, postId) {
             if (e.button === 2) return;
@@ -4311,6 +4337,7 @@
             postPressTimer = setTimeout(() => {
                 if (isPostPressing && !window.isPostMultiSelectMode) {
                     if (navigator.vibrate) navigator.vibrate(50);
+                    window.ignoreNextPostClick = true;
                     enterPostMultiSelectMode(postId);
                 }
             }, 600);
