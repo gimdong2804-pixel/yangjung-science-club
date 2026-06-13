@@ -2153,17 +2153,17 @@
 
     <!-- 사이드 드로어 메뉴 & 오버레이 -->
     <div id="drawerOverlay" class="drawer-overlay"></div>
-    <div id="multiDeleteBar" style="position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--bg-color); border: 1px solid var(--glass-border); padding: 1rem 2rem; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000; display: flex; align-items: center; gap: 1rem; transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
-        <span id="multiDeleteCount" style="font-weight: 600; color: var(--text-primary);">0개 선택됨</span>
-        <button id="multiPinBtn" onclick="executeMultiPin()" style="background: var(--accent-color); color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; display: none;">고정</button>
-        <button onclick="executeMultiDelete()" style="background: #ff6b6b; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;">삭제</button>
-        <button onclick="cancelMultiDelete()" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--glass-border); padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold;">취소</button>
+    <div id="multiDeleteBar" style="position: fixed; bottom: -250px; left: 50%; transform: translateX(-50%); background: var(--bg-color); border: 1px solid var(--glass-border); padding: 0.8rem 1.5rem; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0.5rem; width: max-content; max-width: 90vw; transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <span id="multiDeleteCount" style="font-weight: 600; color: var(--text-primary); white-space: nowrap;">0개 선택됨</span>
+        <button id="multiPinBtn" onclick="executeMultiPin()" style="background: var(--accent-color); color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; display: none; white-space: nowrap;">고정</button>
+        <button onclick="executeMultiDelete()" style="background: #ff6b6b; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; white-space: nowrap;">삭제</button>
+        <button onclick="cancelMultiDelete()" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--glass-border); padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; white-space: nowrap;">취소</button>
     </div>
-    <div id="postMultiDeleteBar" style="position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--bg-color); border: 1px solid var(--glass-border); padding: 1rem 2rem; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000; display: flex; align-items: center; gap: 1rem; transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
-        <span id="postMultiDeleteCount" style="font-weight: 600; color: var(--text-primary);">0개 선택됨</span>
-        <button id="postMultiPinBtn" onclick="executePostMultiPin()" style="background: var(--accent-color); color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; display: none;">고정</button>
-        <button onclick="executePostMultiDelete()" style="background: #ff6b6b; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;">삭제</button>
-        <button onclick="cancelPostMultiDelete()" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--glass-border); padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold;">취소</button>
+    <div id="postMultiDeleteBar" style="position: fixed; bottom: -250px; left: 50%; transform: translateX(-50%); background: var(--bg-color); border: 1px solid var(--glass-border); padding: 0.8rem 1.5rem; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0.5rem; width: max-content; max-width: 90vw; transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <span id="postMultiDeleteCount" style="font-weight: 600; color: var(--text-primary); white-space: nowrap;">0개 선택됨</span>
+        <button id="postMultiPinBtn" onclick="executePostMultiPin()" style="background: var(--accent-color); color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; display: none; white-space: nowrap;">고정</button>
+        <button onclick="executePostMultiDelete()" style="background: #ff6b6b; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; white-space: nowrap;">삭제</button>
+        <button onclick="cancelPostMultiDelete()" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--glass-border); padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; white-space: nowrap;">취소</button>
     </div>
     <div id="sideDrawer" class="side-drawer">
         <div class="drawer-header">
@@ -4110,7 +4110,7 @@
                 cntSpan.textContent = `${checkboxes.length}개 선택됨`;
                 bar.style.bottom = '100px';
             } else {
-                bar.style.bottom = '-100px';
+                bar.style.bottom = '-250px';
             }
         };
 
@@ -4413,7 +4413,7 @@
                 cntSpan.textContent = `${checkboxes.length}개 선택됨`;
                 bar.style.bottom = '100px';
             } else {
-                bar.style.bottom = '-100px';
+                bar.style.bottom = '-250px';
             }
         };
 
