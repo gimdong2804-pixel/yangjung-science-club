@@ -3513,11 +3513,41 @@
 
                 // 3. 삭제된 댓글 제거 (애니메이션)
                 commentList.querySelectorAll('.comment-item').forEach(item => {
-                    if (!currentIds.has(item.getAttribute('data-id'))) {
-                        item.style.transition = 'all 0.3s ease';
+                    if (!currentIds.has(item.getAttribute('data-id')) && !item.classList.contains('deleting')) {
+                        item.classList.add('deleting');
+                        item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
                         item.style.opacity = '0';
                         item.style.transform = 'scale(0.95)';
-                        setTimeout(() => item.remove(), 300);
+                        
+                        setTimeout(() => {
+                            // 지워지기 직전 남아있는 아이템들의 위치 백업
+                            const beforeRemovePositions = new Map();
+                            commentList.querySelectorAll('.comment-item:not(.deleting)').forEach(el => {
+                                beforeRemovePositions.set(el.getAttribute('data-id'), el.getBoundingClientRect());
+                            });
+                            
+                            item.remove(); // DOM에서 완전히 제거
+                            
+                            // 제거 후 남아있는 아이템들이 빈 공간으로 자연스럽게 밀려 올라가는 애니메이션 (FLIP)
+                            requestAnimationFrame(() => {
+                                commentList.querySelectorAll('.comment-item:not(.deleting)').forEach(el => {
+                                    const id = el.getAttribute('data-id');
+                                    const oldR = beforeRemovePositions.get(id);
+                                    if (oldR) {
+                                        const newR = el.getBoundingClientRect();
+                                        const deltaY = oldR.top - newR.top;
+                                        if (Math.abs(deltaY) > 1) {
+                                            el.style.transform = `translateY(${deltaY}px)`;
+                                            el.style.transition = 'none';
+                                            requestAnimationFrame(() => {
+                                                el.style.transform = '';
+                                                el.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+                                            });
+                                        }
+                                    }
+                                });
+                            });
+                        }, 300);
                     }
                 });
 
