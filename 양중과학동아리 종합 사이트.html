@@ -2081,11 +2081,17 @@
         }
 
         .comment-checkbox-wrapper {
-            display: none !important;
+            width: 0;
+            opacity: 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            transition: width 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
         }
 
         body.multi-select-active .comment-checkbox-wrapper {
-            display: flex !important;
+            width: 1.5rem;
+            opacity: 1;
         }
     </style>
 </head>
