@@ -3519,7 +3519,9 @@
                             </div>
                             <div class="board-stats" style="font-size: 0.95rem;">
                                 <span><i class="fa-regular fa-comment"></i> <span id="detailTopCommentCount">0</span></span>
-                                <span style="cursor: pointer; transition: color 0.3s; font-variant-numeric: tabular-nums; ${heartColor}" onclick="likePost('${id}', this)" id="detailLikeBtn"><i class="${heartClass}"></i> <span id="detailLikeCnt">${currentPost.likes || 0}</span></span>
+                                <button type="button" class="board-action-btn" style="${heartColor}" onclick="likePost('${id}', this)" id="detailLikeBtn" title="좋아요">
+                                    <i class="${heartClass}"></i> <span id="detailLikeCnt" class="like-count">${currentPost.likes || 0}</span>
+                                </button>
                             </div>
                         </div>
                         
