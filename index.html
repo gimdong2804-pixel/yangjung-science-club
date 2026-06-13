@@ -3532,7 +3532,7 @@
                     }
                     const timeA = (a.data().createdAt && typeof a.data().createdAt.toMillis === 'function') ? a.data().createdAt.toMillis() : (a.data().createdAt instanceof Date ? a.data().createdAt.getTime() : 0);
                     const timeB = (b.data().createdAt && typeof b.data().createdAt.toMillis === 'function') ? b.data().createdAt.toMillis() : (b.data().createdAt instanceof Date ? b.data().createdAt.getTime() : 0);
-                    return timeA - timeB; // 작성일 오름차순
+                    return timeB - timeA; // 작성일 내림차순 (최신순)
                 });
 
                 sortedDocs.forEach((cDoc, index) => {
