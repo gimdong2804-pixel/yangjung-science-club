@@ -3239,7 +3239,7 @@
                             card.addEventListener('pointerdown', (e) => window.handlePostPointerDown(e, id));
                             card.addEventListener('pointerup', () => window.handlePostPointerUp());
                             card.addEventListener('pointercancel', () => window.handlePostPointerUp());
-                            card.addEventListener('pointermove', () => window.handlePostPointerMove());
+                            card.addEventListener('pointermove', (e) => window.handlePostPointerMove(e));
                             card.addEventListener('contextmenu', (e) => {
                                 if (window.isPostMultiSelectMode) { e.preventDefault(); }
                             });
@@ -3251,10 +3251,13 @@
                                     return;
                                 }
                                 if (window.isPostMultiSelectMode) {
+                                    if (e.target.classList.contains('post-select-cb') || e.target.closest('label')) {
+                                        return;
+                                    }
                                     e.preventDefault();
                                     e.stopPropagation();
                                     const cb = card.querySelector('.post-select-cb');
-                                    if (cb && e.target !== cb && !e.target.closest('label')) {
+                                    if (cb) {
                                         cb.checked = !cb.checked;
                                         updatePostMultiDeleteUI();
                                     }
@@ -3784,10 +3787,13 @@
                                     return;
                                 }
                                 if (window.isMultiSelectMode) {
+                                    if (e.target.classList.contains('comment-select-cb') || e.target.closest('label')) {
+                                        return;
+                                    }
                                     e.preventDefault();
                                     e.stopPropagation();
                                     const cb = item.querySelector('.comment-select-cb');
-                                    if (cb && e.target !== cb && !e.target.closest('label')) {
+                                    if (cb) {
                                         cb.checked = !cb.checked;
                                         updateMultiDeleteUI();
                                     }
