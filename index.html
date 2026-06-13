@@ -3586,13 +3586,21 @@
                         item = document.createElement('div');
                         item.className = 'comment-item comment-slide-in';
                         item.setAttribute('data-id', cid);
+                        item.setAttribute('data-pinned', c.pinned ? 'true' : 'false');
                         item.style.cssText = `display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.25rem; ${cItemStyle}`;
                         item.innerHTML = innerHtml;
                         item.style.order = index;
                         commentList.appendChild(item);
                     } else {
-                        item.style.cssText = `display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.25rem; ${cItemStyle}`;
-                        item.style.order = index;
+                        const wasPinned = item.getAttribute('data-pinned') === 'true';
+                        if (wasPinned !== !!c.pinned) {
+                            item.style.cssText = `display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.25rem; ${cItemStyle}`;
+                            item.setAttribute('data-pinned', c.pinned ? 'true' : 'false');
+                        }
+                        
+                        if (item.style.order !== String(index)) {
+                            item.style.order = index;
+                        }
                         
                         const pinBadgeEl = item.querySelector('.c-pin-badge');
                         if (pinBadgeEl) {
@@ -3618,7 +3626,7 @@
                             const newRect = item.getBoundingClientRect();
                             const deltaY = oldRect.top - newRect.top;
                             
-                            if (deltaY !== 0) {
+                            if (Math.abs(deltaY) > 1) {
                                 item.style.transform = `translateY(${deltaY}px)`;
                                 item.style.transition = 'none';
                                 
