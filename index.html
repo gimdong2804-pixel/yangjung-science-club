@@ -2662,8 +2662,13 @@
             }
         });
 
-        function switchPage(fromPage, toPage) {
+        function switchPage(fromPage, toPage, skipHistory = false) {
             if (fromPage === toPage) return; // 동일한 페이지로의 전환은 무시
+            
+            if (!skipHistory) {
+                const pageId = toPage.id || 'mainPage';
+                history.pushState({ page: pageId }, '', '#' + pageId);
+            }
             
             // 현재 페이지 fade out
             fromPage.classList.add('fade-out');
@@ -2917,7 +2922,7 @@
 
         writePostBtn.addEventListener('click', () => {
             if (!currentUser) {
-                alert('건의사항을 작성하시려면 먼저 Google 로그인을 해주세요!');
+                alert('게시글을 작성하려면 로그인이 필요합니다. Google 계정으로 로그인해주세요.');
                 openDrawer();
                 return;
             }
@@ -2927,7 +2932,7 @@
 
         function closeWritePage(e) {
             const fromPopState = (e === true);
-            switchPage(currentPage, suggestionPage);
+            switchPage(currentPage, suggestionPage, true); // 뒤로가기로 닫힐 때는 히스토리 푸시 제외
             document.getElementById('postTitle').value = '';
             document.getElementById('postBody').value = '';
             if (fromPopState !== true && history.state && history.state.modal === 'writePage') {
@@ -4507,8 +4512,22 @@
                 closeDrawer(true);
                 return;
             }
+
+            // [추가] 탭 네비게이션 복구 처리 (시스템 뒤로 가기 시 페이지 전환)
+            if (e.state && e.state.page) {
+                const targetPage = document.getElementById(e.state.page);
+                if (targetPage) switchPage(currentPage, targetPage, true);
+            } else {
+                if (currentPage !== mainPage) switchPage(currentPage, mainPage, true);
+            }
         });
-        
+        // 초기 상태 히스토리 설정
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!history.state || !history.state.page) {
+                history.replaceState({ page: 'mainPage' }, '', '#mainPage');
+            }
+        });
+
         // PWA 설정
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
