@@ -1925,25 +1925,12 @@
         }
 
         .side-detail-scroll-area::-webkit-scrollbar {
-            width: 6px;
+            display: none; /* 모바일 및 데스크탑에서 기본 스크롤바 숨김 */
         }
 
-        .side-detail-scroll-area::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .side-detail-scroll-area::-webkit-scrollbar-thumb {
-            background: rgba(59, 130, 246, 0.3);
-            border-radius: 10px;
-            transition: background 0.3s;
-        }
-
-        .side-detail-scroll-area:hover::-webkit-scrollbar-thumb {
-            background: rgba(59, 130, 246, 0.5);
-        }
-
-        .side-detail-scroll-area::-webkit-scrollbar-thumb:hover {
-            background: var(--accent-color);
+        .side-detail-scroll-area {
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
         }
 
         .side-detail-header {
