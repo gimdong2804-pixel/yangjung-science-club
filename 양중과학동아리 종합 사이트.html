@@ -3594,6 +3594,7 @@
             // 조회수 증가
             db.collection('posts').doc(id).update({ views: firebase.firestore.FieldValue.increment(1) });
 
+            let detailUpdateTimeout = null;
             if (postUnsubscribe) postUnsubscribe();
             postUnsubscribe = db.collection('posts').doc(id).onSnapshot(docSnap => {
                 if (!docSnap.exists) return;
@@ -3671,8 +3672,10 @@
                 };
 
                 if (isAnimating) {
-                    setTimeout(updateUI, 600);
+                    if (detailUpdateTimeout) clearTimeout(detailUpdateTimeout);
+                    detailUpdateTimeout = setTimeout(updateUI, 600);
                 } else {
+                    if (detailUpdateTimeout) clearTimeout(detailUpdateTimeout);
                     updateUI();
                 }
             });
@@ -4058,28 +4061,34 @@
         window.togglePin = async function(id, currentPinned) {
             if(!currentUser || currentUser.email !== 'gimdong2804@gmail.com') return;
             const btn = window.event ? (window.event.currentTarget || window.event.target.closest('.pin-toggle-btn')) : null;
+            let isPinned = currentPinned;
             if (btn) {
-                btn.classList.toggle('active', !currentPinned);
+                isPinned = btn.classList.contains('active');
+                btn.classList.toggle('active', !isPinned);
                 btn.classList.remove('animate-pin-action');
                 void btn.offsetWidth;
                 btn.classList.add('animate-pin-action');
+                btn.title = !isPinned ? '고정 해제' : '상단 고정';
             }
             try {
-                await db.collection('posts').doc(id).update({ pinned: !currentPinned });
+                await db.collection('posts').doc(id).update({ pinned: !isPinned });
             } catch(e) { console.error(e); }
         };
 
         window.togglePinComment = async function(postId, commentId, currentPinned) {
             if(!currentUser || currentUser.email !== 'gimdong2804@gmail.com') return;
             const btn = window.event ? (window.event.currentTarget || window.event.target.closest('.pin-toggle-btn')) : null;
+            let isPinned = currentPinned;
             if (btn) {
-                btn.classList.toggle('active', !currentPinned);
+                isPinned = btn.classList.contains('active');
+                btn.classList.toggle('active', !isPinned);
                 btn.classList.remove('animate-pin-action');
                 void btn.offsetWidth;
                 btn.classList.add('animate-pin-action');
+                btn.title = !isPinned ? '고정 해제' : '상단 고정';
             }
             try {
-                await db.collection('posts').doc(postId).collection('comments').doc(commentId).update({ pinned: !currentPinned });
+                await db.collection('posts').doc(postId).collection('comments').doc(commentId).update({ pinned: !isPinned });
             } catch(e) { console.error(e); }
         };
 
