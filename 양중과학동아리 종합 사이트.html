@@ -3473,60 +3473,72 @@
                 if (!docSnap.exists) return;
                 const currentPost = docSnap.data();
 
-                const isPresident = currentUser && currentUser.email === 'gimdong2804@gmail.com';
-                const isAuthor = currentUser && (currentPost.uid === currentUser.uid || isPresident);
-                
-                // 삭제 버튼 (작성자 또는 회장)
-                const deleteBtnHtml = isAuthor ? `
-                    <button class="board-action-btn delete-btn" onclick="deletePost('${id}')" title="삭제하기">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                ` : '';
-                
-                // 고정 버튼 (회장 전용)
-                const pinBtnHtml = isPresident ? `
-                    <button class="board-action-btn pin-toggle-btn ${currentPost.pinned ? 'active' : ''}" onclick="togglePin('${id}', ${currentPost.pinned || false})" title="${currentPost.pinned ? '고정 해제' : '상단 고정'}">
-                        <i class="fa-solid fa-thumbtack"></i>
-                    </button>
-                ` : '';
+                const existingBtn = document.getElementById('detailLikeBtn');
+                const existingHeart = existingBtn ? existingBtn.querySelector('i') : null;
+                const isAnimating = existingHeart && (existingHeart.classList.contains('animate-heart') || existingHeart.classList.contains('animate-heart-cancel'));
 
-                const isLiked = currentUser && currentPost.likedUsers && currentPost.likedUsers.includes(currentUser.uid);
-                const heartClass = isLiked ? 'fa-solid fa-heart fa-fw' : 'fa-regular fa-heart fa-fw';
-                const heartColor = isLiked ? 'color: #ff6b6b;' : 'color: var(--text-primary);';
+                const updateUI = () => {
+                    const isPresident = currentUser && currentUser.email === 'gimdong2804@gmail.com';
+                    const isAuthor = currentUser && (currentPost.uid === currentUser.uid || isPresident);
+                    
+                    // 삭제 버튼 (작성자 또는 회장)
+                    const deleteBtnHtml = isAuthor ? `
+                        <button class="board-action-btn delete-btn" onclick="deletePost('${id}')" title="삭제하기">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    ` : '';
+                    
+                    // 고정 버튼 (회장 전용)
+                    const pinBtnHtml = isPresident ? `
+                        <button class="board-action-btn pin-toggle-btn ${currentPost.pinned ? 'active' : ''}" onclick="togglePin('${id}', ${currentPost.pinned || false})" title="${currentPost.pinned ? '고정 해제' : '상단 고정'}">
+                            <i class="fa-solid fa-thumbtack"></i>
+                        </button>
+                    ` : '';
 
-                area.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <div style="color: var(--accent-color); font-size: 0.85rem; font-weight: 600;">커뮤니티 · 게시글</div>
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            ${pinBtnHtml}
-                            ${deleteBtnHtml}
+                    const isLiked = currentUser && currentPost.likedUsers && currentPost.likedUsers.includes(currentUser.uid);
+                    const heartClass = isLiked ? 'fa-solid fa-heart fa-fw' : 'fa-regular fa-heart fa-fw';
+                    const heartColor = isLiked ? 'color: #ff6b6b;' : 'color: var(--text-primary);';
+
+                    area.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <div style="color: var(--accent-color); font-size: 0.85rem; font-weight: 600;">커뮤니티 · 게시글</div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                ${pinBtnHtml}
+                                ${deleteBtnHtml}
+                            </div>
                         </div>
-                    </div>
-                    <h2 class="post-body-title" style="margin-bottom: 0.5rem; font-size: 1.6rem; color: var(--text-primary);">${currentPost.title}</h2>
-                    <div style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
-                        ${timeStr} &nbsp;|&nbsp; 조회 ${currentPost.views || 0}회
-                    </div>
-                    
-                    <div class="board-card-header" style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
-                        <div class="board-author" style="flex: 1;">
-                            ${avatar}
-                            <span class="board-author-name" style="font-weight: 600; font-size: 1rem;">${currentPost.author}</span>
+                        <h2 class="post-body-title" style="margin-bottom: 0.5rem; font-size: 1.6rem; color: var(--text-primary);">${currentPost.title}</h2>
+                        <div style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
+                            ${timeStr} &nbsp;|&nbsp; 조회 ${currentPost.views || 0}회
                         </div>
-                        <div class="board-stats" style="font-size: 0.95rem;">
-                            <span><i class="fa-regular fa-comment"></i> <span id="detailTopCommentCount">0</span></span>
-                            <span style="cursor: pointer; transition: color 0.3s; font-variant-numeric: tabular-nums; ${heartColor}" onclick="likePost('${id}', this)" id="detailLikeBtn"><i class="${heartClass}"></i> <span id="detailLikeCnt">${currentPost.likes || 0}</span></span>
+                        
+                        <div class="board-card-header" style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+                            <div class="board-author" style="flex: 1;">
+                                ${avatar}
+                                <span class="board-author-name" style="font-weight: 600; font-size: 1rem;">${currentPost.author}</span>
+                            </div>
+                            <div class="board-stats" style="font-size: 0.95rem;">
+                                <span><i class="fa-regular fa-comment"></i> <span id="detailTopCommentCount">0</span></span>
+                                <span style="cursor: pointer; transition: color 0.3s; font-variant-numeric: tabular-nums; ${heartColor}" onclick="likePost('${id}', this)" id="detailLikeBtn"><i class="${heartClass}"></i> <span id="detailLikeCnt">${currentPost.likes || 0}</span></span>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="post-body" style="font-size: 1.05rem; line-height: 1.7; color: var(--text-primary); padding-bottom: 1rem;">
-                        ${currentPost.body.replace(/\n/g, '<br>')}
-                    </div>
-                    ${currentPost.images && currentPost.images.length > 0 ? `
-                        <div class="post-image-gallery">
-                            ${currentPost.images.map(url => `<img src="${url}" alt="게시글 첨부 사진" style="cursor: pointer;" onclick="openLightbox('${url}')">`).join('')}
+                        
+                        <div class="post-body" style="font-size: 1.05rem; line-height: 1.7; color: var(--text-primary); padding-bottom: 1rem;">
+                            ${currentPost.body.replace(/\n/g, '<br>')}
                         </div>
-                    ` : ''}
-                `;
+                        ${currentPost.images && currentPost.images.length > 0 ? `
+                            <div class="post-image-gallery">
+                                ${currentPost.images.map(url => `<img src="${url}" alt="게시글 첨부 사진" style="cursor: pointer;" onclick="openLightbox('${url}')">`).join('')}
+                            </div>
+                        ` : ''}
+                    `;
+                };
+
+                if (isAnimating) {
+                    setTimeout(updateUI, 300);
+                } else {
+                    updateUI();
+                }
             });
 
             // 댓글 실시간 렌더링
