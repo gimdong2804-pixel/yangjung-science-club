@@ -3284,7 +3284,7 @@
                             pinToggleBtn.setAttribute('title', post.pinned ? '고정 해제' : '상단 고정');
                         }
 
-                        card.classList.toggle('pinned-state', post.pinned);
+                        card.classList.toggle('pinned-state', !!post.pinned);
                         card.style.order = index;
                     }
 
@@ -3744,7 +3744,7 @@
                         
                         const pinBtnEl = item.querySelector('.pin-toggle-btn');
                         if (pinBtnEl) {
-                            pinBtnEl.classList.toggle('active', c.pinned);
+                            pinBtnEl.classList.toggle('active', !!c.pinned);
                             pinBtnEl.title = c.pinned ? '댓글 고정 해제' : '댓글 고정';
                             pinBtnEl.setAttribute('onclick', `togglePinComment('${id}', '${cid}', ${c.pinned || false})`);
                         }
