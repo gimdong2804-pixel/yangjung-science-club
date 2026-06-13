@@ -2747,7 +2747,7 @@
 
         greetingLink.addEventListener('click', (e) => {
             e.preventDefault();
-            closeDrawer();
+            closeDrawer(true);
             switchPage(currentPage, greetingPage);
         });
 
@@ -2769,7 +2769,7 @@
 
         goalLink.addEventListener('click', (e) => {
             e.preventDefault();
-            closeDrawer();
+            closeDrawer(true);
             switchPage(currentPage, goalPage);
         });
 
@@ -2783,7 +2783,7 @@
         const suggestionBackBtn = document.getElementById('suggestionBackBtn');
         suggestionLink.addEventListener('click', (e) => {
             e.preventDefault();
-            closeDrawer();
+            closeDrawer(true);
             switchPage(currentPage, suggestionPage);
         });
 
