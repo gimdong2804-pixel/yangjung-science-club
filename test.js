@@ -782,7 +782,7 @@
                                     <i class="fa-regular fa-comment"></i> <span id="comment-cnt-${id}">0</span>
                                 </button>
                                 <button type="button" class="board-action-btn" onclick="event.stopPropagation(); likePost('${id}')">
-                                    <i class="${isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'} ${wasLiked !== isLiked ? (isLiked ? 'animate-heart' : 'animate-heart-cancel') : (isLiked ? 'animate-heart' : '')}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> ${post.likes || 0}
+                                    <i class="${isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'} fa-fw ${wasLiked !== isLiked ? (isLiked ? 'animate-heart' : 'animate-heart-cancel') : ''}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> ${post.likes || 0}
                                 </button>
                             </div>
                         </div>
@@ -798,7 +798,7 @@
                         card = cardElement;
 
                         // ?´ë²¤??ë°”ì¸??
-                        card.addEventListener('click', () => openPostDetail(id, post, avatarHtml, timeStr, 'fullscreen'));
+                        card.addEventListener('click', () => openPostDetail(id, card._latestPost || post, avatarHtml, timeStr, 'fullscreen'));
                         
                         if (post.pinned) {
                             card.offsetHeight; // ê°•ì œ ë¦¬í”Œë¡œìš°ë¡??Œë”ë§??€?´ë° ë³´ìž¥
@@ -807,40 +807,56 @@
                             if (badge) badge.classList.add('active');
                             if (btn) btn.classList.add('active');
                         }
-                    } else {
-                        // ?´ìš© ?…ë°?´íŠ¸ ë°??´ëž˜??ê°±ì‹ 
-                        card.innerHTML = innerHtml;
-                        card.classList.toggle('pinned-state', post.pinned);
-                        card.style.order = index; // appendChild ?€??order ?…ë°?´íŠ¸ (DOM ë¶„ë¦¬ ë°©ì?)
-                        
-                        if (wasPinned !== post.pinned) {
-                            card.offsetHeight; // ê°•ì œ ë¦¬í”Œë¡œìš° ë°œìƒ?œì¼œ ? ë‹ˆë©”ì´???œìž‘??ë³€ê²????íƒœ) ?¸ì??œí‚´
-                            
-                            const badge = card.querySelector('.pin-badge-wrapper');
-                            const btn = card.querySelector('.pin-toggle-btn');
-                            if (post.pinned) {
-                                if (badge) badge.classList.add('active');
-                                if (btn) btn.classList.add('active');
-                            } else {
-                                if (badge) badge.classList.remove('active');
-                                if (btn) btn.classList.remove('active');
-                            }
+                        // We insert listeners into the isNew block right above the else!
+                        const commentBtn = card.querySelector('.board-comment-btn');
+                        if (commentBtn) {
+                            commentBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                openPostDetail(id, card._latestPost || post, avatarHtml, timeStr, 'side');
+                            });
                         }
-                    }
 
-                    const commentBtn = card.querySelector('.board-comment-btn');
-                    if (commentBtn) {
-                        commentBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            openPostDetail(id, post, avatarHtml, timeStr, 'side');
+                        db.collection('posts').doc(id).collection('comments').onSnapshot(snap => {
+                            const el = card.querySelector(`#comment-cnt-${id}`);
+                            if(el) el.innerText = snap.size;
                         });
-                    }
+                    } else {
+                        // Update latest post for the click listener
+                        card._latestPost = post;
+                        
+                        const titleEl = card.querySelector('.board-title');
+                        if (titleEl && titleEl.textContent !== post.title) titleEl.textContent = post.title;
+                        
+                        const previewEl = card.querySelector('.board-preview');
+                        if (previewEl && previewEl.textContent !== post.body) previewEl.textContent = post.body;
+                        
+                        const viewsEl = card.querySelector('.board-footer > span');
+                        if (viewsEl && !viewsEl.textContent.includes(post.views + 'íšŒ')) viewsEl.textContent = 'ì¡°íšŒ ' + post.views + 'íšŒ';
+                        
+                        const likeBtn = card.querySelector('.board-action-btn[onclick*="likePost"]');
+                        if (likeBtn) {
+                            const heartIcon = likeBtn.querySelector('i');
+                            if (heartIcon) {
+                                const heartAnimClass = (wasLiked !== isLiked) ? (isLiked ? 'animate-heart' : 'animate-heart-cancel') : '';
+                                heartIcon.className = (isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart') + ' fa-fw ' + heartAnimClass;
+                                heartIcon.style.color = isLiked ? '#ff6b6b' : 'var(--text-primary)';
+                            }
+                            Array.from(likeBtn.childNodes).forEach(node => {
+                                if (node.nodeType === 3 && node.textContent.trim().length > 0) {
+                                    node.textContent = ' ' + (post.likes || 0);
+                                }
+                            });
+                        }
+                        
+                        const pinBadge = card.querySelector('.pin-badge-wrapper');
+                        if (pinBadge) pinBadge.className = 'pin-badge-wrapper ' + (post.pinned ? 'active' : '');
+                        
+                        const pinToggleBtn = card.querySelector('.pin-toggle-btn');
+                        if (pinToggleBtn) pinToggleBtn.className = 'board-action-btn pin-toggle-btn ' + (post.pinned ? 'active' : '');
 
-                    // ?“ê? ???¤ì‹œê°??…ë°?´íŠ¸
-                    db.collection('posts').doc(id).collection('comments').onSnapshot(snap => {
-                        const el = card.querySelector(`#comment-cnt-${id}`);
-                        if(el) el.innerText = snap.size;
-                    });
+                        card.classList.toggle('pinned-state', post.pinned);
+                        card.style.order = index;
+                    }
 
                 });
 
@@ -1048,10 +1064,10 @@
                 const wasLiked = existingHeart ? existingHeart.classList.contains('fa-solid') : false;
                 const isLiked = currentUser && currentPost.likedUsers && currentPost.likedUsers.includes(currentUser.uid);
                 
-                const heartClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+                const heartClass = isLiked ? 'fa-solid fa-heart fa-fw' : 'fa-regular fa-heart fa-fw';
                 const heartAnimClass = (existingHeart && wasLiked !== isLiked) 
                     ? (isLiked ? 'animate-heart' : 'animate-heart-cancel') 
-                    : (isLiked ? 'animate-heart' : '');
+                    : '';
                 
                 const heartIcon = `${heartClass} ${heartAnimClass}`;
                 const heartColor = isLiked ? 'color: #ff6b6b;' : 'color: var(--text-primary);';
