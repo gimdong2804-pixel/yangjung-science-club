@@ -861,6 +861,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
         .board-author {
             display: flex;
@@ -883,10 +885,12 @@
             font-size: 0.9rem;
             color: var(--text-primary);
             font-weight: 500;
+            white-space: nowrap;
         }
         .board-time {
             font-size: 0.8rem;
             color: var(--text-secondary);
+            white-space: nowrap;
         }
         .board-title {
             font-size: 1.1rem;
