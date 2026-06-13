@@ -1199,116 +1199,57 @@
             display: flex;
             gap: 0.8rem;
             align-items: center;
-            /* 리퀴드 글래스: 반투명 배경 + 블러 */
-            background: rgba(30, 41, 59, 0.35);
-            backdrop-filter: blur(18px) saturate(1.5) brightness(1.05);
-            -webkit-backdrop-filter: blur(18px) saturate(1.5) brightness(1.05);
-            border: 1.5px solid rgba(255, 255, 255, 0.22);
-            border-top-color: rgba(255, 255, 255, 0.35);
-            border-left-color: rgba(255, 255, 255, 0.25);
+            /* 리퀴드 글래스 효과: 반투명 배경 + 블러 */
+            background: rgba(30, 41, 59, 0.45);
+            backdrop-filter: blur(20px) saturate(1.4);
+            -webkit-backdrop-filter: blur(20px) saturate(1.4);
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
+            /* 모서리 대각선 렌더링 버그(탁 하고 변하는 현상) 방지를 위해 각 방향의 테두리 색상을 통일 */
             box-sizing: border-box;
             border-radius: 9999px;
             padding: 0.6rem 0.6rem 0.6rem 1.5rem;
-            box-shadow:
-                /* 외부 그림자 - 떠있는 느낌 */
-                0 8px 32px rgba(0, 0, 0, 0.3),
-                0 2px 8px rgba(0, 0, 0, 0.15),
-                /* 내부 상단 반사광 - 유리 윗면 빛 반사 */
-                inset 0 1.5px 1px rgba(255, 255, 255, 0.25),
-                /* 내부 하단 미세 그림자 - 깊이감 */
-                inset 0 -1px 1px rgba(0, 0, 0, 0.1),
-                /* 외곽 미세 링 - 유리 테두리 */
-                0 0 0 0.5px rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.15),
+                        inset 0 -1px 1px rgba(255, 255, 255, 0.05),
+                        0 0 0 1px rgba(255, 255, 255, 0.05);
             transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
                         box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
                         border-color 0.3s linear,
                         background 0.3s ease;
             position: relative;
             overflow: hidden;
+            /* 웹킷(WebKit) 브라우저 모서리 렌더링 버그(border-radius가 풀리는 현상) 방지용 하드웨어 가속 */
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
             transform: translateZ(0);
             will-change: transform, box-shadow;
         }
-        /* 리퀴드 글래스 상단 반사 하이라이트 (유리 윗면 빛 반사 시뮬레이션) */
-        .comment-input-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 10%;
-            right: 10%;
-            height: 50%;
-            background: linear-gradient(
-                180deg,
-                rgba(255, 255, 255, 0.20) 0%,
-                rgba(255, 255, 255, 0.08) 40%,
-                transparent 100%
-            );
-            border-radius: 9999px 9999px 50% 50%;
-            pointer-events: none;
-            z-index: 1;
-        }
-        /* 리퀴드 글래스 하단 굴절 무지개빛 (유리 하단 미세 프리즘 효과) */
-        .comment-input-container::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 15%;
-            right: 15%;
-            height: 30%;
-            background: linear-gradient(
-                0deg,
-                rgba(120, 180, 255, 0.06) 0%,
-                rgba(200, 150, 255, 0.03) 50%,
-                transparent 100%
-            );
-            border-radius: 50% 50% 9999px 9999px;
-            pointer-events: none;
-            z-index: 1;
-        }
         [data-theme="light"] .comment-input-container {
             /* 라이트 모드 리퀴드 글래스 */
-            background: rgba(255, 255, 255, 0.35);
-            border: 1.5px solid rgba(255, 255, 255, 0.65);
-            border-top-color: rgba(255, 255, 255, 0.85);
-            border-left-color: rgba(255, 255, 255, 0.7);
-            box-shadow:
-                0 8px 32px rgba(0, 0, 0, 0.06),
-                0 2px 8px rgba(0, 0, 0, 0.04),
-                inset 0 1.5px 1px rgba(255, 255, 255, 0.7),
-                inset 0 -1px 1px rgba(0, 0, 0, 0.02),
-                0 0 0 0.5px rgba(255, 255, 255, 0.5);
-        }
-        [data-theme="light"] .comment-input-container::before {
-            background: linear-gradient(
-                180deg,
-                rgba(255, 255, 255, 0.55) 0%,
-                rgba(255, 255, 255, 0.15) 40%,
-                transparent 100%
-            );
+            background: rgba(255, 255, 255, 0.5);
+            border: 1.5px solid rgba(255, 255, 255, 0.7);
+            /* 라이트 모드도 마찬가지로 대각선 렌더링 버그 방지를 위해 통일 */
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08),
+                        inset 0 1px 2px rgba(255, 255, 255, 0.9),
+                        inset 0 -1px 1px rgba(0, 0, 0, 0.03),
+                        0 0 0 1px rgba(255, 255, 255, 0.3);
         }
         .comment-input-container:focus-within {
             transform: scale(1.01) translateY(-3px);
-            border-color: rgba(59, 130, 246, 0.35);
-            border-top-color: rgba(130, 180, 255, 0.5);
-            background: rgba(30, 41, 59, 0.4);
-            box-shadow:
-                0 8px 32px rgba(59, 130, 246, 0.2),
-                0 2px 8px rgba(59, 130, 246, 0.1),
-                inset 0 1.5px 1px rgba(255, 255, 255, 0.2),
-                inset 0 -1px 1px rgba(0, 0, 0, 0.05),
-                0 0 0 0.5px rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.45);
+            background: rgba(30, 41, 59, 0.55);
+            /* 애니메이션 버그 수정: 평소 상태와 그림자 갯수를 맞춰야 부드럽게 전환됨 */
+            box-shadow: 0 8px 32px rgba(59, 130, 246, 0.2),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.1),
+                        inset 0 -1px 1px rgba(255, 255, 255, 0),
+                        0 0 0 1px rgba(59, 130, 246, 0.15);
         }
         [data-theme="light"] .comment-input-container:focus-within {
-            background: rgba(255, 255, 255, 0.45);
-            border-color: rgba(59, 130, 246, 0.3);
-            border-top-color: rgba(130, 180, 255, 0.6);
-            box-shadow:
-                0 8px 32px rgba(59, 130, 246, 0.1),
-                0 2px 8px rgba(59, 130, 246, 0.06),
-                inset 0 1.5px 1px rgba(255, 255, 255, 0.6),
-                inset 0 -1px 1px rgba(0, 0, 0, 0.01),
-                0 0 0 0.5px rgba(59, 130, 246, 0.2);
+            background: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px rgba(59, 130, 246, 0.12),
+                        inset 0 1px 2px rgba(255, 255, 255, 0.9),
+                        inset 0 -1px 1px rgba(0, 0, 0, 0),
+                        0 0 0 1px rgba(59, 130, 246, 0.2);
         }
         .comment-input {
             flex: 1;
