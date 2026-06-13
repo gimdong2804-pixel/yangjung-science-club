@@ -1541,6 +1541,14 @@
         }
 
         /* Responsive Adjustments */
+        @media (max-width: 1023px) {
+            .mobile-hide { display: none !important; }
+            .mobile-show { display: flex !important; }
+        }
+        @media (min-width: 1024px) {
+            .mobile-show { display: none !important; }
+        }
+
         @media (max-width: 768px) {
             header {
                 padding: 0 1rem;
@@ -3796,14 +3804,20 @@
                                             ${badge}
                                         </div>
                                         <div class="comment-actions" style="display: flex; align-items: center; gap: 0.5rem;">
-                                            ${cPinBtn}
-                                            ${cDeleteBtn}
+                                            <div class="mobile-hide" style="display: flex; align-items: center; gap: 0.5rem;">
+                                                ${cPinBtn}
+                                                ${cDeleteBtn}
+                                            </div>
                                             <span class="board-time" style="font-weight: 400;">${cTime}</span>
                                         </div>
                                     </div>
                                     <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${c.body}</div>
-                                    <div class="comment-footer" style="display: flex; justify-content: flex-end; align-items: center;">
-                                        <div class="board-stats">
+                                    <div class="comment-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem;">
+                                            ${cPinBtn}
+                                            ${cDeleteBtn}
+                                        </div>
+                                        <div class="board-stats" style="margin-left: auto;">
                                             ${cLikeBtn}
                                         </div>
                                     </div>
