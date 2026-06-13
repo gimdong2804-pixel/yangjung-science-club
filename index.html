@@ -2155,11 +2155,13 @@
     <div id="drawerOverlay" class="drawer-overlay"></div>
     <div id="multiDeleteBar" style="position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--bg-color); border: 1px solid var(--glass-border); padding: 1rem 2rem; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000; display: flex; align-items: center; gap: 1rem; transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
         <span id="multiDeleteCount" style="font-weight: 600; color: var(--text-primary);">0개 선택됨</span>
+        <button id="multiPinBtn" onclick="executeMultiPin()" style="background: var(--accent-color); color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; display: none;">고정</button>
         <button onclick="executeMultiDelete()" style="background: #ff6b6b; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;">삭제</button>
         <button onclick="cancelMultiDelete()" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--glass-border); padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold;">취소</button>
     </div>
     <div id="postMultiDeleteBar" style="position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--bg-color); border: 1px solid var(--glass-border); padding: 1rem 2rem; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000; display: flex; align-items: center; gap: 1rem; transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
         <span id="postMultiDeleteCount" style="font-weight: 600; color: var(--text-primary);">0개 선택됨</span>
+        <button id="postMultiPinBtn" onclick="executePostMultiPin()" style="background: var(--accent-color); color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; display: none;">고정</button>
         <button onclick="executePostMultiDelete()" style="background: #ff6b6b; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;">삭제</button>
         <button onclick="cancelPostMultiDelete()" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--glass-border); padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold;">취소</button>
     </div>
@@ -4102,11 +4104,38 @@
             const checkboxes = document.querySelectorAll('.comment-select-cb:checked');
             const bar = document.getElementById('multiDeleteBar');
             const cntSpan = document.getElementById('multiDeleteCount');
+            const pinBtn = document.getElementById('multiPinBtn');
+            if (pinBtn) pinBtn.style.display = (currentUser && currentUser.email === 'gimdong2804@gmail.com') ? 'block' : 'none';
             if (checkboxes.length > 0) {
                 cntSpan.textContent = `${checkboxes.length}개 선택됨`;
                 bar.style.bottom = '100px';
             } else {
                 bar.style.bottom = '-100px';
+            }
+        };
+
+        window.executeMultiPin = async function() {
+            if(!currentUser || currentUser.email !== 'gimdong2804@gmail.com') return;
+            const checkboxes = document.querySelectorAll('.comment-select-cb:checked');
+            if (checkboxes.length === 0) return;
+            if (!confirm(`선택한 ${checkboxes.length}개의 댓글 고정 상태를 전환하시겠습니까?`)) return;
+
+            try {
+                const batch = db.batch();
+                for (let cb of checkboxes) {
+                    const cid = cb.value;
+                    const ref = db.collection('posts').doc(currentPostId).collection('comments').doc(cid);
+                    const doc = await ref.get();
+                    if(doc.exists) {
+                        const currentPinned = doc.data().pinned || false;
+                        batch.update(ref, { pinned: !currentPinned });
+                    }
+                }
+                await batch.commit();
+                cancelMultiDelete();
+            } catch(e) {
+                console.error("Multi pin comment error", e);
+                alert('댓글 고정 중 오류가 발생했습니다.');
             }
         };
 
@@ -4378,11 +4407,35 @@
             const checkboxes = document.querySelectorAll('.post-select-cb:checked');
             const bar = document.getElementById('postMultiDeleteBar');
             const cntSpan = document.getElementById('postMultiDeleteCount');
+            const pinBtn = document.getElementById('postMultiPinBtn');
+            if (pinBtn) pinBtn.style.display = (currentUser && currentUser.email === 'gimdong2804@gmail.com') ? 'block' : 'none';
             if (checkboxes.length > 0) {
                 cntSpan.textContent = `${checkboxes.length}개 선택됨`;
                 bar.style.bottom = '100px';
             } else {
                 bar.style.bottom = '-100px';
+            }
+        };
+
+        window.executePostMultiPin = async function() {
+            if(!currentUser || currentUser.email !== 'gimdong2804@gmail.com') return;
+            const checkboxes = document.querySelectorAll('.post-select-cb:checked');
+            if (checkboxes.length === 0) return;
+            if (!confirm(`선택한 ${checkboxes.length}개의 게시물 고정 상태를 전환하시겠습니까?`)) return;
+
+            try {
+                for (let cb of checkboxes) {
+                    const pid = cb.value;
+                    const doc = await db.collection('posts').doc(pid).get();
+                    if(doc.exists) {
+                        const currentPinned = doc.data().pinned || false;
+                        await db.collection('posts').doc(pid).update({ pinned: !currentPinned });
+                    }
+                }
+                cancelPostMultiDelete();
+            } catch(e) {
+                console.error("Multi pin post error", e);
+                alert('게시물 고정 중 오류가 발생했습니다.');
             }
         };
 
@@ -4403,7 +4456,6 @@
                     const pid = cb.value;
                     await db.collection('posts').doc(pid).delete();
                 }
-                alert('선택한 게시물이 삭제되었습니다.');
                 cancelPostMultiDelete();
             } catch(e) {
                 console.error("Multi delete post error", e);
