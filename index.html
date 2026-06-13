@@ -2094,7 +2094,7 @@
             gap: 0.8rem !important;
         }
 
-        .comment-checkbox-wrapper {
+        .comment-checkbox-wrapper, .post-checkbox-wrapper {
             width: 0;
             opacity: 0;
             overflow: hidden;
@@ -2103,7 +2103,8 @@
             transition: width 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
         }
 
-        body.multi-select-active .comment-checkbox-wrapper {
+        body.multi-select-active .comment-checkbox-wrapper,
+        body.post-multi-select-active .post-checkbox-wrapper {
             width: 1.5rem;
             opacity: 1;
         }
@@ -2152,6 +2153,11 @@
         <span id="multiDeleteCount" style="font-weight: 600; color: var(--text-primary);">0개 선택됨</span>
         <button onclick="executeMultiDelete()" style="background: #ff6b6b; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;">삭제</button>
         <button onclick="cancelMultiDelete()" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--glass-border); padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold;">취소</button>
+    </div>
+    <div id="postMultiDeleteBar" style="position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--bg-color); border: 1px solid var(--glass-border); padding: 1rem 2rem; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000; display: flex; align-items: center; gap: 1rem; transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <span id="postMultiDeleteCount" style="font-weight: 600; color: var(--text-primary);">0개 선택됨</span>
+        <button onclick="executePostMultiDelete()" style="background: #ff6b6b; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; transition: opacity 0.2s;">삭제</button>
+        <button onclick="cancelPostMultiDelete()" style="background: transparent; color: var(--text-secondary); border: 1px solid var(--glass-border); padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold;">취소</button>
     </div>
     <div id="sideDrawer" class="side-drawer">
         <div class="drawer-header">
@@ -3168,10 +3174,19 @@
                         </div>
                     `;
 
+                    const postCheckbox = (isAuthor || isPresident) ? `
+                        <label class="post-checkbox-wrapper" style="align-items: center; margin-right: 0.5rem;" onclick="event.stopPropagation();">
+                            <input type="checkbox" class="post-select-cb" value="${id}" onchange="updatePostMultiDeleteUI()">
+                            <span class="checkbox-custom"></span>
+                        </label>
+                    ` : '';
+
                     const innerHtml = `
                         ${pinBadgeHtml}
                         <div class="board-card-header">
-                            <div class="board-author" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div style="display: flex; align-items: center;">
+                                ${postCheckbox}
+                                <div class="board-author" style="display: flex; align-items: center; gap: 0.5rem;">
                                 ${avatarHtml}
                                 <span class="board-author-name">${post.author}</span>
                             </div>
@@ -3216,7 +3231,30 @@
                         card = cardElement;
 
                         // 이벤트 바인딩
-                        card.addEventListener('click', () => openPostDetail(id, card._latestPost || post, avatarHtml, timeStr, 'fullscreen'));
+                        if (isAuthor || isPresident) {
+                            card.addEventListener('pointerdown', (e) => window.handlePostPointerDown(e, id));
+                            card.addEventListener('pointerup', () => window.handlePostPointerUp());
+                            card.addEventListener('pointercancel', () => window.handlePostPointerUp());
+                            card.addEventListener('pointermove', () => window.handlePostPointerMove());
+                            card.addEventListener('contextmenu', (e) => {
+                                if (window.isPostMultiSelectMode) { e.preventDefault(); }
+                            });
+                            card.addEventListener('click', (e) => {
+                                if (window.isPostMultiSelectMode) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    const cb = card.querySelector('.post-select-cb');
+                                    if (cb && e.target !== cb && !e.target.closest('label')) {
+                                        cb.checked = !cb.checked;
+                                        updatePostMultiDeleteUI();
+                                    }
+                                    return;
+                                }
+                                openPostDetail(id, card._latestPost || post, avatarHtml, timeStr, 'fullscreen');
+                            });
+                        } else {
+                            card.addEventListener('click', () => openPostDetail(id, card._latestPost || post, avatarHtml, timeStr, 'fullscreen'));
+                        }
                         
                         if (post.pinned) {
                             card.offsetHeight; // 강제 리플로우로 렌더링 타이밍 보장
@@ -3684,25 +3722,27 @@
 
                     if (isNew) {
                         const innerHtml = `
-                            ${cCheckbox}
-                            ${cAvatarHtml}
-                            <div class="comment-content" style="flex: 1; min-width: 0; padding-top: 0.2rem;">
-                                ${cPinBadge}
-                                <div class="comment-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 0.4rem;">
-                                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                                        <span class="board-author-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">${c.author}</span>
-                                        ${badge}
+                            ${cPinBadge}
+                            <div style="display: flex; align-items: flex-start; gap: 0.75rem; width: 100%;">
+                                ${cCheckbox}
+                                ${cAvatarHtml}
+                                <div class="comment-content" style="flex: 1; min-width: 0; padding-top: 0.2rem;">
+                                    <div class="comment-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 0.4rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                            <span class="board-author-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">${c.author}</span>
+                                            ${badge}
+                                        </div>
+                                        <div class="comment-actions" style="display: flex; align-items: center; gap: 0.5rem;">
+                                            ${cPinBtn}
+                                            ${cDeleteBtn}
+                                            <span class="board-time" style="font-weight: 400;">${cTime}</span>
+                                        </div>
                                     </div>
-                                    <div class="comment-actions" style="display: flex; align-items: center; gap: 0.5rem;">
-                                        ${cPinBtn}
-                                        ${cDeleteBtn}
-                                        <span class="board-time" style="font-weight: 400;">${cTime}</span>
-                                    </div>
-                                </div>
-                                <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${c.body}</div>
-                                <div class="comment-footer" style="display: flex; justify-content: flex-end; align-items: center;">
-                                    <div class="board-stats">
-                                        ${cLikeBtn}
+                                    <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${c.body}</div>
+                                    <div class="comment-footer" style="display: flex; justify-content: flex-end; align-items: center;">
+                                        <div class="board-stats">
+                                            ${cLikeBtn}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -3711,7 +3751,7 @@
                         item.className = 'comment-item new-comment-flip';
                         item.setAttribute('data-id', cid);
                         item.setAttribute('data-pinned', c.pinned ? 'true' : 'false');
-                        item.style.cssText = `display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.25rem; ${cItemStyle}`;
+                        item.style.cssText = `display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 1.25rem; ${cItemStyle}`;
                         item.innerHTML = innerHtml;
                         item.style.order = index;
                         
@@ -4248,6 +4288,92 @@
             }
         });
 
+
+        // Post Multi Select Variables
+        window.isPostMultiSelectMode = false;
+        let postPressTimer = null;
+        let isPostPressing = false;
+        let postStartY = 0;
+        let postStartX = 0;
+
+        window.handlePostPointerDown = function(e, postId) {
+            if (e.button === 2) return;
+            if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input') || e.target.closest('.board-author')) return;
+            
+            isPostPressing = true;
+            postStartY = e.clientY || (e.touches && e.touches[0].clientY);
+            postStartX = e.clientX || (e.touches && e.touches[0].clientX);
+            
+            postPressTimer = setTimeout(() => {
+                if (isPostPressing && !window.isPostMultiSelectMode) {
+                    if (navigator.vibrate) navigator.vibrate(50);
+                    enterPostMultiSelectMode(postId);
+                }
+            }, 600);
+        };
+
+        window.handlePostPointerMove = function(e) {
+            if (!isPostPressing) return;
+            const currentY = e.clientY || (e.touches && e.touches[0].clientY);
+            const currentX = e.clientX || (e.touches && e.touches[0].clientX);
+            if (Math.abs(currentY - postStartY) > 10 || Math.abs(currentX - postStartX) > 10) {
+                clearTimeout(postPressTimer);
+                isPostPressing = false;
+            }
+        };
+
+        window.handlePostPointerUp = function() {
+            clearTimeout(postPressTimer);
+            isPostPressing = false;
+        };
+
+        window.enterPostMultiSelectMode = function(targetId) {
+            window.isPostMultiSelectMode = true;
+            document.body.classList.add('post-multi-select-active');
+            const cb = document.querySelector(`.post-select-cb[value="${targetId}"]`);
+            if (cb) {
+                cb.checked = true;
+            }
+            updatePostMultiDeleteUI();
+        };
+
+        window.updatePostMultiDeleteUI = function() {
+            const checkboxes = document.querySelectorAll('.post-select-cb:checked');
+            const bar = document.getElementById('postMultiDeleteBar');
+            const cntSpan = document.getElementById('postMultiDeleteCount');
+            if (checkboxes.length > 0) {
+                cntSpan.textContent = `${checkboxes.length}개 선택됨`;
+                bar.style.bottom = '100px';
+            } else {
+                bar.style.bottom = '-100px';
+            }
+        };
+
+        window.cancelPostMultiDelete = function() {
+            window.isPostMultiSelectMode = false;
+            document.body.classList.remove('post-multi-select-active');
+            document.querySelectorAll('.post-select-cb').forEach(cb => cb.checked = false);
+            updatePostMultiDeleteUI();
+        };
+
+        window.executePostMultiDelete = async function() {
+            const checkboxes = document.querySelectorAll('.post-select-cb:checked');
+            if (checkboxes.length === 0) return;
+            if (!confirm(`선택한 ${checkboxes.length}개의 게시물을 삭제하시겠습니까?`)) return;
+
+            try {
+                for (let cb of checkboxes) {
+                    const pid = cb.value;
+                    await db.collection('posts').doc(pid).delete();
+                }
+                alert('선택한 게시물이 삭제되었습니다.');
+                cancelPostMultiDelete();
+            } catch(e) {
+                console.error("Multi delete post error", e);
+                alert('게시물 삭제 중 오류가 발생했습니다.');
+            }
+        };
     </script>
 </body>
+
 </html>
