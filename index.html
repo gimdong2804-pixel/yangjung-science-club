@@ -134,17 +134,14 @@
         /* Glassmorphic Header */
         header {
             position: sticky;
-            top: 0;
+            top: 1rem;
             z-index: 100;
-            background: var(--glass-bg);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--glass-border);
-            padding: 1rem 2rem;
+            padding: 0 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: background 0.5s ease, border-color 0.5s ease;
+            pointer-events: none; /* 빈 공간 클릭 통과 */
+            transition: top 0.3s ease;
         }
 
         .logo {
@@ -153,9 +150,18 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            pointer-events: auto; /* 자체 클릭 허용 */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: background 0.5s ease, border-color 0.5s ease;
+            cursor: pointer;
             letter-spacing: -0.5px;
             transition: color 0.5s ease, transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-            cursor: pointer;
         }
 
         .logo.clicked {
@@ -333,7 +339,16 @@
         .header-actions {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.25rem;
+            padding: 0.4rem 0.6rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50px;
+            pointer-events: auto; /* 자체 클릭 허용 */
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: background 0.5s ease, border-color 0.5s ease;
         }
 
         .theme-toggle-btn {
@@ -1531,7 +1546,7 @@
         /* Responsive Adjustments */
         @media (max-width: 768px) {
             header {
-                padding: 1rem;
+                padding: 0 1rem;
             }
             main {
                 padding: 3rem 1rem;
