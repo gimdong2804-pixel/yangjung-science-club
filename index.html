@@ -2107,6 +2107,7 @@
         body.post-multi-select-active .post-checkbox-wrapper {
             width: 1.5rem;
             opacity: 1;
+            margin-right: 0.5rem;
         }
     </style>
 </head>
@@ -3175,9 +3176,8 @@
                     `;
 
                     const postCheckbox = (isAuthor || isPresident) ? `
-                        <label class="post-checkbox-wrapper" style="align-items: center; margin-right: 0.5rem;" onclick="event.stopPropagation();">
-                            <input type="checkbox" class="post-select-cb" value="${id}" onchange="updatePostMultiDeleteUI()">
-                            <span class="checkbox-custom"></span>
+                        <label class="post-checkbox-wrapper" style="align-items: center; margin-right: 0;" onclick="event.stopPropagation();">
+                            <input type="checkbox" class="post-select-cb" value="${id}" onchange="updatePostMultiDeleteUI()" style="width: 1.1rem; height: 1.1rem; accent-color: var(--accent-color); cursor: pointer;">
                         </label>
                     ` : '';
 
@@ -3773,7 +3773,7 @@
                     } else {
                         const wasPinned = item.getAttribute('data-pinned') === 'true';
                         if (wasPinned !== !!c.pinned) {
-                            item.style.cssText = `display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.25rem; ${cItemStyle}`;
+                            item.style.cssText = `display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 1.25rem; ${cItemStyle}`;
                             item.setAttribute('data-pinned', c.pinned ? 'true' : 'false');
                         }
                         
