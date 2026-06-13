@@ -3674,7 +3674,7 @@
                                     <div class="comment-actions" style="display: flex; align-items: center; gap: 0.5rem;">
                                         ${cPinBtn}
                                         ${cDeleteBtn}
-                                        <span class="board-time" style="font-size: 0.85rem; color: var(--text-secondary);">${cTime}</span>
+                                        <span class="board-time" style="font-weight: 400;">${cTime}</span>
                                     </div>
                                 </div>
                                 <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${c.body}</div>
@@ -3909,9 +3909,38 @@
                 return;
             }
             try {
-                // 하트 팝 애니메이션
-                btn.style.transform = 'scale(1.3)';
-                setTimeout(() => { btn.style.transform = 'scale(1)'; }, 150);
+                const heartIcon = btn.querySelector('i');
+                const likeCountEl = btn.querySelector('.like-count');
+                if (heartIcon) {
+                    const currentlyLiked = heartIcon.classList.contains('fa-solid');
+                    
+                    heartIcon.classList.remove('animate-heart', 'animate-heart-cancel');
+                    void heartIcon.offsetWidth; 
+                    
+                    if (currentlyLiked) {
+                        heartIcon.classList.remove('fa-solid');
+                        heartIcon.classList.add('fa-regular', 'animate-heart-cancel');
+                        heartIcon.style.color = 'var(--text-primary)';
+                        if (likeCountEl) {
+                            const cur = parseInt(likeCountEl.textContent) || 0;
+                            likeCountEl.textContent = Math.max(0, cur - 1);
+                        }
+                    } else {
+                        heartIcon.classList.remove('fa-regular');
+                        heartIcon.classList.add('fa-solid', 'animate-heart');
+                        heartIcon.style.color = '#ff6b6b';
+                        if (likeCountEl) {
+                            const cur = parseInt(likeCountEl.textContent) || 0;
+                            likeCountEl.textContent = cur + 1;
+                        }
+                    }
+                    
+                    const onAnimEnd = () => {
+                        heartIcon.classList.remove('animate-heart', 'animate-heart-cancel');
+                        heartIcon.removeEventListener('animationend', onAnimEnd);
+                    };
+                    heartIcon.addEventListener('animationend', onAnimEnd);
+                }
 
                 const commentRef = db.collection('posts').doc(postId).collection('comments').doc(commentId);
                 if (isLiked) {
