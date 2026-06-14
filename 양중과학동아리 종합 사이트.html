@@ -1191,24 +1191,6 @@
         }
         .comment-node {
             position: relative;
-            margin-left: min(calc(var(--reply-depth, 0) * 1.15rem), 1.15rem);
-        }
-        .comment-node.comment-node-reply::before {
-            content: "";
-            position: absolute;
-            left: -0.65rem;
-            top: 0.3rem;
-            bottom: 0.8rem;
-            width: 2px;
-            border-radius: 999px;
-            background: rgba(148, 163, 184, 0.22);
-        }
-        .comment-item.comment-reply {
-            padding: 0.9rem;
-            background: rgba(30, 41, 59, 0.34);
-        }
-        [data-theme="light"] .comment-item.comment-reply {
-            background: rgba(255, 255, 255, 0.58);
         }
         .comment-item.comment-deleted {
             opacity: 0.72;
@@ -1218,11 +1200,53 @@
             color: var(--text-secondary) !important;
             font-style: italic;
         }
-        .comment-replies {
+        .comment-replies-flat {
             display: flex;
             flex-direction: column;
+            margin-left: 1.5rem;
+            padding-left: 1rem;
+            border-left: 2.5px solid rgba(148, 163, 184, 0.25);
             animation: replyExpand 0.28s cubic-bezier(0.16, 1, 0.3, 1);
             transform-origin: top;
+        }
+        .comment-flat-reply {
+            padding: 0.7rem 0;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+        }
+        .comment-flat-reply:last-child {
+            border-bottom: none;
+        }
+        .comment-flat-reply .flat-reply-content {
+            flex: 1;
+            min-width: 0;
+        }
+        .comment-flat-reply .flat-reply-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 0.25rem;
+        }
+        .comment-flat-reply .flat-reply-body {
+            font-size: 0.9rem;
+            line-height: 1.45;
+            color: var(--text-primary);
+            word-break: break-all;
+            margin-bottom: 0.4rem;
+        }
+        .comment-flat-reply .flat-reply-footer {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+        }
+        .comment-flat-reply .flat-reply-mention {
+            color: var(--accent-color);
+            font-weight: 600;
+            font-size: 0.9rem;
         }
         .reply-toggle-btn,
         .reply-action-btn {
@@ -3720,7 +3744,21 @@
                 return count;
             };
 
-            return { byId, childrenMap, countDescendants };
+            const flatDescendants = (commentId) => {
+                const result = [];
+                const collect = (id) => {
+                    const kids = childrenMap.get(id) || [];
+                    kids.forEach(child => {
+                        result.push(child);
+                        collect(child.id);
+                    });
+                };
+                collect(commentId);
+                result.sort((a, b) => commentTimeValue(a) - commentTimeValue(b));
+                return result;
+            };
+
+            return { byId, childrenMap, countDescendants, flatDescendants };
         }
 
         function getCommentAvatar(comment, isPresidentComment, isDeleted) {
@@ -3734,6 +3772,53 @@
             return `<div class="board-author-avatar" style="background: ${isPresidentComment ? 'var(--accent-color)' : '#9ca3af'}; width: 32px; height: 32px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;">${isPresidentComment ? '<i class="fa-solid fa-crown" style="font-size: 0.6rem;"></i>' : escapeHtml(initial)}</div>`;
         }
 
+        function renderFlatReply(comment, tree, postId) {
+            const isDeleted = !!comment.deleted;
+            const isPresidentComment = !isDeleted && ((comment.author || '').includes('회장') || comment.email === PRESIDENT_EMAIL);
+            const isPresident = isPresidentUser();
+            const canDelete = !!(currentUser && !isDeleted && (isPresident || comment.uid === currentUser.uid));
+            const canPin = !!(isPresident && !isDeleted);
+            const isLiked = !!(comment.likedUsers && currentUser && comment.likedUsers.includes(currentUser.uid));
+            const safePostId = toJsString(postId);
+            const safeCommentId = toJsString(comment.id);
+            const pinned = !!(comment.pinned && !isDeleted);
+            const authorName = isDeleted ? '삭제된 댓글' : (comment.author || '사용자');
+            const cTime = formatDate(comment.createdAt);
+            const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.08rem 0.35rem; border-radius: 4px; font-weight: bold; margin-left: 0.4rem;">공식 답변</span>' : '';
+            const parentComment = comment.parentId ? tree.byId.get(comment.parentId) : null;
+            const mentionHtml = (parentComment && !isDeleted) ? `<span class="flat-reply-mention">@${escapeHtml(parentComment.author || '사용자')}</span> ` : '';
+            const bodyHtml = isDeleted
+                ? '<span class="comment-deleted-text">삭제된 댓글입니다.</span>'
+                : mentionHtml + escapeHtml(comment.body || '').replace(/\n/g, '<br>');
+            const deleteBtn = canDelete ? `<button type="button" class="board-action-btn delete-btn" onclick="deleteComment('${safePostId}', '${safeCommentId}')" title="댓글 삭제"><i class="fa-solid fa-trash-can"></i></button>` : '';
+            const pinBtn = canPin ? `<button type="button" class="board-action-btn pin-toggle-btn ${pinned ? 'active' : ''}" onclick="togglePinComment('${safePostId}', '${safeCommentId}', ${pinned})" title="${pinned ? '댓글 고정 해제' : '댓글 고정'}"><i class="fa-solid fa-thumbtack"></i></button>` : '';
+            const replyBtn = !isDeleted ? `<button type="button" class="reply-action-btn" onclick="startReplyTarget('${safePostId}', '${safeCommentId}')" title="답글"><i class="fa-regular fa-comment-dots"></i> 답글</button>` : '';
+            const heartClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+            const likeBtn = !isDeleted ? `<button type="button" class="board-action-btn c-like-btn" onclick="toggleLikeComment('${safePostId}', '${safeCommentId}', this, ${isLiked})" title="좋아요"><i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="c-like-cnt like-count" style="margin-left: 0.1rem;">${comment.likes || 0}</span></button>` : '';
+
+            return `
+                <div class="comment-flat-reply" id="comment-${escapeHtml(comment.id)}" data-id="${escapeHtml(comment.id)}" data-can-delete="${canDelete ? 'true' : 'false'}" data-reply-count="0" data-pinned="${pinned ? 'true' : 'false'}">
+                    ${getCommentAvatar(comment, isPresidentComment, isDeleted)}
+                    <div class="flat-reply-content">
+                        <div class="flat-reply-header">
+                            <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                                <span class="board-author-name" style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">${escapeHtml(authorName)}</span>
+                                ${badge}
+                            </div>
+                            <span class="board-time" style="font-weight: 400; font-size: 0.78rem;">${cTime}</span>
+                        </div>
+                        <div class="flat-reply-body">${bodyHtml}</div>
+                        <div class="flat-reply-footer">
+                            ${replyBtn}
+                            ${pinBtn}
+                            ${deleteBtn}
+                            <div style="margin-left: auto;">${likeBtn}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         function renderCommentBranch(comment, depth, tree, postId) {
             const isDeleted = !!comment.deleted;
             const isPresidentComment = !isDeleted && ((comment.author || '').includes('회장') || comment.email === PRESIDENT_EMAIL);
@@ -3743,7 +3828,6 @@
             const isLiked = !!(comment.likedUsers && currentUser && comment.likedUsers.includes(currentUser.uid));
             const replyCount = tree.countDescendants(comment.id);
             const isExpanded = window.expandedCommentIds.has(comment.id);
-            const children = tree.childrenMap.get(comment.id) || [];
             const safePostId = toJsString(postId);
             const safeCommentId = toJsString(comment.id);
             const pinned = !!(comment.pinned && !isDeleted);
@@ -3789,18 +3873,21 @@
             const itemStyle = pinned
                 ? 'border-color: var(--accent-color); background: rgba(59, 130, 246, 0.08);'
                 : '';
-            const parentComment = (depth >= 2 && comment.parentId) ? tree.byId.get(comment.parentId) : null;
-            const mentionHtml = (parentComment && !isDeleted) ? `<span style="color: var(--accent-color); font-weight: 600;">@${escapeHtml(parentComment.author || '사용자')}</span> ` : '';
             const bodyHtml = isDeleted
                 ? '<span class="comment-deleted-text">삭제된 댓글입니다.</span>'
-                : mentionHtml + escapeHtml(comment.body || '').replace(/\n/g, '<br>');
-            const repliesHtml = (children.length > 0 && isExpanded)
-                ? `<div class="comment-replies">${children.map(child => renderCommentBranch(child, depth + 1, tree, postId)).join('')}</div>`
-                : '';
+                : escapeHtml(comment.body || '').replace(/\n/g, '<br>');
+
+            let repliesHtml = '';
+            if (isExpanded) {
+                const allReplies = tree.flatDescendants(comment.id);
+                if (allReplies.length > 0) {
+                    repliesHtml = `<div class="comment-replies-flat">${allReplies.map(r => renderFlatReply(r, tree, postId)).join('')}</div>`;
+                }
+            }
 
             return `
-                <div class="comment-node ${depth > 0 ? 'comment-node-reply' : ''}" style="--reply-depth: ${(depth >= 1 && depth <= 2) ? 1 : 0};">
-                    <div id="comment-${escapeHtml(comment.id)}" class="comment-item ${depth > 0 ? 'comment-reply' : ''} ${isDeleted ? 'comment-deleted' : ''} ${isPresidentComment ? 'official' : ''}" data-id="${escapeHtml(comment.id)}" data-can-delete="${canDelete ? 'true' : 'false'}" data-reply-count="${replyCount}" data-pinned="${pinned ? 'true' : 'false'}" style="display: flex; flex-direction: column; align-items: flex-start; ${itemStyle}">
+                <div class="comment-node">
+                    <div id="comment-${escapeHtml(comment.id)}" class="comment-item ${isDeleted ? 'comment-deleted' : ''} ${isPresidentComment ? 'official' : ''}" data-id="${escapeHtml(comment.id)}" data-can-delete="${canDelete ? 'true' : 'false'}" data-reply-count="${replyCount}" data-pinned="${pinned ? 'true' : 'false'}" style="display: flex; flex-direction: column; align-items: flex-start; ${itemStyle}">
                         ${pinBadge}
                         <div style="display: flex; align-items: flex-start; width: 100%;">
                             ${checkbox}
@@ -3842,7 +3929,7 @@
         }
 
         function attachCommentItemEvents() {
-            document.querySelectorAll('#detailCommentList .comment-item').forEach(item => {
+            document.querySelectorAll('#detailCommentList .comment-item, #detailCommentList .comment-flat-reply').forEach(item => {
                 const cid = item.getAttribute('data-id');
                 const canDelete = item.getAttribute('data-can-delete') === 'true';
 
@@ -3857,7 +3944,7 @@
                 }
 
                 item.addEventListener('click', (e) => {
-                    if (e.target.closest('.comment-item') !== item) return;
+                    if (e.target.closest('.comment-item') !== item && e.target.closest('.comment-flat-reply') !== item) return;
                     if (window.ignoreNextCommentClick) {
                         window.ignoreNextCommentClick = false;
                         e.preventDefault();
@@ -3891,7 +3978,7 @@
             if (!commentList) return;
 
             const oldPositions = new Map();
-            commentList.querySelectorAll('.comment-item').forEach(item => {
+            commentList.querySelectorAll('.comment-item, .comment-flat-reply').forEach(item => {
                 oldPositions.set(item.getAttribute('data-id'), item.getBoundingClientRect());
             });
 
@@ -3919,7 +4006,7 @@
 
             if (window.skipCommentFlip) return;
             requestAnimationFrame(() => {
-                commentList.querySelectorAll('.comment-item').forEach(item => {
+                commentList.querySelectorAll('.comment-item, .comment-flat-reply').forEach(item => {
                     const cid = item.getAttribute('data-id');
                     const oldRect = oldPositions.get(cid);
                     if (oldRect) {
