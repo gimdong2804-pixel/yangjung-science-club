@@ -3721,11 +3721,10 @@
             const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.08rem 0.35rem; border-radius: 4px; font-weight: bold; margin-left: 0.4rem;">공식 답변</span>' : '';
             let depthIcon = '';
             if (depth >= 4) {
-                const arrowCount = Math.min(depth - 3, 5);
-                const colors = ['#9ca3af', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444'];
-                const color = colors[Math.min(depth - 4, 4)];
-                const arrows = '&#x21B3;'.repeat(arrowCount);
-                depthIcon = `<span style="color: ${color}; font-size: 1.1rem; margin-right: 0.3rem; font-weight: bold; line-height: 1; letter-spacing: -2px;">${arrows}</span>`;
+                const arrowCount = depth - 3;
+                const arrowText = '&#x21B3; X' + arrowCount;
+                depthIcon = `<span style="color: #9ca3af; font-size: 0.9rem; margin-right: 0.4rem; font-weight: bold; line-height: 1;">${arrowText}</span>`;
+            }; font-size: 1.1rem; margin-right: 0.3rem; font-weight: bold; line-height: 1; letter-spacing: -2px;">${arrows}</span>`;
             }
             const parentComment = comment.parentId ? tree.byId.get(comment.parentId) : null;
             const mentionHtml = (parentComment && !isDeleted) ? `<span class="flat-reply-mention">@${escapeHtml(parentComment.author || '사용자')}</span> ` : '';
