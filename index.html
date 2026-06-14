@@ -2161,12 +2161,13 @@
             margin-right: 0.5rem;
         }
 
-        /* 댓글 선택 모드에서 시간 텍스트가 아래로 내려가지 않도록 고정 */
-        body.multi-select-active .comment-header {
+        /* 댓글 헤더에서 시간 텍스트가 아래로 내려가지 않도록 항상 고정 */
+        .comment-header {
             flex-wrap: nowrap !important;
         }
         body.multi-select-active .comment-header .board-time {
             font-size: 0.7rem;
+            transition: font-size 0.3s ease;
         }
     </style>
     <link rel="manifest" href="manifest.json">
