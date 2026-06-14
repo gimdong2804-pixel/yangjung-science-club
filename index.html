@@ -3797,7 +3797,7 @@
                 : '';
 
             return `
-                <div class="comment-node ${depth > 0 ? 'comment-node-reply' : ''}" style="--reply-depth: ${Math.min(depth, 1)};">
+                <div class="comment-node ${depth > 0 ? 'comment-node-reply' : ''}" style="--reply-depth: ${depth === 1 ? 1 : 0};">
                     <div id="comment-${escapeHtml(comment.id)}" class="comment-item ${depth > 0 ? 'comment-reply' : ''} ${isDeleted ? 'comment-deleted' : ''} ${isPresidentComment ? 'official' : ''}" data-id="${escapeHtml(comment.id)}" data-can-delete="${canDelete ? 'true' : 'false'}" data-reply-count="${replyCount}" data-pinned="${pinned ? 'true' : 'false'}" style="display: flex; flex-direction: column; align-items: flex-start; ${itemStyle}">
                         ${pinBadge}
                         <div style="display: flex; align-items: flex-start; width: 100%;">
