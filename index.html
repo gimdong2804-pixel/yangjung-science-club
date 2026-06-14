@@ -3796,6 +3796,13 @@
             const heartClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
             const likeBtn = !isDeleted ? `<button type="button" class="board-action-btn c-like-btn" onclick="toggleLikeComment('${safePostId}', '${safeCommentId}', this, ${isLiked})" title="좋아요"><i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="c-like-cnt like-count" style="margin-left: 0.1rem;">${comment.likes || 0}</span></button>` : '';
 
+            const kids = tree.childrenMap.get(comment.id) || [];
+            let childRepliesHtml = '';
+            if (kids.length > 0) {
+                const sortedKids = [...kids].sort((a, b) => commentTimeValue(a) - commentTimeValue(b));
+                childRepliesHtml = `<div class="comment-replies-flat">${sortedKids.map(r => renderFlatReply(r, tree, postId)).join('')}</div>`;
+            }
+
             return `
                 <div class="comment-flat-reply" id="comment-${escapeHtml(comment.id)}" data-id="${escapeHtml(comment.id)}" data-can-delete="${canDelete ? 'true' : 'false'}" data-reply-count="0" data-pinned="${pinned ? 'true' : 'false'}">
                     ${getCommentAvatar(comment, isPresidentComment, isDeleted)}
@@ -3816,6 +3823,7 @@
                         </div>
                     </div>
                 </div>
+                ${childRepliesHtml}
             `;
         }
 
@@ -3879,9 +3887,10 @@
 
             let repliesHtml = '';
             if (isExpanded) {
-                const allReplies = tree.flatDescendants(comment.id);
-                if (allReplies.length > 0) {
-                    repliesHtml = `<div class="comment-replies-flat">${allReplies.map(r => renderFlatReply(r, tree, postId)).join('')}</div>`;
+                const immediateReplies = tree.childrenMap.get(comment.id) || [];
+                if (immediateReplies.length > 0) {
+                    const sortedReplies = [...immediateReplies].sort((a, b) => commentTimeValue(a) - commentTimeValue(b));
+                    repliesHtml = `<div class="comment-replies-flat">${sortedReplies.map(r => renderFlatReply(r, tree, postId)).join('')}</div>`;
                 }
             }
 
