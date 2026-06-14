@@ -190,7 +190,7 @@
             flex: 1;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 4rem 2rem;
+            padding: 4rem 2rem 8rem 2rem;
             width: 100%;
         }
 
@@ -324,11 +324,18 @@
         /* Footer */
         footer {
             text-align: center;
-            padding: 3rem 2rem;
+            padding: 1.5rem 2rem;
             color: var(--text-secondary);
             font-size: 0.875rem;
             border-top: 1px solid var(--glass-border);
-            margin-top: auto;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 50;
         }
 
         .footer-content {
@@ -1582,7 +1589,7 @@
                 padding: 0 1rem;
             }
             main {
-                padding: 3rem 1rem;
+                padding: 3rem 1rem 8rem 1rem;
             }
             .hero {
                 margin-bottom: 3rem;
