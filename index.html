@@ -3789,9 +3789,11 @@
             const itemStyle = pinned
                 ? 'border-color: var(--accent-color); background: rgba(59, 130, 246, 0.08);'
                 : '';
+            const parentComment = (depth >= 2 && comment.parentId) ? tree.byId.get(comment.parentId) : null;
+            const mentionHtml = (parentComment && !isDeleted) ? `<span style="color: var(--accent-color); font-weight: 600;">@${escapeHtml(parentComment.author || '사용자')}</span> ` : '';
             const bodyHtml = isDeleted
                 ? '<span class="comment-deleted-text">삭제된 댓글입니다.</span>'
-                : escapeHtml(comment.body || '').replace(/\n/g, '<br>');
+                : mentionHtml + escapeHtml(comment.body || '').replace(/\n/g, '<br>');
             const repliesHtml = (children.length > 0 && isExpanded)
                 ? `<div class="comment-replies">${children.map(child => renderCommentBranch(child, depth + 1, tree, postId)).join('')}</div>`
                 : '';
