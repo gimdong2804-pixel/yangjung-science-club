@@ -1249,20 +1249,7 @@
             font-size: 0.9rem;
         }
         .reply-toggle-btn,
-        .reply-action-btn {
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 0.82rem;
-            font-weight: 600;
-            padding: 0.35rem 0.45rem;
-            border-radius: 999px;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
-        }
+        .reply-action-btn { display: inline-flex; align-items: center; justify-content: center; height: 36px; background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; font-weight: 500; padding: 0 0.75rem; border-radius: 8px; transition: all 0.2s ease; gap: 0.4rem; }
         .reply-toggle-btn:hover,
         .reply-action-btn:hover {
             background: rgba(59, 130, 246, 0.12);
@@ -1359,24 +1346,7 @@
             color: var(--text-secondary);
             margin-left: auto;
         }
-        .comment-input-area {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 800px;
-            background: transparent !important;
-            padding: 0 !important;
-            border: none !important;
-            z-index: 1000;
-            pointer-events: none;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            gap: 0.6rem;
-        }
+        .comment-input-area { position: relative; width: 100%; max-width: 800px; margin: 0 auto; background: transparent !important; padding: 1rem 1.5rem !important; border: none !important; z-index: 1000; display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 0.6rem; flex-shrink: 0; }
         .comment-input-container {
             width: 100%;
             pointer-events: auto;
@@ -2104,7 +2074,7 @@
                         padding 0.4s ease;
             display: flex;
             flex-direction: column;
-            z-index: 10;
+            z-index: 100;
             opacity: 1;
             visibility: visible;
             transform: translateX(0);
@@ -2171,17 +2141,7 @@
 
         /* 데스크탑에서 댓글 창이 사이드바 내부에 고정되도록 조정 */
         @media (min-width: 1024px) {
-            .side-detail-container .comment-input-area {
-                position: absolute;
-                bottom: 2rem;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 90%;
-                background: transparent !important;
-                padding: 0 !important;
-                z-index: 1000;
-                pointer-events: none;
-            }
+            .side-detail-container .comment-input-area { width: 100%; }
             .side-detail-container .comment-input-container {
                 max-width: 100%;
                 pointer-events: auto;
@@ -2220,18 +2180,7 @@
                 opacity: 0;
                 visibility: hidden;
             }
-            .side-detail-container .comment-input-area {
-                position: absolute;
-                bottom: calc(1.5rem + env(safe-area-inset-bottom));
-                left: 50%;
-                transform: translateX(-50%);
-                width: 92%;
-                background: transparent !important;
-                border-top: none;
-                padding: 0 !important;
-                z-index: 1000;
-                pointer-events: none;
-            }
+            .side-detail-container .comment-input-area { width: 100%; }
             .side-detail-container .comment-input-container {
                 max-width: 800px;
                 margin: 0 auto;
@@ -2267,18 +2216,7 @@
             margin-right: auto;
         }
 
-        .side-detail-container.fullscreen-detail .comment-input-area {
-            position: absolute;
-            bottom: calc(1.5rem + env(safe-area-inset-bottom));
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            background: transparent !important;
-            padding: 0 !important;
-            border-top: none;
-            z-index: 1000;
-            pointer-events: none;
-        }
+        .side-detail-container.fullscreen-detail .comment-input-area { width: 100%; }
 
         .side-detail-container.fullscreen-detail .comment-input-container {
             max-width: 900px;
@@ -2286,11 +2224,7 @@
         }
 
         /* 댓글 목록 하단 여백: 고정된 입력창에 가려지지 않도록 */
-        .comment-section {
-            padding-bottom: 150px;
-            -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 150px), transparent calc(100% - 50px));
-            mask-image: linear-gradient(to bottom, black calc(100% - 150px), transparent calc(100% - 50px));
-        }
+        .comment-section { padding-bottom: 2rem; }
 
         .comment-actions {
             gap: 0.8rem !important;
