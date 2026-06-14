@@ -3772,7 +3772,7 @@
             return `<div class="board-author-avatar" style="background: ${isPresidentComment ? 'var(--accent-color)' : '#9ca3af'}; width: 32px; height: 32px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;">${isPresidentComment ? '<i class="fa-solid fa-crown" style="font-size: 0.6rem;"></i>' : escapeHtml(initial)}</div>`;
         }
 
-        function renderFlatReply(comment, tree, postId) {
+        function renderFlatReply(comment, tree, postId, depth = 1) {
             const isDeleted = !!comment.deleted;
             const isPresidentComment = !isDeleted && ((comment.author || '').includes('회장') || comment.email === PRESIDENT_EMAIL);
             const isPresident = isPresidentUser();
@@ -3785,6 +3785,7 @@
             const authorName = isDeleted ? '삭제된 댓글' : (comment.author || '사용자');
             const cTime = formatDate(comment.createdAt);
             const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.08rem 0.35rem; border-radius: 4px; font-weight: bold; margin-left: 0.4rem;">공식 답변</span>' : '';
+            const depthIcon = depth >= 4 ? `<span style="color: #9ca3af; font-size: 1.1rem; margin-right: 0.2rem; font-weight: bold; line-height: 1;">&#x21B3;</span>` : '';
             const parentComment = comment.parentId ? tree.byId.get(comment.parentId) : null;
             const mentionHtml = (parentComment && !isDeleted) ? `<span class="flat-reply-mention">@${escapeHtml(parentComment.author || '사용자')}</span> ` : '';
             const bodyHtml = isDeleted
@@ -3800,7 +3801,9 @@
             let childRepliesHtml = '';
             if (kids.length > 0) {
                 const sortedKids = [...kids].sort((a, b) => commentTimeValue(a) - commentTimeValue(b));
-                childRepliesHtml = `<div class="comment-replies-flat">${sortedKids.map(r => renderFlatReply(r, tree, postId)).join('')}</div>`;
+                const isMaxDepth = depth >= 3;
+                const containerStyle = isMaxDepth ? `margin-left: 0; padding-left: 0; border-left: none; margin-top: 0;` : ``;
+                childRepliesHtml = `<div class="comment-replies-flat" style="${containerStyle}">${sortedKids.map(r => renderFlatReply(r, tree, postId, depth + 1)).join('')}</div>`;
             }
 
             return `
@@ -3809,6 +3812,7 @@
                     <div class="flat-reply-content">
                         <div class="flat-reply-header">
                             <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                                ${depthIcon}
                                 <span class="board-author-name" style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">${escapeHtml(authorName)}</span>
                                 ${badge}
                             </div>
@@ -3890,7 +3894,7 @@
                 const immediateReplies = tree.childrenMap.get(comment.id) || [];
                 if (immediateReplies.length > 0) {
                     const sortedReplies = [...immediateReplies].sort((a, b) => commentTimeValue(a) - commentTimeValue(b));
-                    repliesHtml = `<div class="comment-replies-flat">${sortedReplies.map(r => renderFlatReply(r, tree, postId)).join('')}</div>`;
+                    repliesHtml = `<div class="comment-replies-flat">${sortedReplies.map(r => renderFlatReply(r, tree, postId, 1)).join('')}</div>`;
                 }
             }
 
