@@ -5037,7 +5037,10 @@
                         deleted: false,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                    if (parentId) window.expandCommentLineage(parentId);
+                    if (parentId) {
+                        window.expandCommentLineage(parentId);
+                        window.renderCurrentComments(currentPostId);
+                    }
                     commentInput.value = '';
                     window.replyTarget = null;
                     updateReplyTargetUI();
