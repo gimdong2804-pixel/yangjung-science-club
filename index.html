@@ -1187,6 +1187,105 @@
             border-radius: 12px;
             padding: 1rem;
             margin-bottom: 0.8rem;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+        }
+        .comment-node {
+            position: relative;
+            margin-left: min(calc(var(--reply-depth, 0) * 1.15rem), 3.7rem);
+        }
+        .comment-node.comment-node-reply::before {
+            content: "";
+            position: absolute;
+            left: -0.65rem;
+            top: 0.3rem;
+            bottom: 0.8rem;
+            width: 2px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.22);
+        }
+        .comment-item.comment-reply {
+            padding: 0.9rem;
+            background: rgba(30, 41, 59, 0.34);
+        }
+        [data-theme="light"] .comment-item.comment-reply {
+            background: rgba(255, 255, 255, 0.58);
+        }
+        .comment-item.comment-deleted {
+            opacity: 0.72;
+            border-style: dashed;
+        }
+        .comment-deleted-text {
+            color: var(--text-secondary) !important;
+            font-style: italic;
+        }
+        .comment-replies {
+            display: flex;
+            flex-direction: column;
+            animation: replyExpand 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+            transform-origin: top;
+        }
+        .reply-toggle-btn,
+        .reply-action-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 600;
+            padding: 0.35rem 0.45rem;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
+        }
+        .reply-toggle-btn:hover,
+        .reply-action-btn:hover {
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--accent-color);
+            transform: translateY(-1px);
+        }
+        .reply-target-bar {
+            width: 100%;
+            pointer-events: auto;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.45rem 0.85rem;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, 0.14);
+            border: 1px solid rgba(59, 130, 246, 0.28);
+            color: var(--text-primary);
+            font-size: 0.86rem;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+            animation: replyTargetIn 0.25s ease;
+        }
+        .reply-target-bar.active {
+            display: flex;
+        }
+        .reply-target-bar button {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .reply-target-bar button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+        .comment-empty-state {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            padding: 1.2rem 0.5rem;
+            text-align: center;
         }
         .comment-item.official {
             border-left: 4px solid var(--accent-color);
@@ -1243,6 +1342,9 @@
             pointer-events: none;
             display: flex;
             justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 0.6rem;
         }
         .comment-input-container {
             width: 100%;
@@ -1544,6 +1646,16 @@
         @keyframes commentFadeOut {
             from { opacity: 1; transform: translateY(0); }
             to { opacity: 0; transform: translateY(-10px); }
+        }
+
+        @keyframes replyExpand {
+            from { opacity: 0; transform: translateY(-8px) scaleY(0.98); }
+            to { opacity: 1; transform: translateY(0) scaleY(1); }
+        }
+
+        @keyframes replyTargetIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .fab-hidden {
@@ -2428,6 +2540,12 @@
                 </div>
 
                 <div class="comment-input-area">
+                    <div class="reply-target-bar" id="replyTargetBar">
+                        <span id="replyTargetText">답글 작성 중</span>
+                        <button type="button" onclick="cancelReplyTarget()" title="답글 취소">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
                     <div class="comment-input-container">
                         <input type="text" class="comment-input" placeholder="댓글을 입력하세요...">
                         <button class="comment-submit-btn"><i class="fa-solid fa-paper-plane"></i></button>
@@ -3392,7 +3510,7 @@
 
                         db.collection('posts').doc(id).collection('comments').onSnapshot(snap => {
                             const el = card.querySelector(`#comment-cnt-${id}`);
-                            if(el) el.innerText = snap.size;
+                            if(el) el.innerText = snap.docs.filter(doc => !doc.data().deleted).length;
                         });
                     } else {
                         // Update latest post for the click listener
@@ -3525,6 +3643,361 @@
 
         let commentUnsubscribe = null;
         let currentDetailMode = 'side';
+        const PRESIDENT_EMAIL = 'gimdong2804@gmail.com';
+        window.expandedCommentIds = new Set();
+        window.currentCommentDocs = [];
+        window.replyTarget = null;
+
+        function isPresidentUser(user = currentUser) {
+            return !!(user && user.email === PRESIDENT_EMAIL);
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+
+        function toJsString(value) {
+            return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        }
+
+        function commentTimeValue(comment) {
+            const createdAt = comment.createdAt;
+            if (createdAt && typeof createdAt.toMillis === 'function') return createdAt.toMillis();
+            if (createdAt && typeof createdAt.toDate === 'function') return createdAt.toDate().getTime();
+            if (createdAt instanceof Date) return createdAt.getTime();
+            return Date.now();
+        }
+
+        function normalizeCommentDoc(doc) {
+            const data = doc.data();
+            return Object.assign({}, data, {
+                id: doc.id,
+                parentId: data.parentId || null
+            });
+        }
+
+        function buildCommentTree(comments) {
+            const byId = new Map(comments.map(comment => [comment.id, comment]));
+            const childrenMap = new Map();
+
+            comments.forEach(comment => {
+                const parentId = comment.parentId && byId.has(comment.parentId) ? comment.parentId : null;
+                if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
+                childrenMap.get(parentId).push(comment);
+            });
+
+            childrenMap.forEach(children => {
+                children.sort((a, b) => {
+                    const pinA = a.pinned ? 1 : 0;
+                    const pinB = b.pinned ? 1 : 0;
+                    if (pinB !== pinA) return pinB - pinA;
+                    return commentTimeValue(b) - commentTimeValue(a);
+                });
+            });
+
+            const countCache = new Map();
+            const countDescendants = (commentId) => {
+                if (countCache.has(commentId)) return countCache.get(commentId);
+                const children = childrenMap.get(commentId) || [];
+                const count = children.reduce((sum, child) => {
+                    const selfCount = child.deleted ? 0 : 1;
+                    return sum + selfCount + countDescendants(child.id);
+                }, 0);
+                countCache.set(commentId, count);
+                return count;
+            };
+
+            return { byId, childrenMap, countDescendants };
+        }
+
+        function getCommentAvatar(comment, isPresidentComment, isDeleted) {
+            if (isDeleted) {
+                return `<div class="board-author-avatar" style="background: #64748b; width: 32px; height: 32px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;"><i class="fa-solid fa-minus"></i></div>`;
+            }
+            if (comment.userPhoto) {
+                return `<img class="board-author-avatar" src="${escapeHtml(comment.userPhoto)}" alt="${escapeHtml(comment.author || '사용자')}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; border: 1px solid var(--glass-border);">`;
+            }
+            const initial = (comment.author || '?').substring(0, 1);
+            return `<div class="board-author-avatar" style="background: ${isPresidentComment ? 'var(--accent-color)' : '#9ca3af'}; width: 32px; height: 32px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;">${isPresidentComment ? '<i class="fa-solid fa-crown" style="font-size: 0.6rem;"></i>' : escapeHtml(initial)}</div>`;
+        }
+
+        function renderCommentBranch(comment, depth, tree, postId) {
+            const isDeleted = !!comment.deleted;
+            const isPresidentComment = !isDeleted && ((comment.author || '').includes('회장') || comment.email === PRESIDENT_EMAIL);
+            const isPresident = isPresidentUser();
+            const canDelete = !!(currentUser && !isDeleted && (isPresident || comment.uid === currentUser.uid));
+            const canPin = !!(isPresident && !isDeleted);
+            const isLiked = !!(comment.likedUsers && currentUser && comment.likedUsers.includes(currentUser.uid));
+            const replyCount = tree.countDescendants(comment.id);
+            const isExpanded = window.expandedCommentIds.has(comment.id);
+            const children = tree.childrenMap.get(comment.id) || [];
+            const safePostId = toJsString(postId);
+            const safeCommentId = toJsString(comment.id);
+            const pinned = !!(comment.pinned && !isDeleted);
+            const authorName = isDeleted ? '삭제된 댓글' : (comment.author || '사용자');
+            const cTime = formatDate(comment.createdAt);
+            const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem;">공식 답변</span>' : '';
+            const pinBadge = `<div class="pin-badge-wrapper ${pinned ? 'active' : ''}">
+                                <span class="pin-badge-ui" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; display: inline-block;">
+                                    <i class="fa-solid fa-thumbtack"></i> 상단 고정
+                                </span>
+                            </div>`;
+            const checkbox = canDelete ? `
+                <label class="comment-checkbox-wrapper" style="align-items: center; margin-top: 0.2rem; padding-right: 0;">
+                    <input type="checkbox" class="comment-select-cb" value="${escapeHtml(comment.id)}" onchange="updateMultiDeleteUI()" style="width: 1.1rem; height: 1.1rem; accent-color: var(--accent-color); cursor: pointer;">
+                </label>
+            ` : '';
+            const deleteBtn = canDelete ? `
+                <button type="button" class="board-action-btn delete-btn" onclick="deleteComment('${safePostId}', '${safeCommentId}')" title="댓글 삭제">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            ` : '';
+            const pinBtn = canPin ? `
+                <button type="button" class="board-action-btn pin-toggle-btn ${pinned ? 'active' : ''}" onclick="togglePinComment('${safePostId}', '${safeCommentId}', ${pinned})" title="${pinned ? '댓글 고정 해제' : '댓글 고정'}">
+                    <i class="fa-solid fa-thumbtack"></i>
+                </button>
+            ` : '';
+            const replyBtn = !isDeleted ? `
+                <button type="button" class="reply-action-btn" onclick="startReplyTarget('${safePostId}', '${safeCommentId}')" title="답글">
+                    <i class="fa-regular fa-comment-dots"></i> 답글
+                </button>
+            ` : '';
+            const replyToggleBtn = replyCount > 0 ? `
+                <button type="button" class="reply-toggle-btn" onclick="toggleCommentReplies('${safeCommentId}')" title="${isExpanded ? '답글 접기' : '답글 보기'}">
+                    <i class="fa-solid fa-chevron-${isExpanded ? 'up' : 'down'}"></i> 답글 ${replyCount}개
+                </button>
+            ` : '';
+            const heartClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+            const likeBtn = !isDeleted ? `
+                <button type="button" class="board-action-btn c-like-btn" onclick="toggleLikeComment('${safePostId}', '${safeCommentId}', this, ${isLiked})" title="좋아요">
+                    <i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="c-like-cnt like-count" style="margin-left: 0.1rem;">${comment.likes || 0}</span>
+                </button>
+            ` : '';
+            const itemStyle = pinned
+                ? 'border-color: var(--accent-color); background: rgba(59, 130, 246, 0.08);'
+                : '';
+            const bodyHtml = isDeleted
+                ? '<span class="comment-deleted-text">삭제된 댓글입니다.</span>'
+                : escapeHtml(comment.body || '').replace(/\n/g, '<br>');
+            const repliesHtml = (children.length > 0 && isExpanded)
+                ? `<div class="comment-replies">${children.map(child => renderCommentBranch(child, depth + 1, tree, postId)).join('')}</div>`
+                : '';
+
+            return `
+                <div class="comment-node ${depth > 0 ? 'comment-node-reply' : ''}" style="--reply-depth: ${Math.min(depth, 4)};">
+                    <div id="comment-${escapeHtml(comment.id)}" class="comment-item ${depth > 0 ? 'comment-reply' : ''} ${isDeleted ? 'comment-deleted' : ''} ${isPresidentComment ? 'official' : ''}" data-id="${escapeHtml(comment.id)}" data-can-delete="${canDelete ? 'true' : 'false'}" data-reply-count="${replyCount}" data-pinned="${pinned ? 'true' : 'false'}" style="display: flex; flex-direction: column; align-items: flex-start; ${itemStyle}">
+                        ${pinBadge}
+                        <div style="display: flex; align-items: flex-start; width: 100%;">
+                            ${checkbox}
+                            ${getCommentAvatar(comment, isPresidentComment, isDeleted)}
+                            <div class="comment-content" style="flex: 1; min-width: 0; padding-top: 0.2rem; margin-left: 0.75rem;">
+                                <div class="comment-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 0.4rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                        <span class="board-author-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">${escapeHtml(authorName)}</span>
+                                        ${badge}
+                                    </div>
+                                    <div class="comment-actions" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <div class="mobile-hide" style="display: flex; align-items: center; gap: 0.5rem;">
+                                            ${pinBtn}
+                                            ${deleteBtn}
+                                        </div>
+                                        <span class="board-time" style="font-weight: 400;">${cTime}</span>
+                                    </div>
+                                </div>
+                                <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${bodyHtml}</div>
+                                <div class="comment-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                                    <div style="display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap;">
+                                        ${replyBtn}
+                                        ${replyToggleBtn}
+                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem;">
+                                            ${pinBtn}
+                                            ${deleteBtn}
+                                        </div>
+                                    </div>
+                                    <div class="board-stats" style="margin-left: auto;">
+                                        ${likeBtn}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    ${repliesHtml}
+                </div>
+            `;
+        }
+
+        function attachCommentItemEvents() {
+            document.querySelectorAll('#detailCommentList .comment-item').forEach(item => {
+                const cid = item.getAttribute('data-id');
+                const canDelete = item.getAttribute('data-can-delete') === 'true';
+
+                if (canDelete) {
+                    item.addEventListener('pointerdown', (e) => window.handleCommentPointerDown(e, cid));
+                    item.addEventListener('pointerup', window.handleCommentPointerUp);
+                    item.addEventListener('pointercancel', window.handleCommentPointerUp);
+                    item.addEventListener('pointerleave', window.handleCommentPointerUp);
+                    item.addEventListener('contextmenu', (e) => {
+                        if (window.isMultiSelectMode) e.preventDefault();
+                    });
+                }
+
+                item.addEventListener('click', (e) => {
+                    if (e.target.closest('.comment-item') !== item) return;
+                    if (window.ignoreNextCommentClick) {
+                        window.ignoreNextCommentClick = false;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
+                    if (e.target.closest('button') || e.target.closest('a') || e.target.closest('label') || e.target.closest('input')) return;
+
+                    if (window.isMultiSelectMode) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const cb = item.querySelector('.comment-select-cb');
+                        if (cb) {
+                            cb.checked = !cb.checked;
+                            updateMultiDeleteUI();
+                        }
+                        return;
+                    }
+
+                    const replyCount = parseInt(item.getAttribute('data-reply-count') || '0', 10);
+                    if (replyCount > 0) {
+                        window.toggleCommentReplies(cid);
+                    }
+                });
+            });
+        }
+
+        window.renderCurrentComments = function(postId = currentPostId) {
+            if (!postId || postId !== currentPostId) return;
+            const commentList = document.getElementById('detailCommentList');
+            if (!commentList) return;
+
+            const oldPositions = new Map();
+            commentList.querySelectorAll('.comment-item').forEach(item => {
+                oldPositions.set(item.getAttribute('data-id'), item.getBoundingClientRect());
+            });
+
+            const comments = window.currentCommentDocs || [];
+            const tree = buildCommentTree(comments);
+            const visibleCount = comments.filter(comment => !comment.deleted).length;
+            const topCountEl = document.getElementById('detailTopCommentCount');
+            if (topCountEl) topCountEl.innerText = visibleCount;
+            const detailCommentCount = document.getElementById('detailCommentCount');
+            if (detailCommentCount) detailCommentCount.innerText = visibleCount;
+
+            if (window.replyTarget && (!tree.byId.has(window.replyTarget.id) || tree.byId.get(window.replyTarget.id).deleted)) {
+                window.replyTarget = null;
+                updateReplyTargetUI();
+            }
+
+            const roots = tree.childrenMap.get(null) || [];
+            if (roots.length === 0) {
+                commentList.innerHTML = '<div class="comment-empty-state">아직 댓글이 없습니다.</div>';
+                return;
+            }
+
+            commentList.innerHTML = roots.map(comment => renderCommentBranch(comment, 0, tree, postId)).join('');
+            attachCommentItemEvents();
+
+            if (window.skipCommentFlip) return;
+            requestAnimationFrame(() => {
+                commentList.querySelectorAll('.comment-item').forEach(item => {
+                    const cid = item.getAttribute('data-id');
+                    const oldRect = oldPositions.get(cid);
+                    if (oldRect) {
+                        const newRect = item.getBoundingClientRect();
+                        const deltaY = oldRect.top - newRect.top;
+                        if (Math.abs(deltaY) > 1) {
+                            item.style.transform = `translateY(${deltaY}px)`;
+                            item.style.transition = 'none';
+                            requestAnimationFrame(() => {
+                                item.style.transform = '';
+                                item.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, background 0.3s ease, border-color 0.3s ease';
+                            });
+                        }
+                    } else {
+                        item.style.opacity = '0';
+                        item.style.transform = 'scale(0.96)';
+                        item.style.transition = 'none';
+                        requestAnimationFrame(() => {
+                            item.style.opacity = '1';
+                            item.style.transform = 'scale(1)';
+                            item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                        });
+                    }
+                });
+            });
+        };
+
+        window.toggleCommentReplies = function(commentId) {
+            if (window.expandedCommentIds.has(commentId)) {
+                window.expandedCommentIds.delete(commentId);
+            } else {
+                window.expandedCommentIds.add(commentId);
+            }
+            window.renderCurrentComments();
+        };
+
+        window.expandCommentLineage = function(commentId) {
+            const byId = new Map((window.currentCommentDocs || []).map(comment => [comment.id, comment]));
+            let currentId = commentId;
+            while (currentId) {
+                window.expandedCommentIds.add(currentId);
+                const currentComment = byId.get(currentId);
+                currentId = currentComment ? currentComment.parentId : null;
+            }
+        };
+
+        function updateReplyTargetUI() {
+            const bar = document.getElementById('replyTargetBar');
+            const text = document.getElementById('replyTargetText');
+            const input = document.querySelector('.side-detail-container .comment-input');
+            if (!bar || !text || !input) return;
+
+            if (window.replyTarget) {
+                text.textContent = `${window.replyTarget.author}님에게 답글 작성 중`;
+                bar.classList.add('active');
+                input.placeholder = '답글을 입력하세요...';
+            } else {
+                text.textContent = '답글 작성 중';
+                bar.classList.remove('active');
+                input.placeholder = '댓글을 입력하세요...';
+            }
+        }
+
+        window.startReplyTarget = function(postId, commentId) {
+            if (!currentUser) {
+                alert('답글을 작성하시려면 먼저 Google 로그인을 해주세요!');
+                openDrawer();
+                return;
+            }
+            const target = (window.currentCommentDocs || []).find(comment => comment.id === commentId);
+            if (!target || target.deleted) return;
+            window.replyTarget = {
+                postId,
+                id: commentId,
+                author: target.author || '사용자'
+            };
+            window.expandCommentLineage(commentId);
+            updateReplyTargetUI();
+            window.renderCurrentComments(postId);
+            const input = document.querySelector('.side-detail-container .comment-input');
+            if (input) input.focus();
+        };
+
+        window.cancelReplyTarget = function() {
+            window.replyTarget = null;
+            updateReplyTargetUI();
+        };
 
         // 상세 닫기 함수
         function closeSideDetail(e) {
@@ -3570,6 +4043,10 @@
                 commentUnsubscribe();
                 commentUnsubscribe = null;
             }
+            window.expandedCommentIds.clear();
+            window.currentCommentDocs = [];
+            window.replyTarget = null;
+            updateReplyTargetUI();
             // 즉시 초기화하지 않고 애니메이션 종료 후 처리 (위의 setTimeout 내부)
             // currentPostId = null;
             currentDetailMode = 'side';
@@ -3589,6 +4066,12 @@
             // 이미 같은 게시물이 열려있다면 무시 (필요시 업데이트 로직 추가)
             if (currentPostId === id && !sideDetailContainer.classList.contains('detail-hidden')) return;
 
+            if (currentPostId !== id) {
+                window.expandedCommentIds.clear();
+                window.currentCommentDocs = [];
+                window.replyTarget = null;
+                updateReplyTargetUI();
+            }
             currentPostId = id;
             currentDetailMode = mode;
 
@@ -3723,6 +4206,10 @@
             const commentArea = document.getElementById('detailCommentArea');
             if (commentUnsubscribe) commentUnsubscribe();
             commentUnsubscribe = db.collection('posts').doc(id).collection('comments').onSnapshot(snap => {
+                window.currentCommentDocs = snap.docs.map(normalizeCommentDoc);
+                window.renderCurrentComments(id);
+                return;
+
                 const topCountEl = document.getElementById('detailTopCommentCount');
                 if (topCountEl) topCountEl.innerText = snap.size;
                 const detailCommentCount = document.getElementById('detailCommentCount');
@@ -4296,22 +4783,88 @@
             setTimeout(() => { window.skipCommentFlip = false; }, 400);
         };
 
+        function buildDeleteChildrenMap(comments) {
+            const childrenMap = new Map();
+            comments.forEach(comment => {
+                if (!childrenMap.has(comment.parentId || null)) childrenMap.set(comment.parentId || null, []);
+                childrenMap.get(comment.parentId || null).push(comment);
+            });
+            return childrenMap;
+        }
+
+        function hasUnselectedDescendant(commentId, childrenMap, selectedIds) {
+            const children = childrenMap.get(commentId) || [];
+            for (const child of children) {
+                if (!selectedIds.has(child.id)) return true;
+                if (hasUnselectedDescendant(child.id, childrenMap, selectedIds)) return true;
+            }
+            return false;
+        }
+
+        async function deleteSelectedComments(postId, selectedIds) {
+            if (!currentUser) {
+                alert('댓글을 삭제하시려면 먼저 Google 로그인을 해주세요!');
+                openDrawer();
+                return;
+            }
+
+            const commentsRef = db.collection('posts').doc(postId).collection('comments');
+            const snap = await commentsRef.get();
+            const comments = snap.docs.map(normalizeCommentDoc);
+            const byId = new Map(comments.map(comment => [comment.id, comment]));
+            const childrenMap = buildDeleteChildrenMap(comments);
+            const batch = db.batch();
+            let blockedCount = 0;
+            let changedCount = 0;
+
+            selectedIds.forEach(commentId => {
+                const comment = byId.get(commentId);
+                if (!comment) return;
+                const canDelete = isPresidentUser() || comment.uid === currentUser.uid;
+                if (!canDelete) {
+                    blockedCount += 1;
+                    return;
+                }
+
+                const ref = commentsRef.doc(commentId);
+                if (hasUnselectedDescendant(commentId, childrenMap, selectedIds)) {
+                    batch.update(ref, {
+                        body: '삭제된 댓글입니다.',
+                        deleted: true,
+                        pinned: false,
+                        likes: 0,
+                        likedUsers: [],
+                        deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } else {
+                    batch.delete(ref);
+                }
+                changedCount += 1;
+            });
+
+            if (changedCount > 0) await batch.commit();
+            if (blockedCount > 0) alert('삭제 권한이 없는 댓글은 제외했습니다.');
+        }
+
         window.executeMultiDelete = async function() {
             const checkboxes = document.querySelectorAll('.comment-select-cb:checked');
             if (checkboxes.length === 0) return;
             if (!confirm(`선택한 ${checkboxes.length}개의 댓글을 정말로 삭제하시겠습니까?`)) return;
             
+            const selectedIds = new Set(Array.from(checkboxes).map(cb => cb.value));
+            selectedIds.forEach(cid => {
+                const el = document.getElementById(`comment-${cid}`);
+                if (el) {
+                    el.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+                    el.style.opacity = '0';
+                    el.style.transform = 'scale(0.96)';
+                }
+            });
+            await new Promise(resolve => setTimeout(resolve, 250));
             cancelMultiDelete(); // UI 숨기기 및 선택 해제
             
-            const selectedIds = new Set(Array.from(checkboxes).map(cb => cb.value));
-            const batch = db.batch();
-            selectedIds.forEach(cid => {
-                const ref = db.collection('posts').doc(currentPostId).collection('comments').doc(cid);
-                batch.delete(ref);
-            });
-            
             try {
-                await batch.commit(); // onSnapshot이 일괄 삭제를 감지하고 애니메이션을 트리거합니다.
+                await deleteSelectedComments(currentPostId, selectedIds);
             } catch (e) {
                 console.error("Batch delete error:", e);
                 alert("댓글 삭제 실패");
@@ -4319,6 +4872,11 @@
         };
 
         window.deleteComment = async function(postId, commentId) {
+            if (!currentUser) {
+                alert('댓글을 삭제하시려면 먼저 Google 로그인을 해주세요!');
+                openDrawer();
+                return;
+            }
             if (!confirm('정말로 이 댓글을 삭제하시겠습니까?')) return;
             const commentEl = document.getElementById(`comment-${commentId}`);
             
@@ -4328,7 +4886,7 @@
                 
                 setTimeout(async () => {
                     try {
-                        await db.collection('posts').doc(postId).collection('comments').doc(commentId).delete();
+                        await deleteSelectedComments(postId, new Set([commentId]));
                     } catch (error) {
                         console.error("Error deleting comment: ", error);
                         alert('댓글 삭제 실패');
@@ -4336,7 +4894,7 @@
                 }, 400);
             } else {
                 try {
-                    await db.collection('posts').doc(postId).collection('comments').doc(commentId).delete();
+                    await deleteSelectedComments(postId, new Set([commentId]));
                 } catch (error) {
                     console.error("Error deleting comment: ", error);
                     alert('댓글 삭제 실패');
@@ -4357,6 +4915,7 @@
                 if(!currentPostId) return;
                 const body = commentInput.value.trim();
                 if(body === '') return;
+                const parentId = (window.replyTarget && window.replyTarget.postId === currentPostId) ? window.replyTarget.id : null;
 
                 try {
                     await db.collection('posts').doc(currentPostId).collection('comments').add({
@@ -4365,9 +4924,18 @@
                         userPhoto: currentUser.photoURL || '',
                         email: currentUser.email,
                         body: body,
+                        parentId: parentId,
+                        replyToAuthor: parentId && window.replyTarget ? window.replyTarget.author : '',
+                        pinned: false,
+                        likes: 0,
+                        likedUsers: [],
+                        deleted: false,
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
+                    if (parentId) window.expandCommentLineage(parentId);
                     commentInput.value = '';
+                    window.replyTarget = null;
+                    updateReplyTargetUI();
                 } catch(e) {
                     console.error(e);
                     alert('댓글 작성 실패');
