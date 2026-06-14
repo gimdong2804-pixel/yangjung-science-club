@@ -3724,7 +3724,7 @@
                 const arrowCount = depth - 3;
                 const arrowText = '&#x21B3; X' + arrowCount;
                 depthIcon = `<span style="color: #9ca3af; font-size: 0.9rem; margin-right: 0.4rem; font-weight: bold; line-height: 1;">${arrowText}</span>`;
-            }; font-size: 1.1rem; margin-right: 0.3rem; font-weight: bold; line-height: 1; letter-spacing: -2px;">${arrows}</span>`;
+            }
             }
             const parentComment = comment.parentId ? tree.byId.get(comment.parentId) : null;
             const mentionHtml = (parentComment && !isDeleted) ? `<span class="flat-reply-mention">@${escapeHtml(parentComment.author || '사용자')}</span> ` : '';
