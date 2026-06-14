@@ -3960,7 +3960,8 @@
                     }
                 });
 
-                // 5. FLIP 애니메이션 실행
+                // 5. FLIP 애니메이션 실행 (선택 해제 중에는 건너뛰기)
+                if (window.skipCommentFlip) return;
                 requestAnimationFrame(() => {
                     commentList.querySelectorAll('.comment-item').forEach(item => {
                         const cid = item.getAttribute('data-id');
@@ -4202,6 +4203,7 @@
         };
 
         window.isMultiSelectMode = false;
+        window.skipCommentFlip = false;
         let pressTimer;
         window.ignoreNextCommentClick = false;
 
@@ -4269,10 +4271,12 @@
         };
 
         window.cancelMultiDelete = function() {
+            window.skipCommentFlip = true;
             window.isMultiSelectMode = false;
             document.body.classList.remove('multi-select-active');
             document.querySelectorAll('.comment-select-cb').forEach(cb => cb.checked = false);
             updateMultiDeleteUI();
+            setTimeout(() => { window.skipCommentFlip = false; }, 400);
         };
 
         window.executeMultiDelete = async function() {
