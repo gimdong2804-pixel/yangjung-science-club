@@ -1223,6 +1223,9 @@
             flex-direction: column;
             animation: replyExpand 0.28s cubic-bezier(0.16, 1, 0.3, 1);
             transform-origin: top;
+            border-left: 2.5px solid rgba(148, 163, 184, 0.25);
+            margin-left: 0.75rem;
+            padding-left: 0.35rem;
         }
         .reply-toggle-btn,
         .reply-action-btn {
@@ -3720,21 +3723,7 @@
                 return count;
             };
 
-            const flatDescendants = (commentId) => {
-                const result = [];
-                const collect = (id) => {
-                    const kids = childrenMap.get(id) || [];
-                    kids.forEach(child => {
-                        result.push(child);
-                        collect(child.id);
-                    });
-                };
-                collect(commentId);
-                result.sort((a, b) => commentTimeValue(a) - commentTimeValue(b));
-                return result;
-            };
-
-            return { byId, childrenMap, countDescendants, flatDescendants };
+            return { byId, childrenMap, countDescendants };
         }
 
         function getCommentAvatar(comment, isPresidentComment, isDeleted) {
@@ -3789,7 +3778,7 @@
                     <i class="fa-regular fa-comment-dots"></i> 답글
                 </button>
             ` : '';
-            const replyToggleBtn = (depth === 0 && replyCount > 0) ? `
+            const replyToggleBtn = replyCount > 0 ? `
                 <button type="button" class="reply-toggle-btn" onclick="toggleCommentReplies('${safeCommentId}')" title="${isExpanded ? '답글 접기' : '답글 보기'}">
                     <i class="fa-solid fa-chevron-${isExpanded ? 'up' : 'down'}"></i> 답글 ${replyCount}개
                 </button>
@@ -3803,21 +3792,17 @@
             const itemStyle = pinned
                 ? 'border-color: var(--accent-color); background: rgba(59, 130, 246, 0.08);'
                 : '';
-            const parentComment = (depth >= 1 && comment.parentId) ? tree.byId.get(comment.parentId) : null;
+            const parentComment = (depth >= 2 && comment.parentId) ? tree.byId.get(comment.parentId) : null;
             const mentionHtml = (parentComment && !isDeleted) ? `<span style="color: var(--accent-color); font-weight: 600;">@${escapeHtml(parentComment.author || '사용자')}</span> ` : '';
             const bodyHtml = isDeleted
                 ? '<span class="comment-deleted-text">삭제된 댓글입니다.</span>'
                 : mentionHtml + escapeHtml(comment.body || '').replace(/\n/g, '<br>');
-            let repliesHtml = '';
-            if (depth === 0 && isExpanded) {
-                const allReplies = tree.flatDescendants(comment.id);
-                if (allReplies.length > 0) {
-                    repliesHtml = `<div class="comment-replies">${allReplies.map(child => renderCommentBranch(child, 1, tree, postId)).join('')}</div>`;
-                }
-            }
+            const repliesHtml = (children.length > 0 && isExpanded)
+                ? `<div class="comment-replies">${children.map(child => renderCommentBranch(child, depth + 1, tree, postId)).join('')}</div>`
+                : '';
 
             return `
-                <div class="comment-node ${depth > 0 ? 'comment-node-reply' : ''}" style="--reply-depth: ${depth > 0 ? 1 : 0};">
+                <div class="comment-node ${depth > 0 ? 'comment-node-reply' : ''}" style="--reply-depth: ${(depth >= 1 && depth <= 2) ? 1 : 0};">
                     <div id="comment-${escapeHtml(comment.id)}" class="comment-item ${depth > 0 ? 'comment-reply' : ''} ${isDeleted ? 'comment-deleted' : ''} ${isPresidentComment ? 'official' : ''}" data-id="${escapeHtml(comment.id)}" data-can-delete="${canDelete ? 'true' : 'false'}" data-reply-count="${replyCount}" data-pinned="${pinned ? 'true' : 'false'}" style="display: flex; flex-direction: column; align-items: flex-start; ${itemStyle}">
                         ${pinBadge}
                         <div style="display: flex; align-items: flex-start; width: 100%;">
