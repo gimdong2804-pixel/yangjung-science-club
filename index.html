@@ -128,6 +128,9 @@
             background-attachment: fixed;
             transition: background-color 0.5s ease, color 0.5s ease;
         }
+        body.home-active {
+            overflow: hidden;
+        }
 
         body.detail-open {
             overflow: hidden;
@@ -2182,7 +2185,7 @@
     <meta name="theme-color" content="#2c52ed">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg">
 </head>
-<body>
+<body class="home-active">
 
     <!-- 커스텀 스크롤바 -->
     <div id="customScrollbar" class="custom-scrollbar">
@@ -2741,6 +2744,12 @@
         function switchPage(fromPage, toPage, skipHistory = false, replaceState = false) {
             if (fromPage === toPage) return; // 동일한 페이지로의 전환은 무시
             
+            if (toPage === mainPage) {
+                document.body.classList.add('home-active');
+            } else {
+                document.body.classList.remove('home-active');
+            }
+
             if (!skipHistory) {
                 const pageId = toPage.id || 'mainPage';
                 if (replaceState) {
