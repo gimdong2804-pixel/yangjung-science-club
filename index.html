@@ -3719,7 +3719,7 @@
             const authorName = isDeleted ? '삭제된 댓글' : (comment.author || '사용자');
             const cTime = formatDate(comment.createdAt);
             const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.08rem 0.35rem; border-radius: 4px; font-weight: bold; margin-left: 0.4rem;">공식 답변</span>' : '';
-            const depthIcon = depth >= 4 ? `<span style="color: #9ca3af; font-size: 1.1rem; margin-right: 0.2rem; font-weight: bold; line-height: 1;">&#x21B3;</span>` : '';
+            const depthIcon = depth >= 11 ? `<span style="color: #9ca3af; font-size: 1.1rem; margin-right: 0.2rem; font-weight: bold; line-height: 1;">&#x21B3;</span>` : '';
             const parentComment = comment.parentId ? tree.byId.get(comment.parentId) : null;
             const mentionHtml = (parentComment && !isDeleted) ? `<span class="flat-reply-mention">@${escapeHtml(parentComment.author || '사용자')}</span> ` : '';
             const bodyHtml = isDeleted
@@ -3743,7 +3743,7 @@
             let childRepliesHtml = '';
             if (isExpanded && kids.length > 0) {
                 const sortedKids = [...kids].sort((a, b) => commentTimeValue(a) - commentTimeValue(b));
-                const isMaxDepth = depth >= 3;
+                const isMaxDepth = depth >= 10;
                 const containerStyle = isMaxDepth ? `margin-left: 0; padding-left: 0; border-left: none; margin-top: 0;` : ``;
                 childRepliesHtml = `<div class="comment-replies-flat" style="${containerStyle}">${sortedKids.map(r => renderFlatReply(r, tree, postId, depth + 1)).join('')}</div>`;
             }
