@@ -2160,6 +2160,14 @@
             opacity: 1;
             margin-right: 0.5rem;
         }
+
+        /* 댓글 선택 모드에서 시간 텍스트가 아래로 내려가지 않도록 고정 */
+        body.multi-select-active .comment-header {
+            flex-wrap: nowrap !important;
+        }
+        body.multi-select-active .comment-header .board-time {
+            font-size: 0.7rem;
+        }
     </style>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2c52ed">
@@ -2986,7 +2994,7 @@
                 return;
             }
             history.pushState({ modal: 'writePage' }, '', '#write');
-            switchPage(currentPage, writePostPage);
+            switchPage(currentPage, writePostPage, true);
         });
 
         function closeWritePage(e) {
