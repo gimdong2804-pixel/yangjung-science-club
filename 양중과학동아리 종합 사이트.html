@@ -1265,6 +1265,9 @@
         .reply-target-bar.active {
             display: flex;
         }
+        body.multi-select-active .reply-target-bar {
+            display: none !important;
+        }
         .reply-target-bar button {
             background: transparent;
             border: none;
@@ -1288,8 +1291,12 @@
             text-align: center;
         }
         .comment-item.official {
-            border-left: 4px solid var(--accent-color);
-            background: rgba(59, 130, 246, 0.04);
+            border-left-width: 1px;
+            border-left-color: var(--glass-border);
+            background: var(--glass-bg);
+        }
+        .comment-item.official[data-pinned="true"] {
+            border-left-color: var(--accent-color);
         }
         .comment-author {
             display: flex;
@@ -4606,6 +4613,7 @@
             if(!currentUser || currentUser.email !== 'gimdong2804@gmail.com') return;
             const btn = window.event ? (window.event.currentTarget || window.event.target.closest('.pin-toggle-btn')) : null;
             let isPinned = currentPinned;
+            window.skipCommentFlip = true;
             if (btn) {
                 isPinned = btn.classList.contains('active');
                 btn.classList.toggle('active', !isPinned);
@@ -4615,8 +4623,10 @@
                 btn.title = !isPinned ? '고정 해제' : '상단 고정';
             }
             try {
+                await new Promise(resolve => setTimeout(resolve, 160));
                 await db.collection('posts').doc(postId).collection('comments').doc(commentId).update({ pinned: !isPinned });
             } catch(e) { console.error(e); }
+            setTimeout(() => { window.skipCommentFlip = false; }, 450);
         };
 
         window.deletePostWithAnim = async function(id, btn) {
@@ -4728,6 +4738,9 @@
         window.enterMultiSelectMode = function(targetCid) {
             window.isMultiSelectMode = true;
             document.body.classList.add('multi-select-active');
+            if (typeof window.cancelReplyTarget === 'function') {
+                window.cancelReplyTarget();
+            }
             const cb = document.querySelector(`.comment-select-cb[value="${targetCid}"]`);
             if (cb) {
                 cb.checked = true;
@@ -4756,6 +4769,7 @@
             if (!confirm(`선택한 ${checkboxes.length}개의 댓글 고정 상태를 전환하시겠습니까?`)) return;
 
             try {
+                window.skipCommentFlip = true;
                 const batch = db.batch();
                 for (let cb of checkboxes) {
                     const cid = cb.value;
@@ -4768,7 +4782,9 @@
                 }
                 await batch.commit();
                 cancelMultiDelete();
+                setTimeout(() => { window.skipCommentFlip = false; }, 450);
             } catch(e) {
+                window.skipCommentFlip = false;
                 console.error("Multi pin comment error", e);
                 alert('댓글 고정 중 오류가 발생했습니다.');
             }
