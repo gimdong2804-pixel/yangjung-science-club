@@ -3797,9 +3797,17 @@
             const heartClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
             const likeBtn = !isDeleted ? `<button type="button" class="board-action-btn c-like-btn" onclick="toggleLikeComment('${safePostId}', '${safeCommentId}', this, ${isLiked})" title="좋아요"><i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="c-like-cnt like-count" style="margin-left: 0.1rem;">${comment.likes || 0}</span></button>` : '';
 
+            const isExpanded = window.expandedCommentIds.has(comment.id);
+            const replyCount = tree.countDescendants(comment.id);
+            const replyToggleBtn = replyCount > 0 ? `
+                <button type="button" class="reply-toggle-btn" onclick="toggleCommentReplies('${safeCommentId}')" title="${isExpanded ? '답글 접기' : '답글 보기'}">
+                    <i class="fa-solid fa-chevron-${isExpanded ? 'up' : 'down'}"></i> 답글 ${replyCount}개
+                </button>
+            ` : '';
+
             const kids = tree.childrenMap.get(comment.id) || [];
             let childRepliesHtml = '';
-            if (kids.length > 0) {
+            if (isExpanded && kids.length > 0) {
                 const sortedKids = [...kids].sort((a, b) => commentTimeValue(a) - commentTimeValue(b));
                 const isMaxDepth = depth >= 3;
                 const containerStyle = isMaxDepth ? `margin-left: 0; padding-left: 0; border-left: none; margin-top: 0;` : ``;
@@ -3807,7 +3815,7 @@
             }
 
             return `
-                <div class="comment-flat-reply" id="comment-${escapeHtml(comment.id)}" data-id="${escapeHtml(comment.id)}" data-can-delete="${canDelete ? 'true' : 'false'}" data-reply-count="0" data-pinned="${pinned ? 'true' : 'false'}">
+                <div class="comment-flat-reply" id="comment-${escapeHtml(comment.id)}" data-id="${escapeHtml(comment.id)}" data-can-delete="${canDelete ? 'true' : 'false'}" data-reply-count="${replyCount}" data-pinned="${pinned ? 'true' : 'false'}">
                     ${getCommentAvatar(comment, isPresidentComment, isDeleted)}
                     <div class="flat-reply-content">
                         <div class="flat-reply-header">
@@ -3821,6 +3829,7 @@
                         <div class="flat-reply-body">${bodyHtml}</div>
                         <div class="flat-reply-footer">
                             ${replyBtn}
+                            ${replyToggleBtn}
                             ${pinBtn}
                             ${deleteBtn}
                             <div style="margin-left: auto;">${likeBtn}</div>
