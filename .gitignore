@@ -1,0 +1,23 @@
+# Windows 시스템 파일
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS 시스템 파일
+.DS_Store
+
+# 에디터 및 개발 도구 설정 파일
+.vscode/
+.idea/
+*.suo
+*.sw?
+
+# 파이썬 임시 파일
+__pycache__/
+*.py[cod]
+
+# 로그 및 임시 파일
+*.log
+tmp/
+temp/
