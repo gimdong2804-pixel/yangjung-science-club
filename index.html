@@ -2002,11 +2002,12 @@
         .profile-dropdown-icon {
             color: var(--text-secondary);
             font-size: 0.8rem;
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, color 0.3s ease;
         }
         
         .user-profile-info.expanded .profile-dropdown-icon {
             transform: rotate(180deg);
+            color: var(--accent-color);
         }
 
         .user-profile-details {
