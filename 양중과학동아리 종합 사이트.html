@@ -1946,16 +1946,12 @@
 
         .user-profile-info {
             display: flex;
-            align-items: center;
-            gap: 0.75rem;
+            flex-direction: column;
             width: 100%;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--glass-border);
-            padding: 0.75rem 1rem;
-            border-radius: 12px;
             transition: opacity 0.3s cubic-bezier(0.25, 1, 0.5, 1), transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
             opacity: 1;
             transform: translateY(0);
+            gap: 0.5rem;
         }
 
         .google-login-btn.fade-out, .user-profile-info.fade-out {
@@ -1964,19 +1960,33 @@
             pointer-events: none;
         }
 
+        .user-profile-summary {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            width: 100%;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 0.5rem 1rem 0.5rem 0.5rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .user-profile-summary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
         .user-avatar {
             width: 40px;
             height: 40px;
             border-radius: 50%;
             border: 2px solid var(--accent-color);
             object-fit: cover;
-        }
-
-        .user-details {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-            min-width: 0;
+            flex-shrink: 0;
         }
 
         .user-name {
@@ -1986,6 +1996,44 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            flex: 1;
+        }
+        
+        .profile-dropdown-icon {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .user-profile-info.expanded .profile-dropdown-icon {
+            transform: rotate(180deg);
+        }
+
+        .user-profile-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 1rem;
+            border-radius: 1.2rem;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-top: -0.25rem;
+            pointer-events: none;
+        }
+        
+        .user-profile-info.expanded .user-profile-details {
+            max-height: 150px;
+            opacity: 1;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+            margin-top: 0;
+            pointer-events: auto;
         }
 
         .user-email {
@@ -1993,25 +2041,31 @@
             color: var(--text-secondary);
             word-break: break-all;
             white-space: normal;
+            margin-bottom: 0.5rem;
+            text-align: center;
         }
 
         .logout-btn {
-            background: none;
-            border: none;
-            color: #ff6b6b;
-            font-size: 1.1rem;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
             cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 8px;
+            padding: 0.6rem;
+            border-radius: 999px;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            width: 100%;
         }
 
         .logout-btn:hover {
-            background: rgba(255, 107, 107, 0.1);
-            transform: scale(1.1);
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
+            transform: translateY(-1px);
         }
 
         /* 로그인 상태에서의 글쓰기 제한/안내 팁 */
@@ -2330,14 +2384,17 @@
             </button>
             <!-- 로그인 후 (기본 hidden) -->
             <div class="user-profile-info hidden" id="userProfileInfo">
-                <img class="user-avatar" id="userAvatar" src="" alt="User Avatar">
-                <div class="user-details">
+                <div class="user-profile-summary" id="userProfileSummary" onclick="toggleProfileDetails()">
+                    <img class="user-avatar" id="userAvatar" src="" alt="User Avatar">
                     <span class="user-name" id="userName">사용자</span>
-                    <span class="user-email" id="userEmail">user@example.com</span>
+                    <i class="fa-solid fa-chevron-down profile-dropdown-icon"></i>
                 </div>
-                <button class="logout-btn" id="logoutBtn" aria-label="로그아웃" title="로그아웃">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                </button>
+                <div class="user-profile-details" id="userProfileDetails">
+                    <span class="user-email" id="userEmail">user@example.com</span>
+                    <button class="logout-btn" id="logoutBtn" aria-label="로그아웃" title="로그아웃">
+                        <i class="fa-solid fa-right-from-bracket"></i> 로그아웃
+                    </button>
+                </div>
             </div>
         </div>
         
@@ -2602,6 +2659,13 @@
                 localStorage.setItem('theme', 'light');
             }
         });
+
+        function toggleProfileDetails() {
+            const profileInfo = document.getElementById('userProfileInfo');
+            if (profileInfo) {
+                profileInfo.classList.toggle('expanded');
+            }
+        }
 
         // 사이드 드로어 제어 로직
         const menuBtn = document.getElementById('menuBtn');
