@@ -575,6 +575,7 @@
             flex-direction: column;
             gap: 0.75rem;
             overflow-y: auto;
+            min-height: 0;
             flex: 1;
             padding-right: 4px; /* 스크롤바 영역 확보 */
         }
@@ -2918,7 +2919,7 @@
             if (history.length > 1) {
                 history.back();
             } else {
-                history.replaceState({ page: 'mainPage' }, '', '#mainPage');
+                history.replaceState({ page: 'mainPage' }, '', '#/mainPage');
                 switchPage(currentPage, mainPage, true);
             }
         }
@@ -2926,18 +2927,16 @@
         function switchPage(fromPage, toPage, skipHistory = false, replaceState = false) {
             if (fromPage === toPage) return; // 동일한 페이지로의 전환은 무시
             
-            if (toPage === mainPage) {
-                document.body.classList.add('home-active');
-            } else {
+            if (toPage !== mainPage) {
                 document.body.classList.remove('home-active');
             }
 
             if (!skipHistory) {
                 const pageId = toPage.id || 'mainPage';
                 if (replaceState) {
-                    history.replaceState({ page: pageId }, '', '#' + pageId);
+                    history.replaceState({ page: pageId }, '', '#/' + pageId);
                 } else {
-                    history.pushState({ page: pageId }, '', '#' + pageId);
+                    history.pushState({ page: pageId }, '', '#/' + pageId);
                 }
             }
             
@@ -2954,11 +2953,19 @@
             hideScrollbar();
 
             setTimeout(() => {
-                fromPage.classList.add('hidden');
+                // 보여줄 페이지의 hidden을 먼저 해제하여 높이를 확보
                 toPage.classList.remove('hidden');
                 
-                // 페이지가 보이지 않는 상태에서 스크롤 리셋
-                window.scrollTo({ top: 0, behavior: 'instant' });
+                // 스크롤 리셋 (높이가 확보되었으므로 스크롤 리셋이 원활히 수행됨)
+                window.scrollTo(0, 0);
+                
+                // 사라질 페이지를 hidden 처리
+                fromPage.classList.add('hidden');
+                
+                // 메인 페이지로 완전히 전환되었을 때 비로소 overflow: hidden을 적용하여 스크롤 차단
+                if (toPage === mainPage) {
+                    document.body.classList.add('home-active');
+                }
                 
                 // 강제 리플로우를 발생시켜 display 상태의 변화를 인지하도록 처리
                 toPage.offsetHeight;
@@ -5468,8 +5475,11 @@
         });
         // 초기 상태 히스토리 설정
         window.addEventListener('DOMContentLoaded', () => {
+            if ('scrollRestoration' in history) {
+                history.scrollRestoration = 'manual';
+            }
             if (!history.state || !history.state.page) {
-                history.replaceState({ page: 'mainPage' }, '', '#mainPage');
+                history.replaceState({ page: 'mainPage' }, '', '#/mainPage');
             }
         });
 
