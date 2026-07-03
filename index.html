@@ -485,6 +485,8 @@
             max-width: 85vw;
             height: 100vh;
             height: 100dvh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             background: var(--glass-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
@@ -516,10 +518,7 @@
             .drawer-auth-section {
                 flex-shrink: 0;
             }
-            .drawer-menu {
-                min-height: 0;
-                -webkit-overflow-scrolling: touch;
-            }
+            /* 모바일 가로 모드 메뉴 최소 높이 제거 (통합 스크롤 사용) */
         }
 
         .side-drawer.active {
@@ -575,9 +574,7 @@
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
-            overflow-y: auto;
-            min-height: 0;
-            flex: 1;
+            flex-shrink: 0; /* 메뉴 전체가 찌그러지는 것을 방지하고 드로어 부모의 스크롤을 트리거함 */
             padding-right: 4px; /* 스크롤바 영역 확보 */
         }
 
