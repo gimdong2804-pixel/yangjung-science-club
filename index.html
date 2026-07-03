@@ -501,8 +501,6 @@
             box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
-            contain: layout paint;
-            overflow: hidden;
         }
 
         /* 모바일 가로 모드: 화면 높이가 짧을 때 패딩/갭 축소 */
@@ -513,6 +511,14 @@
             }
             .drawer-header {
                 padding-bottom: 0.5rem;
+                flex-shrink: 0;
+            }
+            .drawer-auth-section {
+                flex-shrink: 0;
+            }
+            .drawer-menu {
+                min-height: 0;
+                -webkit-overflow-scrolling: touch;
             }
         }
 
