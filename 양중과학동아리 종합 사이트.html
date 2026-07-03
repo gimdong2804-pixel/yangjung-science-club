@@ -484,6 +484,7 @@
             width: 320px;
             max-width: 85vw;
             height: 100vh;
+            height: 100dvh;
             background: var(--glass-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
@@ -501,6 +502,18 @@
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
             contain: layout paint;
+            overflow: hidden;
+        }
+
+        /* 모바일 가로 모드: 화면 높이가 짧을 때 패딩/갭 축소 */
+        @media (max-height: 500px) {
+            .side-drawer {
+                padding: 1rem 1.2rem;
+                gap: 0.75rem;
+            }
+            .drawer-header {
+                padding-bottom: 0.5rem;
+            }
         }
 
         .side-drawer.active {
@@ -701,7 +714,7 @@
 
         .page.fade-out {
             opacity: 0;
-            transform: translateY(10px);
+            pointer-events: none;
         }
 
         .page.fade-in {
@@ -874,7 +887,7 @@
             padding: 1.25rem;
             margin-bottom: 1rem;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
         }
         @keyframes slideOutAndFade {
             to { transform: scale(0.9); opacity: 0; }
@@ -887,6 +900,7 @@
             .board-card:hover {
                 transform: translateY(-2px);
                 border-color: var(--accent-color);
+                transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, transform 0.3s ease;
             }
         }
         .board-card.pinned {
@@ -1265,13 +1279,25 @@
             gap: 0.75rem;
             padding: 0.45rem 0.85rem;
             border-radius: 999px;
-            background: rgba(59, 130, 246, 0.14);
-            border: 1px solid rgba(59, 130, 246, 0.28);
+            
+            /* 글래스모피즘 블러 효과 (입력창과 통일) */
+            background: rgba(59, 130, 246, 0.15);
+            backdrop-filter: blur(20px) saturate(1.4);
+            -webkit-backdrop-filter: blur(20px) saturate(1.4);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            
             color: var(--text-primary);
             font-size: 0.86rem;
             font-weight: 600;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
             animation: replyTargetIn 0.25s ease;
+            box-sizing: border-box;
+        }
+        [data-theme="light"] .reply-target-bar {
+            background: rgba(59, 130, 246, 0.12);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06),
+                        inset 0 -1px 1px rgba(0, 0, 0, 0.02);
         }
         .reply-target-bar.active {
             display: flex;
@@ -1293,7 +1319,7 @@
         }
         .reply-target-bar button:hover {
             background: rgba(255, 255, 255, 0.1);
-            color: var(--text-primary);
+            color: var(--accent-color);
         }
         .comment-empty-state {
             color: var(--text-secondary);
@@ -1346,7 +1372,7 @@
             color: var(--text-secondary);
             margin-left: auto;
         }
-        .comment-input-area { position: relative; width: 100%; max-width: 800px; margin: 0 auto; background: transparent !important; padding: 1rem 1.5rem !important; border: none !important; z-index: 1000; display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 0.6rem; flex-shrink: 0; }
+        .comment-input-area { position: absolute; bottom: 0; left: 0; right: 0; width: 100%; max-width: none; margin: 0; background: none !important; padding: 1rem 1.5rem !important; border: none !important; z-index: 1000; display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 0.6rem; flex-shrink: 0; }
         .comment-input-container {
             width: 100%;
             pointer-events: auto;
@@ -1358,7 +1384,6 @@
             backdrop-filter: blur(20px) saturate(1.4);
             -webkit-backdrop-filter: blur(20px) saturate(1.4);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            /* 모서리 대각선 렌더링 버그(탁 하고 변하는 현상) 방지를 위해 각 방향의 테두리 색상을 통일 */
             box-sizing: border-box;
             border-radius: 9999px;
             padding: 0.6rem 0.6rem 0.6rem 1.5rem;
@@ -1369,12 +1394,7 @@
                         border-color 0.3s linear,
                         background 0.3s ease;
             position: relative;
-            overflow: hidden;
-            /* 웹킷(WebKit) 브라우저 모서리 렌더링 버그(border-radius가 풀리는 현상) 방지용 하드웨어 가속 */
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-            transform: translateZ(0);
-            will-change: transform, box-shadow;
+            /* overflow: hidden과 transform이 겹쳐서 검은 네모가 생기는 버그 제거 */
         }
         [data-theme="light"] .comment-input-container {
             /* 라이트 모드 리퀴드 글래스 */
@@ -1899,6 +1919,11 @@
             justify-content: center;
             line-height: 1;
             padding: 0;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .image-lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: scale(1.05);
         }
 
         /* 로그인/프로필 섹션 스타일 */
@@ -2197,7 +2222,8 @@
         /* 데스크탑에서 댓글 창이 사이드바 내부에 고정되도록 조정 */
         @media (min-width: 1024px) {
             .side-detail-container .comment-input-area { width: 100%; }
-            .side-detail-container .comment-input-container {
+            .side-detail-container .comment-input-container,
+            .side-detail-container .reply-target-bar {
                 max-width: 100%;
                 pointer-events: auto;
             }
@@ -2236,7 +2262,8 @@
                 visibility: hidden;
             }
             .side-detail-container .comment-input-area { width: 100%; }
-            .side-detail-container .comment-input-container {
+            .side-detail-container .comment-input-container,
+            .side-detail-container .reply-target-bar {
                 max-width: 800px;
                 margin: 0 auto;
                 pointer-events: auto;
@@ -2273,7 +2300,8 @@
 
         .side-detail-container.fullscreen-detail .comment-input-area { width: 100%; }
 
-        .side-detail-container.fullscreen-detail .comment-input-container {
+        .side-detail-container.fullscreen-detail .comment-input-container,
+        .side-detail-container.fullscreen-detail .reply-target-bar {
             max-width: 900px;
             margin: 0 auto;
         }
@@ -2547,7 +2575,7 @@
                 <div class="side-detail-scroll-area">
                     <div class="side-detail-header">
                         <span class="side-detail-title" style="color: var(--accent-color); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-file-lines"></i> 건의글 상세</span>
-                        <button class="close-btn" id="closeSideDetailBtn" aria-label="상세 닫기" style="background: none; border: none; color: var(--text-primary); font-size: 1.2rem; cursor: pointer;">
+                        <button class="close-btn" id="closeSideDetailBtn" aria-label="상세 닫기">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
@@ -2907,7 +2935,7 @@
                 }
             }
             
-            // 현재 페이지 fade out
+            // 현재 페이지 fade out (opacity만 사용하여 스크롤 위치 무관하게 동작)
             fromPage.classList.add('fade-out');
             fromPage.classList.remove('fade-in');
             
@@ -2923,11 +2951,12 @@
                 fromPage.classList.add('hidden');
                 toPage.classList.remove('hidden');
                 
+                // 페이지가 보이지 않는 상태에서 스크롤 리셋
+                window.scrollTo({ top: 0, behavior: 'instant' });
+                
                 // 강제 리플로우를 발생시켜 display 상태의 변화를 인지하도록 처리
                 toPage.offsetHeight;
                 
-                // 스크롤 위로
-                window.scrollTo({ top: 0, behavior: 'instant' });
                 // 새 페이지 fade in
                 requestAnimationFrame(() => {
                     toPage.classList.remove('fade-out');
@@ -3041,6 +3070,17 @@
         // 로그인 상태 변수
         let currentUser = null;
 
+        // 개발 모드: URL에 ?dev=true 붙이면 로그인 없이 테스트 가능
+        const isDevMode = new URLSearchParams(window.location.search).get('dev') === 'true';
+        if (isDevMode) {
+            currentUser = {
+                uid: 'dev-test-president',
+                email: 'gimdong2804@gmail.com',
+                displayName: '회장 김동현',
+                photoURL: '',
+            };
+            console.log('%c[개발 모드] 로그인 없이 회장 계정으로 접속 중', 'color: #3b82f6; font-weight: bold;');
+        }
         // 구글 로그인 관련 DOM
         const googleLoginBtn = document.getElementById('googleLoginBtn');
         const userProfileInfo = document.getElementById('userProfileInfo');
@@ -3090,6 +3130,23 @@
         // Auth 상태 리스너
         let authUITimeout;
         auth.onAuthStateChanged((user) => {
+            // 개발 모드에서는 Auth 리스너가 currentUser를 덮어쓰지 않음
+            if (isDevMode) {
+                // 개발 모드 UI: 로그인 버튼 숨기고 프로필 표시
+                googleLoginBtn.classList.add('hidden');
+                userProfileInfo.classList.remove('hidden');
+                userName.innerText = '회장 김동현';
+                userEmail.innerText = 'gimdong2804@gmail.com';
+                userAvatar.src = '';
+                const postAuthorInput = document.getElementById('postAuthor');
+                if (postAuthorInput) {
+                    postAuthorInput.value = '회장 김동현';
+                    postAuthorInput.placeholder = '작성자 이름';
+                }
+                const currentSort = document.querySelector('.custom-dropdown-option.active')?.getAttribute('data-value') || 'latest';
+                loadPosts(currentSort);
+                return;
+            }
             clearTimeout(authUITimeout);
             const postAuthorInput = document.getElementById('postAuthor');
             if (user) {
@@ -3357,6 +3414,20 @@
             let query = db.collection('posts').orderBy('createdAt', 'desc');
 
             postsUnsubscribe = query.onSnapshot((snapshot) => {
+                // 0. 진행 중인 FLIP 애니메이션 즉시 완료 (연속 snapshot 뚝뚝거림 방지)
+                boardContainer.querySelectorAll('.board-card.flipping').forEach(card => {
+                    const tid = card._flipTimerId;
+                    if (tid) { clearTimeout(tid); card._flipTimerId = null; }
+                    card.classList.remove('flipping');
+                    card.style.transition = 'none';
+                    card.style.transform = '';
+                    card.style.zIndex = '';
+                    const pb = card.querySelector('.pin-badge-wrapper');
+                    if (pb) pb.style.transition = '';
+                    card.offsetHeight;
+                    card.style.transition = '';
+                });
+
                 // 1. 이전 위치 및 데이터 스냅샷 저장
                 const oldPositions = new Map();
                 const oldData = new Map();
@@ -3579,7 +3650,12 @@
                         }
                         
                         const pinBadge = card.querySelector('.pin-badge-wrapper');
-                        if (pinBadge) pinBadge.className = 'pin-badge-wrapper ' + (post.pinned ? 'active' : '');
+                        if (pinBadge) {
+                            // 뱃지 크기 변화가 FLIP 위치 계산에 포함되도록 transition 없이 즉시 적용
+                            pinBadge.style.transition = 'none';
+                            pinBadge.className = 'pin-badge-wrapper ' + (post.pinned ? 'active' : '');
+                            pinBadge.offsetHeight; // 즉시 레이아웃 반영
+                        }
                         
                         const pinToggleBtn = card.querySelector('.pin-toggle-btn');
                         if (pinToggleBtn) {
@@ -3607,11 +3683,25 @@
                             card.style.transition = 'none';
                             card.style.transform = `translate(${dx}px, ${dy}px)`;
                             card.classList.add('flipping');
+                            
+                            const oldState = oldData.get(id);
+                            if (oldState && oldState.pinned !== card.classList.contains('pinned-state')) {
+                                card.style.zIndex = '20'; // 고정/해제된 카드는 무조건 최상단 위로 비행
+                            }
+                            
                             card.offsetHeight; // 리플로우
                             card.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease';
                             card.style.transform = 'translate(0, 0)';
-                            setTimeout(() => {
+                            card._flipTimerId = setTimeout(() => {
+                                card._flipTimerId = null;
                                 card.classList.remove('flipping');
+                                card.style.transition = '';
+                                card.style.transform = '';
+                                card.style.zIndex = '';
+                                
+                                // 뱃지의 transition 복원 (다음 변경부터 부드러운 애니메이션 적용)
+                                const pb = card.querySelector('.pin-badge-wrapper');
+                                if (pb) pb.style.transition = '';
                             }, 500);
                         }
                     } else {
@@ -3622,6 +3712,11 @@
                         card.style.transition = 'transform 0.5s cubic-bezier(0.2, 0, 0, 1), opacity 0.5s ease';
                         card.style.opacity = '1';
                         card.style.transform = 'translateY(0)';
+                        setTimeout(() => {
+                            card.style.transition = '';
+                            card.style.transform = '';
+                            card.style.opacity = '';
+                        }, 500);
                     }
                 });
             }, (error) => {
@@ -4299,7 +4394,7 @@
                             <div class="board-stats" style="font-size: 0.95rem;">
                                 <span style="cursor: default; user-select: none; margin-right: 0.8rem;"><i class="fa-regular fa-comment"></i> <span id="detailTopCommentCount">${currentTopCount}</span></span>
                                 <button type="button" class="board-action-btn" onclick="likePost('${id}', this)" id="detailLikeBtn" title="좋아요">
-                                    <i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span id="detailLikeCnt" class="like-count" style="${isLiked ? 'color: var(--accent-color);' : 'color: var(--text-primary);'}">${currentPost.likes || 0}</span>
+                                    <i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span id="detailLikeCnt" class="like-count">${currentPost.likes || 0}</span>
                                 </button>
                             </div>
                         </div>
@@ -4328,8 +4423,19 @@
             const commentArea = document.getElementById('detailCommentArea');
             if (commentUnsubscribe) commentUnsubscribe();
             commentUnsubscribe = db.collection('posts').doc(id).collection('comments').onSnapshot(snap => {
-                window.currentCommentDocs = snap.docs.map(normalizeCommentDoc);
-                window.renderCurrentComments(id);
+                const updateComments = () => {
+                    window.currentCommentDocs = snap.docs.map(normalizeCommentDoc);
+                    window.renderCurrentComments(id);
+                };
+
+                const isAnimating = !!document.querySelector('.c-like-btn i.animate-heart, .c-like-btn i.animate-heart-cancel, .board-action-btn i.animate-heart, .board-action-btn i.animate-heart-cancel');
+                if (isAnimating) {
+                    if (window.commentUpdateTimeout) clearTimeout(window.commentUpdateTimeout);
+                    window.commentUpdateTimeout = setTimeout(updateComments, 400);
+                } else {
+                    if (window.commentUpdateTimeout) clearTimeout(window.commentUpdateTimeout);
+                    updateComments();
+                }
                 return;
 
                 const topCountEl = document.getElementById('detailTopCommentCount');
@@ -4576,7 +4682,7 @@
                                     } else {
                                         icon.classList.remove('fa-solid');
                                         icon.classList.add('fa-regular');
-                                        icon.style.color = 'var(--text-primary)';
+                                        icon.style.color = '';
                                     }
                                 }
                             }
@@ -4652,13 +4758,10 @@
                         // 취소 시: regular로 변경 및 cancel 애니메이션 부여
                         heartIcon.classList.remove('fa-solid');
                         heartIcon.classList.add('fa-regular', 'animate-heart-cancel');
-                        heartIcon.style.color = 'var(--text-primary)';
+                        heartIcon.style.color = '';
                         if (likeCountEl) {
                             const cur = parseInt(likeCountEl.textContent) || 0;
                             likeCountEl.textContent = Math.max(0, cur - 1);
-                            if (btnEl.id === 'detailLikeBtn') {
-                                likeCountEl.style.color = 'var(--text-primary)';
-                            }
                         }
                     } else {
                         // 추가 시: solid로 변경 및 heart 애니메이션 부여
@@ -4668,9 +4771,6 @@
                         if (likeCountEl) {
                             const cur = parseInt(likeCountEl.textContent) || 0;
                             likeCountEl.textContent = cur + 1;
-                            if (btnEl.id === 'detailLikeBtn') {
-                                likeCountEl.style.color = 'var(--accent-color)';
-                            }
                         }
                     }
                     
@@ -4780,24 +4880,29 @@
                 openDrawer();
                 return;
             }
-            try {
+            
+            // 애니메이션 먼저 실행 (DB 호출과 분리)
+            if (btn) {
                 const heartIcon = btn.querySelector('i');
                 const likeCountEl = btn.querySelector('.like-count');
                 if (heartIcon) {
                     const currentlyLiked = heartIcon.classList.contains('fa-solid');
                     
+                    // 기존 애니메이션 클래스 깔끔히 제거 후 강제 리플로우
                     heartIcon.classList.remove('animate-heart', 'animate-heart-cancel');
                     void heartIcon.offsetWidth; 
                     
                     if (currentlyLiked) {
+                        // 취소 시: regular로 변경 및 cancel 애니메이션 부여
                         heartIcon.classList.remove('fa-solid');
                         heartIcon.classList.add('fa-regular', 'animate-heart-cancel');
-                        heartIcon.style.color = 'var(--text-primary)';
+                        heartIcon.style.color = '';
                         if (likeCountEl) {
                             const cur = parseInt(likeCountEl.textContent) || 0;
                             likeCountEl.textContent = Math.max(0, cur - 1);
                         }
                     } else {
+                        // 추가 시: solid로 변경 및 heart 애니메이션 부여
                         heartIcon.classList.remove('fa-regular');
                         heartIcon.classList.add('fa-solid', 'animate-heart');
                         heartIcon.style.color = '#ff6b6b';
@@ -4813,18 +4918,28 @@
                     };
                     heartIcon.addEventListener('animationend', onAnimEnd);
                 }
-
+            }
+            
+            // DB 업데이트
+            try {
                 const commentRef = db.collection('posts').doc(postId).collection('comments').doc(commentId);
-                if (isLiked) {
-                    await commentRef.update({
-                        likes: firebase.firestore.FieldValue.increment(-1),
-                        likedUsers: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-                    });
-                } else {
-                    await commentRef.update({
-                        likes: firebase.firestore.FieldValue.increment(1),
-                        likedUsers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-                    });
+                const doc = await commentRef.get();
+                if (doc.exists) {
+                    const commentData = doc.data();
+                    const likedUsers = commentData.likedUsers || [];
+                    const actualIsLiked = likedUsers.includes(currentUser.uid);
+                    
+                    if (actualIsLiked) {
+                        await commentRef.update({
+                            likes: firebase.firestore.FieldValue.increment(-1),
+                            likedUsers: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+                        });
+                    } else {
+                        await commentRef.update({
+                            likes: firebase.firestore.FieldValue.increment(1),
+                            likedUsers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+                        });
+                    }
                 }
             } catch (error) {
                 console.error("Error toggling comment like: ", error);
@@ -4923,15 +5038,6 @@
             return childrenMap;
         }
 
-        function hasUnselectedDescendant(commentId, childrenMap, selectedIds) {
-            const children = childrenMap.get(commentId) || [];
-            for (const child of children) {
-                if (!selectedIds.has(child.id)) return true;
-                if (hasUnselectedDescendant(child.id, childrenMap, selectedIds)) return true;
-            }
-            return false;
-        }
-
         async function deleteSelectedComments(postId, selectedIds) {
             if (!currentUser) {
                 alert('댓글을 삭제하시려면 먼저 Google 로그인을 해주세요!');
@@ -4948,28 +5054,32 @@
             let blockedCount = 0;
             let changedCount = 0;
 
+            const toDelete = new Set();
+
             selectedIds.forEach(commentId => {
                 const comment = byId.get(commentId);
                 if (!comment) return;
+                
                 const canDelete = isPresidentUser() || comment.uid === currentUser.uid;
                 if (!canDelete) {
                     blockedCount += 1;
                     return;
                 }
 
-                const ref = commentsRef.doc(commentId);
-                if (hasUnselectedDescendant(commentId, childrenMap, selectedIds)) {
-                    batch.update(ref, {
-                        body: '삭제된 댓글입니다.',
-                        deleted: true,
-                        pinned: false,
-                        likes: 0,
-                        likedUsers: [],
-                        deletedAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                } else {
-                    batch.delete(ref);
+                // 권한이 있는 경우, 해당 댓글과 모든 대댓글을 삭제 목록에 추가
+                const queue = [commentId];
+                while (queue.length > 0) {
+                    const currentId = queue.shift();
+                    if (!toDelete.has(currentId)) {
+                        toDelete.add(currentId);
+                        const kids = childrenMap.get(currentId) || [];
+                        kids.forEach(k => queue.push(k.id));
+                    }
                 }
+            });
+
+            toDelete.forEach(commentId => {
+                batch.delete(commentsRef.doc(commentId));
                 changedCount += 1;
             });
 
