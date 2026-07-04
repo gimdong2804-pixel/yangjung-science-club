@@ -511,15 +511,7 @@
                 padding: 1rem 1.2rem;
                 gap: 0.75rem;
             }
-            .drawer-header {
-                padding-bottom: 0.5rem;
-                flex-shrink: 0;
-            }
-            .drawer-auth-section {
-                flex-shrink: 0;
-                margin-top: 0;
-                padding: 0 0 0.75rem 0; /* 줄어든 gap(0.75rem)과 하단 패딩을 동일하게 맞춰 1:1 대칭 유지 */
-            }
+            /* 가로모드에서는 부모의 gap만 줄이면 됨 */
             /* 모바일 가로 모드 메뉴 최소 높이 제거 (통합 스크롤 사용) */
         }
 
@@ -529,12 +521,18 @@
             transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear;
         }
 
+        .drawer-divider {
+            border: none;
+            border-bottom: 1px solid var(--glass-border);
+            margin: 0;
+            width: 100%;
+            flex-shrink: 0;
+        }
+
         .drawer-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--glass-border);
-            padding-bottom: 1rem;
             flex-shrink: 0;
         }
 
@@ -1934,11 +1932,10 @@
 
         /* 로그인/프로필 섹션 스타일 */
         .drawer-auth-section {
-            padding: 0 0 2rem 0; /* 위쪽 공간은 부모의 gap(2rem)이 대신함. 상하 1:1 비율을 위해 하단 패딩만 동일하게 2rem 줌 */
-            margin-top: 0; /* 모바일 렌더링 버그를 유발하던 음수 마진 꼼수 제거 */
-            border-bottom: 1px solid var(--glass-border);
             display: flex;
             flex-direction: column;
+            margin: 0;
+            padding: 0;
             gap: 0.75rem;
             flex-shrink: 0;
         }
@@ -2422,6 +2419,8 @@
             </button>
         </div>
         
+        <hr class="drawer-divider">
+        
         <!-- 로그인 정보 영역 -->
         <div class="drawer-auth-section">
             <!-- 로그인 전 -->
@@ -2443,7 +2442,10 @@
                     </button>
                 </div>
             </div>
+            </div>
         </div>
+        
+        <hr class="drawer-divider">
         
         <nav class="drawer-menu">
             <!-- 카테고리 1: 안내 및 인사 -->
