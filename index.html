@@ -2004,7 +2004,15 @@
             transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
         }
         
-        .user-profile-summary:hover {
+        /* 데스크탑에서만 기본 호버 배경 적용 (테두리는 표시 안 함) */
+        @media (hover: hover) {
+            .user-profile-summary:hover {
+                background: rgba(255, 255, 255, 0.1);
+            }
+        }
+        
+        /* 로그인 UI가 열렸을 때(expanded) 파란색 테두리와 그림자 고정 */
+        .user-profile-info.expanded .user-profile-summary {
             background: rgba(255, 255, 255, 0.1);
             border-color: var(--accent-color);
             box-shadow: 0 0 15px var(--accent-glow);
@@ -2027,6 +2035,8 @@
             text-overflow: ellipsis;
             white-space: nowrap;
             flex: 1;
+            line-height: 1; /* 아바타와의 상하 중앙 정렬을 위한 줄높이 통일 */
+            margin-top: 1px; /* 폰트 베이스라인 미세 보정 */
         }
         
         .profile-dropdown-icon {
