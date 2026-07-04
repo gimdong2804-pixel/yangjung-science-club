@@ -517,8 +517,8 @@
             }
             .drawer-auth-section {
                 flex-shrink: 0;
-                margin-top: -0.75rem; /* 가로 모드에서 줄어든 gap(0.75rem)을 상쇄하여 상하 여백 대칭 유지 */
-                padding: 1rem 0; /* 가로 모드의 제한된 높이를 고려해 상하 패딩 소폭 축소 */
+                margin-top: 0;
+                padding: 0 0 0.75rem 0; /* 줄어든 gap(0.75rem)과 하단 패딩을 동일하게 맞춰 1:1 대칭 유지 */
             }
             /* 모바일 가로 모드 메뉴 최소 높이 제거 (통합 스크롤 사용) */
         }
@@ -1934,8 +1934,8 @@
 
         /* 로그인/프로필 섹션 스타일 */
         .drawer-auth-section {
-            padding: 1.5rem 0;
-            margin-top: -2rem; /* drawer의 gap: 2rem을 상쇄하여 drawer-header의 보더라인과 밀착 */
+            padding: 0 0 2rem 0; /* 위쪽 공간은 부모의 gap(2rem)이 대신함. 상하 1:1 비율을 위해 하단 패딩만 동일하게 2rem 줌 */
+            margin-top: 0; /* 모바일 렌더링 버그를 유발하던 음수 마진 꼼수 제거 */
             border-bottom: 1px solid var(--glass-border);
             display: flex;
             flex-direction: column;
