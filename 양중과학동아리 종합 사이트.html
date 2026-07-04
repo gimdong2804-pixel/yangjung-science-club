@@ -477,6 +477,79 @@
             pointer-events: auto;
         }
 
+        /* 관리자 모달 스타일 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            pointer-events: none;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .modal-container {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -40%);
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 2rem;
+            border-radius: 12px;
+            z-index: 2001;
+            display: flex;
+            flex-direction: column;
+            width: 90%;
+            max-width: 320px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+            pointer-events: none;
+        }
+        .modal-container.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, -50%);
+            pointer-events: auto;
+        }
+        .category-fade-in {
+            animation: fadeInMenu 0.4s ease-out forwards;
+        }
+        @keyframes fadeInMenu {
+            0% { opacity: 0; transform: translateY(-10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .modal-container input {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+            margin-top: 0.5rem;
+        }
+        .modal-container input:focus {
+            border-color: var(--accent-color);
+        }
+        .shake-animation {
+            animation: shake 0.4s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translate(-50%, -50%); }
+            20%, 60% { transform: translate(calc(-50% - 5px), -50%); }
+            40%, 80% { transform: translate(calc(-50% + 5px), -50%); }
+        }
+
         .side-drawer {
             position: fixed;
             top: 0;
@@ -2399,6 +2472,31 @@
 
     <!-- 사이드 드로어 메뉴 & 오버레이 -->
     <div id="drawerOverlay" class="drawer-overlay"></div>
+    
+    <!-- 관리자 비밀번호 모달 -->
+    <div id="adminModalOverlay" class="modal-overlay"></div>
+    <div id="adminModal" class="modal-container">
+        <h3 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-lock"></i> 관리자 인증</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.9rem;">관리자 비밀번호를 입력해주세요.</p>
+        <input type="password" id="adminPwdInput" placeholder="비밀번호" />
+        <div class="modal-buttons" style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button id="adminModalCancel" style="padding: 0.5rem 1rem; border: none; border-radius: 8px; background: var(--glass-border); color: var(--text-primary); cursor: pointer;">취소</button>
+            <button id="adminModalConfirm" style="padding: 0.5rem 1rem; border: none; border-radius: 8px; background: var(--accent-color); color: white; cursor: pointer;">확인</button>
+        </div>
+    </div>
+    
+    <!-- 직책 부여 모달 -->
+    <div id="roleModalOverlay" class="modal-overlay"></div>
+    <div id="roleModal" class="modal-container">
+        <h3 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-user-tag"></i> 직책 부여 (회장 전용)</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.9rem;">대상 이메일과 부여할 직책명을 입력하세요.</p>
+        <input type="email" id="roleTargetEmail" placeholder="대상 이메일 (예: user@gmail.com)" />
+        <input type="text" id="roleNameInput" placeholder="직책명 (예: 부회장 지후)" />
+        <div class="modal-buttons" style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button id="roleModalCancel" style="padding: 0.5rem 1rem; border: none; border-radius: 8px; background: var(--glass-border); color: var(--text-primary); cursor: pointer;">취소</button>
+            <button id="roleModalConfirm" style="padding: 0.5rem 1rem; border: none; border-radius: 8px; background: var(--accent-color); color: white; cursor: pointer;">부여</button>
+        </div>
+    </div>
     <div id="multiDeleteBar" style="position: fixed; bottom: -250px; left: 50%; transform: translateX(-50%); background: var(--bg-color); border: 1px solid var(--glass-border); padding: 0.8rem 1.5rem; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0.5rem; width: max-content; max-width: 90vw; transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
         <span id="multiDeleteCount" style="font-weight: 600; color: var(--text-primary); white-space: nowrap;">0개 선택됨</span>
         <button id="multiPinBtn" onclick="executeMultiPin()" style="background: var(--accent-color); color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; display: none; white-space: nowrap;">고정</button>
@@ -2413,7 +2511,7 @@
     </div>
     <div id="sideDrawer" class="side-drawer">
         <div class="drawer-header">
-            <span class="drawer-title"><i class="fa-solid fa-flask"></i> 전체 메뉴</span>
+            <span class="drawer-title"><i class="fa-solid fa-flask" id="adminTriggerIcon" style="cursor: pointer;"></i> 전체 메뉴</span>
             <button class="close-btn" id="drawerCloseBtn" aria-label="메뉴 닫기">
                 <i class="fa-solid fa-xmark"></i>
             </button>
@@ -2474,6 +2572,21 @@
                         <a href="#safety" id="ruleSafetyLink"><i class="fa-solid fa-vial"></i> 실험 및 활동 안전 규칙</a>
                         <a href="#conflict" id="ruleConflictLink"><i class="fa-solid fa-handshake-angle"></i> 갈등 및 분쟁 해결 조항</a>
                         <a href="#penalty" id="rulePenaltyLink"><i class="fa-solid fa-scale-balanced"></i> 경고 및 징계 규정</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 카테고리 3: 관리자 모드 -->
+            <div class="menu-category" id="adminCategory" style="display: none;">
+                <div class="category-header">
+                    <span class="category-label" style="color: #ef4444;"><i class="fa-solid fa-user-shield"></i> 관리자 모드</span>
+                    <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                </div>
+                <div class="menu-items-wrapper">
+                    <div class="menu-items" id="adminMenuItems">
+                        <div class="menu-item" id="roleManageMenuBtn">
+                            <i class="fa-solid fa-user-tag"></i> 직책 관리
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3154,7 +3267,7 @@
 
         // Auth 상태 리스너
         let authUITimeout;
-        auth.onAuthStateChanged((user) => {
+        auth.onAuthStateChanged(async (user) => {
             // 개발 모드에서는 Auth 리스너가 currentUser를 덮어쓰지 않음
             if (isDevMode) {
                 // 개발 모드 UI: 로그인 버튼 숨기고 프로필 표시
@@ -3176,6 +3289,20 @@
             const postAuthorInput = document.getElementById('postAuthor');
             if (user) {
                 currentUser = user;
+                
+                // 직책 정보 조회
+                try {
+                    const roleDoc = await db.collection('userRoles').doc(user.email).get();
+                    if (roleDoc.exists) {
+                        currentUserRole = roleDoc.data().roleName;
+                    } else {
+                        currentUserRole = null;
+                    }
+                } catch(e) {
+                    console.error("Failed to fetch user role", e);
+                    currentUserRole = null;
+                }
+
                 // UI 업데이트 (애니메이션 적용)
                 googleLoginBtn.classList.add('fade-out');
                 authUITimeout = setTimeout(() => {
@@ -3190,12 +3317,13 @@
                 }, 300);
 
                 const isPresident = user.email === 'gimdong2804@gmail.com';
-                userName.innerText = isPresident ? "회장 김동현" : user.displayName;
+                const displayName = isPresident ? "회장 김동현" : (currentUserRole || user.displayName);
+                userName.innerText = displayName;
                 userEmail.innerText = user.email;
                 userAvatar.src = user.photoURL || '';
 
                 if (postAuthorInput) {
-                    postAuthorInput.value = isPresident ? "회장 김동현" : user.displayName;
+                    postAuthorInput.value = displayName;
                     postAuthorInput.placeholder = "작성자 이름";
                 }
 
@@ -3340,7 +3468,7 @@
                 return;
             }
             const title = document.getElementById('postTitle').value.trim();
-            const author = currentUser.email === 'gimdong2804@gmail.com' ? "회장 김동현" : currentUser.displayName;
+            const author = currentUser.email === 'gimdong2804@gmail.com' ? "회장 김동현" : (currentUserRole || currentUser.displayName);
             const body = document.getElementById('postBody').value.trim();
 
             if (!title || !body) {
@@ -5501,6 +5629,141 @@
                 navigator.serviceWorker.register('./sw.js').catch(err => {
                     console.error('ServiceWorker registration failed: ', err);
                 });
+            });
+        }
+
+        // ==========================================
+        // 관리자 모드 이스터에그 로직 추가
+        // ==========================================
+        const adminTriggerIcon = document.getElementById('adminTriggerIcon');
+        const adminModalOverlay = document.getElementById('adminModalOverlay');
+        const adminModal = document.getElementById('adminModal');
+        const adminPwdInput = document.getElementById('adminPwdInput');
+        const adminModalCancel = document.getElementById('adminModalCancel');
+        const adminModalConfirm = document.getElementById('adminModalConfirm');
+        const adminCategory = document.getElementById('adminCategory');
+        
+        let adminClickCount = 0;
+        let adminLastClickTime = 0;
+
+        adminTriggerIcon.addEventListener('click', (e) => {
+            const currentTime = new Date().getTime();
+            if (currentTime - adminLastClickTime > 3000) {
+                adminClickCount = 0;
+            }
+            adminClickCount++;
+            adminLastClickTime = currentTime;
+
+            if (adminClickCount >= 5) {
+                adminClickCount = 0; 
+                adminModalOverlay.classList.add('active');
+                adminModal.classList.add('active');
+                adminPwdInput.value = '';
+                setTimeout(() => adminPwdInput.focus(), 300);
+            }
+        });
+
+        adminModalCancel.addEventListener('click', () => {
+            adminModalOverlay.classList.remove('active');
+            adminModal.classList.remove('active');
+        });
+
+        function checkAdminPassword() {
+            if (adminPwdInput.value === '110420') {
+                adminModalOverlay.classList.remove('active');
+                adminModal.classList.remove('active');
+                adminCategory.style.display = 'block'; 
+                adminCategory.classList.add('category-fade-in'); 
+                
+                const newHeader = adminCategory.querySelector('.category-header');
+                newHeader.addEventListener('click', () => {
+                    const wasActive = adminCategory.classList.contains('active');
+                    if (!wasActive) {
+                        adminCategory.classList.add('active');
+                    } else {
+                        adminCategory.classList.remove('active');
+                    }
+                });
+
+                const drawer = document.getElementById('sideDrawer');
+                drawer.scrollTo({
+                    top: drawer.scrollHeight,
+                    behavior: 'smooth'
+                });
+            } else {
+                adminModal.classList.add('shake-animation');
+                adminPwdInput.value = '';
+                adminPwdInput.focus();
+                setTimeout(() => {
+                    adminModal.classList.remove('shake-animation');
+                }, 400);
+            }
+        }
+
+        adminModalConfirm.addEventListener('click', checkAdminPassword);
+        adminPwdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                checkAdminPassword();
+            }
+        });
+
+        // ==========================================
+        // 직책 관리 모달 로직 추가
+        // ==========================================
+        const roleManageMenuBtn = document.getElementById('roleManageMenuBtn');
+        const roleModalOverlay = document.getElementById('roleModalOverlay');
+        const roleModal = document.getElementById('roleModal');
+        const roleTargetEmail = document.getElementById('roleTargetEmail');
+        const roleNameInput = document.getElementById('roleNameInput');
+        const roleModalCancel = document.getElementById('roleModalCancel');
+        const roleModalConfirm = document.getElementById('roleModalConfirm');
+
+        if(roleManageMenuBtn) {
+            roleManageMenuBtn.addEventListener('click', () => {
+                if(!currentUser || currentUser.email !== 'gimdong2804@gmail.com') {
+                    alert('회장만 접근 가능한 메뉴입니다.');
+                    return;
+                }
+                roleModalOverlay.classList.add('active');
+                roleModal.classList.add('active');
+                roleTargetEmail.value = '';
+                roleNameInput.value = '';
+                // 모바일 환경 등에서 메뉴 닫기
+                const drawer = document.getElementById('sideDrawer');
+                const overlay = document.getElementById('drawerOverlay');
+                drawer.classList.remove('active');
+                overlay.classList.remove('active');
+            });
+        }
+        
+        if(roleModalCancel) {
+            roleModalCancel.addEventListener('click', () => {
+                roleModalOverlay.classList.remove('active');
+                roleModal.classList.remove('active');
+            });
+        }
+        
+        if(roleModalConfirm) {
+            roleModalConfirm.addEventListener('click', async () => {
+                if(!currentUser || currentUser.email !== 'gimdong2804@gmail.com') return;
+                
+                const targetEmail = roleTargetEmail.value.trim();
+                const roleName = roleNameInput.value.trim();
+                
+                if(!targetEmail || !roleName) {
+                    alert('이메일과 직책명을 모두 입력해주세요.');
+                    return;
+                }
+                
+                try {
+                    await db.collection('userRoles').doc(targetEmail).set({ roleName: roleName });
+                    alert(`[${targetEmail}] 계정에 [${roleName}] 직책이 성공적으로 부여되었습니다.\n\n(해당 사용자가 새로 로그인하거나 앱을 다시 열면 반영됩니다.)`);
+                    roleModalOverlay.classList.remove('active');
+                    roleModal.classList.remove('active');
+                } catch(e) {
+                    console.error("Role setting error", e);
+                    alert('직책 부여 중 오류가 발생했습니다.');
+                }
             });
         }
     </script>
