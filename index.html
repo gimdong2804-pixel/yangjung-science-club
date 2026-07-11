@@ -3487,6 +3487,34 @@
                     Gemini API 키는 안전하게 동아리 데이터베이스에 보관되며, 부원들의 AI 기능(챗봇, 건의 요약 등) 활성화를 위해 사용됩니다.</p>
             </div>
 
+            <div>
+                <label
+                    style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--text-primary); font-size: 1.05rem;"><i
+                        class="fa-solid fa-microchip"></i> AI 모델 선택</label>
+                <div style="position: relative; display: flex; align-items: center; width: 100%;">
+                    <select id="aiModelSelect"
+                        style="padding: 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.03); color: var(--text-primary); font-size: 1rem; width: 100%; box-sizing: border-box; transition: all 0.2s; outline: none; appearance: none; -webkit-appearance: none; cursor: pointer;">
+                        <option value="gemini-3.5-flash"
+                            style="background-color: var(--bg-color); color: var(--text-primary);">Gemini 3.5 Flash
+                        </option>
+                        <option value="gemini-3.1-pro-preview"
+                            style="background-color: var(--bg-color); color: var(--text-primary);">Gemini 3.1 Pro
+                            Preview</option>
+                        <option value="gemini-1.5-flash"
+                            style="background-color: var(--bg-color); color: var(--text-primary);">Gemini 1.5 Flash (권장)
+                        </option>
+                        <option value="gemini-1.5-pro"
+                            style="background-color: var(--bg-color); color: var(--text-primary);">Gemini 1.5 Pro
+                        </option>
+                    </select>
+                    <div style="position: absolute; right: 1rem; pointer-events: none; color: var(--text-secondary);">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                </div>
+                <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.85rem; line-height: 1.4;">사용하고자
+                    하는 Gemini 모델을 선택해 주세요. (기본값: Gemini 3.5 Flash)</p>
+            </div>
+
             <div style="border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
                 <label
                     style="display: block; font-weight: bold; margin-bottom: 1rem; color: var(--text-primary); font-size: 1.05rem;"><i
@@ -7427,6 +7455,7 @@
         // ==========================================
         window.aiConfig = {
             apiKey: '',
+            model: 'gemini-3.5-flash',
             enabled: false,
             chatbotEnabled: false,
             summaryEnabled: false
@@ -7436,6 +7465,7 @@
         const aiSettingsPage = document.getElementById('aiSettingsPage');
         const aiSettingsBackBtn = document.getElementById('aiSettingsBackBtn');
         const aiApiKeyInput = document.getElementById('aiApiKeyInput');
+        const aiModelSelect = document.getElementById('aiModelSelect');
         const toggleApiKeyVisibility = document.getElementById('toggleApiKeyVisibility');
         const aiEnabledCheckbox = document.getElementById('aiEnabledCheckbox');
         const aiChatbotEnabledCheckbox = document.getElementById('aiChatbotEnabledCheckbox');
@@ -7459,6 +7489,7 @@
                     const data = doc.data();
                     window.aiConfig = {
                         apiKey: data.apiKey || '',
+                        model: data.model || 'gemini-3.5-flash',
                         enabled: data.enabled || false,
                         chatbotEnabled: data.chatbotEnabled || false,
                         summaryEnabled: data.summaryEnabled || false
@@ -7496,6 +7527,9 @@
 
                 // 설정값 채우기
                 aiApiKeyInput.value = window.aiConfig.apiKey;
+                if (aiModelSelect) {
+                    aiModelSelect.value = window.aiConfig.model || 'gemini-3.5-flash';
+                }
                 aiEnabledCheckbox.checked = window.aiConfig.enabled;
                 aiChatbotEnabledCheckbox.checked = window.aiConfig.chatbotEnabled;
                 aiSummaryEnabledCheckbox.checked = window.aiConfig.summaryEnabled;
@@ -7534,6 +7568,7 @@
                 if (!currentUser || !isAdmin(currentUser.email)) return;
 
                 const apiKey = aiApiKeyInput.value.trim();
+                const model = aiModelSelect ? aiModelSelect.value : 'gemini-3.5-flash';
                 const enabled = aiEnabledCheckbox.checked;
                 const chatbotEnabled = aiChatbotEnabledCheckbox.checked;
                 const summaryEnabled = aiSummaryEnabledCheckbox.checked;
@@ -7544,13 +7579,14 @@
                 try {
                     await db.collection('settings').doc('ai_config').set({
                         apiKey: apiKey,
+                        model: model,
                         enabled: enabled,
                         chatbotEnabled: chatbotEnabled,
                         summaryEnabled: summaryEnabled,
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
 
-                    window.aiConfig = { apiKey, enabled, chatbotEnabled, summaryEnabled };
+                    window.aiConfig = { apiKey, model, enabled, chatbotEnabled, summaryEnabled };
                     updateAiFeaturesUI();
 
                     alert('AI 설정이 성공적으로 저장되었습니다!');
@@ -7566,7 +7602,8 @@
 
         // Gemini API 호출 헬퍼
         async function callGeminiAPI(apiKey, prompt) {
-            const url = `https://generativetalk.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            const model = window.aiConfig.model || 'gemini-3.5-flash';
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
