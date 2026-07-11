@@ -926,6 +926,203 @@
             transform: translateY(0);
         }
 
+        /* Switch styling */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked+.slider {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        /* AI Floating Chatbot Styles */
+        .ai-chatbot-fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s;
+        }
+
+        .ai-chatbot-fab:hover {
+            transform: scale(1.1) rotate(15deg);
+        }
+
+        .ai-chatbot-window {
+            position: fixed;
+            bottom: 6rem;
+            right: 2rem;
+            width: 380px;
+            height: 520px;
+            max-width: calc(100vw - 4rem);
+            max-height: calc(100vh - 8rem);
+            border-radius: 20px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+            transform-origin: bottom right;
+        }
+
+        .ai-chatbot-window.hidden {
+            display: none;
+            opacity: 0;
+            transform: scale(0.8) translateY(20px);
+            pointer-events: none;
+        }
+
+        .ai-chatbot-header {
+            padding: 1rem 1.25rem;
+            background: rgba(59, 130, 246, 0.1);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-chatbot-messages {
+            flex: 1;
+            padding: 1.25rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .ai-message {
+            max-width: 80%;
+            padding: 0.8rem 1rem;
+            border-radius: 16px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            animation: messageFadeIn 0.3s ease forwards;
+        }
+
+        @keyframes messageFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ai-message.user {
+            background: var(--accent-color);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-message.assistant {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .ai-chatbot-input-container {
+            padding: 1rem;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .ai-chatbot-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border-radius: 999px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+
+        .ai-chatbot-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .ai-chatbot-send-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .ai-chatbot-send-btn:hover {
+            background: #2563eb;
+        }
+
         /* Greeting Page */
         .greeting-back-btn {
             display: inline-flex;
@@ -3303,6 +3500,102 @@
         </div>
     </div>
 
+    <!-- AI 설정 페이지 -->
+    <div id="aiSettingsPage" class="page hidden fade-out">
+        <button class="greeting-back-btn" id="aiSettingsBackBtn">
+            <i class="fa-solid fa-arrow-left"></i> 돌아가기
+        </button>
+        <h1 class="greeting-title">AI 설정 (회장, 사장 전용)</h1>
+        <div class="greeting-card"
+            style="max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; padding: 2rem;">
+
+            <div>
+                <label
+                    style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--text-primary); font-size: 1.05rem;"><i
+                        class="fa-solid fa-key"></i> Gemini API Key</label>
+                <div style="position: relative; display: flex; align-items: center; width: 100%;">
+                    <input type="password" id="aiApiKeyInput" placeholder="AI API Key를 입력하세요"
+                        style="padding: 1rem 3rem 1rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.03); color: var(--text-primary); font-size: 1rem; width: 100%; box-sizing: border-box;" />
+                    <button id="toggleApiKeyVisibility"
+                        style="position: absolute; right: 1rem; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; height: 100%;">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+                </div>
+                <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.85rem; line-height: 1.4;">
+                    Gemini API 키는 안전하게 동아리 데이터베이스에 보관되며, 부원들의 AI 기능(챗봇, 건의 요약 등) 활성화를 위해 사용됩니다.</p>
+            </div>
+
+            <div style="border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+                <label
+                    style="display: block; font-weight: bold; margin-bottom: 1rem; color: var(--text-primary); font-size: 1.05rem;"><i
+                        class="fa-solid fa-sliders"></i> 기능 활성화 설정</label>
+
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- AI 마스터 스위치 -->
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); padding: 0.8rem 1rem; border-radius: 10px; border: 1px solid var(--glass-border);">
+                        <div>
+                            <span style="font-weight: 600; color: var(--text-primary); display: block;">전체 AI 기능
+                                켜기</span>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">동아리 사이트 전체의 AI 활성화 여부를
+                                결정합니다.</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="aiEnabledCheckbox">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- AI 챗봇 비서 -->
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); padding: 0.8rem 1rem; border-radius: 10px; border: 1px solid var(--glass-border);">
+                        <div>
+                            <span style="font-weight: 600; color: var(--text-primary); display: block;">양중과학동아리 AI 도우미
+                                (챗봇)</span>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">메인 화면에 과학 질문을 할 수 있는 AI 챗봇을
+                                추가합니다.</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="aiChatbotEnabledCheckbox">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- AI 건의 요약 -->
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); padding: 0.8rem 1rem; border-radius: 10px; border: 1px solid var(--glass-border);">
+                        <div>
+                            <span style="font-weight: 600; color: var(--text-primary); display: block;">건의방 글 AI 요약 및 분석
+                                피드백</span>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">커뮤니티 건의글에 대해 AI가 자동 핵심 요약 및
+                                해결 가이드를 생성합니다.</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="aiSummaryEnabledCheckbox">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+                <button id="aiTestBtn"
+                    style="padding: 0.8rem 1.5rem; border: 1px solid var(--glass-border); border-radius: 12px; background: rgba(255,255,255,0.05); color: var(--text-primary); font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-vial"></i> 연결 테스트
+                </button>
+                <button id="aiSaveBtn"
+                    style="padding: 0.8rem 2rem; border: none; border-radius: 12px; background: var(--accent-color); color: white; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-floppy-disk"></i> 저장하기
+                </button>
+            </div>
+
+            <div id="aiTestResult"
+                style="display: none; padding: 1rem; border-radius: 10px; font-size: 0.9rem; border: 1px solid transparent; transition: all 0.3s ease; line-height: 1.5; word-break: break-all;">
+            </div>
+        </div>
+    </div>
+
     <div id="multiDeleteBar"
         style="position: fixed; bottom: -250px; left: 50%; transform: translateX(-50%); background: var(--bg-color); border: 1px solid var(--glass-border); padding: 0.8rem 1.5rem; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0.5rem; width: max-content; max-width: 90vw; transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
         <span id="multiDeleteCount" style="font-weight: 600; color: var(--text-primary); white-space: nowrap;">0개
@@ -3549,6 +3842,9 @@
                     <div class="menu-items" id="adminMenuItems">
                         <a href="#" id="roleManageMenuBtn">
                             <i class="fa-solid fa-user-tag"></i> 직책 관리
+                        </a>
+                        <a href="#" id="aiSettingsMenuBtn">
+                            <i class="fa-solid fa-robot"></i> AI 설정
                         </a>
                     </div>
                 </div>
@@ -3806,6 +4102,35 @@
     <button class="fab fab-hidden" id="writePostBtn" aria-label="글쓰기">
         <i class="fa-solid fa-pen"></i>
     </button>
+
+    <!-- AI 챗봇 비서 (기본적으로 숨김 처리되고, Firestore 설정을 로드하여 켜져있을 때만 JS로 표시) -->
+    <button class="ai-chatbot-fab" id="aiChatbotFab" style="display: none;" aria-label="AI 도우미">
+        <i class="fa-solid fa-robot"></i>
+    </button>
+
+    <div class="ai-chatbot-window hidden" id="aiChatbotWindow">
+        <div class="ai-chatbot-header">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-robot" style="color: var(--accent-color);"></i>
+                <span style="font-weight: bold; color: var(--text-primary);">양중과학동아리 AI 비서</span>
+            </div>
+            <button id="closeAiChatbot"
+                style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="ai-chatbot-messages" id="aiChatbotMessages">
+            <div class="ai-message assistant">
+                안녕하세요! 양중과학동아리 AI 비서입니다. 🧪✨<br>과학 현상에 대한 질문이나 동아리 활동에 대해 궁금한 점이 있다면 무엇이든 물어보세요!
+            </div>
+        </div>
+        <div class="ai-chatbot-input-container">
+            <input type="text" class="ai-chatbot-input" id="aiChatbotInput" placeholder="메시지를 입력하세요..." />
+            <button class="ai-chatbot-send-btn" id="aiChatbotSendBtn">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -5861,6 +6186,28 @@
                                 ${currentPost.images.map(url => `<img src="${url}" alt="게시글 첨부 사진" style="cursor: pointer;" onclick="openLightbox('${url}')">`).join('')}
                             </div>
                         ` : ''}
+
+                        ${window.aiConfig && window.aiConfig.enabled && window.aiConfig.summaryEnabled && window.aiConfig.apiKey ? `
+                            <div class="ai-analysis-container" style="margin-top: 2rem; padding: 1.25rem; border-radius: 16px; background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); display: flex; flex-direction: column; gap: 0.75rem;">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: bold; color: var(--accent-color); font-size: 1rem;">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                        <span>AI 건의 분석 및 피드백</span>
+                                    </div>
+                                    <span style="font-size: 0.75rem; color: var(--text-secondary); background: rgba(59, 130, 246, 0.15); padding: 0.2rem 0.5rem; border-radius: 999px;">Gemini 2.5 Flash</span>
+                                </div>
+                                <div id="aiAnalysisContent-${id}" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary);">
+                                    ${currentPost.aiSummary ? currentPost.aiSummary.replace(/\n/g, '<br>') : `
+                                        <div style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 1rem 0;" id="aiGenBox-${id}">
+                                            <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">아직 생성된 AI 분석 조언이 없습니다.</p>
+                                            <button type="button" class="ai-analysis-generate-btn" onclick="generateAiSummary('${id}')" style="background: var(--accent-color); color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; transition: background 0.2s;">
+                                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI 분석 요약 받기
+                                            </button>
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+                        ` : ''}
                     `;
                 };
 
@@ -7112,6 +7459,311 @@
                 checkAdminPassword();
             }
         });
+
+        // ==========================================
+        // AI 설정 및 챗봇 연동 로직
+        // ==========================================
+        window.aiConfig = {
+            apiKey: '',
+            enabled: false,
+            chatbotEnabled: false,
+            summaryEnabled: false
+        };
+
+        const aiSettingsMenuBtn = document.getElementById('aiSettingsMenuBtn');
+        const aiSettingsPage = document.getElementById('aiSettingsPage');
+        const aiSettingsBackBtn = document.getElementById('aiSettingsBackBtn');
+        const aiApiKeyInput = document.getElementById('aiApiKeyInput');
+        const toggleApiKeyVisibility = document.getElementById('toggleApiKeyVisibility');
+        const aiEnabledCheckbox = document.getElementById('aiEnabledCheckbox');
+        const aiChatbotEnabledCheckbox = document.getElementById('aiChatbotEnabledCheckbox');
+        const aiSummaryEnabledCheckbox = document.getElementById('aiSummaryEnabledCheckbox');
+        const aiSaveBtn = document.getElementById('aiSaveBtn');
+        const aiTestBtn = document.getElementById('aiTestBtn');
+        const aiTestResult = document.getElementById('aiTestResult');
+
+        const aiChatbotFab = document.getElementById('aiChatbotFab');
+        const aiChatbotWindow = document.getElementById('aiChatbotWindow');
+        const aiChatbotMessages = document.getElementById('aiChatbotMessages');
+        const aiChatbotInput = document.getElementById('aiChatbotInput');
+        const aiChatbotSendBtn = document.getElementById('aiChatbotSendBtn');
+        const closeAiChatbot = document.getElementById('closeAiChatbot');
+
+        // Firestore에서 AI 설정 로드하는 함수
+        async function loadAiConfig() {
+            try {
+                const doc = await db.collection('settings').doc('ai_config').get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    window.aiConfig = {
+                        apiKey: data.apiKey || '',
+                        enabled: data.enabled || false,
+                        chatbotEnabled: data.chatbotEnabled || false,
+                        summaryEnabled: data.summaryEnabled || false
+                    };
+                }
+                updateAiFeaturesUI();
+            } catch (e) {
+                console.error("AI 설정 로드 에러", e);
+            }
+        }
+
+        // 설정에 맞춰 AI UI 요소(챗봇 등) 활성화/비활성화 처리
+        function updateAiFeaturesUI() {
+            if (window.aiConfig && window.aiConfig.enabled && window.aiConfig.chatbotEnabled && window.aiConfig.apiKey) {
+                aiChatbotFab.style.display = 'flex';
+            } else {
+                aiChatbotFab.style.display = 'none';
+                aiChatbotWindow.classList.add('hidden');
+            }
+        }
+
+        // Auth 변경에 맞춘 AI 설정 리로드 바인딩
+        firebase.auth().onAuthStateChanged((user) => {
+            loadAiConfig();
+        });
+
+        // AI 설정 메뉴 클릭
+        if (aiSettingsMenuBtn) {
+            aiSettingsMenuBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (!currentUser || !isAdmin(currentUser.email)) {
+                    alert('회장 및 사장만 접근 가능합니다.');
+                    return;
+                }
+
+                // 설정값 채우기
+                aiApiKeyInput.value = window.aiConfig.apiKey;
+                aiEnabledCheckbox.checked = window.aiConfig.enabled;
+                aiChatbotEnabledCheckbox.checked = window.aiConfig.chatbotEnabled;
+                aiSummaryEnabledCheckbox.checked = window.aiConfig.summaryEnabled;
+
+                aiTestResult.style.display = 'none';
+                aiApiKeyInput.type = 'password';
+                const eyeIcon = toggleApiKeyVisibility.querySelector('i');
+                eyeIcon.className = 'fa-regular fa-eye';
+
+                closeDrawer(true);
+                switchPage(currentPage, aiSettingsPage, false, true);
+            });
+        }
+
+        if (aiSettingsBackBtn) {
+            aiSettingsBackBtn.addEventListener('click', handlePageBack);
+        }
+
+        // API Key 눈 모양 보이기/숨기기 토글
+        if (toggleApiKeyVisibility) {
+            toggleApiKeyVisibility.addEventListener('click', () => {
+                const eyeIcon = toggleApiKeyVisibility.querySelector('i');
+                if (aiApiKeyInput.type === 'password') {
+                    aiApiKeyInput.type = 'text';
+                    eyeIcon.className = 'fa-regular fa-eye-slash';
+                } else {
+                    aiApiKeyInput.type = 'password';
+                    eyeIcon.className = 'fa-regular fa-eye';
+                }
+            });
+        }
+
+        // 저장하기
+        if (aiSaveBtn) {
+            aiSaveBtn.addEventListener('click', async () => {
+                if (!currentUser || !isAdmin(currentUser.email)) return;
+
+                const apiKey = aiApiKeyInput.value.trim();
+                const enabled = aiEnabledCheckbox.checked;
+                const chatbotEnabled = aiChatbotEnabledCheckbox.checked;
+                const summaryEnabled = aiSummaryEnabledCheckbox.checked;
+
+                aiSaveBtn.disabled = true;
+                aiSaveBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 저장 중...';
+
+                try {
+                    await db.collection('settings').doc('ai_config').set({
+                        apiKey: apiKey,
+                        enabled: enabled,
+                        chatbotEnabled: chatbotEnabled,
+                        summaryEnabled: summaryEnabled,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    window.aiConfig = { apiKey, enabled, chatbotEnabled, summaryEnabled };
+                    updateAiFeaturesUI();
+
+                    alert('AI 설정이 성공적으로 저장되었습니다!');
+                } catch (e) {
+                    console.error("AI 설정 저장 중 오류", e);
+                    alert('설정 저장 중 오류가 발생했습니다: ' + e.message);
+                } finally {
+                    aiSaveBtn.disabled = false;
+                    aiSaveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> 저장하기';
+                }
+            });
+        }
+
+        // Gemini API 호출 헬퍼
+        async function callGeminiAPI(apiKey, prompt) {
+            const url = `https://generativetalk.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                const errMsg = errData.error?.message || response.statusText;
+                throw new Error(errMsg);
+            }
+            const data = await response.json();
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        // 연결 테스트
+        if (aiTestBtn) {
+            aiTestBtn.addEventListener('click', async () => {
+                const key = aiApiKeyInput.value.trim();
+                if (!key) {
+                    alert('연결 테스트를 수행하려면 API Key를 먼저 입력해 주세요.');
+                    return;
+                }
+
+                aiTestResult.style.display = 'block';
+                aiTestResult.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                aiTestResult.style.borderColor = 'var(--glass-border)';
+                aiTestResult.style.color = 'var(--text-primary)';
+                aiTestResult.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Gemini API에 연결 중입니다. 잠시만 기다려 주세요...';
+
+                try {
+                    const reply = await callGeminiAPI(key, "Hello, standard test connection check. Respond with 'SUCCESS'.");
+                    aiTestResult.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+                    aiTestResult.style.borderColor = '#10b981';
+                    aiTestResult.style.color = '#34d399';
+                    aiTestResult.innerHTML = `<strong><i class="fa-solid fa-circle-check"></i> 연결 성공!</strong><br>Gemini API가 정상적으로 연동되었습니다.<br>응답 내용: "${reply.trim()}"`;
+                } catch (e) {
+                    aiTestResult.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                    aiTestResult.style.borderColor = '#ef4444';
+                    aiTestResult.style.color = '#f87171';
+                    aiTestResult.innerHTML = `<strong><i class="fa-solid fa-circle-xmark"></i> 연결 실패</strong><br>에러 발생: ${e.message}`;
+                }
+            });
+        }
+
+        // AI 챗봇 클라이언트 인터랙션
+        if (aiChatbotFab) {
+            aiChatbotFab.addEventListener('click', () => {
+                aiChatbotWindow.classList.toggle('hidden');
+                if (!aiChatbotWindow.classList.contains('hidden')) {
+                    aiChatbotInput.focus();
+                    aiChatbotMessages.scrollTop = aiChatbotMessages.scrollHeight;
+                }
+            });
+        }
+
+        if (closeAiChatbot) {
+            closeAiChatbot.addEventListener('click', () => {
+                aiChatbotWindow.classList.add('hidden');
+            });
+        }
+
+        async function sendChatbotMessage() {
+            const message = aiChatbotInput.value.trim();
+            if (!message) return;
+
+            appendChatbotMessage('user', message);
+            aiChatbotInput.value = '';
+            aiChatbotInput.focus();
+
+            const loadingId = appendChatbotMessage('assistant', '<i class="fa-solid fa-circle-notch fa-spin"></i> AI 비서가 고민하고 있습니다...');
+
+            try {
+                const systemPrompt = `너는 양중과학동아리의 AI 비서/도우미야. 부원들이 과학 원리를 묻거나 동아리 소통에 대해 이야기하면 친절하고 유머러스하게 중학생 눈높이에서 답변해줘. 마크다운 기호 없이 가독성 좋고 부러운 줄바꿈으로 한국어로 답변해줘.
+사용자 질문: ${message}`;
+
+                const reply = await callGeminiAPI(window.aiConfig.apiKey, systemPrompt);
+                removeChatbotMessage(loadingId);
+                appendChatbotMessage('assistant', reply.replace(/\n/g, '<br>'));
+            } catch (e) {
+                removeChatbotMessage(loadingId);
+                appendChatbotMessage('assistant', `<span style="color: #f87171;"><i class="fa-solid fa-triangle-exclamation"></i> 에러 발생: ${e.message}<br>API 키 만료나 네트워크 환경을 확인해 주세요.</span>`);
+            }
+        }
+
+        function appendChatbotMessage(sender, text) {
+            const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `ai-message ${sender}`;
+            msgDiv.id = msgId;
+            msgDiv.innerHTML = text;
+            aiChatbotMessages.appendChild(msgDiv);
+            aiChatbotMessages.scrollTop = aiChatbotMessages.scrollHeight;
+            return msgId;
+        }
+
+        function removeChatbotMessage(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        if (aiChatbotSendBtn) {
+            aiChatbotSendBtn.addEventListener('click', sendChatbotMessage);
+        }
+
+        if (aiChatbotInput) {
+            aiChatbotInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendChatbotMessage();
+                }
+            });
+        }
+
+        // 건의사항 AI 요약 분석 생성 함수
+        window.generateAiSummary = async function (postId) {
+            const genBox = document.getElementById('aiGenBox-' + postId);
+            if (!genBox) return;
+
+            genBox.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; color: var(--accent-color);">
+                    <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 1.5rem;"></i>
+                    <span style="font-size: 0.9rem; font-weight: 500;">Gemini AI가 이 건의 내용을 핵심 요약하고 최적의 해결 방안을 기안 중입니다...</span>
+                </div>
+            `;
+
+            try {
+                const postSnap = await db.collection('posts').doc(postId).get();
+                if (!postSnap.exists) {
+                    throw new Error('게시글을 찾을 수 없습니다.');
+                }
+                const postData = postSnap.data();
+
+                const prompt = `너는 중학교 과학동아리 회장과 사장의 건의사항 분석을 돕는 'AI 정책 기획 보좌관'이야. 아래 제공되는 동아리 부원의 건의사항(제목 및 내용)을 다각도로 분석하여 요약하고 해결 가이드라인을 작성해줘. 중학생들이 실현 가능한 수준으로 재미있고 명료하게 3가지 포인트로 정리해줘:
+1. 📌 건의 핵심 내용 (한 줄 요약)
+2. 💡 AI가 제안하는 기발하고 합리적인 해결 방안 (동아리 부 예산이나 상황에 맞게 중학생 수준에서 제안)
+3. 🛠️ 회장/사장이 취해야 할 즉각적인 Action Step 조언
+
+건의 제목: "${postData.title}"
+건의 본문 내용: "${postData.body}"
+
+답변은 마크다운 기호 없이 깔끔하고 예쁘게 줄바꿈하여 완성도 높게 한국어로 정성스레 작성해줘.`;
+
+                const aiSummary = await callGeminiAPI(window.aiConfig.apiKey, prompt);
+
+                await db.collection('posts').doc(postId).update({
+                    aiSummary: aiSummary
+                });
+            } catch (e) {
+                console.error("AI 요약 생성 에러", e);
+                genBox.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; color: #f87171;">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.5rem;"></i>
+                        <span style="font-size: 0.9rem; font-weight: 500;">AI 요약 생성 중 에러 발생: ${e.message}</span>
+                        <button type="button" onclick="generateAiSummary('${postId}')" style="margin-top: 0.5rem; background: var(--accent-color); color: white; border: none; padding: 0.4rem 1rem; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem;">다시 시도</button>
+                    </div>
+                `;
+            }
+        };
 
         // ==========================================
         // 직책 관리 페이지 로직 (모달에서 변경)
