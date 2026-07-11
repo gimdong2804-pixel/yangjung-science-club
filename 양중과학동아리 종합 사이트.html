@@ -926,54 +926,15 @@
             transform: translateY(0);
         }
 
-        /* Switch styling */
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 44px;
-            height: 24px;
-            flex-shrink: 0;
+        /* Secure Input and AI Settings style */
+        .secure-mask {
+            -webkit-text-security: disc !important;
         }
 
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--glass-border);
-            transition: .4s;
-            border-radius: 34px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-
-        input:checked+.slider {
-            background-color: var(--accent-color);
-            border-color: var(--accent-color);
-        }
-
-        input:checked+.slider:before {
-            transform: translateX(20px);
+        #aiApiKeyInput:focus {
+            outline: none !important;
+            border-color: var(--accent-color) !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
         }
 
         /* AI Floating Chatbot Styles */
@@ -3514,8 +3475,9 @@
                     style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--text-primary); font-size: 1.05rem;"><i
                         class="fa-solid fa-key"></i> Gemini API Key</label>
                 <div style="position: relative; display: flex; align-items: center; width: 100%;">
-                    <input type="password" id="aiApiKeyInput" placeholder="AI API Key를 입력하세요"
-                        style="padding: 1rem 3rem 1rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.03); color: var(--text-primary); font-size: 1rem; width: 100%; box-sizing: border-box;" />
+                    <input type="text" id="aiApiKeyInput" class="secure-mask" placeholder="AI API Key를 입력하세요"
+                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                        style="padding: 1rem 3rem 1rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.03); color: var(--text-primary); font-size: 1rem; width: 100%; box-sizing: border-box; transition: all 0.2s;" />
                     <button id="toggleApiKeyVisibility"
                         style="position: absolute; right: 1rem; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; height: 100%;">
                         <i class="fa-regular fa-eye"></i>
@@ -3540,9 +3502,9 @@
                             <span style="font-size: 0.8rem; color: var(--text-secondary);">동아리 사이트 전체의 AI 활성화 여부를
                                 결정합니다.</span>
                         </div>
-                        <label class="switch">
+                        <label class="settings-toggle">
                             <input type="checkbox" id="aiEnabledCheckbox">
-                            <span class="slider"></span>
+                            <span class="toggle-slider"></span>
                         </label>
                     </div>
 
@@ -3555,9 +3517,9 @@
                             <span style="font-size: 0.8rem; color: var(--text-secondary);">메인 화면에 과학 질문을 할 수 있는 AI 챗봇을
                                 추가합니다.</span>
                         </div>
-                        <label class="switch">
+                        <label class="settings-toggle">
                             <input type="checkbox" id="aiChatbotEnabledCheckbox">
-                            <span class="slider"></span>
+                            <span class="toggle-slider"></span>
                         </label>
                     </div>
 
@@ -3570,9 +3532,9 @@
                             <span style="font-size: 0.8rem; color: var(--text-secondary);">커뮤니티 건의글에 대해 AI가 자동 핵심 요약 및
                                 해결 가이드를 생성합니다.</span>
                         </div>
-                        <label class="switch">
+                        <label class="settings-toggle">
                             <input type="checkbox" id="aiSummaryEnabledCheckbox">
-                            <span class="slider"></span>
+                            <span class="toggle-slider"></span>
                         </label>
                     </div>
                 </div>
@@ -7091,8 +7053,8 @@
             });
         }
 
-        // 사이드 메뉴 아이템 클릭 시 알림 및 드로어 닫기 (인사말, 목표, 건의방, 직책 관리 제외)
-        document.querySelectorAll('.drawer-menu a:not(#greetingLink):not(#goalLink):not(#suggestionLink):not(#roleManageMenuBtn)').forEach(item => {
+        // 사이드 메뉴 아이템 클릭 시 알림 및 드로어 닫기 (인사말, 목표, 건의방, 직책 관리, AI 설정 제외)
+        document.querySelectorAll('.drawer-menu a:not(#greetingLink):not(#goalLink):not(#suggestionLink):not(#roleManageMenuBtn):not(#aiSettingsMenuBtn)').forEach(item => {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
                 const title = item.innerText.trim();
@@ -7539,7 +7501,7 @@
                 aiSummaryEnabledCheckbox.checked = window.aiConfig.summaryEnabled;
 
                 aiTestResult.style.display = 'none';
-                aiApiKeyInput.type = 'password';
+                aiApiKeyInput.classList.add('secure-mask');
                 const eyeIcon = toggleApiKeyVisibility.querySelector('i');
                 eyeIcon.className = 'fa-regular fa-eye';
 
@@ -7556,11 +7518,11 @@
         if (toggleApiKeyVisibility) {
             toggleApiKeyVisibility.addEventListener('click', () => {
                 const eyeIcon = toggleApiKeyVisibility.querySelector('i');
-                if (aiApiKeyInput.type === 'password') {
-                    aiApiKeyInput.type = 'text';
+                if (aiApiKeyInput.classList.contains('secure-mask')) {
+                    aiApiKeyInput.classList.remove('secure-mask');
                     eyeIcon.className = 'fa-regular fa-eye-slash';
                 } else {
-                    aiApiKeyInput.type = 'password';
+                    aiApiKeyInput.classList.add('secure-mask');
                     eyeIcon.className = 'fa-regular fa-eye';
                 }
             });
