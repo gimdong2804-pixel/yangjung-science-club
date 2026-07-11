@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>양중과학동아리 종합 사이트</title>
     <link rel="icon" href="logo.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="logo.svg">
@@ -2499,15 +2499,19 @@
                 margin-top: 1.2rem;
                 padding-top: 0.8rem;
             }
+
             .community-layout .board-container {
                 padding: 0;
             }
+
             .board-header {
                 padding: 0;
             }
+
             .board-card {
                 padding: 1rem;
             }
+
             .fab {
                 bottom: auto;
                 top: calc(100vh - 5.75rem);
@@ -3688,7 +3692,8 @@
                 <div class="comment-input-area">
                     <div class="comment-input-container">
                         <input type="text" class="comment-input" placeholder="댓글을 입력하세요...">
-                        <button type="button" id="cancelReplyBtn" class="cancel-reply-btn" onclick="cancelReplyTarget()" title="답글 취소">
+                        <button type="button" id="cancelReplyBtn" class="cancel-reply-btn" onclick="cancelReplyTarget()"
+                            title="답글 취소">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                         <button class="comment-submit-btn"><i class="fa-solid fa-paper-plane"></i></button>
