@@ -157,8 +157,10 @@
 
         /* Glassmorphic Header */
         header {
-            position: sticky;
+            position: fixed;
             top: 1rem;
+            left: 0;
+            right: 0;
             z-index: 100;
             padding: 0 1.5rem;
             display: flex;
@@ -261,7 +263,7 @@
             flex: 1;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 4rem 2rem;
+            padding: 6rem 2rem 4rem 2rem;
             width: 100%;
         }
 
@@ -2448,7 +2450,7 @@
             }
 
             main {
-                padding: 3rem 1rem;
+                padding: 5rem 1rem 3rem 1rem;
             }
 
             .hero {
@@ -2496,6 +2498,24 @@
             .greeting-signature {
                 margin-top: 1.2rem;
                 padding-top: 0.8rem;
+            }
+
+            .community-layout .board-container {
+                padding: 0;
+            }
+
+            .board-header {
+                padding: 0;
+            }
+
+            .board-card {
+                padding: 1rem;
+            }
+
+            .fab {
+                bottom: auto;
+                top: calc(100vh - 5.75rem);
+                top: calc(100svh - 5.75rem);
             }
         }
 
