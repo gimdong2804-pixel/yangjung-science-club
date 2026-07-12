@@ -1837,12 +1837,11 @@
             gap: 0.4rem;
             white-space: nowrap;
             flex-shrink: 0;
-            max-width: 150px;
-            /* enough width */
+            max-width: 150px; /* enough width */
             overflow: hidden;
             opacity: 1;
         }
-
+        
         .reply-toggle-btn.hidden-toggle {
             max-width: 0;
             opacity: 0;
@@ -5982,7 +5981,7 @@
                 });
                 const isMaxDepth = depth >= 3;
                 const containerStyle = isMaxDepth ? `margin-left: 0; padding-left: 0; border-left: none; margin-top: 0;` : ``;
-                childRepliesHtml = `<div class="comment-replies-flat" style="${containerStyle}">${sortedKids.map(r => renderFlatReply(r, tree, postId, depth + 1)).join('')}</div>`;
+                childRepliesHtml = `<div class="comment-replies-flat ${isJustExpanded ? 'just-expanded' : ''}" style="${containerStyle}">${sortedKids.map(r => renderFlatReply(r, tree, postId, depth + 1)).join('')}</div>`;
             }
 
             return `
@@ -6009,17 +6008,13 @@
                             <div class="hide-scrollbar" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; overflow-x: auto; flex: 1; min-width: 0;">
                                 ${replyBtn}
                                 ${replyToggleBtn}
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto; flex-shrink: 0;">
-                                <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem;">
+                                <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem; flex-shrink: 0;">
                                     ${pinBtn}
                                     ${deleteBtn}
                                     ${editBtn}
                                 </div>
-                                <div class="board-stats">
-                                    ${likeBtn}
-                                </div>
                             </div>
+                            <div style="margin-left: auto; flex-shrink: 0;">${likeBtn}</div>
                         </div>
                     </div>
                 </div>
@@ -6116,7 +6111,7 @@
                         }
                         return commentTimeValue(b) - commentTimeValue(a);
                     });
-                    repliesHtml = `<div class="comment-replies-flat">${sortedReplies.map(r => renderFlatReply(r, tree, postId, 1)).join('')}</div>`;
+                    repliesHtml = `<div class="comment-replies-flat ${isJustExpanded ? 'just-expanded' : ''}">${sortedReplies.map(r => renderFlatReply(r, tree, postId, 1)).join('')}</div>`;
                 }
             }
 
@@ -6147,16 +6142,14 @@
                                     <div class="hide-scrollbar" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; overflow-x: auto; flex: 1; min-width: 0;">
                                         ${replyBtn}
                                         ${replyToggleBtn}
-                                    </div>
-                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto; flex-shrink: 0;">
-                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem;">
+                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem; flex-shrink: 0;">
                                             ${pinBtn}
                                             ${deleteBtn}
                                             ${editBtn}
                                         </div>
-                                        <div class="board-stats">
-                                            ${likeBtn}
-                                        </div>
+                                    </div>
+                                    <div class="board-stats" style="margin-left: auto; flex-shrink: 0;">
+                                        ${likeBtn}
                                     </div>
                                 </div>
                             </div>
@@ -6268,7 +6261,22 @@
                 });
             });
 
-            // 화면 깜빡임(팝핑) 방지: 브라우저가 화면을 그리기 전에 새 요소들을 투명하게 만듦
+            attachCommentItemEvents();
+
+            // 만약 skipCommentFlip 이 true면 즉시 새 코멘트를 보여주고 끝냄
+            if (window.skipCommentFlip) {
+                commentList.querySelectorAll('.comment-item, .comment-flat-reply').forEach(item => {
+                    item.style.opacity = '';
+                    item.style.transform = '';
+                    item.style.transition = '';
+                });
+                setTimeout(() => {
+                    commentList.style.minHeight = '';
+                }, 450);
+                return;
+            }
+
+            // 1. 화면 깜빡임(팝핑) 방지: 브라우저가 화면을 그리기 전에 새 요소들을 투명하게 만듦
             commentList.querySelectorAll('.comment-item, .comment-flat-reply').forEach(item => {
                 if (!oldPositions.has(item.getAttribute('data-id'))) {
                     item.style.opacity = '0';
@@ -6277,27 +6285,47 @@
                 }
             });
 
-            attachCommentItemEvents();
+            // 2. 답글 보기/접기(.comment-replies-flat) 확장 애니메이션 처리
+            requestAnimationFrame(() => {
+                commentList.querySelectorAll('.comment-replies-flat.just-expanded').forEach(container => {
+                    container.classList.remove('just-expanded');
+                    const fullHeight = container.offsetHeight;
+                    container.style.height = '0px';
+                    container.style.opacity = '0';
+                    container.style.overflow = 'hidden';
+                    container.style.transition = 'none';
+                    container.offsetHeight; // force reflow
+                    
+                    container.style.transition = 'height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease';
+                    container.style.height = fullHeight + 'px';
+                    container.style.opacity = '1';
+                    
+                    setTimeout(() => {
+                        container.style.height = '';
+                        container.style.opacity = '';
+                        container.style.overflow = '';
+                        container.style.transition = '';
+                    }, 350);
+                });
+            });
 
-            if (window.skipCommentFlip) return;
+            // 3. FLIP 및 새 댓글 등장 애니메이션 시작
             requestAnimationFrame(() => {
                 commentList.querySelectorAll('.comment-item, .comment-flat-reply').forEach(item => {
                     const cid = item.getAttribute('data-id');
                     const oldData = oldPositions.get(cid);
                     const toggleBtn = item.querySelector('.reply-toggle-btn');
-
+                    
+                    // 3-1. 답글 갯수 버튼이 0 -> >0 / >0 -> 0 으로 바뀔 때의 마진/너비 애니메이션
                     if (oldData && toggleBtn) {
                         const hasRepliesNow = !toggleBtn.classList.contains('hidden-toggle');
                         if (!oldData.hadReplies && hasRepliesNow) {
-                            // Replies were added (0 -> >0), so animate from hidden to shown
                             toggleBtn.classList.add('no-transition');
                             toggleBtn.classList.add('hidden-toggle');
                             void toggleBtn.offsetWidth; // force reflow
                             toggleBtn.classList.remove('no-transition');
                             toggleBtn.classList.remove('hidden-toggle');
                         } else if (oldData.hadReplies && !hasRepliesNow) {
-                            // Replies were deleted (>0 -> 0), but the button is rendered as hidden already by renderCommentBranch.
-                            // We need it to animate from shown to hidden.
                             toggleBtn.classList.add('no-transition');
                             toggleBtn.classList.remove('hidden-toggle');
                             void toggleBtn.offsetWidth; // force reflow
@@ -6305,6 +6333,8 @@
                             toggleBtn.classList.add('hidden-toggle');
                         }
                     }
+
+                    // 3-2. 기존 댓글의 위치 이동 애니메이션 (FLIP)
                     if (oldData) {
                         const newRect = item.getBoundingClientRect();
                         const deltaY = oldData.rect.top - newRect.top;
@@ -6328,41 +6358,43 @@
                                     pb.style.transition = 'none';
                                 }
                             }
+                            
                             if (Math.abs(deltaY) > 1) {
                                 item.style.transform = `translateY(${deltaY}px)`;
                             }
                             item.style.transition = 'none';
-                            item.offsetHeight; // 플로우 강제 리페인트 (버그 수정)
+                            item.offsetHeight; // force reflow
+
                             requestAnimationFrame(() => {
-                                requestAnimationFrame(() => {
-                                    item.classList.add('flipping');
-                                    item.style.transform = '';
-                                    if (pinnedChanged) {
-                                        item.setAttribute('data-pinned', isPinnedNow ? 'true' : 'false');
-                                        const pb = item.querySelector('.pin-badge-wrapper');
-                                        if (pb) {
-                                            pb.classList.toggle('active', isPinnedNow);
-                                            pb.style.transition = '';
-                                        }
+                                item.classList.add('flipping');
+                                item.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
+                                item.style.transform = '';
+                                
+                                if (pinnedChanged) {
+                                    item.setAttribute('data-pinned', isPinnedNow ? 'true' : 'false');
+                                    const pb = item.querySelector('.pin-badge-wrapper');
+                                    if (pb) {
+                                        pb.classList.toggle('active', isPinnedNow);
+                                        pb.style.transition = '';
                                     }
-                                    item.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.4s ease, padding-left 0.3s ease, border-width 0.3s ease, border-radius 0.3s ease';
-                                    setTimeout(() => {
-                                        item.classList.remove('flipping');
-                                        item.style.transition = '';
-                                    }, 500);
-                                });
+                                }
+                                
+                                setTimeout(() => {
+                                    item.classList.remove('flipping');
+                                    item.style.transition = '';
+                                }, 450);
                             });
                         }
                     } else {
-                        // 새 댓글/답글 부드럽게 나타나기
+                        // 3-3. 새 댓글/답글 등장 애니메이션
                         requestAnimationFrame(() => {
                             item.style.opacity = '1';
                             item.style.transform = 'scale(1)';
-                            item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                            item.style.transition = 'opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
                             setTimeout(() => {
                                 item.style.transition = '';
                                 item.style.transform = '';
-                            }, 300);
+                            }, 350);
                         });
                     }
                 });
@@ -6923,15 +6955,13 @@
                                     </div>
                                     <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${c.body}</div>
                                     <div class="comment-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: nowrap; width: 100%;">
-                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto; flex-shrink: 0;">
-                                            <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem;">
-                                                ${cPinBtn}
-                                                ${cDeleteBtn}
-                                                ${cEditBtn}
-                                            </div>
-                                            <div class="board-stats">
-                                                ${cLikeBtn}
-                                            </div>
+                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+                                            ${cPinBtn}
+                                            ${cDeleteBtn}
+                                            ${cEditBtn}
+                                        </div>
+                                        <div class="board-stats" style="margin-left: auto; flex-shrink: 0;">
+                                            ${cLikeBtn}
                                         </div>
                                     </div>
                                 </div>
