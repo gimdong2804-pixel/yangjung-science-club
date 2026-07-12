@@ -2863,6 +2863,14 @@
             .mobile-show {
                 display: flex !important;
             }
+
+            /* 모바일에서 가상 키보드가 뿅 올라오거나 뷰포트 높이가 급변할 때 댓글 카드가 위아래로 길게 늘어나는 것을 완벽 차단합니다 */
+            .comment-item,
+            .comment-node,
+            .comment-flat-reply {
+                height: auto !important;
+                min-height: 0 !important;
+            }
         }
 
         @media (min-width: 1024px) {
@@ -6090,9 +6098,12 @@
                 return;
             }
 
-            const currentHeight = commentList.getBoundingClientRect().height;
-            if (currentHeight > 0) {
-                commentList.style.minHeight = `${currentHeight}px`;
+            // 모바일에서는 가상 키보드 작동으로 뷰포트가 실시간 축소될 때 이전 측정 높이(minHeight)가 댓글을 강제 팽창시키는 것을 완벽히 방지합니다.
+            if (window.innerWidth >= 1024) {
+                const currentHeight = commentList.getBoundingClientRect().height;
+                if (currentHeight > 0) {
+                    commentList.style.minHeight = `${currentHeight}px`;
+                }
             }
 
             const html = roots.map(comment => renderCommentBranch(comment, 0, tree, postId)).join('');
