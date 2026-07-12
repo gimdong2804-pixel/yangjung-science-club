@@ -4356,7 +4356,7 @@
                                 </ul>
                             </div>
                         </div>
-                        <div id="detailCommentList" style="display: flex; flex-direction: column;"></div>
+                        <div id="detailCommentList" style="display: block;"></div>
                     </div>
                 </div>
 
@@ -6024,7 +6024,7 @@
 
             return `
                 <div class="comment-node">
-                    <div id="comment-${escapeHtml(comment.id)}" class="comment-item ${isDeleted ? 'comment-deleted' : ''} ${isPresidentComment ? 'official' : ''}" data-id="${escapeHtml(comment.id)}" data-can-delete="${canDelete ? 'true' : 'false'}" data-reply-count="${replyCount}" data-pinned="${pinned ? 'true' : 'false'}" style="display: flex; flex-direction: column; align-items: flex-start; ${itemStyle}">
+                    <div id="comment-${escapeHtml(comment.id)}" class="comment-item ${isDeleted ? 'comment-deleted' : ''} ${isPresidentComment ? 'official' : ''}" data-id="${escapeHtml(comment.id)}" data-can-delete="${canDelete ? 'true' : 'false'}" data-reply-count="${replyCount}" data-pinned="${pinned ? 'true' : 'false'}" style="${itemStyle}">
                         ${pinBadge}
                         <div style="display: flex; align-items: flex-start; width: 100%;">
                             ${checkbox}
@@ -6816,7 +6816,7 @@
                         item.className = 'comment-item new-comment-flip';
                         item.setAttribute('data-id', cid);
                         item.setAttribute('data-pinned', c.pinned ? 'true' : 'false');
-                        item.style.cssText = `display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 1.25rem; ${cItemStyle}`;
+                        item.style.cssText = `margin-bottom: 1.25rem; ${cItemStyle}`;
                         item.innerHTML = innerHtml;
                         item.style.order = index;
 
@@ -6857,7 +6857,7 @@
                     } else {
                         const wasPinned = item.getAttribute('data-pinned') === 'true';
                         if (wasPinned !== !!c.pinned) {
-                            item.style.cssText = `display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 1.25rem; ${cItemStyle}`;
+                            item.style.cssText = `margin-bottom: 1.25rem; ${cItemStyle}`;
                             item.setAttribute('data-pinned', c.pinned ? 'true' : 'false');
                         }
 
