@@ -1833,10 +1833,26 @@
             font-weight: 500;
             padding: 0 0.75rem;
             border-radius: 8px;
-            transition: all 0.2s ease;
+            transition: max-width 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease, margin 0.4s ease, padding 0.4s ease, background 0.2s ease, transform 0.2s ease, color 0.2s ease;
             gap: 0.4rem;
             white-space: nowrap;
             flex-shrink: 0;
+            max-width: 150px;
+            /* enough width */
+            overflow: hidden;
+            opacity: 1;
+        }
+
+        .reply-toggle-btn.hidden-toggle {
+            max-width: 0;
+            opacity: 0;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            gap: 0 !important;
+            pointer-events: none;
+            border: none;
         }
 
         .reply-toggle-btn:hover,
@@ -5942,11 +5958,13 @@
             const isJustExpanded = window.justExpandedCommentId === comment.id;
             const expandedClass = isExpanded && !isJustExpanded ? 'expanded' : '';
             const replyCount = tree.countDescendants(comment.id);
-            const replyToggleBtn = replyCount > 0 ? `
-                <button type="button" class="reply-toggle-btn ${expandedClass}" ${isJustExpanded ? 'data-should-expand="true"' : ''} onclick="toggleCommentReplies('${safeCommentId}')" title="${isExpanded ? '답글 접기' : '답글 보기'}">
-                    <i class="fa-solid fa-chevron-down reply-arrow-icon"></i> 답글 ${replyCount}개
+            const isHiddenToggle = replyCount === 0;
+            const toggleText = replyCount > 0 ? `답글 ${replyCount}개` : `답글 0개`;
+            const replyToggleBtn = `
+                <button type="button" class="reply-toggle-btn ${expandedClass} ${isHiddenToggle ? 'hidden-toggle' : ''}" ${isJustExpanded ? 'data-should-expand="true"' : ''} onclick="toggleCommentReplies('${safeCommentId}')" title="${isExpanded ? '답글 접기' : '답글 보기'}">
+                    <i class="fa-solid fa-chevron-down reply-arrow-icon"></i> ${toggleText}
                 </button>
-            ` : '';
+            `;
 
             const kids = tree.childrenMap.get(comment.id) || [];
             let childRepliesHtml = '';
@@ -5991,13 +6009,17 @@
                             <div class="hide-scrollbar" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; overflow-x: auto; flex: 1; min-width: 0;">
                                 ${replyBtn}
                                 ${replyToggleBtn}
-                                <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto; flex-shrink: 0;">
+                                <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem;">
                                     ${pinBtn}
                                     ${deleteBtn}
                                     ${editBtn}
                                 </div>
+                                <div class="board-stats">
+                                    ${likeBtn}
+                                </div>
                             </div>
-                            <div style="margin-left: auto; flex-shrink: 0;">${likeBtn}</div>
                         </div>
                     </div>
                 </div>
@@ -6052,11 +6074,13 @@
                     <i class="fa-regular fa-comment-dots"></i> 답글
                 </button>
             ` : '';
-            const replyToggleBtn = replyCount > 0 ? `
-                <button type="button" class="reply-toggle-btn ${expandedClass}" ${isJustExpanded ? 'data-should-expand="true"' : ''} onclick="toggleCommentReplies('${safeCommentId}')" title="${isExpanded ? '답글 접기' : '답글 보기'}">
-                    <i class="fa-solid fa-chevron-down reply-arrow-icon"></i> 답글 ${replyCount}개
+            const isHiddenToggle = replyCount === 0;
+            const toggleText = replyCount > 0 ? `답글 ${replyCount}개` : `답글 0개`;
+            const replyToggleBtn = `
+                <button type="button" class="reply-toggle-btn ${expandedClass} ${isHiddenToggle ? 'hidden-toggle' : ''}" ${isJustExpanded ? 'data-should-expand="true"' : ''} onclick="toggleCommentReplies('${safeCommentId}')" title="${isExpanded ? '답글 접기' : '답글 보기'}">
+                    <i class="fa-solid fa-chevron-down reply-arrow-icon"></i> ${toggleText}
                 </button>
-            ` : '';
+            `;
             const heartClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
             const likeBtn = !isDeleted ? `
                 <button type="button" class="board-action-btn c-like-btn" onclick="toggleLikeComment('${safePostId}', '${safeCommentId}', this, ${isLiked})" title="좋아요">
@@ -6123,14 +6147,16 @@
                                     <div class="hide-scrollbar" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; overflow-x: auto; flex: 1; min-width: 0;">
                                         ${replyBtn}
                                         ${replyToggleBtn}
-                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto; flex-shrink: 0;">
+                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem;">
                                             ${pinBtn}
                                             ${deleteBtn}
                                             ${editBtn}
                                         </div>
-                                    </div>
-                                    <div class="board-stats" style="margin-left: auto; flex-shrink: 0;">
-                                        ${likeBtn}
+                                        <div class="board-stats">
+                                            ${likeBtn}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -6193,10 +6219,12 @@
             const oldPositions = new Map();
             commentList.querySelectorAll('.comment-item, .comment-flat-reply').forEach(item => {
                 const opacity = window.getComputedStyle(item).opacity;
+                const toggleBtn = item.querySelector('.reply-toggle-btn');
                 oldPositions.set(item.getAttribute('data-id'), {
                     rect: item.getBoundingClientRect(),
                     opacity: opacity,
-                    isPinned: item.getAttribute('data-pinned') === 'true'
+                    isPinned: item.getAttribute('data-pinned') === 'true',
+                    hadReplies: toggleBtn && !toggleBtn.classList.contains('hidden-toggle')
                 });
             });
 
@@ -6256,6 +6284,27 @@
                 commentList.querySelectorAll('.comment-item, .comment-flat-reply').forEach(item => {
                     const cid = item.getAttribute('data-id');
                     const oldData = oldPositions.get(cid);
+                    const toggleBtn = item.querySelector('.reply-toggle-btn');
+
+                    if (oldData && toggleBtn) {
+                        const hasRepliesNow = !toggleBtn.classList.contains('hidden-toggle');
+                        if (!oldData.hadReplies && hasRepliesNow) {
+                            // Replies were added (0 -> >0), so animate from hidden to shown
+                            toggleBtn.classList.add('no-transition');
+                            toggleBtn.classList.add('hidden-toggle');
+                            void toggleBtn.offsetWidth; // force reflow
+                            toggleBtn.classList.remove('no-transition');
+                            toggleBtn.classList.remove('hidden-toggle');
+                        } else if (oldData.hadReplies && !hasRepliesNow) {
+                            // Replies were deleted (>0 -> 0), but the button is rendered as hidden already by renderCommentBranch.
+                            // We need it to animate from shown to hidden.
+                            toggleBtn.classList.add('no-transition');
+                            toggleBtn.classList.remove('hidden-toggle');
+                            void toggleBtn.offsetWidth; // force reflow
+                            toggleBtn.classList.remove('no-transition');
+                            toggleBtn.classList.add('hidden-toggle');
+                        }
+                    }
                     if (oldData) {
                         const newRect = item.getBoundingClientRect();
                         const deltaY = oldData.rect.top - newRect.top;
@@ -6874,13 +6923,15 @@
                                     </div>
                                     <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${c.body}</div>
                                     <div class="comment-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: nowrap; width: 100%;">
-                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem; flex-shrink: 0;">
-                                            ${cPinBtn}
-                                            ${cDeleteBtn}
-                                            ${cEditBtn}
-                                        </div>
-                                        <div class="board-stats" style="margin-left: auto; flex-shrink: 0;">
-                                            ${cLikeBtn}
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-left: auto; flex-shrink: 0;">
+                                            <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem;">
+                                                ${cPinBtn}
+                                                ${cDeleteBtn}
+                                                ${cEditBtn}
+                                            </div>
+                                            <div class="board-stats">
+                                                ${cLikeBtn}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
