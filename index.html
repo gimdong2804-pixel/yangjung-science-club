@@ -3718,42 +3718,58 @@
 
         /* 답글이 달린 댓글의 모바일 푸터 레이아웃 특별 처리 */
         @media (max-width: 768px) {
+
+            /* 일반 댓글: 푸터 전체를 왼쪽으로 -2.75rem(44px) 당겨서 프로필 사진 아래부터 시작하도록 정렬 */
+            .comment-footer.has-replies {
+                margin-left: -2.75rem !important;
+                width: calc(100% + 2.75rem) !important;
+            }
+
+            /* 답글(Flat Reply): 푸터 전체를 왼쪽으로 아바타와 갭만큼 당겨서 정렬 */
+            .flat-reply-footer.has-replies {
+                margin-left: calc(-32px - 0.6rem) !important;
+                width: calc(100% + 32px + 0.6rem) !important;
+            }
+
+            /* 버튼들을 가로로 배치하는 컨테이너: 간격을 넓혀서 쾌적하게 보이게 함 */
             .has-replies .hide-scrollbar {
                 overflow-x: visible !important;
                 flex: 1;
                 width: 100%;
                 display: flex;
                 align-items: center;
-                gap: 0.75rem !important;
+                gap: 0.6rem !important;
             }
 
+            /* 답글 작성 버튼 패딩 조절 */
             .has-replies .reply-action-btn {
-                padding-left: 0 !important;
-                padding-right: 0.25rem !important;
-                gap: 0.25rem !important;
+                padding: 0 0.45rem !important;
+                gap: 0.3rem !important;
             }
 
+            /* 답글 보기/접기 버튼 패딩 조절 */
             .has-replies .reply-toggle-btn {
-                padding-left: 0.25rem !important;
-                padding-right: 0.25rem !important;
-                gap: 0.25rem !important;
+                padding: 0 0.45rem !important;
+                gap: 0.3rem !important;
             }
 
+            /* 고정, 삭제, 수정 버튼이 모여 있는 모바일 영역 간격 */
             .has-replies .mobile-show {
                 display: flex !important;
                 align-items: center;
-                gap: 0.75rem !important;
-                margin-left: 0.25rem !important;
+                gap: 0.6rem !important;
             }
 
-            .has-replies .board-action-btn {
+            /* 고정, 삭제, 수정 버튼은 동그랗고 터치하기 편하게 32px 크기로 유지 (좋아요 버튼 제외!) */
+            .has-replies .mobile-show .board-action-btn {
                 width: 32px !important;
                 height: 32px !important;
                 display: inline-flex !important;
                 align-items: center;
                 justify-content: center;
                 padding: 0 !important;
-                font-size: 0.95rem !important;
+                font-size: 0.9rem !important;
+                border-radius: 50% !important;
             }
         }
     </style>
