@@ -2894,6 +2894,7 @@
                 display: none !important;
             }
 
+            .reply-toggle-btn, .reply-action-btn, .board-action-btn { padding: 0 0.35rem !important; gap: 0.15rem !important; min-width: 26px !important; }
             .mobile-show {
                 display: flex !important;
             }
@@ -3702,17 +3703,12 @@
         body.multi-select-active .comment-header .board-time {
             font-size: 0.7rem;
         }
-
         .hide-scrollbar {
-            -ms-overflow-style: none;
-            /* IE and Edge */
-            scrollbar-width: none;
-            /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
         }
-
         .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-            /* Chrome, Safari and Opera */
+            display: none; /* Chrome, Safari and Opera */
         }
     </style>
     <link rel="manifest" href="manifest.json">
@@ -5930,10 +5926,10 @@
                         </div>
                         <div class="flat-reply-body">${bodyHtml}${imagesHtml}</div>
                         <div class="flat-reply-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: nowrap;">
-                            <div class="hide-scrollbar" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; overflow-x: auto; max-width: calc(100% - 60px);">
+                            <div class="hide-scrollbar" style="display: flex; align-items: center; gap: 0.2rem; flex-wrap: nowrap;">
                                 ${replyBtn}
                                 ${replyToggleBtn}
-                                <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+                                <div class="mobile-show" style="display: none; align-items: center; gap: 0.1rem; flex-shrink: 0;">
                                     ${pinBtn}
                                     ${deleteBtn}
                                     ${editBtn}
@@ -6062,10 +6058,10 @@
                                 </div>
                                 <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${bodyHtml}${imagesHtml}</div>
                                 <div class="comment-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; flex-wrap: nowrap; width: 100%;">
-                                    <div class="hide-scrollbar" style="display: flex; align-items: center; gap: 0.25rem; flex-wrap: nowrap; overflow-x: auto; max-width: calc(100% - 60px);">
+                                    <div class="hide-scrollbar" style="display: flex; align-items: center; gap: 0.2rem; flex-wrap: nowrap;">
                                         ${replyBtn}
                                         ${replyToggleBtn}
-                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.1rem; flex-shrink: 0;">
                                             ${pinBtn}
                                             ${deleteBtn}
                                             ${editBtn}
@@ -6816,7 +6812,7 @@
                                     </div>
                                     <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${c.body}</div>
                                     <div class="comment-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; flex-wrap: nowrap; width: 100%;">
-                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.1rem; flex-shrink: 0;">
                                             ${cPinBtn}
                                             ${cDeleteBtn}
                                             ${cEditBtn}
