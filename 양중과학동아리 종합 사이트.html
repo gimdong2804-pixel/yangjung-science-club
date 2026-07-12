@@ -1990,15 +1990,14 @@
             border: none;
             color: var(--text-secondary);
             cursor: pointer;
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
-            margin-right: 0px;
-            margin-left: 3px;
+            margin: 0;
         }
 
         .comment-attach-btn:hover {
@@ -2148,8 +2147,8 @@
             -webkit-backdrop-filter: blur(20px) saturate(1.4);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-sizing: border-box;
-            border-radius: 30px;
-            padding: 0.6rem 0.6rem 0.6rem 0.6rem;
+            border-radius: 9999px;
+            padding: 0.4rem;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25),
                 inset 0 -1px 1px rgba(0, 0, 0, 0.1);
             transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
@@ -2169,7 +2168,7 @@
 
         .comment-input-row {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.25rem;
             align-items: center;
             width: 100%;
         }
@@ -2207,6 +2206,8 @@
             outline: none;
             font-weight: 500;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            transition: opacity 0.3s ease;
+            padding-left: 0.15rem;
         }
 
         .comment-input::placeholder {
@@ -2215,7 +2216,7 @@
             transition: color 0.3s ease, opacity 0.3s ease;
         }
 
-        .comment-input.placeholder-fade::placeholder {
+        .comment-input.text-fade {
             opacity: 0;
         }
 
@@ -2233,15 +2234,15 @@
             border: none;
             color: var(--text-secondary);
             cursor: pointer;
-            width: 36px;
-            height: 36px;
+            width: 44px;
+            height: 44px;
             font-size: 1.2rem;
             border-radius: 50%;
             display: none;
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
-            margin-right: 4px;
+            margin-right: 0px;
         }
 
         .cancel-reply-btn.active {
@@ -6234,13 +6235,13 @@
             }
         };
 
-        function updateReplyTargetUI() {
+        function updateReplyTargetUI(newValue = undefined, focusAfter = false) {
             const input = document.querySelector('.side-detail-container .comment-input');
             const cancelBtn = document.getElementById('cancelReplyBtn');
             const submitBtn = document.querySelector('.side-detail-container .comment-submit-btn');
             if (!input || !cancelBtn) return;
 
-            input.classList.add('placeholder-fade');
+            input.classList.add('text-fade');
             setTimeout(() => {
                 if (window.editTarget) {
                     input.placeholder = '댓글을 수정하세요...';
@@ -6258,7 +6259,15 @@
                     cancelBtn.title = '답글 취소';
                     if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
                 }
-                input.classList.remove('placeholder-fade');
+
+                if (newValue !== undefined) {
+                    input.value = newValue;
+                }
+
+                input.classList.remove('text-fade');
+                if (focusAfter) {
+                    input.focus();
+                }
             }, 300);
         }
 
@@ -6277,16 +6286,14 @@
             };
             window.editTarget = null;
             window.expandCommentLineage(commentId);
-            updateReplyTargetUI();
-            const input = document.querySelector('.side-detail-container .comment-input');
-            if (input) input.focus();
+            updateReplyTargetUI(undefined, true);
         };
 
         window.cancelReplyTarget = function () {
+            let newValue = undefined;
             if (window.editTarget) {
                 window.editTarget = null;
-                const input = document.querySelector('.side-detail-container .comment-input');
-                if (input) input.value = '';
+                newValue = '';
                 if (typeof commentAttachedImages !== 'undefined') {
                     commentAttachedImages = [];
                     if (typeof renderCommentImagePreview === 'function') {
@@ -6295,7 +6302,7 @@
                 }
             }
             window.replyTarget = null;
-            updateReplyTargetUI();
+            updateReplyTargetUI(newValue);
         };
 
         // 상세 닫기 함수
@@ -7093,12 +7100,6 @@
 
                 window.replyTarget = null; // 수정 모드로 진입하므로 답글 모드 해제
 
-                const commentInput = document.querySelector('.side-detail-container .comment-input');
-                if (commentInput) {
-                    commentInput.value = comment.body || '';
-                    commentInput.focus();
-                }
-
                 if (typeof commentAttachedImages !== 'undefined') {
                     commentAttachedImages = (comment.images || []).map(imgUrl => ({
                         file: null, // 기존 이미지는 파일 객체가 없음
@@ -7110,7 +7111,7 @@
                 }
 
                 if (typeof updateReplyTargetUI === 'function') {
-                    updateReplyTargetUI();
+                    updateReplyTargetUI(comment.body || '', true);
                 }
 
             } catch (e) {
@@ -7556,17 +7557,16 @@
                         }
                     }
 
-                    commentInput.value = '';
                     commentAttachedImages = [];
                     renderCommentImagePreview();
                     window.replyTarget = null;
-                    updateReplyTargetUI();
+                    updateReplyTargetUI('');
                 } catch (e) {
                     console.error("댓글 작성/수정 실패", e);
                     alert('처리 중 실패했습니다.');
+                    updateReplyTargetUI();
                 } finally {
                     commentSubmitBtn.disabled = false;
-                    updateReplyTargetUI();
                 }
             });
 
