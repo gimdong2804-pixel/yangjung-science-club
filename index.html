@@ -1837,16 +1837,19 @@
             gap: 0.4rem;
             white-space: nowrap;
             flex-shrink: 0;
-            max-width: 150px; /* enough width */
+            max-width: 150px;
+            /* enough width */
             overflow: hidden;
             opacity: 1;
         }
-        
-        .reply-toggle-btn.hidden-toggle {
-            max-width: 0;
-            opacity: 0;
+
+        .reply-toggle-btn.hidden-toggle,
+        .has-replies .reply-toggle-btn.hidden-toggle {
+            max-width: 0 !important;
+            opacity: 0 !important;
             padding-left: 0 !important;
             padding-right: 0 !important;
+            padding: 0 !important;
             margin-left: 0 !important;
             margin-right: 0 !important;
             gap: 0 !important;
@@ -6286,27 +6289,29 @@
             });
 
             // 2. 답글 보기/접기(.comment-replies-flat) 확장 애니메이션 처리
-            requestAnimationFrame(() => {
-                commentList.querySelectorAll('.comment-replies-flat.just-expanded').forEach(container => {
-                    container.classList.remove('just-expanded');
-                    const fullHeight = container.offsetHeight;
-                    container.style.height = '0px';
-                    container.style.opacity = '0';
-                    container.style.overflow = 'hidden';
-                    container.style.transition = 'none';
-                    container.offsetHeight; // force reflow
-                    
-                    container.style.transition = 'height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease';
-                    container.style.height = fullHeight + 'px';
-                    container.style.opacity = '1';
-                    
-                    setTimeout(() => {
-                        container.style.height = '';
-                        container.style.opacity = '';
-                        container.style.overflow = '';
-                        container.style.transition = '';
-                    }, 350);
+            commentList.querySelectorAll('.comment-replies-flat.just-expanded').forEach(container => {
+                container.classList.remove('just-expanded');
+                const fullHeight = container.offsetHeight;
+                container.style.height = '0px';
+                container.style.opacity = '0';
+                container.style.overflow = 'hidden';
+                container.style.transition = 'none';
+                container.offsetHeight; // force reflow
+
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        container.style.transition = 'height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease';
+                        container.style.height = fullHeight + 'px';
+                        container.style.opacity = '1';
+                    });
                 });
+
+                setTimeout(() => {
+                    container.style.height = '';
+                    container.style.opacity = '';
+                    container.style.overflow = '';
+                    container.style.transition = '';
+                }, 350);
             });
 
             // 3. FLIP 및 새 댓글 등장 애니메이션 시작
@@ -6315,7 +6320,7 @@
                     const cid = item.getAttribute('data-id');
                     const oldData = oldPositions.get(cid);
                     const toggleBtn = item.querySelector('.reply-toggle-btn');
-                    
+
                     // 3-1. 답글 갯수 버튼이 0 -> >0 / >0 -> 0 으로 바뀔 때의 마진/너비 애니메이션
                     if (oldData && toggleBtn) {
                         const hasRepliesNow = !toggleBtn.classList.contains('hidden-toggle');
@@ -6323,14 +6328,22 @@
                             toggleBtn.classList.add('no-transition');
                             toggleBtn.classList.add('hidden-toggle');
                             void toggleBtn.offsetWidth; // force reflow
-                            toggleBtn.classList.remove('no-transition');
-                            toggleBtn.classList.remove('hidden-toggle');
+                            requestAnimationFrame(() => {
+                                requestAnimationFrame(() => {
+                                    toggleBtn.classList.remove('no-transition');
+                                    toggleBtn.classList.remove('hidden-toggle');
+                                });
+                            });
                         } else if (oldData.hadReplies && !hasRepliesNow) {
                             toggleBtn.classList.add('no-transition');
                             toggleBtn.classList.remove('hidden-toggle');
                             void toggleBtn.offsetWidth; // force reflow
-                            toggleBtn.classList.remove('no-transition');
-                            toggleBtn.classList.add('hidden-toggle');
+                            requestAnimationFrame(() => {
+                                requestAnimationFrame(() => {
+                                    toggleBtn.classList.remove('no-transition');
+                                    toggleBtn.classList.add('hidden-toggle');
+                                });
+                            });
                         }
                     }
 
@@ -6344,8 +6357,10 @@
                         if (parseFloat(oldData.opacity) < 1) {
                             item.style.opacity = oldData.opacity;
                             requestAnimationFrame(() => {
-                                item.style.transition = 'opacity 0.4s ease';
-                                item.style.opacity = '1';
+                                requestAnimationFrame(() => {
+                                    item.style.transition = 'opacity 0.4s ease';
+                                    item.style.opacity = '1';
+                                });
                             });
                         }
 
@@ -6358,7 +6373,7 @@
                                     pb.style.transition = 'none';
                                 }
                             }
-                            
+
                             if (Math.abs(deltaY) > 1) {
                                 item.style.transform = `translateY(${deltaY}px)`;
                             }
@@ -6366,35 +6381,39 @@
                             item.offsetHeight; // force reflow
 
                             requestAnimationFrame(() => {
-                                item.classList.add('flipping');
-                                item.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
-                                item.style.transform = '';
-                                
-                                if (pinnedChanged) {
-                                    item.setAttribute('data-pinned', isPinnedNow ? 'true' : 'false');
-                                    const pb = item.querySelector('.pin-badge-wrapper');
-                                    if (pb) {
-                                        pb.classList.toggle('active', isPinnedNow);
-                                        pb.style.transition = '';
+                                requestAnimationFrame(() => {
+                                    item.classList.add('flipping');
+                                    item.style.transition = 'transform 0.45s cubic-bezier(0.16, 1, 0.3, 1)';
+                                    item.style.transform = '';
+
+                                    if (pinnedChanged) {
+                                        item.setAttribute('data-pinned', isPinnedNow ? 'true' : 'false');
+                                        const pb = item.querySelector('.pin-badge-wrapper');
+                                        if (pb) {
+                                            pb.classList.toggle('active', isPinnedNow);
+                                            pb.style.transition = '';
+                                        }
                                     }
-                                }
-                                
-                                setTimeout(() => {
-                                    item.classList.remove('flipping');
-                                    item.style.transition = '';
-                                }, 450);
+
+                                    setTimeout(() => {
+                                        item.classList.remove('flipping');
+                                        item.style.transition = '';
+                                    }, 450);
+                                });
                             });
                         }
                     } else {
                         // 3-3. 새 댓글/답글 등장 애니메이션
                         requestAnimationFrame(() => {
-                            item.style.opacity = '1';
-                            item.style.transform = 'scale(1)';
-                            item.style.transition = 'opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
-                            setTimeout(() => {
-                                item.style.transition = '';
-                                item.style.transform = '';
-                            }, 350);
+                            requestAnimationFrame(() => {
+                                item.style.opacity = '1';
+                                item.style.transform = 'scale(1)';
+                                item.style.transition = 'opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+                                setTimeout(() => {
+                                    item.style.transition = '';
+                                    item.style.transform = '';
+                                }, 350);
+                            });
                         });
                     }
                 });
