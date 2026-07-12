@@ -2852,6 +2852,10 @@
 
         /* Responsive Adjustments */
         @media (max-width: 1023px) {
+            .year-prefix {
+                display: none;
+            }
+
             .mobile-hide {
                 display: none !important;
             }
@@ -5194,20 +5198,23 @@
                     const ampm = d.getHours() < 12 ? '오전' : '오후';
                     const h = d.getHours() % 12 || 12;
                     const m = String(d.getMinutes()).padStart(2, '0');
-                    return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}. ${ampm} ${h}:${m}`;
+                    const year = String(d.getFullYear());
+                    return `<span class="year-prefix">${year.substring(0, 2)}</span>${year.substring(2)}. ${d.getMonth() + 1}. ${d.getDate()}. ${ampm} ${h}:${m}`;
                 }
                 if (timestamp instanceof Date) {
                     const ampm = timestamp.getHours() < 12 ? '오전' : '오후';
                     const h = timestamp.getHours() % 12 || 12;
                     const m = String(timestamp.getMinutes()).padStart(2, '0');
-                    return `${timestamp.getFullYear()}. ${timestamp.getMonth() + 1}. ${timestamp.getDate()}. ${ampm} ${h}:${m}`;
+                    const year = String(timestamp.getFullYear());
+                    return `<span class="year-prefix">${year.substring(0, 2)}</span>${year.substring(2)}. ${timestamp.getMonth() + 1}. ${timestamp.getDate()}. ${ampm} ${h}:${m}`;
                 }
                 if (typeof timestamp.toMillis === 'function') {
                     const d = new Date(timestamp.toMillis());
                     const ampm = d.getHours() < 12 ? '오전' : '오후';
                     const h = d.getHours() % 12 || 12;
                     const m = String(d.getMinutes()).padStart(2, '0');
-                    return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}. ${ampm} ${h}:${m}`;
+                    const year = String(d.getFullYear());
+                    return `<span class="year-prefix">${year.substring(0, 2)}</span>${year.substring(2)}. ${d.getMonth() + 1}. ${d.getDate()}. ${ampm} ${h}:${m}`;
                 }
             } catch (e) {
                 console.error(e);
@@ -5773,7 +5780,7 @@
             const pinned = !!(comment.pinned && !isDeleted);
             const authorName = isDeleted ? '삭제된 댓글' : (comment.author || '사용자');
             const cTime = formatDate(comment.createdAt) + (comment.edited && !isDeleted ? ' <span style="font-size: 0.8em; color: var(--text-secondary);">(수정됨)</span>' : '');
-            const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.08rem 0.35rem; border-radius: 4px; font-weight: bold; margin-left: 0.4rem;">공식 답변</span>' : '';
+            const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.08rem 0.35rem; border-radius: 4px; font-weight: bold; margin-left: 0.4rem; white-space: nowrap; flex-shrink: 0;">공식 답변</span>' : '';
             let depthIcon = '';
             if (depth >= 4) {
                 const arrowCount = depth - 3;
@@ -5885,7 +5892,7 @@
             const pinned = !!(comment.pinned && !isDeleted);
             const authorName = isDeleted ? '삭제된 댓글' : (comment.author || '사용자');
             const cTime = formatDate(comment.createdAt) + (comment.edited && !isDeleted ? ' <span style="font-size: 0.8em; color: var(--text-secondary);">(수정됨)</span>' : '');
-            const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem;">공식 답변</span>' : '';
+            const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem; white-space: nowrap; flex-shrink: 0;">공식 답변</span>' : '';
             const pinBadge = `<div class="pin-badge-wrapper ${pinned ? 'active' : ''}">
                                 <span class="pin-badge-ui" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; display: inline-block;">
                                     <i class="fa-solid fa-thumbtack"></i> 상단 고정
@@ -5968,9 +5975,9 @@
                             ${checkbox}
                             ${getCommentAvatar(comment, isPresidentComment, isDeleted)}
                             <div class="comment-content" style="flex: 1; min-width: 0; padding-top: 0.2rem; margin-left: 0.75rem;">
-                                <div class="comment-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 0.4rem;">
-                                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                                        <span class="board-author-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">${escapeHtml(authorName)}</span>
+                                <div class="comment-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; margin-bottom: 0.4rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; min-width: 0;">
+                                        <span class="board-author-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(authorName)}</span>
                                         ${badge}
                                     </div>
                                     <div class="comment-actions" style="display: flex; align-items: center; gap: 0.5rem;">
@@ -6659,7 +6666,7 @@
                     const cid = cDoc.id;
                     const cTime = formatDate(c.createdAt) + (c.edited && !c.deleted ? ' <span style="font-size: 0.8em; color: var(--text-secondary);">(수정됨)</span>' : '');
                     const isPresidentComment = c.author.includes('회장') || (c.email && isAdmin(c.email));
-                    const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem;">공식 답변</span>' : '';
+                    const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem; white-space: nowrap; flex-shrink: 0;">공식 답변</span>' : '';
 
                     const cPinBadge = `<div class="pin-badge-wrapper ${c.pinned ? 'active' : ''}">
                                         <span class="pin-badge-ui" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; display: inline-block;">
@@ -6719,9 +6726,9 @@
                                 ${cCheckbox}
                                 ${cAvatarHtml}
                                 <div class="comment-content" style="flex: 1; min-width: 0; padding-top: 0.2rem; margin-left: 0.75rem;">
-                                    <div class="comment-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 0.4rem;">
-                                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                                            <span class="board-author-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);">${c.author}</span>
+                                    <div class="comment-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; margin-bottom: 0.4rem;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; min-width: 0;">
+                                            <span class="board-author-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.author}</span>
                                             ${badge}
                                         </div>
                                         <div class="comment-actions" style="display: flex; align-items: center; gap: 0.5rem;">
