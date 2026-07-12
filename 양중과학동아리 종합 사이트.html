@@ -193,7 +193,10 @@
                 gap 0.4s cubic-bezier(0.25, 1, 0.5, 1),
                 opacity 0.35s ease,
                 transform 0.35s cubic-bezier(0.25, 1, 0.5, 1),
-                border-color 0.4s ease;
+                background 0.5s ease,
+                color 0.5s ease,
+                border-color 0.5s ease,
+                box-shadow 0.5s ease;
             overflow: hidden;
             white-space: nowrap;
             max-width: 250px;
@@ -603,18 +606,49 @@
         }
 
         .category-fade-in {
-            animation: fadeInMenu 0.4s ease-out forwards;
+            animation: fadeInMenu 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .category-fade-out {
+            animation: fadeOutMenu 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+            pointer-events: none;
         }
 
         @keyframes fadeInMenu {
             0% {
                 opacity: 0;
-                transform: translateY(-10px);
+                transform: translateY(-20px);
+                max-height: 0;
+                border-width: 0;
+                margin-bottom: -0.75rem;
             }
 
             100% {
                 opacity: 1;
                 transform: translateY(0);
+                max-height: 500px;
+                border-width: 1px;
+                margin-bottom: 0;
+            }
+        }
+
+        @keyframes fadeOutMenu {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+                max-height: 500px;
+                border-width: 1px;
+                margin-bottom: 0;
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-20px);
+                max-height: 0;
+                border-width: 0;
+                padding-top: 0;
+                padding-bottom: 0;
+                margin-bottom: -0.75rem;
             }
         }
 
@@ -929,6 +963,54 @@
         /* Secure Input and AI Settings style */
         .secure-mask {
             -webkit-text-security: disc !important;
+        }
+
+        #aiApiKeyInput {
+            transition: border-color 0.2s, box-shadow 0.2s, filter 0.15s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), letter-spacing 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        #aiApiKeyInput.mask-transitioning {
+            filter: blur(4px) !important;
+            opacity: 0.1 !important;
+            letter-spacing: -2px !important;
+        }
+
+        /* Eye icon animation style */
+        .eye-icon-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+        }
+
+        .eye-slash-line {
+            position: absolute;
+            top: 4px;
+            left: 3.5px;
+            width: 0;
+            height: 2px;
+            background-color: currentColor;
+            transform: rotate(45deg);
+            transform-origin: top left;
+            transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
+            opacity: 0;
+            border-radius: 99px;
+        }
+
+        /* Show slash line when parent input has secure-mask */
+        .secure-mask~#toggleApiKeyVisibility .eye-slash-line {
+            width: 24px;
+            opacity: 1;
+        }
+
+        #toggleApiKeyVisibility {
+            transition: color 0.2s;
+        }
+
+        #toggleApiKeyVisibility:hover {
+            color: var(--text-primary) !important;
         }
 
         #aiApiKeyInput:focus {
@@ -1897,28 +1979,199 @@
             flex-shrink: 0;
         }
 
+        .comment-attach-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .comment-attach-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            margin-right: 0px;
+            margin-left: 3px;
+        }
+
+        .comment-attach-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+
+        [data-theme="light"] .comment-attach-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .comment-attach-btn.open i {
+            transform: rotate(45deg);
+            color: var(--accent-color);
+        }
+
+        .comment-attach-btn i {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 1.2rem;
+        }
+
+        .comment-attach-menu {
+            position: absolute;
+            bottom: calc(100% + 25px);
+            left: 0;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transform: translateY(10px) scale(0.95);
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            transform-origin: bottom left;
+            z-index: 1001;
+        }
+
+        [data-theme="light"] .comment-attach-menu {
+            background: var(--glass-bg);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .comment-attach-menu.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        .comment-attach-option {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+
+        .comment-attach-option:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        [data-theme="light"] .comment-attach-option:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .comment-attach-option i {
+            color: var(--accent-color);
+            font-size: 1.1rem;
+        }
+
+        .comment-image-preview-container {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            width: 100%;
+            scrollbar-width: thin;
+            max-height: 0;
+            opacity: 0;
+            padding-bottom: 0;
+            transition: max-height 0.3s ease, opacity 0.3s ease, padding-bottom 0.3s ease;
+            pointer-events: none;
+        }
+
+        .comment-input-container.has-images .comment-image-preview-container {
+            max-height: 100px;
+            opacity: 1;
+            padding-bottom: 0.75rem;
+            pointer-events: auto;
+        }
+
+        .comment-image-preview-item {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            overflow: hidden;
+            flex-shrink: 0;
+            border: 1px solid var(--glass-border);
+            animation: popIn 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+        }
+
+        .comment-image-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .comment-image-preview-item .remove-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: background 0.2s;
+        }
+
+        .comment-image-preview-item .remove-btn:hover {
+            background: #ef4444;
+        }
+
         .comment-input-container {
             width: 100%;
             pointer-events: auto;
             display: flex;
-            gap: 0.8rem;
-            align-items: center;
-            /* 리퀴드 글래스 효과: 반투명 배경 + 블러 */
+            flex-direction: column;
             background: rgba(30, 41, 59, 0.45);
             backdrop-filter: blur(20px) saturate(1.4);
             -webkit-backdrop-filter: blur(20px) saturate(1.4);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-sizing: border-box;
-            border-radius: 9999px;
-            padding: 0.6rem 0.6rem 0.6rem 1.5rem;
+            border-radius: 30px;
+            padding: 0.6rem 0.6rem 0.6rem 0.6rem;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25),
                 inset 0 -1px 1px rgba(0, 0, 0, 0.1);
             transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
                 box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
                 border-color 0.3s linear,
-                background 0.3s ease;
+                background 0.3s ease,
+                border-radius 0.3s ease,
+                padding 0.3s ease;
             position: relative;
             /* overflow: hidden과 transform이 겹쳐서 검은 네모가 생기는 버그 제거 */
+        }
+
+        .comment-input-container.has-images {
+            border-radius: 24px;
+            padding: 1.2rem 0.8rem 0.8rem 0.6rem;
+        }
+
+        .comment-input-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            width: 100%;
         }
 
         [data-theme="light"] .comment-input-container {
@@ -2455,6 +2708,17 @@
             opacity: 1;
             visibility: visible;
             transform: translateX(-50%) translateY(0);
+        }
+
+        #aiModelDropdownContainer .custom-dropdown-options {
+            left: 0 !important;
+            transform: translateY(-10px) !important;
+        }
+
+        #aiModelDropdownContainer.open .custom-dropdown-options {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) !important;
         }
 
         .custom-dropdown-option {
@@ -3436,6 +3700,19 @@
         </div>
     </div>
 
+    <!-- 관리자 비활성화 확인 모달 -->
+    <div id="adminDeactivateModal" class="modal-container">
+        <h3 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-circle-question" style="color: #ef4444;"></i> 관리자 모드 종료
+        </h3>
+        <p style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.9rem;">관리자 모드를 비활성화하시겠습니까?</p>
+        <div class="modal-buttons" style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button id="adminDeactivateCancel"
+                style="padding: 0.5rem 1rem; border: none; border-radius: 8px; background: var(--glass-border); color: var(--text-primary); cursor: pointer;">취소</button>
+            <button id="adminDeactivateConfirm"
+                style="padding: 0.5rem 1rem; border: none; border-radius: 8px; background: #ef4444; color: white; cursor: pointer;">확인</button>
+        </div>
+    </div>
+
     <!-- 직책 부여 페이지 (기존 모달에서 변경) -->
     <div id="roleManagePage" class="page hidden fade-out">
         <button class="greeting-back-btn" id="roleManageBackBtn">
@@ -3447,9 +3724,9 @@
             <p style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.95rem;">대상 이메일과 부여할 직책명을 입력하세요.
             </p>
             <input type="email" id="roleTargetEmail" placeholder="대상 이메일 (예: user@gmail.com)"
-                style="padding: 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.03); color: var(--text-primary); font-size: 1rem; width: 100%; box-sizing: border-box;" />
+                style="padding: 1rem 1.5rem; border-radius: 9999px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.03); color: var(--text-primary); font-size: 1rem; width: 100%; box-sizing: border-box;" />
             <input type="text" id="roleNameInput" placeholder="직책명 (예: 부회장 지후)"
-                style="padding: 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.03); color: var(--text-primary); font-size: 1rem; width: 100%; box-sizing: border-box;" />
+                style="padding: 1rem 1.5rem; border-radius: 9999px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.03); color: var(--text-primary); font-size: 1rem; width: 100%; box-sizing: border-box;" />
             <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
                 <button id="roleManageConfirmBtn"
                     style="padding: 0.8rem 2rem; border: none; border-radius: 12px; background: var(--accent-color); color: white; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.2s;">부여</button>
@@ -3477,10 +3754,14 @@
                 <div style="position: relative; display: flex; align-items: center; width: 100%;">
                     <input type="text" id="aiApiKeyInput" class="secure-mask" placeholder="AI API Key를 입력하세요"
                         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-                        style="padding: 1rem 3rem 1rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.03); color: var(--text-primary); font-size: 1rem; width: 100%; box-sizing: border-box; transition: all 0.2s;" />
+                        style="padding: 1rem 3.5rem 1rem 1.5rem; border-radius: 9999px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.03); color: var(--text-primary); font-size: 1rem; width: 100%; box-sizing: border-box; transition: all 0.2s;" />
                     <button id="toggleApiKeyVisibility"
-                        style="position: absolute; right: 1rem; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; height: 100%;">
-                        <i class="fa-regular fa-eye"></i>
+                        style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; padding: 0; outline: none; border-radius: 50%;"
+                        type="button" aria-label="비밀번호 보이기 토글">
+                        <div class="eye-icon-wrapper">
+                            <i class="fa-regular fa-eye"></i>
+                            <div class="eye-slash-line"></div>
+                        </div>
                     </button>
                 </div>
                 <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.85rem; line-height: 1.4;">
@@ -3492,23 +3773,22 @@
                     style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--text-primary); font-size: 1.05rem;"><i
                         class="fa-solid fa-microchip"></i> AI 모델 선택</label>
                 <div style="position: relative; display: flex; align-items: center; width: 100%;">
-                    <select id="aiModelSelect"
-                        style="padding: 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.03); color: var(--text-primary); font-size: 1rem; width: 100%; box-sizing: border-box; transition: all 0.2s; outline: none; appearance: none; -webkit-appearance: none; cursor: pointer;">
-                        <option value="gemini-3.5-flash"
-                            style="background-color: var(--bg-color); color: var(--text-primary);">Gemini 3.5 Flash
-                        </option>
-                        <option value="gemini-3.1-pro-preview"
-                            style="background-color: var(--bg-color); color: var(--text-primary);">Gemini 3.1 Pro
-                            Preview</option>
-                        <option value="gemini-1.5-flash"
-                            style="background-color: var(--bg-color); color: var(--text-primary);">Gemini 1.5 Flash (권장)
-                        </option>
-                        <option value="gemini-1.5-pro"
-                            style="background-color: var(--bg-color); color: var(--text-primary);">Gemini 1.5 Pro
-                        </option>
-                    </select>
-                    <div style="position: absolute; right: 1rem; pointer-events: none; color: var(--text-secondary);">
-                        <i class="fa-solid fa-chevron-down"></i>
+                    <div class="custom-dropdown-container" id="aiModelDropdownContainer" style="width: 100%;">
+                        <div class="custom-dropdown-selected" id="aiModelSelected"
+                            style="padding: 1rem 1.5rem; border-radius: 9999px; justify-content: space-between; width: 100%; box-sizing: border-box;">
+                            <span id="aiModelSelectedText"><i class="fa-solid fa-bolt"></i> Gemini 3.5 Flash</span>
+                            <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                        </div>
+                        <ul class="custom-dropdown-options" id="aiModelOptions"
+                            style="width: 100%; border-radius: 20px; top: calc(100% + 8px);">
+                            <li class="custom-dropdown-option active" data-value="gemini-3.5-flash"><i
+                                    class="fa-solid fa-bolt"></i> Gemini 3.5 Flash</li>
+                            <li class="custom-dropdown-option" data-value="gemini-3.1-pro-preview"><i
+                                    class="fa-solid fa-wand-magic-sparkles"></i> Gemini 3.1 Pro Preview</li>
+                            <li class="custom-dropdown-option" data-value="gemini-3.1-flash-lite"><i
+                                    class="fa-solid fa-feather"></i> Gemini 3.1 Flash Lite</li>
+                        </ul>
+                        <input type="hidden" id="aiModelSelect" value="gemini-3.5-flash" />
                     </div>
                 </div>
                 <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.85rem; line-height: 1.4;">사용하고자
@@ -4021,13 +4301,29 @@
                 </div>
 
                 <div class="comment-input-area">
-                    <div class="comment-input-container">
-                        <input type="text" class="comment-input" placeholder="댓글을 입력하세요...">
-                        <button type="button" id="cancelReplyBtn" class="cancel-reply-btn" onclick="cancelReplyTarget()"
-                            title="답글 취소">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                        <button class="comment-submit-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                    <div class="comment-input-container" id="commentInputContainer">
+                        <div class="comment-image-preview-container" id="commentImagePreviewContainer"></div>
+                        <div class="comment-input-row">
+                            <div class="comment-attach-wrapper">
+                                <button type="button" id="commentAttachBtn" class="comment-attach-btn"
+                                    aria-label="첨부파일">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                                <div class="comment-attach-menu" id="commentAttachMenu">
+                                    <button type="button" class="comment-attach-option" id="commentAttachImageBtn">
+                                        <i class="fa-solid fa-image"></i>
+                                        <span>이미지</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <input type="file" id="commentImageInput" accept="image/*" multiple style="display: none;">
+                            <input type="text" class="comment-input" placeholder="댓글을 입력하세요...">
+                            <button type="button" id="cancelReplyBtn" class="cancel-reply-btn"
+                                onclick="cancelReplyTarget()" title="답글 취소">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                            <button class="comment-submit-btn"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -5475,7 +5771,7 @@
             const safeCommentId = toJsString(comment.id);
             const pinned = !!(comment.pinned && !isDeleted);
             const authorName = isDeleted ? '삭제된 댓글' : (comment.author || '사용자');
-            const cTime = formatDate(comment.createdAt);
+            const cTime = formatDate(comment.createdAt) + (comment.edited && !isDeleted ? ' <span style="font-size: 0.8em; color: var(--text-secondary);">(수정됨)</span>' : '');
             const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.08rem 0.35rem; border-radius: 4px; font-weight: bold; margin-left: 0.4rem;">공식 답변</span>' : '';
             let depthIcon = '';
             if (depth >= 4) {
@@ -5488,6 +5784,16 @@
             const bodyHtml = isDeleted
                 ? '<span class="comment-deleted-text">삭제된 댓글입니다.</span>'
                 : mentionHtml + escapeHtml(comment.body || '').replace(/\n/g, '<br>');
+
+            let imagesHtml = '';
+            if (comment.images && Array.isArray(comment.images) && comment.images.length > 0 && !isDeleted) {
+                imagesHtml = `<div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">`;
+                comment.images.forEach(imgUrl => {
+                    imagesHtml += `<img src="${escapeHtml(imgUrl)}" alt="첨부 이미지" style="max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover; border: 1px solid var(--glass-border); cursor: pointer;" onclick="event.stopPropagation(); openLightbox('${escapeHtml(imgUrl)}')">`;
+                });
+                imagesHtml += `</div>`;
+            }
+
             const deleteBtn = canDelete ? `<button type="button" class="board-action-btn delete-btn" onclick="deleteComment('${safePostId}', '${safeCommentId}')" title="댓글 삭제"><i class="fa-solid fa-trash-can"></i></button>` : '';
             const editBtn = canDelete ? `<button type="button" class="board-action-btn edit-btn role-edit-btn" onclick="event.stopPropagation(); editComment('${safePostId}', '${safeCommentId}')" title="답글 수정" style="color: #007bff !important;"><i class="fa-solid fa-pen-to-square" style="color: #007bff !important;"></i></button>` : '';
             const pinBtn = canPin ? `<button type="button" class="board-action-btn pin-toggle-btn ${pinned ? 'active' : ''}" onclick="togglePinComment('${safePostId}', '${safeCommentId}', ${pinned})" title="${pinned ? '댓글 고정 해제' : '댓글 고정'}"><i class="fa-solid fa-thumbtack"></i></button>` : '';
@@ -5543,7 +5849,7 @@
                                 <span class="board-time" style="font-weight: 400;">${cTime}</span>
                             </div>
                         </div>
-                        <div class="flat-reply-body">${bodyHtml}</div>
+                        <div class="flat-reply-body">${bodyHtml}${imagesHtml}</div>
                         <div class="flat-reply-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 ${replyBtn}
@@ -5577,7 +5883,7 @@
             const safeCommentId = toJsString(comment.id);
             const pinned = !!(comment.pinned && !isDeleted);
             const authorName = isDeleted ? '삭제된 댓글' : (comment.author || '사용자');
-            const cTime = formatDate(comment.createdAt);
+            const cTime = formatDate(comment.createdAt) + (comment.edited && !isDeleted ? ' <span style="font-size: 0.8em; color: var(--text-secondary);">(수정됨)</span>' : '');
             const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem;">공식 답변</span>' : '';
             const pinBadge = `<div class="pin-badge-wrapper ${pinned ? 'active' : ''}">
                                 <span class="pin-badge-ui" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; display: inline-block;">
@@ -5625,6 +5931,15 @@
                 ? '<span class="comment-deleted-text">삭제된 댓글입니다.</span>'
                 : escapeHtml(comment.body || '').replace(/\n/g, '<br>');
 
+            let imagesHtml = '';
+            if (comment.images && Array.isArray(comment.images) && comment.images.length > 0 && !isDeleted) {
+                imagesHtml = `<div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">`;
+                comment.images.forEach(imgUrl => {
+                    imagesHtml += `<img src="${escapeHtml(imgUrl)}" alt="첨부 이미지" style="max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover; border: 1px solid var(--glass-border); cursor: pointer;" onclick="event.stopPropagation(); openLightbox('${escapeHtml(imgUrl)}')">`;
+                });
+                imagesHtml += `</div>`;
+            }
+
             let repliesHtml = '';
             if (isExpanded) {
                 const immediateReplies = tree.childrenMap.get(comment.id) || [];
@@ -5666,7 +5981,7 @@
                                         <span class="board-time" style="font-weight: 400;">${cTime}</span>
                                     </div>
                                 </div>
-                                <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${bodyHtml}</div>
+                                <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${bodyHtml}${imagesHtml}</div>
                                 <div class="comment-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
                                     <div style="display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap;">
                                         ${replyBtn}
@@ -5922,16 +6237,26 @@
         function updateReplyTargetUI() {
             const input = document.querySelector('.side-detail-container .comment-input');
             const cancelBtn = document.getElementById('cancelReplyBtn');
+            const submitBtn = document.querySelector('.side-detail-container .comment-submit-btn');
             if (!input || !cancelBtn) return;
 
             input.classList.add('placeholder-fade');
             setTimeout(() => {
-                if (window.replyTarget) {
+                if (window.editTarget) {
+                    input.placeholder = '댓글을 수정하세요...';
+                    cancelBtn.classList.add('active');
+                    cancelBtn.title = '수정 취소';
+                    if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                } else if (window.replyTarget) {
                     input.placeholder = `${window.replyTarget.author}님에게 답글 작성 중...`;
                     cancelBtn.classList.add('active');
+                    cancelBtn.title = '답글 취소';
+                    if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
                 } else {
                     input.placeholder = '댓글을 입력하세요...';
                     cancelBtn.classList.remove('active');
+                    cancelBtn.title = '답글 취소';
+                    if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
                 }
                 input.classList.remove('placeholder-fade');
             }, 300);
@@ -5950,6 +6275,7 @@
                 id: commentId,
                 author: target.author || '사용자'
             };
+            window.editTarget = null;
             window.expandCommentLineage(commentId);
             updateReplyTargetUI();
             const input = document.querySelector('.side-detail-container .comment-input');
@@ -5957,6 +6283,17 @@
         };
 
         window.cancelReplyTarget = function () {
+            if (window.editTarget) {
+                window.editTarget = null;
+                const input = document.querySelector('.side-detail-container .comment-input');
+                if (input) input.value = '';
+                if (typeof commentAttachedImages !== 'undefined') {
+                    commentAttachedImages = [];
+                    if (typeof renderCommentImagePreview === 'function') {
+                        renderCommentImagePreview();
+                    }
+                }
+            }
             window.replyTarget = null;
             updateReplyTargetUI();
         };
@@ -6313,7 +6650,7 @@
                 sortedDocs.forEach((cDoc, index) => {
                     const c = cDoc.data();
                     const cid = cDoc.id;
-                    const cTime = formatDate(c.createdAt);
+                    const cTime = formatDate(c.createdAt) + (c.edited && !c.deleted ? ' <span style="font-size: 0.8em; color: var(--text-secondary);">(수정됨)</span>' : '');
                     const isPresidentComment = c.author.includes('회장') || (c.email && isAdmin(c.email));
                     const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem;">공식 답변</span>' : '';
 
@@ -6733,6 +7070,8 @@
             }
         };
 
+        window.editTarget = null;
+
         // 댓글/답글 수정 함수
         window.editComment = async function (postId, commentId) {
             if (!currentUser) {
@@ -6744,11 +7083,36 @@
                 const doc = await db.collection('posts').doc(postId).collection('comments').doc(commentId).get();
                 if (!doc.exists) { alert('댓글을 찾을 수 없습니다.'); return; }
                 const comment = doc.data();
-                const newBody = prompt('댓글을 수정하세요:', comment.body || '');
-                if (newBody === null || newBody.trim() === '') return;
-                await db.collection('posts').doc(postId).collection('comments').doc(commentId).update({
-                    body: newBody.trim()
-                });
+
+                window.editTarget = {
+                    postId: postId,
+                    id: commentId,
+                    body: comment.body || '',
+                    images: comment.images || []
+                };
+
+                window.replyTarget = null; // 수정 모드로 진입하므로 답글 모드 해제
+
+                const commentInput = document.querySelector('.side-detail-container .comment-input');
+                if (commentInput) {
+                    commentInput.value = comment.body || '';
+                    commentInput.focus();
+                }
+
+                if (typeof commentAttachedImages !== 'undefined') {
+                    commentAttachedImages = (comment.images || []).map(imgUrl => ({
+                        file: null, // 기존 이미지는 파일 객체가 없음
+                        dataUrl: imgUrl
+                    }));
+                    if (typeof renderCommentImagePreview === 'function') {
+                        renderCommentImagePreview();
+                    }
+                }
+
+                if (typeof updateReplyTargetUI === 'function') {
+                    updateReplyTargetUI();
+                }
+
             } catch (e) {
                 console.error(e);
                 alert('댓글 수정 중 오류가 발생했습니다.');
@@ -7031,7 +7395,112 @@
             }
         };
 
+        // 이미지 압축 및 리사이즈 함수
+        async function compressImage(file, maxWidth = 1600, maxHeight = 1600, quality = 0.85) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(e);
+                reader.readAsDataURL(file);
+            });
+        }
+
         // 댓글 작성 로직
+        let commentAttachedImages = [];
+        const commentAttachBtn = document.getElementById('commentAttachBtn');
+        const commentAttachMenu = document.getElementById('commentAttachMenu');
+        const commentAttachImageBtn = document.getElementById('commentAttachImageBtn');
+        const commentImageInput = document.getElementById('commentImageInput');
+        const commentImagePreviewContainer = document.getElementById('commentImagePreviewContainer');
+
+        if (commentAttachBtn) {
+            commentAttachBtn.addEventListener('click', () => {
+                commentAttachBtn.classList.toggle('open');
+                commentAttachMenu.classList.toggle('active');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!commentAttachBtn.contains(e.target) && !commentAttachMenu.contains(e.target)) {
+                    commentAttachBtn.classList.remove('open');
+                    commentAttachMenu.classList.remove('active');
+                }
+            });
+        }
+
+        if (commentAttachImageBtn && commentImageInput) {
+            commentAttachImageBtn.addEventListener('click', () => {
+                if (commentAttachedImages.length >= 3) {
+                    alert('이미지는 최대 3개까지만 첨부할 수 있습니다.');
+                    return;
+                }
+                commentImageInput.click();
+                commentAttachBtn.classList.remove('open');
+                commentAttachMenu.classList.remove('active');
+            });
+
+            commentImageInput.addEventListener('change', async (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length === 0) return;
+
+                if (commentAttachedImages.length + files.length > 3) {
+                    alert('이미지는 최대 3개까지만 첨부할 수 있습니다.');
+                    return;
+                }
+
+                const originalBtnHtml = commentAttachBtn.innerHTML;
+                commentAttachBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+                commentAttachBtn.disabled = true;
+
+                try {
+                    for (const file of files) {
+                        if (commentAttachedImages.length >= 3) break;
+                        const compressedDataUrl = await compressImage(file, 1600, 1600, 0.85);
+                        commentAttachedImages.push({
+                            file: file,
+                            dataUrl: compressedDataUrl
+                        });
+                    }
+                    renderCommentImagePreview();
+                } catch (err) {
+                    console.error("이미지 압축 실패:", err);
+                    alert("이미지 처리 중 오류가 발생했습니다.");
+                } finally {
+                    commentAttachBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
+                    commentAttachBtn.disabled = false;
+                    commentImageInput.value = '';
+                }
+            });
+        }
+
+        function renderCommentImagePreview() {
+            const commentInputContainer = document.getElementById('commentInputContainer');
+            if (commentAttachedImages.length > 0) {
+                if (commentInputContainer) commentInputContainer.classList.add('has-images');
+                commentImagePreviewContainer.innerHTML = commentAttachedImages.map((img, index) => `
+                    <div class="comment-image-preview-item">
+                        <img src="${img.dataUrl}" alt="첨부 이미지" style="cursor: pointer;" onclick="openLightbox('${img.dataUrl}')">
+                        <button type="button" class="remove-btn" onclick="removeCommentAttachedImage(${index})">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                if (commentInputContainer) commentInputContainer.classList.remove('has-images');
+                // DOM 업데이트를 트랜지션이 끝난 후로 미루거나 안 함
+                // transition-duration (300ms) 이후에 innerHTML 비우기
+                setTimeout(() => {
+                    if (commentAttachedImages.length === 0) {
+                        commentImagePreviewContainer.innerHTML = '';
+                    }
+                }, 300);
+            }
+        }
+
+        window.removeCommentAttachedImage = function (index) {
+            commentAttachedImages.splice(index, 1);
+            renderCommentImagePreview();
+        };
+
         const commentSubmitBtn = document.querySelector('.side-detail-container .comment-submit-btn');
         const commentInput = document.querySelector('.side-detail-container .comment-input');
         if (commentSubmitBtn && commentInput) {
@@ -7043,33 +7512,61 @@
                 }
                 if (!currentPostId) return;
                 const body = commentInput.value.trim();
-                if (body === '') return;
-                const parentId = (window.replyTarget && window.replyTarget.postId === currentPostId) ? window.replyTarget.id : null;
+                if (body === '' && commentAttachedImages.length === 0) return;
+
+                commentSubmitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+                commentSubmitBtn.disabled = true;
 
                 try {
-                    await db.collection('posts').doc(currentPostId).collection('comments').add({
-                        author: isAdmin(currentUser.email) ? getAdminName(currentUser.email) : currentUser.displayName,
-                        uid: currentUser.uid,
-                        userPhoto: currentUser.photoURL || '',
-                        email: currentUser.email,
-                        body: body,
-                        parentId: parentId,
-                        replyToAuthor: parentId && window.replyTarget ? window.replyTarget.author : '',
-                        pinned: false,
-                        likes: 0,
-                        likedUsers: [],
-                        deleted: false,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    if (parentId) {
-                        window.expandCommentLineage(parentId);
+                    let commentImageUrls = [];
+                    if (commentAttachedImages.length > 0) {
+                        commentImageUrls = commentAttachedImages.map(img => img.dataUrl);
                     }
+
+                    if (window.editTarget) {
+                        await db.collection('posts').doc(currentPostId)
+                            .collection('comments').doc(window.editTarget.id).update({
+                                body: body,
+                                images: commentImageUrls,
+                                edited: true,
+                                editedAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+
+                        window.editTarget = null;
+                    } else {
+                        const parentId = (window.replyTarget && window.replyTarget.postId === currentPostId) ? window.replyTarget.id : null;
+
+                        await db.collection('posts').doc(currentPostId).collection('comments').add({
+                            author: isAdmin(currentUser.email) ? getAdminName(currentUser.email) : currentUser.displayName,
+                            uid: currentUser.uid,
+                            userPhoto: currentUser.photoURL || '',
+                            email: currentUser.email,
+                            body: body,
+                            images: commentImageUrls,
+                            parentId: parentId,
+                            replyToAuthor: parentId && window.replyTarget ? window.replyTarget.author : '',
+                            pinned: false,
+                            likes: 0,
+                            likedUsers: [],
+                            deleted: false,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        if (parentId) {
+                            window.expandCommentLineage(parentId);
+                        }
+                    }
+
                     commentInput.value = '';
+                    commentAttachedImages = [];
+                    renderCommentImagePreview();
                     window.replyTarget = null;
                     updateReplyTargetUI();
                 } catch (e) {
-                    console.error(e);
-                    alert('댓글 작성 실패');
+                    console.error("댓글 작성/수정 실패", e);
+                    alert('처리 중 실패했습니다.');
+                } finally {
+                    commentSubmitBtn.disabled = false;
+                    updateReplyTargetUI();
                 }
             });
 
@@ -7389,6 +7886,9 @@
         const adminModalCancel = document.getElementById('adminModalCancel');
         const adminModalConfirm = document.getElementById('adminModalConfirm');
         const adminCategory = document.getElementById('adminCategory');
+        const adminDeactivateModal = document.getElementById('adminDeactivateModal');
+        const adminDeactivateCancel = document.getElementById('adminDeactivateCancel');
+        const adminDeactivateConfirm = document.getElementById('adminDeactivateConfirm');
 
         // 새로고침해도 관리자 모드 유지
         if (localStorage.getItem('isAdminUnlocked') === 'true') {
@@ -7400,7 +7900,7 @@
 
         adminTriggerIcon.addEventListener('click', (e) => {
             const currentTime = new Date().getTime();
-            if (currentTime - adminLastClickTime > 3000) {
+            if (currentTime - adminLastClickTime > 5000) {
                 adminClickCount = 0;
             }
             adminClickCount++;
@@ -7408,10 +7908,15 @@
 
             if (adminClickCount >= 5) {
                 adminClickCount = 0;
-                adminModalOverlay.classList.add('active');
-                adminModal.classList.add('active');
-                adminPwdInput.value = '';
-                setTimeout(() => adminPwdInput.focus(), 300);
+                if (localStorage.getItem('isAdminUnlocked') === 'true') {
+                    adminModalOverlay.classList.add('active');
+                    adminDeactivateModal.classList.add('active');
+                } else {
+                    adminModalOverlay.classList.add('active');
+                    adminModal.classList.add('active');
+                    adminPwdInput.value = '';
+                    setTimeout(() => adminPwdInput.focus(), 300);
+                }
             }
         });
 
@@ -7420,12 +7925,30 @@
             adminModal.classList.remove('active');
         });
 
+        adminDeactivateCancel.addEventListener('click', () => {
+            adminModalOverlay.classList.remove('active');
+            adminDeactivateModal.classList.remove('active');
+        });
+
+        adminDeactivateConfirm.addEventListener('click', () => {
+            localStorage.removeItem('isAdminUnlocked');
+            adminModalOverlay.classList.remove('active');
+            adminDeactivateModal.classList.remove('active');
+            adminCategory.classList.remove('category-fade-in');
+            adminCategory.classList.add('category-fade-out');
+            setTimeout(() => {
+                adminCategory.style.display = 'none';
+                adminCategory.classList.remove('category-fade-out');
+            }, 400);
+        });
+
         function checkAdminPassword() {
             if (adminPwdInput.value === '110420') {
                 localStorage.setItem('isAdminUnlocked', 'true');
                 adminModalOverlay.classList.remove('active');
                 adminModal.classList.remove('active');
                 adminCategory.style.display = 'block';
+                adminCategory.classList.remove('category-fade-out');
                 adminCategory.classList.add('category-fade-in');
 
                 const drawer = document.getElementById('sideDrawer');
@@ -7481,15 +8004,54 @@
         const aiChatbotSendBtn = document.getElementById('aiChatbotSendBtn');
         const closeAiChatbot = document.getElementById('closeAiChatbot');
 
+        const aiModelDropdownContainer = document.getElementById('aiModelDropdownContainer');
+        const aiModelSelected = document.getElementById('aiModelSelected');
+        const aiModelOptions = document.getElementById('aiModelOptions');
+        const aiModelOptionItems = document.querySelectorAll('#aiModelOptions .custom-dropdown-option');
+
+        if (aiModelSelected && aiModelOptions) {
+            aiModelSelected.addEventListener('click', (e) => {
+                e.stopPropagation();
+                aiModelDropdownContainer.classList.toggle('open');
+            });
+
+            aiModelOptionItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const value = item.getAttribute('data-value');
+                    const textHTML = item.innerHTML;
+
+                    aiModelOptionItems.forEach(opt => opt.classList.remove('active'));
+                    item.classList.add('active');
+
+                    aiModelSelected.innerHTML = `<span>${textHTML}</span> <i class="fa-solid fa-chevron-down arrow-icon"></i>`;
+                    aiModelDropdownContainer.classList.remove('open');
+
+                    aiModelSelect.value = value;
+                });
+            });
+
+            document.addEventListener('click', (e) => {
+                if (aiModelDropdownContainer && !aiModelDropdownContainer.contains(e.target)) {
+                    aiModelDropdownContainer.classList.remove('open');
+                }
+            });
+        }
+
         // Firestore에서 AI 설정 로드하는 함수
         async function loadAiConfig() {
             try {
                 const doc = await db.collection('settings').doc('ai_config').get();
                 if (doc.exists) {
                     const data = doc.data();
+                    let modelValue = data.model || 'gemini-3.5-flash';
+                    const allowedModels = ['gemini-3.5-flash', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite'];
+                    if (!allowedModels.includes(modelValue)) {
+                        modelValue = 'gemini-3.5-flash';
+                    }
                     window.aiConfig = {
                         apiKey: data.apiKey || '',
-                        model: data.model || 'gemini-3.5-flash',
+                        model: modelValue,
                         enabled: data.enabled || false,
                         chatbotEnabled: data.chatbotEnabled || false,
                         summaryEnabled: data.summaryEnabled || false
@@ -7528,7 +8090,24 @@
                 // 설정값 채우기
                 aiApiKeyInput.value = window.aiConfig.apiKey;
                 if (aiModelSelect) {
-                    aiModelSelect.value = window.aiConfig.model || 'gemini-3.5-flash';
+                    let modelValue = window.aiConfig.model || 'gemini-3.5-flash';
+                    const allowedModels = ['gemini-3.5-flash', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite'];
+                    if (!allowedModels.includes(modelValue)) {
+                        modelValue = 'gemini-3.5-flash';
+                    }
+                    aiModelSelect.value = modelValue;
+                    const aiModelOptionItems = document.querySelectorAll('#aiModelOptions .custom-dropdown-option');
+                    aiModelOptionItems.forEach(opt => {
+                        if (opt.getAttribute('data-value') === modelValue) {
+                            opt.classList.add('active');
+                            const aiModelSelected = document.getElementById('aiModelSelected');
+                            if (aiModelSelected) {
+                                aiModelSelected.innerHTML = `<span>${opt.innerHTML}</span> <i class="fa-solid fa-chevron-down arrow-icon"></i>`;
+                            }
+                        } else {
+                            opt.classList.remove('active');
+                        }
+                    });
                 }
                 aiEnabledCheckbox.checked = window.aiConfig.enabled;
                 aiChatbotEnabledCheckbox.checked = window.aiConfig.chatbotEnabled;
@@ -7550,15 +8129,25 @@
 
         // API Key 눈 모양 보이기/숨기기 토글
         if (toggleApiKeyVisibility) {
+            let isTransitioning = false;
             toggleApiKeyVisibility.addEventListener('click', () => {
-                const eyeIcon = toggleApiKeyVisibility.querySelector('i');
-                if (aiApiKeyInput.classList.contains('secure-mask')) {
-                    aiApiKeyInput.classList.remove('secure-mask');
-                    eyeIcon.className = 'fa-regular fa-eye-slash';
-                } else {
-                    aiApiKeyInput.classList.add('secure-mask');
-                    eyeIcon.className = 'fa-regular fa-eye';
-                }
+                if (isTransitioning) return;
+                isTransitioning = true;
+
+                aiApiKeyInput.classList.add('mask-transitioning');
+
+                setTimeout(() => {
+                    if (aiApiKeyInput.classList.contains('secure-mask')) {
+                        aiApiKeyInput.classList.remove('secure-mask');
+                    } else {
+                        aiApiKeyInput.classList.add('secure-mask');
+                    }
+
+                    setTimeout(() => {
+                        aiApiKeyInput.classList.remove('mask-transitioning');
+                        isTransitioning = false;
+                    }, 50); // Small buffer before starting fade-back-in
+                }, 150); // Matches the CSS transition duration
             });
         }
 
