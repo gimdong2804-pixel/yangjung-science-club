@@ -3715,6 +3715,24 @@
             display: none;
             /* Chrome, Safari and Opera */
         }
+
+        .has-replies .reply-action-btn,
+        .has-replies .reply-toggle-btn,
+        .has-replies .board-action-btn {
+            padding: 0 0.35rem !important;
+            gap: 0.15rem !important;
+            min-width: 26px !important;
+            font-size: 0.8rem !important;
+        }
+
+        .has-replies .hide-scrollbar {
+            gap: 0.2rem !important;
+            margin-left: -0.4rem;
+        }
+
+        .has-replies .mobile-show {
+            gap: 0.2rem !important;
+        }
     </style>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2c52ed">
@@ -5930,7 +5948,7 @@
                             </div>
                         </div>
                         <div class="flat-reply-body">${bodyHtml}${imagesHtml}</div>
-                        <div class="flat-reply-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: nowrap;">
+                        <div class="flat-reply-footer ${replyCount > 0 ? 'has-replies' : ''}" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: nowrap;">
                             <div class="hide-scrollbar" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; overflow-x: auto; flex: 1; min-width: 0;">
                                 ${replyBtn}
                                 ${replyToggleBtn}
@@ -6062,7 +6080,7 @@
                                     </div>
                                 </div>
                                 <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${bodyHtml}${imagesHtml}</div>
-                                <div class="comment-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: nowrap; width: 100%;">
+                                <div class="comment-footer ${replyCount > 0 ? 'has-replies' : ''}" style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: nowrap; width: 100%;">
                                     <div class="hide-scrollbar" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; overflow-x: auto; flex: 1; min-width: 0;">
                                         ${replyBtn}
                                         ${replyToggleBtn}
