@@ -3698,6 +3698,18 @@
         body.multi-select-active .comment-header .board-time {
             font-size: 0.7rem;
         }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+            /* Chrome, Safari and Opera */
+        }
     </style>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2c52ed">
@@ -5913,17 +5925,17 @@
                             </div>
                         </div>
                         <div class="flat-reply-body">${bodyHtml}${imagesHtml}</div>
-                        <div class="flat-reply-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="flat-reply-footer" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: nowrap;">
+                            <div class="hide-scrollbar" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; overflow-x: auto; max-width: calc(100% - 60px);">
                                 ${replyBtn}
                                 ${replyToggleBtn}
-                                <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem;">
+                                <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem; flex-shrink: 0;">
                                     ${pinBtn}
                                     ${deleteBtn}
                                     ${editBtn}
                                 </div>
                             </div>
-                            <div style="margin-left: auto;">${likeBtn}</div>
+                            <div style="margin-left: auto; flex-shrink: 0;">${likeBtn}</div>
                         </div>
                     </div>
                 </div>
@@ -6045,17 +6057,17 @@
                                     </div>
                                 </div>
                                 <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${bodyHtml}${imagesHtml}</div>
-                                <div class="comment-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-                                    <div style="display: flex; align-items: center; gap: 0.25rem; flex-wrap: wrap;">
+                                <div class="comment-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; flex-wrap: nowrap; width: 100%;">
+                                    <div class="hide-scrollbar" style="display: flex; align-items: center; gap: 0.25rem; flex-wrap: nowrap; overflow-x: auto; max-width: calc(100% - 60px);">
                                         ${replyBtn}
                                         ${replyToggleBtn}
-                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem;">
+                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem; flex-shrink: 0;">
                                             ${pinBtn}
                                             ${deleteBtn}
                                             ${editBtn}
                                         </div>
                                     </div>
-                                    <div class="board-stats" style="margin-left: auto;">
+                                    <div class="board-stats" style="margin-left: auto; flex-shrink: 0;">
                                         ${likeBtn}
                                     </div>
                                 </div>
@@ -6799,13 +6811,13 @@
                                         </div>
                                     </div>
                                     <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${c.body}</div>
-                                    <div class="comment-footer" style="display: flex; justify-content: space-between; align-items: center;">
-                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem;">
+                                    <div class="comment-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; flex-wrap: nowrap; width: 100%;">
+                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem; flex-shrink: 0;">
                                             ${cPinBtn}
                                             ${cDeleteBtn}
                                             ${cEditBtn}
                                         </div>
-                                        <div class="board-stats" style="margin-left: auto;">
+                                        <div class="board-stats" style="margin-left: auto; flex-shrink: 0;">
                                             ${cLikeBtn}
                                         </div>
                                     </div>
