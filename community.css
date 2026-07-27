@@ -1,0 +1,1697 @@
+/* ========================================== */
+/*         Community Board Styles             */
+/* ========================================== */
+/* Community Board Styles */
+.board-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+    position: relative;
+    padding-bottom: 5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.board-header {
+    order: -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 0 0.5rem;
+}
+
+.board-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, transform 0.3s ease, padding-left 0.3s ease;
+}
+
+@keyframes slideOutAndFade {
+    to {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+}
+
+.board-card.deleting {
+    animation: slideOutAndFade 0.3s ease-out forwards;
+    pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .board-card:hover {
+        transform: translateY(-6px);
+        border-color: var(--accent-color);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, transform 0.3s ease;
+    }
+}
+
+.board-card.pinned {
+    background: rgba(59, 130, 246, 0.08);
+    border-color: rgba(59, 130, 246, 0.4);
+}
+
+.board-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.board-author {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.board-author-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    color: var(--bg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.board-author-name {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.board-time {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    user-select: none;
+}
+
+.board-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pin-icon {
+    color: var(--accent-color);
+    font-size: 0.9rem;
+}
+
+.board-preview {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.5;
+}
+
+.board-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.board-stats {
+    display: flex;
+    gap: 1rem;
+    user-select: none;
+}
+
+.board-stats span {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.board-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: 36px;
+    padding: 0 0.7rem;
+    height: 36px;
+    gap: 0.3rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    border-radius: 6px;
+    font-variant-numeric: tabular-nums;
+    transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.board-action-btn:focus-visible {
+    color: var(--accent-color);
+    background: rgba(59, 130, 246, 0.08);
+    outline: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .board-action-btn:hover {
+        color: var(--accent-color);
+        background: rgba(59, 130, 246, 0.08);
+        outline: none;
+    }
+}
+
+
+@keyframes pinBounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+@keyframes pinPress {
+    0% {
+        transform: scale(1) translateY(0);
+    }
+
+    40% {
+        transform: scale(0.8) translateY(3px) rotate(-10deg);
+    }
+
+    100% {
+        transform: scale(1) translateY(0) rotate(0);
+    }
+}
+
+@keyframes pinRippleGlow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6);
+    }
+
+    70% {
+        box-shadow: 0 0 0 12px rgba(59, 130, 246, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+}
+
+.pin-toggle-btn {
+    position: relative;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+    transform-origin: center;
+}
+
+.pin-toggle-btn i {
+    display: inline-block;
+    font-size: 0.85rem;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform-origin: bottom center;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .pin-toggle-btn:hover i {
+        animation: pinBounce 0.8s ease-in-out infinite;
+    }
+}
+
+.pin-toggle-btn.active {
+    color: var(--accent-color) !important;
+    background: rgba(59, 130, 246, 0.15) !important;
+}
+
+.pin-toggle-btn.animate-pin-action {
+    animation: pinRippleGlow 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pin-toggle-btn.animate-pin-action i {
+    animation: pinPress 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.board-action-btn.delete-btn {
+    color: #ff6b6b;
+}
+
+.board-action-btn.delete-btn i {
+    font-size: 0.85rem;
+}
+
+.board-card.pinned-state {
+    background: rgba(59, 130, 246, 0.04);
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: inset 3px 0 0 var(--accent-color), 0 4px 16px rgba(59, 130, 246, 0.05) !important;
+    padding-left: 1.5rem !important;
+}
+
+/* 핀 뱃지 부드러운 전환 효과 */
+.pin-badge-wrapper {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-8px);
+    transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), margin-bottom 0.35s ease;
+    margin-bottom: 0;
+}
+
+.pin-badge-wrapper.active {
+    max-height: 30px;
+    opacity: 1;
+    transform: translateY(0);
+    margin-bottom: 0.6rem;
+}
+
+.comment-item .pin-badge-wrapper.active {
+    margin-bottom: 1rem;
+}
+
+/* 카드 내부 요소 개별 트랜지션 (지연 정렬 효과) */
+.board-card .board-author {
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.board-card .board-title {
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
+}
+
+.board-card .board-preview {
+    transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
+}
+
+.board-card .board-footer {
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
+}
+
+/* 이동 중 내부 레이어의 시간차 정렬 모션 */
+.board-card.flipping .board-author {
+    transform: translateY(-3px);
+}
+
+.board-card.flipping .board-title {
+    transform: translateY(-1px);
+}
+
+.board-card.flipping .board-preview {
+    transform: translateY(1px);
+}
+
+.board-card.flipping .board-footer {
+    transform: translateY(3px);
+}
+
+.board-card.flipping {
+    z-index: 10 !important;
+    pointer-events: none;
+}
+
+.fab {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    border: none;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    filter: hue-rotate(0deg) brightness(1);
+    z-index: 90;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .fab:hover {
+        transform: scale(1.15) rotate(-10deg);
+        box-shadow: 0 15px 35px rgba(99, 102, 241, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.5);
+        filter: hue-rotate(30deg) brightness(1.2);
+    }
+}
+
+/* Post Detail Styles */
+.post-detail-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+    padding-bottom: 80px;
+    /* space for input */
+}
+
+.post-content-area {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.post-body {
+    margin-top: 1.5rem;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--text-primary);
+    word-break: keep-all;
+}
+
+.post-body-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    line-height: 1.4;
+}
+
+.divider {
+    height: 1px;
+    background: var(--glass-border);
+    margin: 1.5rem 0;
+}
+
+.comment-header {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    padding-left: 0.5rem;
+}
+
+.comment-item {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 0.8rem;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, padding-left 0.3s ease, border-left-width 0.3s ease, border-radius 0.3s ease;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex: 0 0 auto !important;
+}
+
+.comment-node {
+    position: relative;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex: 0 0 auto !important;
+}
+
+.comment-item.comment-deleted {
+    opacity: 0.72;
+    border-style: dashed;
+}
+
+.comment-deleted-text {
+    color: var(--text-secondary) !important;
+    font-style: italic;
+}
+
+.comment-replies-flat {
+    display: flex;
+    flex-direction: column;
+    margin-left: 1.5rem;
+    padding-left: 1rem;
+    border-left: 2.5px solid rgba(148, 163, 184, 0.25);
+    transform-origin: top;
+}
+
+.comment-flat-reply {
+    padding: 0.7rem 1rem 0.7rem 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, padding-left 0.3s ease, border-left-width 0.3s ease, border-radius 0.3s ease;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex: 0 0 auto !important;
+}
+
+.comment-flat-reply:last-child {
+    border-bottom: none;
+}
+
+.comment-flat-reply .flat-reply-content {
+    flex: 1;
+    min-width: 0;
+    height: auto !important;
+    min-height: 0 !important;
+    align-self: flex-start !important;
+}
+
+.comment-flat-reply .flat-reply-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 0.25rem;
+}
+
+.comment-flat-reply .flat-reply-body {
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: var(--text-primary);
+    word-break: break-all;
+    margin-bottom: 0.4rem;
+}
+
+.comment-flat-reply .flat-reply-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    height: auto !important;
+    min-height: 0 !important;
+    align-content: flex-start !important;
+}
+
+.comment-flat-reply .flat-reply-mention {
+    color: var(--accent-color);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.reply-toggle-btn,
+.reply-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 36px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 0 0.75rem;
+    border-radius: 8px;
+    transition: max-width 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.4s ease, margin 0.4s ease, padding 0.4s ease, background 0.2s ease, transform 0.2s ease, color 0.2s ease;
+    gap: 0.4rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    max-width: 150px;
+    /* enough width */
+    overflow: hidden;
+    opacity: 1;
+}
+
+.reply-toggle-btn.hidden-toggle,
+.has-replies .reply-toggle-btn.hidden-toggle {
+    max-width: 0 !important;
+    opacity: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    gap: 0 !important;
+    pointer-events: none;
+    border: none;
+}
+
+.reply-toggle-btn:hover,
+.reply-action-btn:hover {
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--accent-color);
+    transform: translateY(-1px);
+}
+
+.reply-arrow-icon {
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.reply-toggle-btn.expanded .reply-arrow-icon {
+    transform: rotate(180deg);
+    color: var(--accent-color);
+}
+
+.reply-target-bar {
+    width: 100%;
+    pointer-events: auto;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+
+    /* 글래스모피즘 블러 효과 (입력창과 통일) */
+    background: rgba(59, 130, 246, 0.15);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+
+    color: var(--text-primary);
+    font-size: 0.86rem;
+    font-weight: 600;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    animation: replyTargetIn 0.25s ease;
+    box-sizing: border-box;
+}
+
+[data-theme="light"] .reply-target-bar {
+    background: rgba(59, 130, 246, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.02);
+}
+
+.reply-target-bar.active {
+    display: flex;
+}
+
+body.multi-select-active .reply-target-bar {
+    display: none !important;
+}
+
+.reply-target-bar button {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reply-target-bar button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--accent-color);
+}
+
+.comment-empty-state {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    padding: 1.2rem 0.5rem;
+    text-align: center;
+}
+
+.comment-item.official {
+    border-left-width: 1px;
+    border-left-color: var(--glass-border);
+    background: var(--glass-bg);
+}
+
+.comment-item[data-pinned="true"],
+.comment-flat-reply[data-pinned="true"] {
+    border-color: rgba(59, 130, 246, 0.2) !important;
+    box-shadow: inset 3px 0 0 var(--accent-color) !important;
+    background: rgba(59, 130, 246, 0.04) !important;
+    border-radius: 12px !important;
+    padding-left: 1.2rem !important;
+}
+
+.comment-item.flipping {
+    z-index: 10 !important;
+    pointer-events: none;
+}
+
+.comment-author {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.comment-author-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    color: var(--bg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.official-badge {
+    background: var(--accent-color);
+    color: white;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+}
+
+.comment-text {
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    line-height: 1.5;
+    padding-left: 0.5rem;
+}
+
+.comment-content {
+    height: auto !important;
+    min-height: 0 !important;
+    align-self: flex-start !important;
+}
+
+.comment-footer {
+    height: auto !important;
+    min-height: 0 !important;
+    align-content: flex-start !important;
+}
+
+.comment-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-left: auto;
+}
+
+.comment-input-area {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    background: none !important;
+    padding: 1rem 1.5rem !important;
+    border: none !important;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 0.6rem;
+    flex-shrink: 0;
+}
+
+.comment-attach-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.comment-attach-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    margin: 0;
+}
+
+.comment-attach-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+[data-theme="light"] .comment-attach-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.comment-attach-btn.open i {
+    transform: rotate(45deg);
+    color: var(--accent-color);
+}
+
+.comment-attach-btn i {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 1.2rem;
+}
+
+.comment-attach-menu {
+    position: absolute;
+    bottom: calc(100% + 25px);
+    left: 0;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transform-origin: bottom left;
+    z-index: 1001;
+}
+
+[data-theme="light"] .comment-attach-menu {
+    background: var(--glass-bg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.comment-attach-menu.active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.comment-attach-option {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.comment-attach-option:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="light"] .comment-attach-option:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.comment-attach-option i {
+    color: var(--accent-color);
+    font-size: 1.1rem;
+}
+
+.comment-image-preview-container {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+    scrollbar-width: thin;
+    max-height: 0;
+    opacity: 0;
+    padding-bottom: 0;
+    transition: max-height 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.25s ease, padding-bottom 0.3s cubic-bezier(0.2, 0, 0, 1);
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+.comment-input-container.has-images .comment-image-preview-container {
+    max-height: 100px;
+    opacity: 1;
+    padding-bottom: 0.75rem;
+    pointer-events: auto;
+}
+
+.comment-image-preview-item {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 1px solid var(--glass-border);
+    transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), opacity 0.25s ease;
+    animation: popIn 0.3s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
+.comment-image-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.comment-image-preview-item .remove-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.7rem;
+    transition: background 0.2s;
+}
+
+.comment-image-preview-item .remove-btn:hover {
+    background: #ef4444;
+}
+
+.comment-input-container {
+    width: 100%;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    background: rgba(30, 41, 59, 0.45);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-sizing: border-box;
+    border-radius: 9999px;
+    padding: 0.4rem 0.6rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.1);
+    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+        box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+        border-color 0.3s linear,
+        background 0.3s ease,
+        padding 0.35s cubic-bezier(0.2, 0, 0, 1);
+    position: relative;
+}
+
+.comment-input-container.has-images {
+    border-radius: 22px;
+    padding: 0.5rem 0.6rem 0.4rem 0.6rem;
+}
+
+.comment-input-row {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    width: 100%;
+}
+
+[data-theme="light"] .comment-input-container {
+    /* 라이트 모드 리퀴드 글래스 */
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    /* 라이트 모드도 마찬가지로 대각선 렌더링 버그 방지를 위해 통일 */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.02);
+}
+
+.comment-input-container:has(.comment-input:focus) {
+    transform: scale(1.01) translateY(-3px);
+    border-color: rgba(59, 130, 246, 0.45);
+    background: rgba(30, 41, 59, 0.55);
+    /* 애니메이션 버그 수정: 평소 상태와 그림자 갯수를 맞춰야 부드럽게 전환됨 */
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.15),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .comment-input-container:has(.comment-input:focus) {
+    background: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.08),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.02);
+}
+
+.comment-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1rem;
+    outline: none;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: opacity 0.3s ease;
+    padding-left: 0.15rem;
+}
+
+.comment-input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.8;
+    transition: color 0.3s ease, opacity 0.3s ease;
+}
+
+.comment-input.text-fade {
+    opacity: 0;
+}
+
+[data-theme="light"] .comment-input {
+    color: #111827;
+    text-shadow: 0 1px 4px rgba(255, 255, 255, 0.9), 0 0 1px rgba(255, 255, 255, 1);
+}
+
+[data-theme="light"] .comment-input::placeholder {
+    color: #4b5563;
+}
+
+.cancel-reply-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    width: 44px;
+    height: 44px;
+    font-size: 1.2rem;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    margin-right: 0px;
+}
+
+.cancel-reply-btn.active {
+    display: inline-flex;
+}
+
+.cancel-reply-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--accent-color);
+}
+
+[data-theme="light"] .cancel-reply-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.comment-submit-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 15px var(--accent-glow), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    flex-shrink: 0;
+}
+
+.comment-submit-btn:hover {
+    transform: scale(1.08) rotate(15deg);
+    box-shadow: 0 6px 20px var(--accent-glow);
+}
+
+.comment-submit-btn:active {
+    transform: scale(0.95);
+}
+
+/* ========================================== */
+/*   Comments, Attachments & Gallery Styles   */
+/* ========================================== */
+/* 모바일에서 가상 키보드가 뿅 올라오거나 뷰포트 높이가 급변할 때 댓글 카드가 위아래로 길게 늘어나는 것을 완벽 차단합니다 */
+.comment-item,
+.comment-node,
+.comment-flat-reply {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    flex: 0 0 auto !important;
+}
+
+/* 댓글 내용물 및 푸터 영역의 불필요한 높이 팽창 및 정렬 벌어짐 현상을 완벽 방지 */
+.comment-content,
+.flat-reply-content {
+    height: auto !important;
+    min-height: 0 !important;
+    align-self: flex-start !important;
+}
+
+.comment-footer,
+.flat-reply-footer {
+    height: auto !important;
+    min-height: 0 !important;
+    align-content: flex-start !important;
+}
+
+@media (min-width: 1024px) {
+    .mobile-show {
+        display: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    header {
+        padding: 0 1rem;
+    }
+
+    .page {
+        padding: 7rem 1.25rem 3rem 1.25rem;
+    }
+
+    main {
+        padding: 7rem 1.25rem 3rem 1.25rem;
+    }
+
+    .hero {
+        margin-bottom: 3rem;
+    }
+
+    .card {
+        padding: 1.5rem;
+    }
+
+    .greeting-content {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .greeting-photo {
+        width: 140px;
+        height: 175px;
+    }
+
+    .greeting-card {
+        padding: 1.5rem 1rem;
+    }
+
+    .greeting-text p {
+        font-size: 0.95rem;
+        line-height: 1.7;
+        color: var(--text-primary);
+        opacity: 0.9;
+        word-break: keep-all;
+        word-wrap: break-word;
+    }
+
+    .mobile-br {
+        display: inline;
+    }
+
+    .signature-image {
+        left: 1.25rem;
+        bottom: 1.75rem;
+        height: 40px;
+    }
+
+    .greeting-signature {
+        margin-top: 1.2rem;
+        padding-top: 0.8rem;
+    }
+
+    .community-layout .board-container {
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .board-header {
+        padding: 0;
+    }
+
+    .board-card {
+        padding: 0.9rem 1.25rem !important;
+        margin-bottom: 0.75rem !important;
+        border-radius: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .board-card .board-time {
+        display: none !important;
+    }
+
+    .board-card-header {
+        flex-wrap: nowrap !important;
+        margin-bottom: 0.4rem !important;
+        gap: 0.25rem !important;
+        width: 100% !important;
+    }
+
+    .board-card-header .board-action-btn {
+        min-width: 28px !important;
+        height: 28px !important;
+        padding: 0 0.2rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    .board-title {
+        font-size: 1rem !important;
+        margin-bottom: 0.35rem !important;
+    }
+
+    .board-preview {
+        font-size: 0.9rem !important;
+        margin-bottom: 0.6rem !important;
+        -webkit-line-clamp: 2 !important;
+        line-clamp: 2 !important;
+    }
+
+    .board-footer {
+        font-size: 0.8rem !important;
+    }
+
+    .fab {
+        bottom: auto;
+        top: calc(100vh - 5.75rem);
+        top: calc(100svh - 5.75rem);
+    }
+}
+
+/* 사진 첨부 기능 스타일 */
+.image-upload-area {
+    border: 2px dashed var(--glass-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.02);
+    position: relative;
+}
+
+.image-upload-area:hover {
+    border-color: var(--accent-color);
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.image-upload-area input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.image-upload-label {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    pointer-events: none;
+}
+
+.image-upload-label i {
+    font-size: 2rem;
+    color: var(--accent-color);
+}
+
+.image-preview-wrapper {
+    height: 0;
+    overflow: hidden;
+    transition: height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), margin-top 0.4s ease;
+    margin-top: 0;
+}
+
+.image-preview-wrapper.has-images {
+    margin-top: 1rem;
+}
+
+.image-preview-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.75rem;
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.image-preview-item {
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.image-preview-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 1;
+    border: 1px solid var(--glass-border);
+}
+
+.image-preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-preview-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 107, 107, 0.9);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.image-preview-remove:hover {
+    background: #ff4444;
+    transform: scale(1.1);
+}
+
+.image-count-info {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    text-align: right;
+}
+
+.image-count-info.warning {
+    color: #ff6b6b;
+    font-weight: 600;
+}
+
+/* 게시글 상세보기 이미지 갤러리 */
+.post-image-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.post-image-gallery img {
+    width: 100%;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    border: 1px solid var(--glass-border);
+}
+
+.post-image-gallery img:hover {
+    transform: scale(1.02);
+}
+
+/* 이미지 확대 모달 */
+.image-lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.image-lightbox.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.image-lightbox img {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.image-lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+    transition: background 0.2s, transform 0.2s;
+}
+
+.image-lightbox-close:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: scale(1.05);
+}
+
+/* ========================================== */
+/*     Community 2-Split Layout & Mobile      */
+/* ========================================== */
+/* 커뮤니티 2분할 레이아웃 스타일 */
+.community-layout {
+    display: flex;
+    gap: 2rem;
+    position: relative;
+    align-items: flex-start;
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    width: 100%;
+}
+
+.community-layout .board-container {
+    flex: 1;
+    min-width: 0;
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    padding-bottom: 2rem;
+}
+
+.side-detail-container {
+    width: 480px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    position: sticky;
+    top: 90px;
+    max-height: calc(100vh - 120px);
+    overflow: hidden;
+    /* 하드웨어 가속 및 성능 최적화 */
+    backface-visibility: hidden;
+    will-change: transform, opacity;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.4s ease,
+        visibility 0.4s,
+        width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        margin 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        padding 0.4s ease;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+}
+
+.side-detail-scroll-area {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1.5rem 1.5rem 85px 1.5rem;
+    /* 75px(좁음)과 95px(넓음)의 정확한 중간값 85px로 설정 */
+}
+
+/* 전체화면일 때는 아래에서 위로 올라오는 애니메이션 적용 */
+.side-detail-container.fullscreen-detail {
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.4s ease,
+        visibility 0.4s;
+    width: 100vw !important;
+    margin: 0 !important;
+    transform: translateY(0);
+}
+
+/* 사이드 모드에서 숨겨진 상태: 오른쪽으로 이동 */
+.side-detail-container.detail-hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(30px);
+    pointer-events: none;
+}
+
+/* 전체화면 모드에서 숨겨진 상태: 아래로 이동 */
+.side-detail-container.fullscreen-detail.detail-hidden {
+    transform: translateY(30px);
+}
+
+/* 데스크탑 사이드 모드에서 본문 영역 확보를 위한 너비 조절 */
+@media (min-width: 1024px) {
+    .side-detail-container:not(.fullscreen-detail).detail-hidden {
+        width: 0;
+        padding-left: 0;
+        padding-right: 0;
+        margin-left: -2rem;
+        border: none;
+    }
+}
+
+.side-detail-scroll-area::-webkit-scrollbar {
+    display: none;
+    /* 모바일 및 데스크탑에서 기본 스크롤바 숨김 */
+}
+
+.side-detail-scroll-area {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.side-detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 1rem;
+}
+
+/* 데스크탑에서 댓글 창이 사이드바 내부에 고정되도록 조정 */
+@media (min-width: 1024px) {
+    .side-detail-container .comment-input-area {
+        width: 100%;
+    }
+
+    .side-detail-container .comment-input-container,
+    .side-detail-container .reply-target-bar {
+        max-width: 100%;
+        pointer-events: auto;
+    }
+}
+
+/* 모바일 반응형 처리 */
+@media (max-width: 1023px) {
+    .community-layout {
+        flex-direction: column;
+        gap: 0;
+        align-items: stretch !important;
+    }
+
+    .side-detail-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100dvh;
+        max-height: 100dvh;
+        border-radius: 0;
+        z-index: 150;
+        border: none;
+        top: 0 !important;
+        transform: translateY(0);
+        /* 모바일에서는 아래에서 위로 올라오는 애니메이션 */
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+            opacity 0.4s ease,
+            visibility 0.4s;
+    }
+
+    .side-detail-scroll-area {
+        padding: clamp(1rem, 3vw, 2rem);
+        padding-bottom: 75px;
+        /* 모바일 하단 여백 비율 맞춤 65px -> 75px */
+    }
+
+    .side-detail-container.detail-hidden {
+        transform: translateY(30px);
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .side-detail-container .comment-input-area {
+        width: 100%;
+    }
+
+    .side-detail-container .comment-input-container,
+    .side-detail-container .reply-target-bar {
+        max-width: 800px;
+        margin: 0 auto;
+        pointer-events: auto;
+    }
+}
+
+.side-detail-container.fullscreen-detail {
+    position: fixed;
+    inset: 0;
+    top: 0 !important;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
+    max-height: none;
+    border: none;
+    border-radius: 0;
+    background: var(--bg-color);
+    z-index: 180;
+}
+
+.side-detail-container.fullscreen-detail .side-detail-scroll-area {
+    padding: clamp(1rem, 3vw, 2rem);
+    padding-bottom: 75px;
+}
+
+.side-detail-container.fullscreen-detail .side-detail-header,
+.side-detail-container.fullscreen-detail #detailPostArea,
+.side-detail-container.fullscreen-detail #detailCommentArea {
+    width: 100%;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.side-detail-container.fullscreen-detail .comment-input-area {
+    width: 100%;
+}
+
+.side-detail-container.fullscreen-detail .comment-input-container,
+.side-detail-container.fullscreen-detail .reply-target-bar {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* 댓글 목록 하단 여백: 고정된 입력창에 가려지지 않도록 */
+.comment-section {
+    padding-bottom: 2rem;
+}
+
+.comment-actions {
+    gap: 0.8rem !important;
+}
+
+.comment-checkbox-wrapper,
+.post-checkbox-wrapper {
+    width: 0;
+    opacity: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    margin-right: 0;
+    transition: width 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease, margin-right 0.3s ease;
+}
+
+body.multi-select-active .comment-checkbox-wrapper,
+body.post-multi-select-active .post-checkbox-wrapper,
+body.multi-select-mode .post-checkbox-wrapper {
+    width: 1.5rem;
+    opacity: 1;
+    margin-right: 0.5rem;
+}
+
+/* 댓글 헤더에서 시간 텍스트가 아래로 내려가지 않도록 항상 고정 */
+.comment-header {
+    flex-wrap: nowrap !important;
+}
+
+.comment-header .board-time {
+    transition: font-size 0.3s ease;
+}
+
+body.multi-select-active .comment-header .board-time {
+    font-size: 0.7rem;
+}
+
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari and Opera */
+}
+
+/* 답글이 달린 댓글의 모바일 푸터 레이아웃 특별 처리 */
+@media (max-width: 768px) {
+
+    /* 일반 댓글: 푸터 전체를 왼쪽으로 -2.75rem(44px) 당겨서 프로필 사진 아래부터 시작하도록 정렬 */
+    .comment-footer.has-replies {
+        margin-left: -2.75rem !important;
+        width: calc(100% + 2.75rem) !important;
+    }
+
+    /* 답글(Flat Reply): 푸터 전체를 왼쪽으로 아바타와 갭만큼 당겨서 정렬 */
+    .flat-reply-footer.has-replies {
+        margin-left: calc(-32px - 0.6rem) !important;
+        width: calc(100% + 32px + 0.6rem) !important;
+    }
+
+    /* 버튼들을 가로로 배치하는 컨테이너: 간격을 넓혀서 쾌적하게 보이게 함 */
+    .has-replies .hide-scrollbar {
+        overflow-x: visible !important;
+        flex: 1;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem !important;
+    }
+
+    /* 답글 작성 버튼 패딩 조절 */
+    .has-replies .reply-action-btn {
+        padding: 0 0.45rem !important;
+        gap: 0.3rem !important;
+    }
+
+    /* 답글 보기/접기 버튼 패딩 조절 */
+    .has-replies .reply-toggle-btn {
+        padding: 0 0.45rem !important;
+        gap: 0.3rem !important;
+    }
+
+    /* 고정, 삭제, 수정 버튼이 모여 있는 모바일 영역 간격 */
+    .has-replies .mobile-show {
+        display: flex !important;
+        align-items: center;
+        gap: 0.6rem !important;
+    }
+
+    /* 고정, 삭제, 수정 버튼은 동그랗고 터치하기 편하게 32px 크기로 유지 (좋아요 버튼 제외!) */
+    .has-replies .mobile-show .board-action-btn {
+        width: 32px !important;
+        height: 32px !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        padding: 0 !important;
+        font-size: 0.9rem !important;
+        border-radius: 50% !important;
+    }
+}
