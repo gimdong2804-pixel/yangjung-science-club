@@ -1480,10 +1480,13 @@ const openTopButtonSettings = document.getElementById('openTopButtonSettings');
 const backToUsefulCategoriesBtn = document.getElementById('backToUsefulCategoriesBtn');
 const openCommentInputSettings = document.getElementById('openCommentInputSettings');
 const backFromCommentInputBtn = document.getElementById('backFromCommentInputBtn');
+const openTextSelectSettings = document.getElementById('openTextSelectSettings');
+const backFromTextSelectBtn = document.getElementById('backFromTextSelectBtn');
 
 const usefulCategoryList = document.getElementById('usefulCategoryList');
 const topButtonSettingsSubPage = document.getElementById('topButtonSettingsSubPage');
 const commentInputSettingsSubPage = document.getElementById('commentInputSettingsSubPage');
+const textSelectSettingsSubPage = document.getElementById('textSelectSettingsSubPage');
 
 window.isUsefulSubPageOpen = false;
 window.currentSubPageId = null;
@@ -1554,6 +1557,10 @@ window.resetUsefulSettingsSubPage = function () {
         commentInputSettingsSubPage.style.display = 'none';
         commentInputSettingsSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
     }
+    if (textSelectSettingsSubPage) {
+        textSelectSettingsSubPage.style.display = 'none';
+        textSelectSettingsSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
+    }
 };
 
 if (openTopButtonSettings) {
@@ -1567,6 +1574,12 @@ if (openCommentInputSettings) {
 }
 if (backFromCommentInputBtn) {
     backFromCommentInputBtn.addEventListener('click', () => window.closeUsefulSubPage(false));
+}
+if (openTextSelectSettings) {
+    openTextSelectSettings.addEventListener('click', () => window.openUsefulSubPage('textSelectSettingsSubPage'));
+}
+if (backFromTextSelectBtn) {
+    backFromTextSelectBtn.addEventListener('click', () => window.closeUsefulSubPage(false));
 }
 
 if (settingsNavItems.length > 0) {
@@ -1873,3 +1886,31 @@ window.addEventListener('scroll', (e) => {
     }, 300);
 }, { capture: true, passive: true });
 
+
+
+// --- 텍스트 선택 방지 로직 (기본값: true / 켜짐) ---
+let _isTextSelectPreventEnabled = localStorage.getItem('setting_text_select_prevent') !== 'false';
+
+function updateTextSelectToggleUI() {
+    const quickToggle = document.getElementById('textSelectPreventQuickToggle');
+    const subToggle = document.getElementById('textSelectPreventToggle');
+    if (quickToggle) quickToggle.checked = _isTextSelectPreventEnabled;
+    if (subToggle) subToggle.checked = _isTextSelectPreventEnabled;
+
+    if (_isTextSelectPreventEnabled) {
+        document.body.classList.add('no-text-select');
+    } else {
+        document.body.classList.remove('no-text-select');
+    }
+}
+
+// 초기 반영
+updateTextSelectToggleUI();
+
+document.addEventListener('change', (e) => {
+    if (e.target && (e.target.id === 'textSelectPreventQuickToggle' || e.target.id === 'textSelectPreventToggle')) {
+        _isTextSelectPreventEnabled = e.target.checked;
+        localStorage.setItem('setting_text_select_prevent', _isTextSelectPreventEnabled);
+        updateTextSelectToggleUI();
+    }
+});

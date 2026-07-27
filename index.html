@@ -354,27 +354,47 @@
                 <div id="settingsTab-useful" class="settings-tab-content"
                     style="display: none; flex-direction: column;">
 
-                    <!-- 서브 카테고리 (모듈) 카드 목록 -->
-                    <div id="usefulCategoryList" class="settings-sub-category-list">
-                        <div class="settings-card-item" id="openTopButtonSettings">
-                            <div class="settings-card-icon">
-                                <i class="fa-solid fa-flask"></i>
+                    <!-- 서브 카테고리 (모듈) 카드 목록 (One UI 그룹 스타일) -->
+                    <div id="usefulCategoryList" class="settings-sub-category-list" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <!-- 그룹 1: 스크롤 숨기기 관련 설정 -->
+                        <div class="settings-card-group">
+                            <div class="settings-card-item" id="openTopButtonSettings">
+                                <div class="settings-card-icon">
+                                    <i class="fa-solid fa-flask"></i>
+                                </div>
+                                <div class="settings-card-info">
+                                    <div class="settings-card-title">상단 버튼</div>
+                                    <div class="settings-card-desc">상단 로고 표시 형태 및 스크롤 시 자동 숨김 설정</div>
+                                </div>
+                                <i class="fa-solid fa-chevron-right settings-card-arrow"></i>
                             </div>
-                            <div class="settings-card-info">
-                                <div class="settings-card-title">상단 버튼</div>
-                                <div class="settings-card-desc">상단 로고 표시 형태 및 스크롤 시 자동 숨김 설정</div>
+                            <div class="settings-card-item" id="openCommentInputSettings">
+                                <div class="settings-card-icon">
+                                    <i class="fa-solid fa-comment-dots"></i>
+                                </div>
+                                <div class="settings-card-info">
+                                    <div class="settings-card-title">댓글 입력창</div>
+                                    <div class="settings-card-desc">댓글에서 스크롤시 댓글 입력창 자동 숨기기 설정</div>
+                                </div>
+                                <i class="fa-solid fa-chevron-right settings-card-arrow"></i>
                             </div>
-                            <i class="fa-solid fa-chevron-right settings-card-arrow"></i>
                         </div>
-                        <div class="settings-card-item" id="openCommentInputSettings">
-                            <div class="settings-card-icon">
-                                <i class="fa-solid fa-comment-dots"></i>
+
+                        <!-- 그룹 2: 텍스트 선택 방지 (빠른 토글 지원) -->
+                        <div class="settings-card-group">
+                            <div class="settings-card-item" id="openTextSelectSettings" style="cursor: pointer;">
+                                <div class="settings-card-icon">
+                                    <i class="fa-solid fa-i-cursor"></i>
+                                </div>
+                                <div class="settings-card-info">
+                                    <div class="settings-card-title">텍스트 선택 방지</div>
+                                    <div class="settings-card-desc">더블 클릭 시 글자가 파랗게 선택되는 현상 방지 설정</div>
+                                </div>
+                                <label class="settings-toggle" style="margin-left: auto;" onclick="event.stopPropagation();">
+                                    <input type="checkbox" id="textSelectPreventQuickToggle" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
                             </div>
-                            <div class="settings-card-info">
-                                <div class="settings-card-title">댓글 입력창</div>
-                                <div class="settings-card-desc">댓글에서 스크롤시 댓글 입력창 자동 숨기기 설정</div>
-                            </div>
-                            <i class="fa-solid fa-chevron-right settings-card-arrow"></i>
                         </div>
                     </div>
 
@@ -486,6 +506,39 @@
                                 </div>
                                 <label class="settings-toggle">
                                     <input type="checkbox" id="commentInputScrollHideToggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 텍스트 선택 방지 세부 설정 페이지 -->
+                    <div id="textSelectSettingsSubPage" class="settings-sub-page" style="display: none;">
+                        <!-- 뒤로가기 서브 헤더 -->
+                        <div class="settings-sub-header">
+                            <button class="settings-back-btn" id="backFromTextSelectBtn" aria-label="뒤로가기"
+                                title="카테고리로 돌아가기">
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <span class="settings-sub-title">텍스트 선택 방지</span>
+                        </div>
+
+                        <!-- 세부 설정 내용들 -->
+                        <div class="settings-sub-content" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            <div class="settings-item" style="border: none; padding: 0;">
+                                <div class="settings-label" style="align-items: flex-start; max-width: 80%;">
+                                    <i class="fa-solid fa-i-cursor"
+                                        style="width: 20px; text-align: center; margin-top: 0.2rem;"></i>
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 1.05rem;">더블 클릭 텍스트 선택 방지</div>
+                                        <div
+                                            style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4;">
+                                            사이트 내 글자나 메뉴를 더블 클릭했을 때 파랗게 영역이 선택되는 현상을 방지합니다.<br>(글 작성 및 입력창은 정상 작동합니다)
+                                        </div>
+                                    </div>
+                                </div>
+                                <label class="settings-toggle">
+                                    <input type="checkbox" id="textSelectPreventToggle" checked>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>

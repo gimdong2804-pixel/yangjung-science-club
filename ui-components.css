@@ -948,3 +948,30 @@
         display: none !important;
     }
 }
+
+/* One UI 스타일 카테고리 카드 그룹 */
+.settings-card-group {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-card-group .settings-card-item {
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+}
+
+.settings-card-group .settings-card-item:not(:last-child) {
+    border-bottom: 1px solid var(--glass-border) !important;
+}
+
+/* 텍스트 선택 방지 클래스 */
+body.no-text-select,
+body.no-text-select *:not(input):not(textarea):not([contenteditable="true"]) {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
