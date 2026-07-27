@@ -48,20 +48,34 @@ window.customConfirm = function (message, title = '확인') {
         if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-circle-exclamation" style="color: var(--accent-color);"></i> ${title}`;
         if (msgEl) msgEl.textContent = message;
 
+        history.pushState({ modal: 'customConfirm' }, '', '');
         overlay.classList.add('active');
         modal.classList.add('active');
 
-        const cleanup = (result) => {
+        const cleanup = (result, fromPopState) => {
             overlay.classList.remove('active');
             modal.classList.remove('active');
             cancelBtn.removeEventListener('click', onCancel);
             okBtn.removeEventListener('click', onOk);
             overlay.removeEventListener('click', onCancel);
+            if (window._customConfirmPopHandler) {
+                window.removeEventListener('popstate', window._customConfirmPopHandler);
+                window._customConfirmPopHandler = null;
+            }
+            if (!fromPopState && history.state && history.state.modal === 'customConfirm') {
+                window._isProgrammaticBack = true;
+                history.back();
+            }
             resolve(result);
         };
 
-        const onCancel = () => cleanup(false);
-        const onOk = () => cleanup(true);
+        const onCancel = () => cleanup(false, false);
+        const onOk = () => cleanup(true, false);
+
+        window._customConfirmPopHandler = () => {
+            cleanup(false, true);
+        };
+        window.addEventListener('popstate', window._customConfirmPopHandler);
 
         cancelBtn.addEventListener('click', onCancel);
         okBtn.addEventListener('click', onOk);
@@ -490,9 +504,11 @@ adminTriggerIcon.addEventListener('click', (e) => {
     if (adminClickCount >= 5) {
         adminClickCount = 0;
         if (localStorage.getItem('isAdminUnlocked') === 'true') {
+            history.pushState({ modal: 'adminDeactivate' }, '', '');
             adminModalOverlay.classList.add('active');
             adminDeactivateModal.classList.add('active');
         } else {
+            history.pushState({ modal: 'adminAuth' }, '', '');
             adminModalOverlay.classList.add('active');
             adminModal.classList.add('active');
             adminPwdInput.value = '';
@@ -501,34 +517,42 @@ adminTriggerIcon.addEventListener('click', (e) => {
     }
 });
 
-adminModalCancel.addEventListener('click', () => {
+window.closeAdminModal = function (fromPopState = false) {
     adminModalOverlay.classList.remove('active');
     adminModal.classList.remove('active');
-});
+    if (!fromPopState && history.state && history.state.modal === 'adminAuth') {
+        window._isProgrammaticBack = true;
+        history.back();
+    }
+};
+adminModalCancel.addEventListener('click', () => window.closeAdminModal(false));
 
-adminDeactivateCancel.addEventListener('click', () => {
+window.closeAdminDeactivateModal = function (fromPopState = false) {
     adminModalOverlay.classList.remove('active');
     adminDeactivateModal.classList.remove('active');
-});
+    if (!fromPopState && history.state && history.state.modal === 'adminDeactivate') {
+        window._isProgrammaticBack = true;
+        history.back();
+    }
+};
+adminDeactivateCancel.addEventListener('click', () => window.closeAdminDeactivateModal(false));
 
 adminDeactivateConfirm.addEventListener('click', () => {
     localStorage.removeItem('isAdminUnlocked');
-    adminModalOverlay.classList.remove('active');
-    adminDeactivateModal.classList.remove('active');
     adminCategory.classList.remove('category-fade-in');
     adminCategory.classList.add('category-fade-out');
     setTimeout(() => {
         adminCategory.style.display = 'none';
         adminCategory.classList.remove('category-fade-out');
     }, 400);
+    window.closeAdminDeactivateModal(false);
 });
 
 function checkAdminPassword() {
     if (adminPwdInput.value === '110420') {
         localStorage.setItem('isAdminUnlocked', 'true');
-        adminModalOverlay.classList.remove('active');
-        adminModal.classList.remove('active');
         adminCategory.style.display = 'block';
+        window.closeAdminModal(false);
         adminCategory.classList.remove('category-fade-out');
         adminCategory.classList.add('category-fade-in');
 
