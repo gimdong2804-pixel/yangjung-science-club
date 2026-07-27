@@ -1594,6 +1594,11 @@ function closeSideDetail(e) {
     const sideDetailContainer = document.getElementById('sideDetailContainer');
     const writePostBtn = document.getElementById('writePostBtn');
 
+    // 댓글 다중선택 모드가 켜져 있으면 먼저 해제
+    if (window.isMultiSelectMode) {
+        window.cancelMultiDelete(true);
+    }
+
     if (sideDetailContainer) {
         // 1. 먼저 애니메이션 클래스를 추가하여 페이드 아웃/이동 시작
         sideDetailContainer.classList.add('detail-hidden');
@@ -2504,6 +2509,7 @@ window.handleCommentPointerUp = function () {
 
 window.enterMultiSelectMode = function (targetCid) {
     window.isMultiSelectMode = true;
+    history.pushState({ modal: 'commentMultiSelect' }, '', '');
     document.body.classList.add('multi-select-active');
     if (typeof window.cancelReplyTarget === 'function') {
         window.cancelReplyTarget();
@@ -2557,13 +2563,17 @@ window.executeMultiPin = async function () {
     }
 };
 
-window.cancelMultiDelete = function () {
+window.cancelMultiDelete = function (fromPopState = false) {
     window.skipCommentFlip = true;
     window.isMultiSelectMode = false;
     document.body.classList.remove('multi-select-active');
     document.querySelectorAll('.comment-select-cb').forEach(cb => cb.checked = false);
     updateMultiDeleteUI();
     setTimeout(() => { window.skipCommentFlip = false; }, 400);
+    if (!fromPopState && history.state && history.state.modal === 'commentMultiSelect') {
+        window._isProgrammaticBack = true;
+        history.back();
+    }
 };
 
 function buildDeleteChildrenMap(comments) {
@@ -3256,6 +3266,7 @@ window.handlePostPointerUp = function () {
 
 window.enterPostMultiSelectMode = function (targetId) {
     window.isPostMultiSelectMode = true;
+    history.pushState({ modal: 'postMultiSelect' }, '', '');
     document.body.classList.add('post-multi-select-active');
     const cb = document.querySelector(`.post-select-cb[value="${targetId}"]`);
     if (cb) {
@@ -3300,11 +3311,15 @@ window.executePostMultiPin = async function () {
     }
 };
 
-window.cancelPostMultiDelete = function () {
+window.cancelPostMultiDelete = function (fromPopState = false) {
     window.isPostMultiSelectMode = false;
     document.body.classList.remove('post-multi-select-active');
     document.querySelectorAll('.post-select-cb').forEach(cb => cb.checked = false);
     updatePostMultiDeleteUI();
+    if (!fromPopState && history.state && history.state.modal === 'postMultiSelect') {
+        window._isProgrammaticBack = true;
+        history.back();
+    }
 };
 
 window.executePostMultiDelete = async function () {
@@ -3346,6 +3361,17 @@ window.addEventListener('popstate', (e) => {
     const customConfirmModal = document.getElementById('customConfirmModal');
     if (customConfirmModal && customConfirmModal.classList.contains('active')) {
         return; // customConfirm 자체 popstate 핸들러가 처리
+    }
+
+    // 댓글/답글 다중선택 모드
+    if (window.isMultiSelectMode) {
+        window.cancelMultiDelete(true);
+        return;
+    }
+    // 게시물 다중선택 모드
+    if (window.isPostMultiSelectMode) {
+        window.cancelPostMultiDelete(true);
+        return;
     }
 
     const lightbox = document.getElementById('imageLightbox');
