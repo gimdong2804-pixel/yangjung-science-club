@@ -981,8 +981,8 @@ function renderFlatReply(comment, tree, postId, depth = 1) {
     let imagesHtml = '';
     if (comment.images && Array.isArray(comment.images) && comment.images.length > 0 && !isDeleted) {
         imagesHtml = `<div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">`;
-        comment.images.forEach(imgUrl => {
-            imagesHtml += `<img src="${escapeHtml(imgUrl)}" alt="첨부 이미지" style="max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover; border: 1px solid var(--glass-border); cursor: pointer;" onclick="event.stopPropagation(); openLightbox('${escapeHtml(imgUrl)}')">`;
+        comment.images.forEach((imgUrl, imgIdx) => {
+            imagesHtml += `<img src="${escapeHtml(imgUrl)}" alt="첨부 이미지" style="max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover; border: 1px solid var(--glass-border); cursor: pointer;" onclick="event.stopPropagation(); openLightbox('${escapeHtml(imgUrl)}', {postId:'${safePostId}', commentId:'${safeCommentId}', authorUid:'${escapeHtml(comment.uid || '')}', imageIndex:${imgIdx}})">`;
         });
         imagesHtml += `</div>`;
     }
@@ -1131,8 +1131,8 @@ function renderCommentBranch(comment, depth, tree, postId) {
     let imagesHtml = '';
     if (comment.images && Array.isArray(comment.images) && comment.images.length > 0 && !isDeleted) {
         imagesHtml = `<div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">`;
-        comment.images.forEach(imgUrl => {
-            imagesHtml += `<img src="${escapeHtml(imgUrl)}" alt="첨부 이미지" style="max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover; border: 1px solid var(--glass-border); cursor: pointer;" onclick="event.stopPropagation(); openLightbox('${escapeHtml(imgUrl)}')">`;
+        comment.images.forEach((imgUrl, imgIdx) => {
+            imagesHtml += `<img src="${escapeHtml(imgUrl)}" alt="첨부 이미지" style="max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover; border: 1px solid var(--glass-border); cursor: pointer;" onclick="event.stopPropagation(); openLightbox('${escapeHtml(imgUrl)}', {postId:'${safePostId}', commentId:'${safeCommentId}', authorUid:'${escapeHtml(comment.uid || '')}', imageIndex:${imgIdx}})">`;
         });
         imagesHtml += `</div>`;
     }
@@ -1800,7 +1800,7 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                         </div>
                         ${currentPost.images && currentPost.images.length > 0 ? `
                             <div class="post-image-gallery">
-                                ${currentPost.images.map(url => `<img src="${url}" alt="게시글 첨부 사진" style="cursor: pointer;" onclick="openLightbox('${url}')">`).join('')}
+                                ${currentPost.images.map((url, imgIdx) => `<img src="${url}" alt="게시글 첨부 사진" style="cursor: pointer;" onclick="openLightbox('${url}', {postId:'${currentPostId}', commentId:null, authorUid:'${currentPost.uid || ''}', imageIndex:${imgIdx}})">`).join('')}
                             </div>
                         ` : ''}
 
@@ -2291,7 +2291,7 @@ window.togglePinComment = async function (postId, commentId, currentPinned) {
 };
 
 window.deletePostWithAnim = async function (id, btn) {
-    if (!confirm('정말 이 게시글을 삭제하시겠습니까?')) return;
+    if (!await window.customConfirm('정말 이 게시글을 삭제하시겠습니까?', '게시글 삭제')) return;
     const card = btn.closest('.board-card');
     if (card) {
         card.classList.add('deleting');
@@ -2309,7 +2309,7 @@ window.deletePostWithAnim = async function (id, btn) {
 };
 
 window.deletePost = async function (id) {
-    if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) return;
+    if (!await window.customConfirm('정말로 이 게시글을 삭제하시겠습니까?', '게시글 삭제')) return;
     try {
         await db.collection('posts').doc(id).delete();
         alert('게시글이 성공적으로 삭제되었습니다.');
@@ -2533,7 +2533,7 @@ window.executeMultiPin = async function () {
     if (!currentUser || !isAdmin(currentUser.email)) return;
     const checkboxes = document.querySelectorAll('.comment-select-cb:checked');
     if (checkboxes.length === 0) return;
-    if (!confirm(`선택한 ${checkboxes.length}개의 댓글 고정 상태를 전환하시겠습니까?`)) return;
+    if (!await window.customConfirm(`선택한 ${checkboxes.length}개의 댓글 고정 상태를 전환하시겠습니까?`, '댓글 고정 설정')) return;
 
     try {
         window.skipCommentFlip = true;
@@ -2627,7 +2627,7 @@ async function deleteSelectedComments(postId, selectedIds) {
 window.executeMultiDelete = async function () {
     const checkboxes = document.querySelectorAll('.comment-select-cb:checked');
     if (checkboxes.length === 0) return;
-    if (!confirm(`선택한 ${checkboxes.length}개의 댓글을 정말로 삭제하시겠습니까?`)) return;
+    if (!await window.customConfirm(`선택한 ${checkboxes.length}개의 댓글을 정말로 삭제하시겠습니까?`, '댓글 삭제')) return;
 
     const selectedIds = new Set(Array.from(checkboxes).map(cb => cb.value));
     selectedIds.forEach(cid => {
@@ -2655,7 +2655,7 @@ window.deleteComment = async function (postId, commentId) {
         openDrawer();
         return;
     }
-    if (!confirm('정말로 이 댓글을 삭제하시겠습니까?')) return;
+    if (!await window.customConfirm('정말로 이 댓글을 삭제하시겠습니까?', '댓글 삭제')) return;
 
     const commentEl = document.getElementById(`comment-${commentId}`);
     const commentList = document.getElementById('detailCommentList');
@@ -2773,11 +2773,19 @@ if (commentAttachImageBtn && commentImageInput) {
 function renderCommentImagePreview() {
     const commentInputContainer = document.getElementById('commentInputContainer');
     if (commentAttachedImages.length > 0) {
-        if (commentInputContainer) commentInputContainer.classList.add('has-images');
+        if (commentInputContainer && !commentInputContainer.classList.contains('has-images')) {
+            // 확장: 실제 렌더링된 곡률(높이/2)에서 22px로 자연스럽게 전환
+            const actualRadius = Math.min(9999, commentInputContainer.offsetHeight / 2) + 'px';
+            commentInputContainer.classList.add('has-images');
+            commentInputContainer.animate([
+                { borderRadius: actualRadius },
+                { borderRadius: '22px' }
+            ], { duration: 200, easing: 'ease' });
+        }
         requestAnimationFrame(() => {
             commentImagePreviewContainer.innerHTML = commentAttachedImages.map((img, index) => `
                         <div class="comment-image-preview-item">
-                            <img src="${img.dataUrl}" alt="첨부 이미지" style="cursor: pointer;" onclick="openLightbox('${img.dataUrl}')">
+                            <img src="${img.dataUrl}" alt="첨부 이미지" style="cursor: pointer;" onclick="openLightbox('${img.dataUrl}', {preUpload:true, imageIndex:${index}})">
                             <button type="button" class="remove-btn" onclick="removeCommentAttachedImage(${index})">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
@@ -2785,12 +2793,9 @@ function renderCommentImagePreview() {
                     `).join('');
         });
     } else {
-        setTimeout(() => {
-            if (commentAttachedImages.length === 0) {
-                if (commentInputContainer) commentInputContainer.classList.remove('has-images');
-                commentImagePreviewContainer.innerHTML = '';
-            }
-        }, 280);
+        // 축소: 즉시 전환 (22px→~24px 차이라 눈에 안 띔)
+        if (commentInputContainer) commentInputContainer.classList.remove('has-images');
+        commentImagePreviewContainer.innerHTML = '';
     }
 }
 
@@ -2834,6 +2839,11 @@ if (commentSubmitBtn && commentInput) {
             } else {
                 const parentId = (window.replyTarget && window.replyTarget.postId === currentPostId) ? window.replyTarget.id : null;
 
+                const imgDescs = {};
+                commentAttachedImages.forEach((img, idx) => {
+                    if (img.description) imgDescs[String(idx)] = img.description;
+                });
+
                 await db.collection('posts').doc(currentPostId).collection('comments').add({
                     author: isAdmin(currentUser.email) ? getAdminName(currentUser.email) : currentUser.displayName,
                     uid: currentUser.uid,
@@ -2841,6 +2851,7 @@ if (commentSubmitBtn && commentInput) {
                     email: currentUser.email,
                     body: body,
                     images: commentImageUrls,
+                    imageDescriptions: imgDescs,
                     parentId: parentId,
                     replyToAuthor: parentId && window.replyTarget ? window.replyTarget.author : '',
                     pinned: false,
@@ -2904,18 +2915,219 @@ function updateTransform(animate = false) {
     imageLightboxImg.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentZoom})`;
 }
 
-window.openLightbox = function (url) {
+let lightboxMeta = {};
+
+window.openLightbox = function (url, meta) {
+    if (!meta) meta = {};
     history.pushState({ modal: 'lightbox' }, '', '#lightbox');
     imageLightboxImg.src = url;
     imageLightbox.classList.add('active');
     currentZoom = 1; currentPanX = 0; currentPanY = 0;
     updateTransform(true);
+
+    // 설명 보기 버튼 처리
+    lightboxMeta = meta;
+    const descBtn = document.getElementById('lightboxDescBtn');
+
+    if ((meta.postId && meta.imageIndex !== undefined) || (meta.preUpload && meta.imageIndex !== undefined)) {
+        descBtn.style.display = '';
+    } else {
+        descBtn.style.display = 'none';
+    }
 };
+
+async function loadImageDescription(meta) {
+    try {
+        let docRef;
+        if (meta.commentId) {
+            docRef = db.collection('posts').doc(meta.postId)
+                .collection('comments').doc(meta.commentId);
+        } else {
+            docRef = db.collection('posts').doc(meta.postId);
+        }
+        const doc = await docRef.get();
+        if (doc.exists) {
+            const descriptions = doc.data().imageDescriptions || {};
+            return descriptions[String(meta.imageIndex)] || '';
+        }
+        return '';
+    } catch (e) {
+        console.error('사진 설명 불러오기 실패', e);
+        return '';
+    }
+}
+
+async function saveImageDescription(meta, description) {
+    try {
+        let docRef;
+        if (meta.commentId) {
+            docRef = db.collection('posts').doc(meta.postId)
+                .collection('comments').doc(meta.commentId);
+        } else {
+            docRef = db.collection('posts').doc(meta.postId);
+        }
+        await docRef.update({
+            [`imageDescriptions.${meta.imageIndex}`]: description
+        });
+        return true;
+    } catch (e) {
+        console.error('사진 설명 저장 실패', e);
+        return false;
+    }
+}
+
+// 설명 모달 열기/닫기
+function openDescModal() {
+    document.getElementById('lightboxDescOverlay').classList.add('active');
+    document.getElementById('lightboxDescModal').classList.add('active');
+}
+
+function closeDescModal() {
+    document.getElementById('lightboxDescOverlay').classList.remove('active');
+    document.getElementById('lightboxDescModal').classList.remove('active');
+    // 편집 영역 숨기기
+    const ea = document.getElementById('lightboxDescEditArea');
+    ea.style.display = 'none';
+    document.getElementById('lightboxDescText').style.display = '';
+    document.getElementById('lightboxDescEditBtn').style.display =
+        document.getElementById('lightboxDescEditBtn').dataset.canEdit === 'true' ? '' : 'none';
+}
+
+// 설명 보기 버튼 클릭
+document.getElementById('lightboxDescBtn').addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const descText = document.getElementById('lightboxDescText');
+    const editBtn = document.getElementById('lightboxDescEditBtn');
+    const editArea = document.getElementById('lightboxDescEditArea');
+
+    editArea.style.display = 'none';
+    descText.style.display = '';
+
+    if (lightboxMeta.preUpload) {
+        const desc = commentAttachedImages[lightboxMeta.imageIndex]?.description || '';
+        descText.textContent = desc || '설명이 없습니다.';
+        descText.className = 'lightbox-desc-text' + (desc ? '' : ' empty');
+        editBtn.style.display = '';
+        editBtn.dataset.canEdit = 'true';
+        openDescModal();
+    } else if (lightboxMeta.postId) {
+        const desc = await loadImageDescription(lightboxMeta);
+        descText.textContent = desc || '설명이 없습니다.';
+        descText.className = 'lightbox-desc-text' + (desc ? '' : ' empty');
+        const canEdit = currentUser && (
+            lightboxMeta.authorUid === currentUser.uid || isAdmin(currentUser.email)
+        );
+        editBtn.style.display = canEdit ? '' : 'none';
+        editBtn.dataset.canEdit = canEdit ? 'true' : 'false';
+        openDescModal();
+    }
+});
+
+// 설명 모달 X 버튼
+document.getElementById('lightboxDescCloseBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeDescModal();
+});
+
+// 오버레이 클릭
+document.getElementById('lightboxDescOverlay').addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeDescModal();
+});
+
+// 모달 본문 높이 전환 (FLIP)
+function transitionModalBody(prepare) {
+    const body = document.getElementById('lightboxDescModal');
+    const oldH = body.offsetHeight;
+    prepare();
+    const newH = body.offsetHeight;
+    body.style.overflow = 'hidden';
+    const anim = body.animate([
+        { height: oldH + 'px' },
+        { height: newH + 'px' }
+    ], { duration: 280, easing: 'cubic-bezier(0.25, 0.8, 0.25, 1)' });
+
+    anim.onfinish = () => {
+        body.style.overflow = '';
+        body.style.height = '';
+    };
+}
+
+// 수정 버튼
+document.getElementById('lightboxDescEditBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const editArea = document.getElementById('lightboxDescEditArea');
+    const input = document.getElementById('lightboxDescInput');
+    const currentText = document.getElementById('lightboxDescText').textContent;
+    input.value = (currentText === '설명이 없습니다.' || currentText === '불러오는 중...') ? '' : currentText;
+
+    transitionModalBody(() => {
+        document.getElementById('lightboxDescText').style.display = 'none';
+        document.getElementById('lightboxDescEditBtn').style.display = 'none';
+        editArea.style.display = 'block';
+    });
+    setTimeout(() => input.focus(), 300);
+});
+
+// 편집→보기 전환
+function switchToView() {
+    const editArea = document.getElementById('lightboxDescEditArea');
+    const editBtn = document.getElementById('lightboxDescEditBtn');
+    transitionModalBody(() => {
+        editArea.style.display = 'none';
+        document.getElementById('lightboxDescText').style.display = '';
+        if (editBtn.dataset.canEdit === 'true') {
+            editBtn.style.display = '';
+        }
+    });
+}
+
+// 저장 버튼
+document.getElementById('lightboxDescSave').addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const desc = document.getElementById('lightboxDescInput').value.trim();
+    const saveBtn = document.getElementById('lightboxDescSave');
+
+    if (lightboxMeta.preUpload) {
+        if (commentAttachedImages[lightboxMeta.imageIndex]) {
+            commentAttachedImages[lightboxMeta.imageIndex].description = desc;
+        }
+        const descText = document.getElementById('lightboxDescText');
+        descText.textContent = desc || '설명이 없습니다.';
+        descText.className = 'lightbox-desc-text' + (desc ? '' : ' empty');
+        switchToView();
+        return;
+    }
+
+    saveBtn.textContent = '저장 중...';
+    saveBtn.disabled = true;
+    const success = await saveImageDescription(lightboxMeta, desc);
+    if (success) {
+        const descText = document.getElementById('lightboxDescText');
+        descText.textContent = desc || '설명이 없습니다.';
+        descText.className = 'lightbox-desc-text' + (desc ? '' : ' empty');
+        switchToView();
+    } else {
+        alert('저장 실패');
+    }
+    saveBtn.textContent = '저장';
+    saveBtn.disabled = false;
+});
+
+// 취소 버튼
+document.getElementById('lightboxDescCancel').addEventListener('click', (e) => {
+    e.stopPropagation();
+    switchToView();
+});
 
 function closeLightbox(e) {
     const fromPopState = (e === true);
     imageLightbox.classList.remove('active');
-    setTimeout(() => { imageLightboxImg.src = ''; }, 300);
+    closeDescModal();
+    setTimeout(() => {
+        imageLightboxImg.src = '';
+        lightboxMeta = {};
+    }, 300);
     if (fromPopState !== true && history.state && history.state.modal === 'lightbox') {
         window._isProgrammaticBack = true;
         history.back();
@@ -3070,7 +3282,7 @@ window.executePostMultiPin = async function () {
     if (!currentUser || !isAdmin(currentUser.email)) return;
     const checkboxes = document.querySelectorAll('.post-select-cb:checked');
     if (checkboxes.length === 0) return;
-    if (!confirm(`선택한 ${checkboxes.length}개의 게시물 고정 상태를 전환하시겠습니까?`)) return;
+    if (!await window.customConfirm(`선택한 ${checkboxes.length}개의 게시물 고정 상태를 전환하시겠습니까?`, '게시물 고정 설정')) return;
 
     try {
         for (let cb of checkboxes) {
@@ -3098,7 +3310,7 @@ window.cancelPostMultiDelete = function () {
 window.executePostMultiDelete = async function () {
     const checkboxes = document.querySelectorAll('.post-select-cb:checked');
     if (checkboxes.length === 0) return;
-    if (!confirm(`선택한 ${checkboxes.length}개의 게시물을 삭제하시겠습니까?`)) return;
+    if (!await window.customConfirm(`선택한 ${checkboxes.length}개의 게시물을 삭제하시겠습니까?`, '게시물 삭제')) return;
 
     try {
         for (let cb of checkboxes) {
@@ -3125,7 +3337,9 @@ window.addEventListener('popstate', (e) => {
     }
     const settingsModal = document.getElementById('settingsModal');
     if (settingsModal && settingsModal.classList.contains('active')) {
-        if (typeof window.closeSettingsModal === 'function') {
+        if (window.isUsefulSubPageOpen && typeof window.closeUsefulSubPage === 'function') {
+            window.closeUsefulSubPage(true);
+        } else if (typeof window.closeSettingsModal === 'function') {
             window.closeSettingsModal(true);
         }
         return;

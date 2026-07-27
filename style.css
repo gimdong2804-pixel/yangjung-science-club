@@ -64,6 +64,11 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        button {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
         /* Custom Scrollbar Style (Hide Default) */
         html {
             -ms-overflow-style: none;
@@ -171,6 +176,8 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             cursor: pointer;
             letter-spacing: -0.5px;
+            user-select: none;
+            -webkit-user-select: none;
             transition: max-width 0.4s cubic-bezier(0.25, 1, 0.5, 1),
                 padding 0.4s cubic-bezier(0.25, 1, 0.5, 1),
                 gap 0.4s cubic-bezier(0.25, 1, 0.5, 1),
@@ -568,7 +575,7 @@
             background: var(--glass-bg);
             border: 1px solid var(--glass-border);
             padding: 2rem;
-            border-radius: 12px;
+            border-radius: 16px;
             z-index: 2001;
             display: flex;
             flex-direction: column;
@@ -586,6 +593,10 @@
             visibility: visible;
             transform: translate(-50%, -50%);
             pointer-events: auto;
+        }
+
+        .modal-buttons button {
+            border-radius: 9999px !important;
         }
 
         .category-fade-in {

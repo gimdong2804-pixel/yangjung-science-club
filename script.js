@@ -30,6 +30,45 @@ window.auth = firebase.auth();
 var db = window.db;
 var auth = window.auth;
 
+// 전역 커스텀 Confirm 모달 함수 (취소: 왼쪽, 확인: 오른쪽)
+window.customConfirm = function (message, title = '확인') {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('customConfirmModalOverlay');
+        const modal = document.getElementById('customConfirmModal');
+        const titleEl = document.getElementById('customConfirmTitle');
+        const msgEl = document.getElementById('customConfirmMessage');
+        const cancelBtn = document.getElementById('customConfirmCancel');
+        const okBtn = document.getElementById('customConfirmOk');
+
+        if (!overlay || !modal || !cancelBtn || !okBtn) {
+            resolve(window.confirm(message));
+            return;
+        }
+
+        if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-circle-exclamation" style="color: var(--accent-color);"></i> ${title}`;
+        if (msgEl) msgEl.textContent = message;
+
+        overlay.classList.add('active');
+        modal.classList.add('active');
+
+        const cleanup = (result) => {
+            overlay.classList.remove('active');
+            modal.classList.remove('active');
+            cancelBtn.removeEventListener('click', onCancel);
+            okBtn.removeEventListener('click', onOk);
+            overlay.removeEventListener('click', onCancel);
+            resolve(result);
+        };
+
+        const onCancel = () => cleanup(false);
+        const onOk = () => cleanup(true);
+
+        cancelBtn.addEventListener('click', onCancel);
+        okBtn.addEventListener('click', onOk);
+        overlay.addEventListener('click', onCancel);
+    });
+};
+
 // 테마 토글 로직
 const themeToggleBtn = document.getElementById('themeToggleBtn');
 const rootElement = document.documentElement;
@@ -1248,7 +1287,7 @@ window.executeRoleMultiDelete = async function () {
     if (!currentUser || !isAdmin(currentUser.email)) return;
     const cbs = document.querySelectorAll('.role-select-cb:checked');
     if (cbs.length === 0) return;
-    if (!confirm(`선택한 ${cbs.length}명의 직책을 회수하시겠습니까?`)) return;
+    if (!await window.customConfirm(`선택한 ${cbs.length}명의 직책을 회수하시겠습니까?`, '직책 회수')) return;
 
     try {
         const batch = db.batch();
@@ -1404,6 +1443,100 @@ const settingsModalCloseBtn = document.getElementById('settingsModalCloseBtn');
 const settingsNavItems = document.querySelectorAll('.settings-nav-item');
 const settingsTabContents = document.querySelectorAll('.settings-tab-content');
 
+// 설정 서브 카테고리 (굿락 스타일) 전환 로직
+const openTopButtonSettings = document.getElementById('openTopButtonSettings');
+const backToUsefulCategoriesBtn = document.getElementById('backToUsefulCategoriesBtn');
+const openCommentInputSettings = document.getElementById('openCommentInputSettings');
+const backFromCommentInputBtn = document.getElementById('backFromCommentInputBtn');
+
+const usefulCategoryList = document.getElementById('usefulCategoryList');
+const topButtonSettingsSubPage = document.getElementById('topButtonSettingsSubPage');
+const commentInputSettingsSubPage = document.getElementById('commentInputSettingsSubPage');
+
+window.isUsefulSubPageOpen = false;
+window.currentSubPageId = null;
+
+window.openUsefulSubPage = function (subPageId) {
+    if (!usefulCategoryList) return;
+    window.isUsefulSubPageOpen = true;
+    window.currentSubPageId = subPageId;
+
+    usefulCategoryList.style.display = 'none';
+    const targetSubPage = document.getElementById(subPageId);
+    if (targetSubPage) {
+        targetSubPage.style.display = 'block';
+        targetSubPage.classList.remove('sub-page-exit');
+        targetSubPage.classList.add('sub-page-enter');
+    }
+    if (typeof updateCommentInputToggleUI === 'function') {
+        updateCommentInputToggleUI();
+    }
+
+    // 히스토리에 서브페이지 상태 추가 (뒤로가기 지원)
+    history.pushState({ modal: 'settings', subPage: subPageId }, '');
+};
+
+window.closeUsefulSubPage = function (fromPopState = false) {
+    if (!usefulCategoryList || !window.isUsefulSubPageOpen) return;
+    const activeSubPage = window.currentSubPageId ? document.getElementById(window.currentSubPageId) : null;
+    window.isUsefulSubPageOpen = false;
+    const closedSubPageId = window.currentSubPageId;
+    window.currentSubPageId = null;
+
+    if (activeSubPage) {
+        activeSubPage.classList.remove('sub-page-enter');
+        activeSubPage.classList.add('sub-page-exit');
+    }
+
+    setTimeout(() => {
+        if (activeSubPage) {
+            activeSubPage.style.display = 'none';
+            activeSubPage.classList.remove('sub-page-exit');
+        }
+
+        usefulCategoryList.style.display = 'flex';
+        usefulCategoryList.classList.remove('category-list-enter');
+        void usefulCategoryList.offsetWidth; // 강제 리플로우
+        usefulCategoryList.classList.add('category-list-enter');
+    }, 200);
+
+    if (!fromPopState && history.state && history.state.subPage === closedSubPageId) {
+        window._isProgrammaticBack = true;
+        history.back();
+        setTimeout(() => { window._isProgrammaticBack = false; }, 50);
+    }
+};
+
+window.resetUsefulSettingsSubPage = function () {
+    window.isUsefulSubPageOpen = false;
+    window.currentSubPageId = null;
+    if (usefulCategoryList) {
+        usefulCategoryList.style.display = 'flex';
+        usefulCategoryList.classList.remove('category-list-enter');
+    }
+    if (topButtonSettingsSubPage) {
+        topButtonSettingsSubPage.style.display = 'none';
+        topButtonSettingsSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
+    }
+    if (commentInputSettingsSubPage) {
+        commentInputSettingsSubPage.style.display = 'none';
+        commentInputSettingsSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
+    }
+};
+
+if (openTopButtonSettings) {
+    openTopButtonSettings.addEventListener('click', () => window.openUsefulSubPage('topButtonSettingsSubPage'));
+}
+if (backToUsefulCategoriesBtn) {
+    backToUsefulCategoriesBtn.addEventListener('click', () => window.closeUsefulSubPage(false));
+}
+if (openCommentInputSettings) {
+    openCommentInputSettings.addEventListener('click', () => window.openUsefulSubPage('commentInputSettingsSubPage'));
+}
+if (backFromCommentInputBtn) {
+    backFromCommentInputBtn.addEventListener('click', () => window.closeUsefulSubPage(false));
+}
+
 if (settingsNavItems.length > 0) {
     settingsNavItems.forEach(item => {
         item.addEventListener('click', () => {
@@ -1419,6 +1552,9 @@ if (settingsNavItems.length > 0) {
                     content.style.display = 'none';
                 }
             });
+
+            // 탭을 전환할 때 서브페이지를 메인 카드 목록으로 초기화
+            resetUsefulSettingsSubPage();
         });
     });
 }
@@ -1499,6 +1635,7 @@ if (logoDisplaySelected && logoDisplayOptions) {
 }
 
 window.openSettingsModal = function () {
+    resetUsefulSettingsSubPage();
     settingsModalOverlay.classList.add('active');
     settingsModal.classList.add('active');
     const sideDrawer = document.getElementById('sideDrawer');
@@ -1601,8 +1738,83 @@ function _showTopButtons() {
     }
 }
 
+// --- 댓글 스크롤 시 입력창 자동 숨김 로직 (기본값: false / off) ---
+let _isCommentInputScrollHideEnabled = localStorage.getItem('setting_comment_input_scroll_hide') === 'true';
+let _isCommentInputHidden = false;
+let _commentScrollStopTimer = null;
+let _lastCommentScrollY = 0;
+
+function updateCommentInputToggleUI() {
+    const toggle = document.getElementById('commentInputScrollHideToggle');
+    if (toggle) {
+        toggle.checked = _isCommentInputScrollHideEnabled;
+    }
+}
+
+// 이벤트 위임을 통해 토글 상태 변경 즉시 반영
+document.addEventListener('change', (e) => {
+    if (e.target && e.target.id === 'commentInputScrollHideToggle') {
+        _isCommentInputScrollHideEnabled = e.target.checked;
+        localStorage.setItem('setting_comment_input_scroll_hide', _isCommentInputScrollHideEnabled);
+        if (!_isCommentInputScrollHideEnabled) {
+            _showCommentInput();
+        }
+    }
+});
+
+function _hideCommentInput() {
+    const container = document.getElementById('commentInputContainer');
+    const area = document.querySelector('.comment-input-area');
+    const targetEl = container || area;
+
+    if (targetEl && !_isCommentInputHidden) {
+        targetEl.style.transition = 'opacity 0.35s ease';
+        targetEl.style.opacity = '0';
+        targetEl.style.pointerEvents = 'none';
+        _isCommentInputHidden = true;
+    }
+}
+
+function _showCommentInput() {
+    const container = document.getElementById('commentInputContainer');
+    const area = document.querySelector('.comment-input-area');
+    const targetEl = container || area;
+
+    if (targetEl && _isCommentInputHidden) {
+        targetEl.style.transition = 'opacity 0.35s ease';
+        targetEl.style.opacity = '';
+        targetEl.style.pointerEvents = '';
+        _isCommentInputHidden = false;
+    }
+}
+
 window.addEventListener('scroll', (e) => {
     const target = e.target === document ? document.documentElement : e.target;
+
+    // 상세 보기 모달 창이 열려 있는 상태에서의 댓글 스크롤 감지 (상단 버튼 스크롤과 동일 형식)
+    const sideDetailContainer = document.getElementById('sideDetailContainer');
+    const isDetailOpen = document.body.classList.contains('detail-open') ||
+        (sideDetailContainer && !sideDetailContainer.classList.contains('detail-hidden'));
+
+    if (isDetailOpen && _isCommentInputScrollHideEnabled) {
+        const currentCommentScrollY = target.scrollTop || 0;
+        const deltaCommentY = currentCommentScrollY - _lastCommentScrollY;
+
+        if (currentCommentScrollY <= 30) {
+            _showCommentInput();
+        } else if (deltaCommentY > 5) {
+            _hideCommentInput();
+        } else if (deltaCommentY < -5) {
+            _showCommentInput();
+        }
+
+        _lastCommentScrollY = currentCommentScrollY;
+
+        if (_commentScrollStopTimer) clearTimeout(_commentScrollStopTimer);
+        _commentScrollStopTimer = setTimeout(() => {
+            _showCommentInput();
+        }, 300);
+    }
 
     // 페이지 스크롤이 아니면 무시 (드롭다운 등 다른 내부 스크롤 방지)
     if (target !== document.documentElement && (!target.classList || !target.classList.contains('page'))) {
