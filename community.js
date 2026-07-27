@@ -19,6 +19,10 @@ if (!window.hasOwnProperty('_currentPostId')) {
 // 로그인 상태 변수
 let currentUser = null;
 
+// Firestore 리스너 구독 해제 변수 (TDZ 방지를 위해 상단 선언)
+var postsUnsubscribe = null;
+var postUnsubscribe = null;
+
 // 관리자 이메일 목록 (회장 + 사장)
 const ADMIN_EMAILS = ['gimdong2804@gmail.com', 'sjh20110407@gmail.com'];
 function isAdmin(email) { return ADMIN_EMAILS.includes(email); }
@@ -27,8 +31,8 @@ function getAdminName(email) {
     return names[email] || null;
 }
 
-// 개발 모드: URL에 ?dev=true 붙이면 로그인 없이 테스트 가능
-const isDevMode = new URLSearchParams(window.location.search).get('dev') === 'true';
+// 개발 모드: URL에 ?dev=true 붙이거나 localStorage 설정 시 로그인 없이 테스트 가능
+let isDevMode = new URLSearchParams(window.location.search).get('dev') === 'true' || localStorage.getItem('dev_mode') === 'true';
 if (isDevMode) {
     currentUser = {
         uid: 'dev-test-president',
@@ -36,7 +40,7 @@ if (isDevMode) {
         displayName: '회장 김동현',
         photoURL: '',
     };
-    console.log('%c[개발 모드] 로그인 없이 회장 계정으로 접속 중', 'color: #3b82f6; font-weight: bold;');
+    console.log('%c[개발/테스트 모드] 회장 계정으로 접속 중', 'color: #10b981; font-weight: bold;');
 }
 // 구글 로그인 관련 DOM
 const googleLoginBtn = document.getElementById('googleLoginBtn');
@@ -57,32 +61,43 @@ function showLoginError(error) {
         return;
     }
     if (error && error.code === 'auth/unauthorized-domain') {
-        alert("로그인 중 오류가 발생했습니다: Firebase 인증 설정에서 현재 사이트 주소를 승인된 도메인에 추가해야 합니다.");
+        alert(`[Firebase 승인 도메인 설정 필요]\n\n현재 사이트 도메인(${window.location.hostname})이 Firebase 인증의 Authorized Domains에 등록되어 있지 않습니다.\n\nFirebase 콘솔 > Authentication > Settings > Authorized domains 에 아래 도메인을 추가해주세요:\n${window.location.hostname}`);
         return;
     }
     alert("로그인 중 오류가 발생했습니다: " + ((error && error.message) || "알 수 없는 오류"));
 }
 
 // 구글 로그인 연동
-googleLoginBtn.addEventListener('click', async () => {
-    try {
-        googleLoginBtn.disabled = true;
-        await auth.signInWithPopup(googleProvider);
-        googleLoginBtn.disabled = false;
-    } catch (error) {
-        googleLoginBtn.disabled = false;
-        showLoginError(error);
-    }
-});
+if (googleLoginBtn) {
+    googleLoginBtn.addEventListener('click', async () => {
+        try {
+            googleLoginBtn.disabled = true;
+            await auth.signInWithPopup(googleProvider);
+            googleLoginBtn.disabled = false;
+        } catch (error) {
+            googleLoginBtn.disabled = false;
+            showLoginError(error);
+        }
+    });
+}
 
 // 로그아웃
-logoutBtn.addEventListener('click', async () => {
-    try {
-        await auth.signOut();
-    } catch (error) {
-        console.error("Sign-Out Error: ", error);
-    }
-});
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            if (isDevMode) {
+                localStorage.removeItem('dev_mode');
+                const url = new URL(window.location.href);
+                url.searchParams.delete('dev');
+                window.location.href = url.pathname;
+                return;
+            }
+            await auth.signOut();
+        } catch (error) {
+            console.error("Sign-Out Error: ", error);
+        }
+    });
+}
 
 // Auth 상태 리스너
 let authUITimeout;
@@ -182,15 +197,17 @@ const writePostBtn = document.getElementById('writePostBtn');
 const submitPostBtn = document.getElementById('submitPostBtn');
 const boardContainer = document.querySelector('.board-container');
 
-writePostBtn.addEventListener('click', () => {
-    if (!currentUser) {
-        alert('게시글을 작성하려면 로그인이 필요합니다. Google 계정으로 로그인해주세요.');
-        openDrawer();
-        return;
-    }
-    history.pushState({ modal: 'writePage' }, '', '#write');
-    switchPage(currentPage, writePostPage, true);
-});
+if (writePostBtn) {
+    writePostBtn.addEventListener('click', () => {
+        if (!currentUser) {
+            alert('게시글을 작성하려면 로그인이 필요합니다. Google 계정으로 로그인해주세요.');
+            openDrawer();
+            return;
+        }
+        history.pushState({ modal: 'writePage' }, '', '#write');
+        switchPage(currentPage, writePostPage, true);
+    });
+}
 
 function closeWritePage(e) {
     const fromPopState = (e === true);
@@ -222,7 +239,9 @@ function closeWritePage(e) {
         }, 400);
     }
 }
-writePostBackBtn.addEventListener('click', closeWritePage);
+if (writePostBackBtn) {
+    writePostBackBtn.addEventListener('click', closeWritePage);
+}
 
 // 이미지 업로드 로직
 let selectedImages = [];
@@ -302,77 +321,79 @@ window.removeImage = function (index) {
 };
 
 // Firebase 데이터 등록 (글쓰기)
-submitPostBtn.addEventListener('click', async () => {
-    if (!currentUser) {
-        alert('로그인이 필요한 서비스입니다.');
-        return;
-    }
-    const title = document.getElementById('postTitle').value.trim();
-    const author = isAdmin(currentUser.email) ? getAdminName(currentUser.email) : (currentUserRole || currentUser.displayName);
-    const body = document.getElementById('postBody').value.trim();
+if (submitPostBtn) {
+    submitPostBtn.addEventListener('click', async () => {
+        if (!currentUser) {
+            alert('로그인이 필요한 서비스입니다.');
+            return;
+        }
+        const title = document.getElementById('postTitle').value.trim();
+        const author = isAdmin(currentUser.email) ? getAdminName(currentUser.email) : (currentUserRole || currentUser.displayName);
+        const body = document.getElementById('postBody').value.trim();
 
-    if (!title || !body) {
-        alert('제목과 내용을 모두 입력해주세요!');
-        return;
-    }
+        if (!title || !body) {
+            alert('제목과 내용을 모두 입력해주세요!');
+            return;
+        }
 
-    submitPostBtn.innerText = '저장 중...';
-    submitPostBtn.disabled = true;
+        submitPostBtn.innerText = '저장 중...';
+        submitPostBtn.disabled = true;
 
-    try {
-        const imageUrls = [];
-        if (selectedImages.length > 0) {
-            submitPostBtn.innerText = '이미지 업로드 중...';
-            for (const file of selectedImages) {
-                const formData = new FormData();
-                formData.append('image', file);
-                const response = await fetch('https://api.imgbb.com/1/upload?key=2109abd69ec35602a17f2ba6f108d511', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
-                if (data.success) {
-                    imageUrls.push(data.data.url);
-                } else {
-                    throw new Error('이미지 업로드 실패: ' + (data.error ? data.error.message : '알 수 없는 오류'));
+        try {
+            const imageUrls = [];
+            if (selectedImages.length > 0) {
+                submitPostBtn.innerText = '이미지 업로드 중...';
+                for (const file of selectedImages) {
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    const response = await fetch('https://api.imgbb.com/1/upload?key=2109abd69ec35602a17f2ba6f108d511', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        imageUrls.push(data.data.url);
+                    } else {
+                        throw new Error('이미지 업로드 실패: ' + (data.error ? data.error.message : '알 수 없는 오류'));
+                    }
                 }
             }
-        }
 
-        submitPostBtn.innerText = '게시물 저장 중...';
+            submitPostBtn.innerText = '게시물 저장 중...';
 
-        // 수정 모드인 경우 기존 게시글 업데이트
-        if (window._editingPostId) {
-            const updateData = { title: title, body: body };
-            if (imageUrls.length > 0) {
-                updateData.images = [...(window._editingPostImages || []), ...imageUrls];
+            // 수정 모드인 경우 기존 게시글 업데이트
+            if (window._editingPostId) {
+                const updateData = { title: title, body: body };
+                if (imageUrls.length > 0) {
+                    updateData.images = [...(window._editingPostImages || []), ...imageUrls];
+                }
+                await db.collection('posts').doc(window._editingPostId).update(updateData);
+            } else {
+                await db.collection('posts').add({
+                    title: title,
+                    author: author,
+                    uid: currentUser.uid,
+                    userPhoto: currentUser.photoURL || '',
+                    email: currentUser.email,
+                    body: body,
+                    images: imageUrls,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    views: 0,
+                    likes: 0
+                });
             }
-            await db.collection('posts').doc(window._editingPostId).update(updateData);
-        } else {
-            await db.collection('posts').add({
-                title: title,
-                author: author,
-                uid: currentUser.uid,
-                userPhoto: currentUser.photoURL || '',
-                email: currentUser.email,
-                body: body,
-                images: imageUrls,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                views: 0,
-                likes: 0
-            });
+            selectedImages = [];
+            updateImagePreview();
+            closeWritePage();
+        } catch (error) {
+            console.error("Error adding post: ", error);
+            alert('업로드 중 오류가 발생했습니다: ' + error.message);
+        } finally {
+            submitPostBtn.innerText = '게시글 등록하기';
+            submitPostBtn.disabled = false;
         }
-        selectedImages = [];
-        updateImagePreview();
-        closeWritePage();
-    } catch (error) {
-        console.error("Error adding post: ", error);
-        alert('업로드 중 오류가 발생했습니다: ' + error.message);
-    } finally {
-        submitPostBtn.innerText = '게시글 등록하기';
-        submitPostBtn.disabled = false;
-    }
-});
+    });
+}
 
 // Firebase 데이터 실시간 불러오기
 function formatDate(timestamp) {
@@ -408,9 +429,6 @@ function formatDate(timestamp) {
 }
 
 // window.currentPostId 공유 사용
-
-let postsUnsubscribe = null;
-let postUnsubscribe = null;
 
 function loadPosts(sortBy = 'latest') {
     if (postsUnsubscribe) {
@@ -953,6 +971,68 @@ function getCommentAvatar(comment, isPresidentComment, isDeleted) {
     return `<div class="board-author-avatar" style="background: ${isPresidentComment ? 'var(--accent-color)' : '#9ca3af'}; width: 32px; height: 32px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;">${isPresidentComment ? '<i class="fa-solid fa-crown" style="font-size: 0.6rem;"></i>' : escapeHtml(initial)}</div>`;
 }
 
+function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDeleted) {
+    if (isDeleted) return '';
+    let html = '';
+
+    if (comment.images && Array.isArray(comment.images) && comment.images.length > 0) {
+        html += `<div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">`;
+        comment.images.forEach((imgUrl, imgIdx) => {
+            html += `<img src="${escapeHtml(imgUrl)}" alt="첨부 이미지" style="max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover; border: 1px solid var(--glass-border); cursor: pointer;" onclick="event.stopPropagation(); openLightbox('${escapeHtml(imgUrl)}', {postId:'${safePostId}', commentId:'${safeCommentId}', authorUid:'${escapeHtml(comment.uid || '')}', imageIndex:${imgIdx}})">`;
+        });
+        html += `</div>`;
+    }
+
+    if (comment.videos && Array.isArray(comment.videos) && comment.videos.length > 0) {
+        html += `<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">`;
+        comment.videos.forEach(v => {
+            const url = typeof v === 'string' ? v : v.url;
+            if (url) {
+                html += `<video src="${escapeHtml(url)}" controls style="max-width: 100%; max-height: 250px; border-radius: 8px; border: 1px solid var(--glass-border);"></video>`;
+            }
+        });
+        html += `</div>`;
+    }
+
+    if (comment.audios && Array.isArray(comment.audios) && comment.audios.length > 0) {
+        html += `<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">`;
+        comment.audios.forEach(a => {
+            const url = typeof a === 'string' ? a : a.url;
+            const name = typeof a === 'string' ? '음성 파일' : (a.name || '음성 파일');
+            if (url) {
+                html += `<div style="display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-microphone" style="color:#51cf66;"></i><span style="font-size:0.85rem;">${escapeHtml(name)}</span><audio src="${escapeHtml(url)}" controls style="height:32px; max-width:240px;"></audio></div>`;
+            }
+        });
+        html += `</div>`;
+    }
+
+    if (comment.pdfs && Array.isArray(comment.pdfs) && comment.pdfs.length > 0) {
+        html += `<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">`;
+        comment.pdfs.forEach(p => {
+            const url = typeof p === 'string' ? p : p.url;
+            const name = typeof p === 'string' ? 'PDF 문서' : (p.name || 'PDF 문서');
+            if (url) {
+                html += `<a href="${escapeHtml(url)}" target="_blank" download="${escapeHtml(name)}" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.8rem; background:var(--card-bg, rgba(255,255,255,0.05)); border:1px solid var(--glass-border); border-radius:8px; color:var(--text-primary); text-decoration:none; font-size:0.85rem;"><i class="fa-solid fa-file-pdf" style="color:#ff922b;"></i> ${escapeHtml(name)}</a>`;
+            }
+        });
+        html += `</div>`;
+    }
+
+    if (comment.htmls && Array.isArray(comment.htmls) && comment.htmls.length > 0) {
+        html += `<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">`;
+        comment.htmls.forEach(h => {
+            const url = typeof h === 'string' ? h : h.url;
+            const name = typeof h === 'string' ? 'HTML 문서' : (h.name || 'HTML 문서');
+            if (url) {
+                html += `<a href="${escapeHtml(url)}" target="_blank" download="${escapeHtml(name)}" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.8rem; background:var(--card-bg, rgba(255,255,255,0.05)); border:1px solid var(--glass-border); border-radius:8px; color:var(--text-primary); text-decoration:none; font-size:0.85rem;"><i class="fa-solid fa-file-code" style="color:#cc5de8;"></i> ${escapeHtml(name)}</a>`;
+            }
+        });
+        html += `</div>`;
+    }
+
+    return html;
+}
+
 function renderFlatReply(comment, tree, postId, depth = 1) {
     const isDeleted = !!comment.deleted;
     const isPresidentComment = !isDeleted && ((comment.author || '').includes('회장') || isAdmin(comment.email));
@@ -978,16 +1058,9 @@ function renderFlatReply(comment, tree, postId, depth = 1) {
         ? '<span class="comment-deleted-text">삭제된 댓글입니다.</span>'
         : mentionHtml + escapeHtml(comment.body || '').replace(/\n/g, '<br>');
 
-    let imagesHtml = '';
-    if (comment.images && Array.isArray(comment.images) && comment.images.length > 0 && !isDeleted) {
-        imagesHtml = `<div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">`;
-        comment.images.forEach((imgUrl, imgIdx) => {
-            imagesHtml += `<img src="${escapeHtml(imgUrl)}" alt="첨부 이미지" style="max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover; border: 1px solid var(--glass-border); cursor: pointer;" onclick="event.stopPropagation(); openLightbox('${escapeHtml(imgUrl)}', {postId:'${safePostId}', commentId:'${safeCommentId}', authorUid:'${escapeHtml(comment.uid || '')}', imageIndex:${imgIdx}})">`;
-        });
-        imagesHtml += `</div>`;
-    }
+    const attachmentsHtml = renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDeleted);
 
-    const deleteBtn = canDelete ? `<button type="button" class="board-action-btn delete-btn" onclick="event.stopPropagation(); deleteComment('${safePostId}', '${safeCommentId}')" title="댓글 삭제"><i class="fa-solid fa-trash-can"></i></button>` : '';
+    const deleteBtn = canDelete ? `<button type="button" class="board-action-btn delete-btn" onclick="event.stopPropagation(); deleteComment('${safePostId}', '${safeCommentId}', true)" title="답글 삭제"><i class="fa-solid fa-trash-can"></i></button>` : '';
     const editBtn = canDelete ? `<button type="button" class="board-action-btn edit-btn role-edit-btn" onclick="event.stopPropagation(); editComment('${safePostId}', '${safeCommentId}')" title="답글 수정" style="color: #007bff !important;"><i class="fa-solid fa-pen-to-square" style="color: #007bff !important;"></i></button>` : '';
     const pinBtn = canPin ? `<button type="button" class="board-action-btn pin-toggle-btn ${pinned ? 'active' : ''}" onclick="togglePinComment('${safePostId}', '${safeCommentId}', ${pinned})" title="${pinned ? '댓글 고정 해제' : '댓글 고정'}"><i class="fa-solid fa-thumbtack"></i></button>` : '';
     const replyBtn = !isDeleted ? `<button type="button" class="reply-action-btn" onclick="startReplyTarget('${safePostId}', '${safeCommentId}')" title="답글"><i class="fa-regular fa-comment-dots"></i> 답글</button>` : '';
@@ -1044,7 +1117,7 @@ function renderFlatReply(comment, tree, postId, depth = 1) {
                                 <span class="board-time" style="font-weight: 400;">${cTime}</span>
                             </div>
                         </div>
-                        <div class="flat-reply-body">${bodyHtml}${imagesHtml}</div>
+                        <div class="flat-reply-body">${bodyHtml}${attachmentsHtml}</div>
                         <div class="flat-reply-footer ${replyCount > 0 ? 'has-replies' : ''}" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: nowrap;">
                             <div class="hide-scrollbar" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; overflow-x: auto; flex: 1; min-width: 0;">
                                 ${replyBtn}
@@ -1128,14 +1201,7 @@ function renderCommentBranch(comment, depth, tree, postId) {
         ? '<span class="comment-deleted-text">삭제된 댓글입니다.</span>'
         : escapeHtml(comment.body || '').replace(/\n/g, '<br>');
 
-    let imagesHtml = '';
-    if (comment.images && Array.isArray(comment.images) && comment.images.length > 0 && !isDeleted) {
-        imagesHtml = `<div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">`;
-        comment.images.forEach((imgUrl, imgIdx) => {
-            imagesHtml += `<img src="${escapeHtml(imgUrl)}" alt="첨부 이미지" style="max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover; border: 1px solid var(--glass-border); cursor: pointer;" onclick="event.stopPropagation(); openLightbox('${escapeHtml(imgUrl)}', {postId:'${safePostId}', commentId:'${safeCommentId}', authorUid:'${escapeHtml(comment.uid || '')}', imageIndex:${imgIdx}})">`;
-        });
-        imagesHtml += `</div>`;
-    }
+    const attachmentsHtml = renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDeleted);
 
     let repliesHtml = '';
     if (isExpanded) {
@@ -1178,7 +1244,7 @@ function renderCommentBranch(comment, depth, tree, postId) {
                                         <span class="board-time" style="font-weight: 400;">${cTime}</span>
                                     </div>
                                 </div>
-                                <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${bodyHtml}${imagesHtml}</div>
+                                <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${bodyHtml}${attachmentsHtml}</div>
                                 <div class="comment-footer ${replyCount > 0 ? 'has-replies' : ''}" style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: nowrap; width: 100%;">
                                     <div class="hide-scrollbar" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; overflow-x: auto; flex: 1; min-width: 0;">
                                         ${replyBtn}
@@ -1782,7 +1848,7 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                                 ${editBtnHtml}
                             </div>
                         </div>
-                        <h2 class="post-body-title" style="margin-bottom: 0.5rem; font-size: 1.6rem; color: var(--text-primary);">${currentPost.title}</h2>
+                        <h2 class="post-body-title" style="margin-bottom: 0.5rem; font-size: 1.6rem; color: var(--text-primary); word-break: break-word; overflow-wrap: anywhere;">${currentPost.title}</h2>
                         <div style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
                             ${timeStr} &nbsp;|&nbsp; 조회 ${currentPost.views || 0}회
                         </div>
@@ -2390,12 +2456,14 @@ window.editComment = async function (postId, commentId) {
         window.replyTarget = null; // 수정 모드로 진입하므로 답글 모드 해제
 
         if (typeof commentAttachedImages !== 'undefined') {
-            commentAttachedImages = (comment.images || []).map(imgUrl => ({
-                file: null, // 기존 이미지는 파일 객체가 없음
-                dataUrl: imgUrl
-            }));
-            if (typeof renderCommentImagePreview === 'function') {
-                renderCommentImagePreview();
+            commentAttachedImages = (comment.images || []).map(imgUrl => ({ file: null, dataUrl: imgUrl }));
+            commentAttachedVideos = (comment.videos || []).map(v => typeof v === 'string' ? { file: null, dataUrl: v, name: '동영상' } : { file: null, dataUrl: v.url, name: v.name || '동영상' });
+            commentAttachedAudios = (comment.audios || []).map(a => typeof a === 'string' ? { file: null, dataUrl: a, name: '음성 파일' } : { file: null, dataUrl: a.url, name: a.name || '음성 파일' });
+            commentAttachedPdfs = (comment.pdfs || []).map(p => typeof p === 'string' ? { file: null, dataUrl: p, name: 'PDF 문서' } : { file: null, dataUrl: p.url, name: p.name || 'PDF 문서' });
+            commentAttachedHtmls = (comment.htmls || []).map(h => typeof h === 'string' ? { file: null, dataUrl: h, name: 'HTML 문서' } : { file: null, dataUrl: h.url, name: h.name || 'HTML 문서' });
+
+            if (typeof renderCommentAttachmentPreview === 'function') {
+                renderCommentAttachmentPreview();
             }
         }
 
@@ -2659,13 +2727,27 @@ window.executeMultiDelete = async function () {
     }
 };
 
-window.deleteComment = async function (postId, commentId) {
+window.deleteComment = async function (postId, commentId, isReply = false) {
     if (!currentUser) {
-        alert('댓글을 삭제하시려면 먼저 Google 로그인을 해주세요!');
+        alert('삭제하시려면 먼저 Google 로그인을 해주세요!');
         openDrawer();
         return;
     }
-    if (!await window.customConfirm('정말로 이 댓글을 삭제하시겠습니까?', '댓글 삭제')) return;
+
+    if (!isReply) {
+        const commentEl = document.getElementById(`comment-${commentId}`);
+        if (commentEl && commentEl.classList.contains('comment-flat-reply')) {
+            isReply = true;
+        } else if (window.currentCommentDocs) {
+            const doc = window.currentCommentDocs.find(c => c.id === commentId);
+            if (doc && doc.parentId) {
+                isReply = true;
+            }
+        }
+    }
+
+    const itemLabel = isReply ? '답글' : '댓글';
+    if (!await window.customConfirm(`정말로 이 ${itemLabel}을 삭제하시겠습니까?`, `${itemLabel} 삭제`)) return;
 
     const commentEl = document.getElementById(`comment-${commentId}`);
     const commentList = document.getElementById('detailCommentList');
@@ -2689,16 +2771,16 @@ window.deleteComment = async function (postId, commentId) {
                 commentEl.remove();
                 await deleteSelectedComments(postId, new Set([commentId]));
             } catch (error) {
-                console.error("Error deleting comment: ", error);
-                alert('댓글 삭제 실패');
+                console.error(`Error deleting ${itemLabel}: `, error);
+                alert(`${itemLabel} 삭제 실패`);
             }
         }, 300);
     } else {
         try {
             await deleteSelectedComments(postId, new Set([commentId]));
         } catch (error) {
-            console.error("Error deleting comment: ", error);
-            alert('댓글 삭제 실패');
+            console.error(`Error deleting ${itemLabel}: `, error);
+            alert(`${itemLabel} 삭제 실패`);
         }
     }
 };
@@ -2750,78 +2832,258 @@ async function compressImage(file, maxWidth = 1920, maxHeight = 1920, quality = 
     });
 }
 
-// 댓글 작성 로직
+// 댓글/답글 첨부파일 데이터 상태
 let commentAttachedImages = [];
+let commentAttachedVideos = [];
+let commentAttachedAudios = [];
+let commentAttachedPdfs = [];
+let commentAttachedHtmls = [];
+
 const commentAttachBtn = document.getElementById('commentAttachBtn');
 const commentAttachMenu = document.getElementById('commentAttachMenu');
 const commentAttachImageBtn = document.getElementById('commentAttachImageBtn');
+const commentAttachVideoBtn = document.getElementById('commentAttachVideoBtn');
+const commentAttachAudioBtn = document.getElementById('commentAttachAudioBtn');
+const commentAttachPdfBtn = document.getElementById('commentAttachPdfBtn');
+const commentAttachHtmlBtn = document.getElementById('commentAttachHtmlBtn');
+
 const commentImageInput = document.getElementById('commentImageInput');
+const commentVideoInput = document.getElementById('commentVideoInput');
+const commentAudioInput = document.getElementById('commentAudioInput');
+const commentPdfInput = document.getElementById('commentPdfInput');
+const commentHtmlInput = document.getElementById('commentHtmlInput');
+
 const commentImagePreviewContainer = document.getElementById('commentImagePreviewContainer');
 
 if (commentAttachBtn) {
     commentAttachBtn.addEventListener('click', () => {
         commentAttachBtn.classList.toggle('open');
-        commentAttachMenu.classList.toggle('active');
+        if (commentAttachMenu) commentAttachMenu.classList.toggle('active');
     });
 
     document.addEventListener('click', (e) => {
-        if (!commentAttachBtn.contains(e.target) && !commentAttachMenu.contains(e.target)) {
+        if (commentAttachBtn && commentAttachMenu && !commentAttachBtn.contains(e.target) && !commentAttachMenu.contains(e.target)) {
             commentAttachBtn.classList.remove('open');
             commentAttachMenu.classList.remove('active');
         }
     });
 }
 
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = err => reject(err);
+        reader.readAsDataURL(file);
+    });
+}
+
+// 1. 이미지 첨부 (최대 10개)
 if (commentAttachImageBtn && commentImageInput) {
     commentAttachImageBtn.addEventListener('click', () => {
-        if (commentAttachedImages.length >= 3) {
-            alert('이미지는 최대 3개까지만 첨부할 수 있습니다.');
+        if (commentAttachedImages.length >= 10) {
+            alert('이미지는 최대 10개까지만 첨부할 수 있습니다.');
             return;
         }
         commentImageInput.click();
-        commentAttachBtn.classList.remove('open');
-        commentAttachMenu.classList.remove('active');
+        if (commentAttachMenu) commentAttachMenu.classList.remove('active');
+        if (commentAttachBtn) commentAttachBtn.classList.remove('open');
     });
 
     commentImageInput.addEventListener('change', async (e) => {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
 
-        if (commentAttachedImages.length + files.length > 3) {
-            alert('이미지는 최대 3개까지만 첨부할 수 있습니다.');
+        if (commentAttachedImages.length + files.length > 10) {
+            alert('이미지는 최대 10개까지만 첨부할 수 있습니다.');
             return;
         }
 
-        const originalBtnHtml = commentAttachBtn.innerHTML;
-        commentAttachBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
-        commentAttachBtn.disabled = true;
-
         try {
             for (const file of files) {
-                if (commentAttachedImages.length >= 3) break;
+                if (commentAttachedImages.length >= 10) break;
                 const compressedDataUrl = await compressImage(file, 1600, 1600, 0.85);
                 commentAttachedImages.push({
                     file: file,
                     dataUrl: compressedDataUrl
                 });
             }
-            renderCommentImagePreview();
+            renderCommentAttachmentPreview();
         } catch (err) {
             console.error("이미지 압축 실패:", err);
             alert("이미지 처리 중 오류가 발생했습니다.");
         } finally {
-            commentAttachBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
-            commentAttachBtn.disabled = false;
             commentImageInput.value = '';
         }
     });
 }
 
-function renderCommentImagePreview() {
+// 2. 동영상 첨부 (최대 3개)
+if (commentAttachVideoBtn && commentVideoInput) {
+    commentAttachVideoBtn.addEventListener('click', () => {
+        if (commentAttachedVideos.length >= 3) {
+            alert('동영상은 최대 3개까지만 첨부할 수 있습니다.');
+            return;
+        }
+        commentVideoInput.click();
+        if (commentAttachMenu) commentAttachMenu.classList.remove('active');
+        if (commentAttachBtn) commentAttachBtn.classList.remove('open');
+    });
+
+    commentVideoInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        if (commentAttachedVideos.length + files.length > 3) {
+            alert('동영상은 최대 3개까지만 첨부할 수 있습니다.');
+            return;
+        }
+
+        for (const file of files) {
+            if (commentAttachedVideos.length >= 3) break;
+            if (file.size > 25 * 1024 * 1024) {
+                alert(`'${file.name}' 파일이 제한 용량(25MB)을 초과하여 제외되었습니다.`);
+                continue;
+            }
+            try {
+                const dataUrl = await readFileAsDataURL(file);
+                commentAttachedVideos.push({
+                    file: file,
+                    dataUrl: dataUrl,
+                    name: file.name
+                });
+            } catch (err) {
+                console.error("동영상 읽기 오류:", err);
+            }
+        }
+        renderCommentAttachmentPreview();
+        commentVideoInput.value = '';
+    });
+}
+
+// 3. 음성 파일 첨부
+if (commentAttachAudioBtn && commentAudioInput) {
+    commentAttachAudioBtn.addEventListener('click', () => {
+        if (commentAttachedAudios.length >= 5) {
+            alert('음성 파일은 최대 5개까지만 첨부할 수 있습니다.');
+            return;
+        }
+        commentAudioInput.click();
+        if (commentAttachMenu) commentAttachMenu.classList.remove('active');
+        if (commentAttachBtn) commentAttachBtn.classList.remove('open');
+    });
+
+    commentAudioInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        for (const file of files) {
+            if (commentAttachedAudios.length >= 5) break;
+            if (file.size > 15 * 1024 * 1024) {
+                alert(`'${file.name}' 파일이 제한 용량(15MB)을 초과하여 제외되었습니다.`);
+                continue;
+            }
+            try {
+                const dataUrl = await readFileAsDataURL(file);
+                commentAttachedAudios.push({
+                    file: file,
+                    dataUrl: dataUrl,
+                    name: file.name
+                });
+            } catch (err) {
+                console.error("음성 파일 읽기 오류:", err);
+            }
+        }
+        renderCommentAttachmentPreview();
+        commentAudioInput.value = '';
+    });
+}
+
+// 4. PDF 파일 첨부
+if (commentAttachPdfBtn && commentPdfInput) {
+    commentAttachPdfBtn.addEventListener('click', () => {
+        if (commentAttachedPdfs.length >= 5) {
+            alert('PDF 파일은 최대 5개까지만 첨부할 수 있습니다.');
+            return;
+        }
+        commentPdfInput.click();
+        if (commentAttachMenu) commentAttachMenu.classList.remove('active');
+        if (commentAttachBtn) commentAttachBtn.classList.remove('open');
+    });
+
+    commentPdfInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        for (const file of files) {
+            if (commentAttachedPdfs.length >= 5) break;
+            if (file.size > 15 * 1024 * 1024) {
+                alert(`'${file.name}' 파일이 제한 용량(15MB)을 초과하여 제외되었습니다.`);
+                continue;
+            }
+            try {
+                const dataUrl = await readFileAsDataURL(file);
+                commentAttachedPdfs.push({
+                    file: file,
+                    dataUrl: dataUrl,
+                    name: file.name
+                });
+            } catch (err) {
+                console.error("PDF 파일 읽기 오류:", err);
+            }
+        }
+        renderCommentAttachmentPreview();
+        commentPdfInput.value = '';
+    });
+}
+
+// 5. HTML 파일 첨부
+if (commentAttachHtmlBtn && commentHtmlInput) {
+    commentAttachHtmlBtn.addEventListener('click', () => {
+        if (commentAttachedHtmls.length >= 5) {
+            alert('HTML 파일은 최대 5개까지만 첨부할 수 있습니다.');
+            return;
+        }
+        commentHtmlInput.click();
+        if (commentAttachMenu) commentAttachMenu.classList.remove('active');
+        if (commentAttachBtn) commentAttachBtn.classList.remove('open');
+    });
+
+    commentHtmlInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        for (const file of files) {
+            if (commentAttachedHtmls.length >= 5) break;
+            if (file.size > 10 * 1024 * 1024) {
+                alert(`'${file.name}' 파일이 제한 용량(10MB)을 초과하여 제외되었습니다.`);
+                continue;
+            }
+            try {
+                const dataUrl = await readFileAsDataURL(file);
+                commentAttachedHtmls.push({
+                    file: file,
+                    dataUrl: dataUrl,
+                    name: file.name
+                });
+            } catch (err) {
+                console.error("HTML 파일 읽기 오류:", err);
+            }
+        }
+        renderCommentAttachmentPreview();
+        commentHtmlInput.value = '';
+    });
+}
+
+function renderCommentAttachmentPreview() {
     const commentInputContainer = document.getElementById('commentInputContainer');
-    if (commentAttachedImages.length > 0) {
+    const container = document.getElementById('commentImagePreviewContainer');
+    if (!container) return;
+
+    const totalCount = commentAttachedImages.length + commentAttachedVideos.length + commentAttachedAudios.length + commentAttachedPdfs.length + commentAttachedHtmls.length;
+
+    if (totalCount > 0) {
         if (commentInputContainer && !commentInputContainer.classList.contains('has-images')) {
-            // 확장: 실제 렌더링된 곡률(높이/2)에서 22px로 자연스럽게 전환
             const actualRadius = Math.min(9999, commentInputContainer.offsetHeight / 2) + 'px';
             commentInputContainer.classList.add('has-images');
             commentInputContainer.animate([
@@ -2829,26 +3091,95 @@ function renderCommentImagePreview() {
                 { borderRadius: '22px' }
             ], { duration: 200, easing: 'ease' });
         }
-        requestAnimationFrame(() => {
-            commentImagePreviewContainer.innerHTML = commentAttachedImages.map((img, index) => `
-                        <div class="comment-image-preview-item">
-                            <img src="${img.dataUrl}" alt="첨부 이미지" style="cursor: pointer;" onclick="openLightbox('${img.dataUrl}', {preUpload:true, imageIndex:${index}})">
-                            <button type="button" class="remove-btn" onclick="removeCommentAttachedImage(${index})">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                        </div>
-                    `).join('');
+
+        let html = '';
+
+        // 이미지
+        commentAttachedImages.forEach((img, index) => {
+            html += `
+                <div class="comment-image-preview-item">
+                    <img src="${img.dataUrl}" alt="첨부 이미지" style="cursor: pointer;" onclick="openLightbox('${img.dataUrl}', {preUpload:true, imageIndex:${index}})">
+                    <button type="button" class="remove-btn" onclick="removeCommentAttachedItem('image', ${index})" title="삭제">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            `;
         });
+
+        // 동영상
+        commentAttachedVideos.forEach((vid, index) => {
+            html += `
+                <div class="attachment-preview-card">
+                    <i class="fa-solid fa-video" style="color: #ff6b6b; font-size: 1.1rem;"></i>
+                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;">${escapeHtml(vid.name)}</span>
+                    <button type="button" class="attachment-preview-remove" onclick="removeCommentAttachedItem('video', ${index})" title="삭제">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            `;
+        });
+
+        // 음성
+        commentAttachedAudios.forEach((aud, index) => {
+            html += `
+                <div class="attachment-preview-card">
+                    <i class="fa-solid fa-microphone" style="color: #51cf66; font-size: 1.1rem;"></i>
+                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;">${escapeHtml(aud.name)}</span>
+                    <button type="button" class="attachment-preview-remove" onclick="removeCommentAttachedItem('audio', ${index})" title="삭제">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            `;
+        });
+
+        // PDF
+        commentAttachedPdfs.forEach((pdf, index) => {
+            html += `
+                <div class="attachment-preview-card">
+                    <i class="fa-solid fa-file-pdf" style="color: #ff922b; font-size: 1.1rem;"></i>
+                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;">${escapeHtml(pdf.name)}</span>
+                    <button type="button" class="attachment-preview-remove" onclick="removeCommentAttachedItem('pdf', ${index})" title="삭제">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            `;
+        });
+
+        // HTML
+        commentAttachedHtmls.forEach((h, index) => {
+            html += `
+                <div class="attachment-preview-card">
+                    <i class="fa-solid fa-file-code" style="color: #cc5de8; font-size: 1.1rem;"></i>
+                    <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;">${escapeHtml(h.name)}</span>
+                    <button type="button" class="attachment-preview-remove" onclick="removeCommentAttachedItem('html', ${index})" title="삭제">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
     } else {
-        // 축소: 즉시 전환 (22px→~24px 차이라 눈에 안 띔)
         if (commentInputContainer) commentInputContainer.classList.remove('has-images');
-        commentImagePreviewContainer.innerHTML = '';
+        container.innerHTML = '';
     }
 }
 
+function renderCommentImagePreview() {
+    renderCommentAttachmentPreview();
+}
+
+window.removeCommentAttachedItem = function (type, index) {
+    if (type === 'image') commentAttachedImages.splice(index, 1);
+    else if (type === 'video') commentAttachedVideos.splice(index, 1);
+    else if (type === 'audio') commentAttachedAudios.splice(index, 1);
+    else if (type === 'pdf') commentAttachedPdfs.splice(index, 1);
+    else if (type === 'html') commentAttachedHtmls.splice(index, 1);
+    renderCommentAttachmentPreview();
+};
+
 window.removeCommentAttachedImage = function (index) {
-    commentAttachedImages.splice(index, 1);
-    renderCommentImagePreview();
+    removeCommentAttachedItem('image', index);
 };
 
 const commentSubmitBtn = document.querySelector('.side-detail-container .comment-submit-btn');
@@ -2862,22 +3193,28 @@ if (commentSubmitBtn && commentInput) {
         }
         if (!currentPostId) return;
         const body = commentInput.value.trim();
-        if (body === '' && commentAttachedImages.length === 0) return;
+        const totalAttachments = commentAttachedImages.length + commentAttachedVideos.length + commentAttachedAudios.length + commentAttachedPdfs.length + commentAttachedHtmls.length;
+        if (body === '' && totalAttachments === 0) return;
 
         commentSubmitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
         commentSubmitBtn.disabled = true;
 
         try {
-            let commentImageUrls = [];
-            if (commentAttachedImages.length > 0) {
-                commentImageUrls = commentAttachedImages.map(img => img.dataUrl);
-            }
+            const commentImageUrls = commentAttachedImages.map(img => img.dataUrl);
+            const commentVideoItems = commentAttachedVideos.map(v => ({ url: v.dataUrl, name: v.name }));
+            const commentAudioItems = commentAttachedAudios.map(a => ({ url: a.dataUrl, name: a.name }));
+            const commentPdfItems = commentAttachedPdfs.map(p => ({ url: p.dataUrl, name: p.name }));
+            const commentHtmlItems = commentAttachedHtmls.map(h => ({ url: h.dataUrl, name: h.name }));
 
             if (window.editTarget) {
                 await db.collection('posts').doc(currentPostId)
                     .collection('comments').doc(window.editTarget.id).update({
                         body: body,
                         images: commentImageUrls,
+                        videos: commentVideoItems,
+                        audios: commentAudioItems,
+                        pdfs: commentPdfItems,
+                        htmls: commentHtmlItems,
                         edited: true,
                         editedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
@@ -2898,6 +3235,10 @@ if (commentSubmitBtn && commentInput) {
                     email: currentUser.email,
                     body: body,
                     images: commentImageUrls,
+                    videos: commentVideoItems,
+                    audios: commentAudioItems,
+                    pdfs: commentPdfItems,
+                    htmls: commentHtmlItems,
                     imageDescriptions: imgDescs,
                     parentId: parentId,
                     replyToAuthor: parentId && window.replyTarget ? window.replyTarget.author : '',
@@ -2913,7 +3254,11 @@ if (commentSubmitBtn && commentInput) {
             }
 
             commentAttachedImages = [];
-            renderCommentImagePreview();
+            commentAttachedVideos = [];
+            commentAttachedAudios = [];
+            commentAttachedPdfs = [];
+            commentAttachedHtmls = [];
+            renderCommentAttachmentPreview();
             window.replyTarget = null;
             updateReplyTargetUI('');
         } catch (e) {

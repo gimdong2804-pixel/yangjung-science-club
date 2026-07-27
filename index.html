@@ -355,7 +355,8 @@
                     style="display: none; flex-direction: column;">
 
                     <!-- 서브 카테고리 (모듈) 카드 목록 (One UI 그룹 스타일) -->
-                    <div id="usefulCategoryList" class="settings-sub-category-list" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div id="usefulCategoryList" class="settings-sub-category-list"
+                        style="display: flex; flex-direction: column; gap: 1rem;">
                         <!-- 그룹 1: 스크롤 숨기기 관련 설정 -->
                         <div class="settings-card-group">
                             <div class="settings-card-item" id="openTopButtonSettings">
@@ -390,7 +391,8 @@
                                     <div class="settings-card-title">텍스트 선택 방지</div>
                                     <div class="settings-card-desc">더블 클릭 시 글자가 파랗게 선택되는 현상 방지 설정</div>
                                 </div>
-                                <label class="settings-toggle" style="margin-left: auto;" onclick="event.stopPropagation();">
+                                <label class="settings-toggle" style="margin-left: auto;"
+                                    onclick="event.stopPropagation();">
                                     <input type="checkbox" id="textSelectPreventQuickToggle" checked>
                                     <span class="toggle-slider"></span>
                                 </label>
@@ -541,6 +543,27 @@
                                     <input type="checkbox" id="textSelectPreventToggle" checked>
                                     <span class="toggle-slider"></span>
                                 </label>
+                            </div>
+
+                            <!-- 텍스트 선택 예시 안내 및 사진 영역 -->
+                            <div style="border-top: 1px solid var(--glass-border); padding-top: 1.25rem;">
+                                <div
+                                    style="display: flex; gap: 0.75rem; align-items: center; font-size: 0.95rem; color: var(--text-primary); font-weight: bold; margin-bottom: 0.4rem;">
+                                    <span style="width: 20px; text-align: center; display: inline-block;">💡</span>
+                                    <span>더블 클릭 텍스트 선택이란?</span>
+                                </div>
+                                <div style="padding-left: calc(20px + 0.75rem);">
+                                    <div
+                                        style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.8rem;">
+                                        아래 사진처럼 글자를 연속 클릭했을 때 영역이 파랗게 블록 선택되는 상태를 의미합니다.
+                                    </div>
+                                    <div
+                                        style="width: 100%; max-width: 380px; border-radius: 16px; overflow: hidden; border: 1px solid var(--glass-border); background: rgba(0, 0, 0, 0.2); box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
+                                        <img src="설정창 텍스트 선택 예시 사진.png" alt="더블 클릭 텍스트 선택 예시 사진"
+                                            onclick="if (typeof openLightbox === 'function') openLightbox(this.src);"
+                                            style="width: 100%; height: auto; display: block; border-radius: 16px; cursor: pointer;">
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -834,12 +857,36 @@
                                 </button>
                                 <div class="comment-attach-menu" id="commentAttachMenu">
                                     <button type="button" class="comment-attach-option" id="commentAttachImageBtn">
-                                        <i class="fa-solid fa-image"></i>
-                                        <span>이미지</span>
+                                        <i class="fa-solid fa-image" style="color: #4dadf7;"></i>
+                                        <span>이미지 (최대 10개)</span>
+                                    </button>
+                                    <button type="button" class="comment-attach-option" id="commentAttachVideoBtn">
+                                        <i class="fa-solid fa-video" style="color: #ff6b6b;"></i>
+                                        <span>동영상 (최대 3개)</span>
+                                    </button>
+                                    <button type="button" class="comment-attach-option" id="commentAttachAudioBtn">
+                                        <i class="fa-solid fa-microphone" style="color: #51cf66;"></i>
+                                        <span>음성/오디오 파일</span>
+                                    </button>
+                                    <button type="button" class="comment-attach-option" id="commentAttachPdfBtn">
+                                        <i class="fa-solid fa-file-pdf" style="color: #ff922b;"></i>
+                                        <span>PDF 파일</span>
+                                    </button>
+                                    <button type="button" class="comment-attach-option" id="commentAttachHtmlBtn">
+                                        <i class="fa-solid fa-file-code" style="color: #cc5de8;"></i>
+                                        <span>HTML 파일</span>
                                     </button>
                                 </div>
                             </div>
                             <input type="file" id="commentImageInput" accept="image/*" multiple style="display: none;">
+                            <input type="file" id="commentVideoInput" accept="video/*,.mp4,.webm,.mov,.mkv,.avi"
+                                multiple style="display: none;">
+                            <input type="file" id="commentAudioInput" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.webm"
+                                multiple style="display: none;">
+                            <input type="file" id="commentPdfInput" accept="application/pdf,.pdf" multiple
+                                style="display: none;">
+                            <input type="file" id="commentHtmlInput" accept="text/html,.html,.htm" multiple
+                                style="display: none;">
                             <input type="text" class="comment-input" placeholder="댓글을 입력하세요...">
                             <button type="button" id="cancelReplyBtn" class="cancel-reply-btn"
                                 onclick="cancelReplyTarget()" title="답글 취소">
@@ -930,49 +977,68 @@
                 <i class="fa-solid fa-pen"></i> 수정
             </button>
         </div>
-    </div>
-
-    <button class="fab fab-hidden" id="writePostBtn" aria-label="글쓰기">
+        <!-- HTML 파일 미리보기/실행 모달 -->
+        <div class="html-viewer-overlay" id="htmlViewerOverlay"></div>
+        <div class="html-viewer-modal" id="htmlViewerModal">
+            <div class="html-viewer-header">
+                <div class="html-viewer-title">
+                    <i class="fa-solid fa-file-code" style="color: #cc5de8;"></i>
+                    <span id="htmlViewerTitle">HTML 문서 미리보기</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <a id="htmlViewerNewTabBtn" href="#" target="_blank" class="file-card-btn"
+                        style="padding: 0.35rem 0.8rem; font-size: 0.8rem;" title="새 탭에서 열기">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> 새 탭
+                    </a>
+                    <button class="close-btn" id="htmlViewerCloseBtn" onclick="closeHtmlViewerModal()"><i
+                            class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <div class="html-viewer-body">
+                <iframe id="htmlViewerFrame" sandbox="allow-scripts allow-modals"
+                    style="width: 100%; height: 100%; border: none; background: #fff; border-radius: 8px;"></iframe>
+            </div>
+        </div>
         <i class="fa-solid fa-pen"></i>
-    </button>
+        </button>
 
-    <!-- AI 챗봇 비서 (기본적으로 숨김 처리되고, Firestore 설정을 로드하여 켜져있을 때만 JS로 표시) -->
-    <button class="ai-chatbot-fab" id="aiChatbotFab" style="display: none;" aria-label="AI 도우미">
-        <i class="fa-solid fa-robot"></i>
-    </button>
+        <!-- AI 챗봇 비서 (기본적으로 숨김 처리되고, Firestore 설정을 로드하여 켜져있을 때만 JS로 표시) -->
+        <button class="ai-chatbot-fab" id="aiChatbotFab" style="display: none;" aria-label="AI 도우미">
+            <i class="fa-solid fa-robot"></i>
+        </button>
 
-    <div class="ai-chatbot-window hidden" id="aiChatbotWindow">
-        <div class="ai-chatbot-header">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fa-solid fa-robot" style="color: var(--accent-color);"></i>
-                <span style="font-weight: bold; color: var(--text-primary);">양중과학동아리 AI 비서</span>
+        <div class="ai-chatbot-window hidden" id="aiChatbotWindow">
+            <div class="ai-chatbot-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fa-solid fa-robot" style="color: var(--accent-color);"></i>
+                    <span style="font-weight: bold; color: var(--text-primary);">양중과학동아리 AI 비서</span>
+                </div>
+                <button id="closeAiChatbot"
+                    style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
-            <button id="closeAiChatbot"
-                style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-        <div class="ai-chatbot-messages" id="aiChatbotMessages">
-            <div class="ai-message assistant">
-                안녕하세요! 양중과학동아리 AI 비서입니다. 🧪✨<br>과학 현상에 대한 질문이나 동아리 활동에 대해 궁금한 점이 있다면 무엇이든 물어보세요!
+            <div class="ai-chatbot-messages" id="aiChatbotMessages">
+                <div class="ai-message assistant">
+                    안녕하세요! 양중과학동아리 AI 비서입니다. 🧪✨<br>과학 현상에 대한 질문이나 동아리 활동에 대해 궁금한 점이 있다면 무엇이든 물어보세요!
+                </div>
+            </div>
+            <div class="ai-chatbot-input-container">
+                <input type="text" class="ai-chatbot-input" id="aiChatbotInput" placeholder="메시지를 입력하세요..." />
+                <button class="ai-chatbot-send-btn" id="aiChatbotSendBtn">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
             </div>
         </div>
-        <div class="ai-chatbot-input-container">
-            <input type="text" class="ai-chatbot-input" id="aiChatbotInput" placeholder="메시지를 입력하세요..." />
-            <button class="ai-chatbot-send-btn" id="aiChatbotSendBtn">
-                <i class="fa-solid fa-paper-plane"></i>
-            </button>
-        </div>
-    </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+        <!-- Firebase SDK -->
+        <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
-    <script src="script.js"></script>
-    <script src="community.js"></script>
+        <script src="script.js"></script>
+        <script src="community.js"></script>
 </body>
 
 </html>
