@@ -331,6 +331,14 @@ function handlePageBack() {
 function switchPage(fromPage, toPage, skipHistory = false, replaceState = false) {
     if (fromPage === toPage) return; // 동일한 페이지로의 전환은 무시
 
+    // 페이지 전환 시 다중선택 모드 해제
+    if (window.isPostMultiSelectMode && typeof window.cancelPostMultiDelete === 'function') {
+        window.cancelPostMultiDelete(true);
+    }
+    if (window.isMultiSelectMode && typeof window.cancelMultiDelete === 'function') {
+        window.cancelMultiDelete(true);
+    }
+
     if (toPage !== mainPage) {
         document.body.classList.remove('home-active');
     }
