@@ -2989,12 +2989,12 @@ window.resolveMediaUrl = async function (rawUrl) {
 };
 
 async function uploadFileToActualCloud(file) {
-    // 1. 10MB 이하 파일: 파이어스토어 전역 데이터베이스 직접 공유 (모든 계정/기기 100% 완벽 시청)
-    if (file.size <= 10 * 1024 * 1024) {
+    // 1. 태블릿/모바일/모든 계정 100% 시청 보장 (CORS 모바일 차단 방지)
+    if (file.size <= 25 * 1024 * 1024) {
         return await readFileAsDataURL(file);
     }
 
-    // 2. 대용량 파일: TmpFiles direct stream 전역 공유 클라우드 API
+    // 2. 대용량 동영상 전역 클라우드 전송
     try {
         const formData = new FormData();
         formData.append('file', file);
@@ -3005,15 +3005,13 @@ async function uploadFileToActualCloud(file) {
         if (res.ok) {
             const data = await res.json();
             if (data && data.data && data.data.url) {
-                // 모든 회원이 시청 가능한 direct 스트리밍 주소로 변환
                 return data.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
             }
         }
     } catch (e) {
-        console.warn("대용량 전역 공유 1차 업로드 실패:", e);
+        console.warn("대용량 1차 전역 업로드 실패:", e);
     }
 
-    // 3. Catbox 전역 공유 클라우드 API
     try {
         const formData = new FormData();
         formData.append('reqtype', 'fileupload');
@@ -3029,10 +3027,9 @@ async function uploadFileToActualCloud(file) {
             }
         }
     } catch (e) {
-        console.warn("대용량 전역 공유 2차 업로드 실패:", e);
+        console.warn("대용량 2차 전역 업로드 실패:", e);
     }
 
-    // 4. 전역 공유 보장 인라인 전송
     return await readFileAsDataURL(file);
 }
 
