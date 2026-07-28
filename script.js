@@ -27,8 +27,10 @@ if (!firebase.apps.length) {
 }
 window.db = firebase.firestore();
 window.auth = firebase.auth();
+window.storage = firebase.storage();
 var db = window.db;
 var auth = window.auth;
+var storage = window.storage;
 
 // 전역 커스텀 Confirm 모달 함수 (취소: 왼쪽, 확인: 오른쪽)
 window.customConfirm = function (message, title = '확인') {
@@ -329,6 +331,9 @@ function handlePageBack() {
 }
 
 function switchPage(fromPage, toPage, skipHistory = false, replaceState = false) {
+    if (typeof fromPage === 'string') fromPage = document.getElementById(fromPage) || currentPage;
+    if (typeof toPage === 'string') toPage = document.getElementById(toPage);
+    if (!fromPage || !toPage) return;
     if (fromPage === toPage) return; // 동일한 페이지로의 전환은 무시
 
     // 페이지 전환 시 다중선택 모드 해제
@@ -492,6 +497,18 @@ const adminCategory = document.getElementById('adminCategory');
 const adminDeactivateModal = document.getElementById('adminDeactivateModal');
 const adminDeactivateCancel = document.getElementById('adminDeactivateCancel');
 const adminDeactivateConfirm = document.getElementById('adminDeactivateConfirm');
+
+const adminNavTab = document.getElementById('adminNavTab');
+function updateAdminNavTab() {
+    if (adminNavTab) {
+        if (localStorage.getItem('isAdminUnlocked') === 'true') {
+            adminNavTab.style.display = 'inline-flex';
+        } else {
+            adminNavTab.style.display = 'none';
+        }
+    }
+}
+updateAdminNavTab();
 
 // 새로고침해도 관리자 모드 유지
 if (localStorage.getItem('isAdminUnlocked') === 'true') {
@@ -690,6 +707,30 @@ function updateAiFeaturesUI() {
 firebase.auth().onAuthStateChanged((user) => {
     loadAiConfig();
 });
+
+// 클라우드 계정 관리 메뉴 클릭 (독립 페이지 전환)
+const cloudAccountManageMenuBtn = document.getElementById('cloudAccountManageMenuBtn');
+const cloudAccountSettingsBackBtn = document.getElementById('cloudAccountSettingsBackBtn');
+
+if (cloudAccountManageMenuBtn) {
+    cloudAccountManageMenuBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof window.closeDrawer === 'function') window.closeDrawer();
+        const targetPage = document.getElementById('cloudAccountSettingsPage');
+        const fromPage = window.currentPage || document.getElementById('mainPage');
+        if (targetPage && typeof window.switchPage === 'function') {
+            window.switchPage(fromPage, targetPage);
+        }
+    });
+}
+
+if (cloudAccountSettingsBackBtn) {
+    cloudAccountSettingsBackBtn.addEventListener('click', () => {
+        if (typeof window.handlePageBack === 'function') {
+            window.handlePageBack();
+        }
+    });
+}
 
 // AI 설정 메뉴 클릭
 if (aiSettingsMenuBtn) {
@@ -1466,10 +1507,37 @@ window.toggleRolePin = async function (email, currentPinned) {
 };
 
 // --- 설정 창 로직 ---
-const drawerSettingsBtn = document.getElementById('drawerSettingsBtn');
-const settingsModalOverlay = document.getElementById('settingsModalOverlay');
-const settingsModal = document.getElementById('settingsModal');
-const settingsModalCloseBtn = document.getElementById('settingsModalCloseBtn');
+window.openSettingsModal = function (tabName = 'general') {
+    if (typeof window.closeDrawer === 'function') window.closeDrawer();
+    if (settingsModalOverlay && settingsModal) {
+        history.pushState({ modal: 'settingsModal' }, '', '');
+        settingsModalOverlay.classList.add('active');
+        settingsModal.classList.add('active');
+
+        const navTab = document.querySelector(`.settings-nav-item[data-tab="${tabName}"]`);
+        if (navTab) navTab.click();
+    }
+};
+
+window.closeSettingsModal = function (popHistory = true) {
+    if (settingsModalOverlay && settingsModal) {
+        settingsModalOverlay.classList.remove('active');
+        settingsModal.classList.remove('active');
+        if (popHistory && history.state && history.state.modal === 'settingsModal') {
+            history.back();
+        }
+    }
+};
+
+if (drawerSettingsBtn) {
+    drawerSettingsBtn.addEventListener('click', () => window.openSettingsModal());
+}
+if (settingsModalCloseBtn) {
+    settingsModalCloseBtn.addEventListener('click', () => window.closeSettingsModal());
+}
+if (settingsModalOverlay) {
+    settingsModalOverlay.addEventListener('click', () => window.closeSettingsModal());
+}
 
 // --- 설정 창 탭 및 설정 관리 로직 ---
 const settingsNavItems = document.querySelectorAll('.settings-nav-item');
@@ -1686,10 +1754,6 @@ window.openSettingsModal = function () {
     const sideDrawer = document.getElementById('sideDrawer');
     if (sideDrawer) {
         sideDrawer.classList.add('drawer-hidden-by-settings');
-        // Remove inline styles if they exist from before
-        sideDrawer.style.opacity = '';
-        sideDrawer.style.pointerEvents = '';
-        sideDrawer.style.transition = '';
     }
     history.pushState({ modal: 'settings' }, '');
 };
@@ -1701,10 +1765,13 @@ window.closeSettingsModal = function (fromPopState = false) {
     if (sideDrawer) {
         sideDrawer.classList.remove('drawer-hidden-by-settings');
     }
-    if (!fromPopState && history.state && history.state.modal === 'settings') {
+    if (!fromPopState) {
         window._isProgrammaticBack = true;
-        history.back();
-        setTimeout(() => { window._isProgrammaticBack = false; }, 50);
+        if (history.state && history.state.modal === 'settings') {
+            history.back();
+        } else {
+            setTimeout(() => { window._isProgrammaticBack = false; }, 300);
+        }
     }
 };
 

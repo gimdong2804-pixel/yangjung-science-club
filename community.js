@@ -985,10 +985,18 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
 
     if (comment.videos && Array.isArray(comment.videos) && comment.videos.length > 0) {
         html += `<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">`;
-        comment.videos.forEach(v => {
-            const url = typeof v === 'string' ? v : v.url;
-            if (url) {
-                html += `<video src="${escapeHtml(url)}" controls style="max-width: 100%; max-height: 250px; border-radius: 8px; border: 1px solid var(--glass-border);"></video>`;
+        comment.videos.forEach((v, vIdx) => {
+            const rawUrl = typeof v === 'string' ? v : v.url;
+            const vidId = `c-vid-${safeCommentId}-${vIdx}`;
+            if (rawUrl) {
+                html += `<video id="${vidId}" controls preload="metadata" playsinline style="max-width: 100%; max-height: 280px; border-radius: 8px; border: 1px solid var(--glass-border); background: #000;"></video>`;
+                setTimeout(async () => {
+                    const el = document.getElementById(vidId);
+                    if (el) {
+                        const finalUrl = await window.resolveMediaUrl(rawUrl);
+                        if (finalUrl) el.src = finalUrl;
+                    }
+                }, 50);
             }
         });
         html += `</div>`;
@@ -2918,6 +2926,118 @@ if (commentAttachImageBtn && commentImageInput) {
     });
 }
 
+// --- 100% 무료 내장 대용량 미디어 엔지니어링 (신용카드/결제 0원) ---
+const DB_NAME = 'ClubMediaStorageDB';
+const STORE_NAME = 'mediaFiles';
+
+function openMediaDB() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+            }
+        };
+        req.onsuccess = (e) => resolve(e.target.result);
+        req.onerror = (e) => reject(e.target.error);
+    });
+}
+
+async function saveMediaFileLocally(file) {
+    const fileId = 'media_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    try {
+        const db = await openMediaDB();
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE_NAME, 'readwrite');
+            const store = tx.objectStore(STORE_NAME);
+            const req = store.put(file, fileId);
+            req.onsuccess = () => resolve();
+            req.onerror = (e) => reject(e.target.error);
+        });
+        return 'localmedia://' + fileId;
+    } catch (e) {
+        console.warn("로컬 미디어 DB 저장 실패, fallback:", e);
+        return await readFileAsDataURL(file);
+    }
+}
+
+window.resolveMediaUrl = async function (rawUrl) {
+    if (!rawUrl) return '';
+    if (rawUrl.startsWith('localmedia://')) {
+        const fileId = rawUrl.replace('localmedia://', '');
+        try {
+            const db = await openMediaDB();
+            return new Promise((resolve) => {
+                const tx = db.transaction(STORE_NAME, 'readonly');
+                const store = tx.objectStore(STORE_NAME);
+                const req = store.get(fileId);
+                req.onsuccess = () => {
+                    if (req.result) {
+                        resolve(URL.createObjectURL(req.result));
+                    } else {
+                        resolve('');
+                    }
+                };
+                req.onerror = () => resolve('');
+            });
+        } catch (e) {
+            return '';
+        }
+    }
+    return rawUrl;
+};
+
+async function uploadFileToActualCloud(file) {
+    // 다른 모든 회원들이 시청 가능한 100% 무료 전역 클라우드 서버 업로드
+    try {
+        const formData = new FormData();
+        formData.append('reqtype', 'fileupload');
+        formData.append('fileToUpload', file);
+        const res = await fetch('https://catbox.moe/user/api.php', {
+            method: 'POST',
+            body: formData
+        });
+        if (res.ok) {
+            const url = await res.text();
+            if (url && url.startsWith('http')) {
+                return url.trim();
+            }
+        }
+    } catch (e) {
+        console.warn("전역 클라우드 전송 1차 시도 실패:", e);
+    }
+
+    // 2차 전역 무료 클라우드 서버
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('https://tmpfiles.org/api/v1/upload', {
+            method: 'POST',
+            body: formData
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.data && data.data.url) {
+                return data.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+            }
+        }
+    } catch (e) {
+        console.warn("전역 클라우드 전송 2차 시도 실패:", e);
+    }
+
+    // 로컬 보관 fallback
+    return await saveMediaFileLocally(file);
+}
+
+async function uploadFileToStorage(file, folder = 'comments') {
+    return await uploadFileToActualCloud(file);
+}
+
+async function uploadFileToStorageWithRollover(file, folder = 'comments') {
+    return await uploadFileToStorage(file, folder);
+}
+
 // 2. 동영상 첨부 (최대 3개)
 if (commentAttachVideoBtn && commentVideoInput) {
     commentAttachVideoBtn.addEventListener('click', () => {
@@ -2941,12 +3061,8 @@ if (commentAttachVideoBtn && commentVideoInput) {
 
         for (const file of files) {
             if (commentAttachedVideos.length >= 3) break;
-            if (file.size > 25 * 1024 * 1024) {
-                alert(`'${file.name}' 파일이 제한 용량(25MB)을 초과하여 제외되었습니다.`);
-                continue;
-            }
             try {
-                const dataUrl = await readFileAsDataURL(file);
+                const dataUrl = file.size > 15 * 1024 * 1024 ? '' : await readFileAsDataURL(file);
                 commentAttachedVideos.push({
                     file: file,
                     dataUrl: dataUrl,
@@ -2979,12 +3095,12 @@ if (commentAttachAudioBtn && commentAudioInput) {
 
         for (const file of files) {
             if (commentAttachedAudios.length >= 5) break;
-            if (file.size > 15 * 1024 * 1024) {
-                alert(`'${file.name}' 파일이 제한 용량(15MB)을 초과하여 제외되었습니다.`);
+            if (file.size > 100 * 1024 * 1024) {
+                alert(`'${file.name}' 파일이 제한 용량(100MB)을 초과하여 제외되었습니다.`);
                 continue;
             }
             try {
-                const dataUrl = await readFileAsDataURL(file);
+                const dataUrl = file.size > 15 * 1024 * 1024 ? '' : await readFileAsDataURL(file);
                 commentAttachedAudios.push({
                     file: file,
                     dataUrl: dataUrl,
@@ -3017,12 +3133,12 @@ if (commentAttachPdfBtn && commentPdfInput) {
 
         for (const file of files) {
             if (commentAttachedPdfs.length >= 5) break;
-            if (file.size > 15 * 1024 * 1024) {
-                alert(`'${file.name}' 파일이 제한 용량(15MB)을 초과하여 제외되었습니다.`);
+            if (file.size > 100 * 1024 * 1024) {
+                alert(`'${file.name}' 파일이 제한 용량(100MB)을 초과하여 제외되었습니다.`);
                 continue;
             }
             try {
-                const dataUrl = await readFileAsDataURL(file);
+                const dataUrl = file.size > 15 * 1024 * 1024 ? '' : await readFileAsDataURL(file);
                 commentAttachedPdfs.push({
                     file: file,
                     dataUrl: dataUrl,
@@ -3055,12 +3171,12 @@ if (commentAttachHtmlBtn && commentHtmlInput) {
 
         for (const file of files) {
             if (commentAttachedHtmls.length >= 5) break;
-            if (file.size > 10 * 1024 * 1024) {
-                alert(`'${file.name}' 파일이 제한 용량(10MB)을 초과하여 제외되었습니다.`);
+            if (file.size > 50 * 1024 * 1024) {
+                alert(`'${file.name}' 파일이 제한 용량(50MB)을 초과하여 제외되었습니다.`);
                 continue;
             }
             try {
-                const dataUrl = await readFileAsDataURL(file);
+                const dataUrl = file.size > 15 * 1024 * 1024 ? '' : await readFileAsDataURL(file);
                 commentAttachedHtmls.push({
                     file: file,
                     dataUrl: dataUrl,
@@ -3200,11 +3316,44 @@ if (commentSubmitBtn && commentInput) {
         commentSubmitBtn.disabled = true;
 
         try {
-            const commentImageUrls = commentAttachedImages.map(img => img.dataUrl);
-            const commentVideoItems = commentAttachedVideos.map(v => ({ url: v.dataUrl, name: v.name }));
-            const commentAudioItems = commentAttachedAudios.map(a => ({ url: a.dataUrl, name: a.name }));
-            const commentPdfItems = commentAttachedPdfs.map(p => ({ url: p.dataUrl, name: p.name }));
-            const commentHtmlItems = commentAttachedHtmls.map(h => ({ url: h.dataUrl, name: h.name }));
+            const commentImageUrls = await Promise.all(commentAttachedImages.map(async img => {
+                if (img.file) return await uploadFileToStorageWithRollover(img.file, 'comments/images');
+                return img.dataUrl;
+            }));
+
+            const commentVideoItems = await Promise.all(commentAttachedVideos.map(async v => {
+                let url = v.dataUrl;
+                if (!url && v.file) {
+                    url = await readFileAsDataURL(v.file);
+                }
+                if (v.file && v.file.size > 15 * 1024 * 1024) {
+                    try {
+                        const cloudUrl = await uploadFileToStorageWithRollover(v.file, 'comments/videos');
+                        if (cloudUrl) url = cloudUrl;
+                    } catch (err) {
+                        console.warn("클라우드 전송 실패 fallback:", err);
+                    }
+                }
+                return { url: url || v.dataUrl, name: v.name };
+            }));
+
+            const commentAudioItems = await Promise.all(commentAttachedAudios.map(async a => {
+                let url = a.dataUrl;
+                if (a.file) url = await uploadFileToStorageWithRollover(a.file, 'comments/audios');
+                return { url: url, name: a.name };
+            }));
+
+            const commentPdfItems = await Promise.all(commentAttachedPdfs.map(async p => {
+                let url = p.dataUrl;
+                if (p.file) url = await uploadFileToStorageWithRollover(p.file, 'comments/pdfs');
+                return { url: url, name: p.name };
+            }));
+
+            const commentHtmlItems = await Promise.all(commentAttachedHtmls.map(async h => {
+                let url = h.dataUrl;
+                if (h.file) url = await uploadFileToStorageWithRollover(h.file, 'comments/htmls');
+                return { url: url, name: h.name };
+            }));
 
             if (window.editTarget) {
                 await db.collection('posts').doc(currentPostId)
@@ -3253,6 +3402,7 @@ if (commentSubmitBtn && commentInput) {
                 }
             }
 
+            commentInput.value = '';
             commentAttachedImages = [];
             commentAttachedVideos = [];
             commentAttachedAudios = [];
@@ -3263,9 +3413,10 @@ if (commentSubmitBtn && commentInput) {
             updateReplyTargetUI('');
         } catch (e) {
             console.error("댓글 작성/수정 실패", e);
-            alert('처리 중 실패했습니다.');
-            updateReplyTargetUI();
+            alert(e.message || '댓글 작성 중 오류가 발생했습니다.');
+            updateReplyTargetUI('');
         } finally {
+            commentSubmitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
             commentSubmitBtn.disabled = false;
         }
     });
@@ -3278,8 +3429,8 @@ if (commentSubmitBtn && commentInput) {
     });
 }
 
-// 사이드 메뉴 아이템 클릭 시 알림 및 드로어 닫기 (인사말, 목표, 건의방, 직책 관리, AI 설정 제외)
-document.querySelectorAll('.drawer-menu a:not(#greetingLink):not(#goalLink):not(#suggestionLink):not(#roleManageMenuBtn):not(#aiSettingsMenuBtn)').forEach(item => {
+// 사이드 메뉴 아이템 클릭 시 알림 및 드로어 닫기 (인사말, 목표, 건의방, 직책 관리, AI 설정, 클라우드 계정 관리 제외)
+document.querySelectorAll('.drawer-menu a:not(#greetingLink):not(#goalLink):not(#suggestionLink):not(#roleManageMenuBtn):not(#aiSettingsMenuBtn):not(#cloudAccountManageMenuBtn)').forEach(item => {
     item.addEventListener('click', (e) => {
         e.preventDefault();
         const title = item.innerText.trim();
@@ -3287,6 +3438,20 @@ document.querySelectorAll('.drawer-menu a:not(#greetingLink):not(#goalLink):not(
         closeDrawer();
     });
 });
+
+// 클라우드 계정 관리 메뉴 클릭 연동 (독립 페이지 전환)
+const cloudAccountBtn = document.getElementById('cloudAccountManageMenuBtn');
+if (cloudAccountBtn) {
+    cloudAccountBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof closeDrawer === 'function') closeDrawer();
+        const targetPage = document.getElementById('cloudAccountSettingsPage');
+        const fromPage = window.currentPage || document.getElementById('mainPage');
+        if (targetPage && typeof window.switchPage === 'function') {
+            window.switchPage(fromPage, targetPage);
+        }
+    });
+}
 
 // --- 이미지 라이트박스 줌 & 패닝 기능 ---
 const imageLightbox = document.getElementById('imageLightbox');
@@ -3723,7 +3888,7 @@ window.executePostMultiDelete = async function () {
 
 window.addEventListener('popstate', (e) => {
     if (window._isProgrammaticBack) {
-        window._isProgrammaticBack = false;
+        setTimeout(() => { window._isProgrammaticBack = false; }, 200);
         return;
     }
 

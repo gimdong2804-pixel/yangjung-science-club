@@ -830,25 +830,26 @@ body.multi-select-active .reply-target-bar {
 }
 
 .comment-image-preview-container {
-    display: none !important;
+    display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: visible;
     width: 100%;
     scrollbar-width: thin;
     max-height: 0;
     opacity: 0;
-    padding: 0;
-    margin: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    transition: max-height 0.3s cubic-bezier(0.2, 0, 0, 1), opacity 0.25s ease, padding-top 0.3s cubic-bezier(0.2, 0, 0, 1), padding-bottom 0.3s cubic-bezier(0.2, 0, 0, 1);
     pointer-events: none;
     box-sizing: border-box;
 }
 
 .comment-input-container.has-images .comment-image-preview-container {
-    display: flex !important;
-    max-height: 100px;
-    height: auto;
+    max-height: 140px;
     opacity: 1;
+    padding-top: 8px;
     padding-bottom: 0.75rem;
     pointer-events: auto;
 }
@@ -1982,14 +1983,7 @@ body.multi-select-active .comment-header .board-time {
     text-align: center;
 }
 
-/* 첨부 파일 미리보기 영역 */
-.comment-image-preview-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-    padding-bottom: 0.6rem;
-    width: 100%;
-}
+
 
 .attachment-preview-card {
     position: relative;
@@ -2003,6 +1997,8 @@ body.multi-select-active .comment-header .board-time {
     max-width: 200px;
     font-size: 0.82rem;
     color: var(--text-primary);
+    margin-top: 5px;
+    margin-right: 5px;
 }
 
 .attachment-preview-card.image-card {
