@@ -3058,14 +3058,14 @@ if (commentAttachVideoBtn && commentVideoInput) {
         for (const file of files) {
             if (commentAttachedVideos.length >= 3) break;
             try {
-                const dataUrl = file.size > 15 * 1024 * 1024 ? '' : await readFileAsDataURL(file);
+                const dataUrl = await uploadFileToActualCloud(file);
                 commentAttachedVideos.push({
                     file: file,
                     dataUrl: dataUrl,
                     name: file.name
                 });
             } catch (err) {
-                console.error("동영상 읽기 오류:", err);
+                console.error("동영상 미리 로딩 오류:", err);
             }
         }
         renderCommentAttachmentPreview();
@@ -3317,39 +3317,10 @@ if (commentSubmitBtn && commentInput) {
                 return img.dataUrl;
             }));
 
-            const commentVideoItems = await Promise.all(commentAttachedVideos.map(async v => {
-                let url = v.dataUrl;
-                if (!url && v.file) {
-                    url = await readFileAsDataURL(v.file);
-                }
-                if (v.file && v.file.size > 15 * 1024 * 1024) {
-                    try {
-                        const cloudUrl = await uploadFileToStorageWithRollover(v.file, 'comments/videos');
-                        if (cloudUrl) url = cloudUrl;
-                    } catch (err) {
-                        console.warn("클라우드 전송 실패 fallback:", err);
-                    }
-                }
-                return { url: url || v.dataUrl, name: v.name };
-            }));
-
-            const commentAudioItems = await Promise.all(commentAttachedAudios.map(async a => {
-                let url = a.dataUrl;
-                if (a.file) url = await uploadFileToStorageWithRollover(a.file, 'comments/audios');
-                return { url: url, name: a.name };
-            }));
-
-            const commentPdfItems = await Promise.all(commentAttachedPdfs.map(async p => {
-                let url = p.dataUrl;
-                if (p.file) url = await uploadFileToStorageWithRollover(p.file, 'comments/pdfs');
-                return { url: url, name: p.name };
-            }));
-
-            const commentHtmlItems = await Promise.all(commentAttachedHtmls.map(async h => {
-                let url = h.dataUrl;
-                if (h.file) url = await uploadFileToStorageWithRollover(h.file, 'comments/htmls');
-                return { url: url, name: h.name };
-            }));
+            const commentVideoItems = commentAttachedVideos.map(v => ({ url: v.dataUrl || '', name: v.name }));
+            const commentAudioItems = commentAttachedAudios.map(a => ({ url: a.dataUrl || '', name: a.name }));
+            const commentPdfItems = commentAttachedPdfs.map(p => ({ url: p.dataUrl || '', name: p.name }));
+            const commentHtmlItems = commentAttachedHtmls.map(h => ({ url: h.dataUrl || '', name: h.name }));
 
             if (window.editTarget) {
                 await db.collection('posts').doc(currentPostId)
