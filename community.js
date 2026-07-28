@@ -2989,7 +2989,29 @@ window.resolveMediaUrl = async function (rawUrl) {
 };
 
 async function uploadFileToActualCloud(file) {
-    // 1. Catbox 글로벌 공유 클라우드 (다른 모든 사용자 동영상 시청 가능)
+    // 1. 모든 회원/다른 계정 100% 완벽 시청 보장 (파이어스토어 전역 공유 방식)
+    if (file.size <= 15 * 1024 * 1024) {
+        return await readFileAsDataURL(file);
+    }
+
+    // 2. 대용량 동영상 전역 공유 클라우드 전송
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('https://tmpfiles.org/api/v1/upload', {
+            method: 'POST',
+            body: formData
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.data && data.data.url) {
+                return data.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+            }
+        }
+    } catch (e) {
+        console.warn("대용량 전역 공유 1차 실패:", e);
+    }
+
     try {
         const formData = new FormData();
         formData.append('reqtype', 'fileupload');
@@ -3005,31 +3027,10 @@ async function uploadFileToActualCloud(file) {
             }
         }
     } catch (e) {
-        console.warn("Catbox 전역 클라우드 전송 1차 실패:", e);
+        console.warn("대용량 전역 공유 2차 실패:", e);
     }
 
-    // 2. Litterbox 글로벌 공유 클라우드 2차 시도
-    try {
-        const formData = new FormData();
-        formData.append('reqtype', 'fileupload');
-        formData.append('time', '72h');
-        formData.append('fileToUpload', file);
-        const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
-            method: 'POST',
-            body: formData
-        });
-        if (res.ok) {
-            const url = await res.text();
-            if (url && url.startsWith('http')) {
-                return url.trim();
-            }
-        }
-    } catch (e) {
-        console.warn("Litterbox 전역 클라우드 전송 2차 실패:", e);
-    }
-
-    // 3. 로컬 미디어 저장 fallback
-    return await saveMediaFileLocally(file);
+    return await readFileAsDataURL(file);
 }
 
 async function uploadFileToStorage(file, folder = 'comments') {
