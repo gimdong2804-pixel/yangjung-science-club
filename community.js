@@ -2989,29 +2989,15 @@ window.resolveMediaUrl = async function (rawUrl) {
 };
 
 async function uploadFileToActualCloud(file) {
-    // 배포 환경 초고속 업로드 & 영상 재생 보장 래퍼
-    const fetchWithTimeout = async (url, options = {}, timeoutMs = 1500) => {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), timeoutMs);
-        try {
-            const res = await fetch(url, { ...options, signal: controller.signal });
-            clearTimeout(timer);
-            return res;
-        } catch (e) {
-            clearTimeout(timer);
-            throw e;
-        }
-    };
-
-    // 1차 고속 클라우드 업로드 시도 (1.5초 이내 미응답 시 즉시 전환하여 딜레이 차단)
+    // 1. Catbox 글로벌 공유 클라우드 (다른 모든 사용자 동영상 시청 가능)
     try {
         const formData = new FormData();
         formData.append('reqtype', 'fileupload');
         formData.append('fileToUpload', file);
-        const res = await fetchWithTimeout('https://catbox.moe/user/api.php', {
+        const res = await fetch('https://catbox.moe/user/api.php', {
             method: 'POST',
             body: formData
-        }, 1500);
+        });
         if (res.ok) {
             const url = await res.text();
             if (url && url.startsWith('http')) {
@@ -3019,10 +3005,30 @@ async function uploadFileToActualCloud(file) {
             }
         }
     } catch (e) {
-        console.warn("클라우드 고속 전송 지연, 고속 인라인 미디어로 즉시 전환:", e);
+        console.warn("Catbox 전역 클라우드 전송 1차 실패:", e);
     }
 
-    // 2차 배포 사이트 100% 재생 보장 인라인 미디어 처리
+    // 2. Litterbox 글로벌 공유 클라우드 2차 시도
+    try {
+        const formData = new FormData();
+        formData.append('reqtype', 'fileupload');
+        formData.append('time', '72h');
+        formData.append('fileToUpload', file);
+        const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+            method: 'POST',
+            body: formData
+        });
+        if (res.ok) {
+            const url = await res.text();
+            if (url && url.startsWith('http')) {
+                return url.trim();
+            }
+        }
+    } catch (e) {
+        console.warn("Litterbox 전역 클라우드 전송 2차 실패:", e);
+    }
+
+    // 3. 로컬 미디어 저장 fallback
     return await saveMediaFileLocally(file);
 }
 
