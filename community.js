@@ -2989,12 +2989,12 @@ window.resolveMediaUrl = async function (rawUrl) {
 };
 
 async function uploadFileToActualCloud(file) {
-    // 1. 태블릿/모바일/모든 계정 100% 시청 보장 (CORS 모바일 차단 방지)
-    if (file.size <= 25 * 1024 * 1024) {
+    // 1. 파이어스토어 1MB 제한 안전 준수 (700KB 이하 소형 파일 안전 인라인)
+    if (file.size <= 700 * 1024) {
         return await readFileAsDataURL(file);
     }
 
-    // 2. 대용량 동영상 전역 클라우드 전송
+    // 2. 대용량 동영상 전역 공유 클라우드 전송 (태블릿/모바일 공유)
     try {
         const formData = new FormData();
         formData.append('file', file);
@@ -3009,7 +3009,7 @@ async function uploadFileToActualCloud(file) {
             }
         }
     } catch (e) {
-        console.warn("대용량 1차 전역 업로드 실패:", e);
+        console.warn("대용량 전역 공유 1차 실패:", e);
     }
 
     try {
@@ -3027,10 +3027,11 @@ async function uploadFileToActualCloud(file) {
             }
         }
     } catch (e) {
-        console.warn("대용량 2차 전역 업로드 실패:", e);
+        console.warn("대용량 전역 공유 2차 실패:", e);
     }
 
-    return await readFileAsDataURL(file);
+    // 3. 로컬 저장 fallback
+    return await saveMediaFileLocally(file);
 }
 
 async function uploadFileToStorage(file, folder = 'comments') {
