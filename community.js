@@ -3325,7 +3325,20 @@ if (commentSubmitBtn && commentInput) {
                 return img.dataUrl;
             }));
 
-            const commentVideoItems = commentAttachedVideos.map(v => ({ url: v.dataUrl || '', name: v.name }));
+            const commentVideoItems = commentAttachedVideos.map(v => {
+                let url = v.dataUrl || '';
+                // Firestore 1MB Payload Limit 에러 원천 차단 (Base64 대용량 전송 차단)
+                if (url.startsWith('data:') && url.length > 700 * 1024) {
+                    url = '';
+                }
+                return { url: url, name: v.name };
+            });
+
+            const invalidVideo = commentAttachedVideos.find((v, idx) => !commentVideoItems[idx] || !commentVideoItems[idx].url);
+            if (invalidVideo) {
+                alert(`'${invalidVideo.name}' 동영상 파일의 클라우드 업로드가 연결되지 않았습니다. 네트워크 연결 상태를 확인해 주세요.`);
+                return;
+            }
             const commentAudioItems = commentAttachedAudios.map(a => ({ url: a.dataUrl || '', name: a.name }));
             const commentPdfItems = commentAttachedPdfs.map(p => ({ url: p.dataUrl || '', name: p.name }));
             const commentHtmlItems = commentAttachedHtmls.map(h => ({ url: h.dataUrl || '', name: h.name }));
