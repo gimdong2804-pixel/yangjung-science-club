@@ -113,7 +113,9 @@ window.customAlert = function (message, title = '경고') {
         const cleanup = (fromPopState) => {
             overlay.classList.remove('active');
             modal.classList.remove('active');
-            if (cancelBtn) cancelBtn.style.display = '';
+            setTimeout(() => {
+                if (cancelBtn) cancelBtn.style.display = '';
+            }, 350);
             okBtn.removeEventListener('click', onOk);
             overlay.removeEventListener('click', onOk);
             if (window._customAlertPopHandler) {
