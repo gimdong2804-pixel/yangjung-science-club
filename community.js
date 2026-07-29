@@ -3158,18 +3158,27 @@ if (commentAttachVideoBtn && commentVideoInput) {
         }
 
         const maxSizeBytes = 1024 * 1024 * 1024; // 1GB (1,073,741,824 bytes)
+        const oversizedFiles = files.filter(f => f.size > maxSizeBytes);
+        const validFiles = files.filter(f => f.size <= maxSizeBytes);
 
-        for (const file of files) {
-            if (commentAttachedVideos.length >= 5) break;
-            if (file.size > maxSizeBytes) {
-                const msg = `[용량 초과] "${file.name}" 파일 크기가 제한 용량(1GB)을 초과합니다.\n1GB 이하의 동영상만 선택해 주세요.`;
-                if (typeof window.customAlert === 'function') {
-                    await window.customAlert(msg, '용량 제한 초과');
-                } else {
-                    alert(msg);
-                }
-                continue;
+        if (oversizedFiles.length > 0) {
+            let msg = '';
+            if (oversizedFiles.length === 1) {
+                msg = `"${oversizedFiles[0].name}" 파일 크기가 제한 용량(1GB)을 초과합니다.\n1GB 이하의 동영상만 선택해 주세요.`;
+            } else {
+                const namesList = oversizedFiles.map(f => `• ${f.name}`).join('\n');
+                msg = `아래 ${oversizedFiles.length}개 파일 크기가 제한 용량(1GB)을 초과합니다:\n${namesList}\n\n1GB 이하의 동영상만 선택해 주세요.`;
             }
+
+            if (typeof window.customAlert === 'function') {
+                await window.customAlert(msg, '용량 제한 초과');
+            } else {
+                alert(msg);
+            }
+        }
+
+        for (const file of validFiles) {
+            if (commentAttachedVideos.length >= 5) break;
             try {
                 commentAttachedVideos.push({
                     file: file,
