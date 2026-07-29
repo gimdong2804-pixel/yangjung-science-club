@@ -3421,15 +3421,9 @@ if (commentSubmitBtn && commentInput) {
                 let url = '';
                 if (v.file) {
                     try {
-                        const cloudUrl = await uploadFileToFirebaseStorage(v.file, 'comments/videos');
-                        if (cloudUrl) {
-                            url = cloudUrl;
-                        } else {
-                            url = await uploadFileToActualCloud(v.file);
-                        }
+                        url = await uploadFileToActualCloud(v.file);
                     } catch (e) {
                         console.warn("비디오 클라우드 업로드 처리 오류:", e);
-                        url = await uploadFileToActualCloud(v.file);
                     }
                 } else if (v.dataUrl && !v.dataUrl.startsWith('blob:')) {
                     url = v.dataUrl;
