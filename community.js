@@ -3024,16 +3024,56 @@ window.resolveMediaUrl = async function (rawUrl) {
     return rawUrl;
 };
 
+async function uploadFileToFirebaseStorage(file, folder = 'comments/videos') {
+    if (typeof firebase !== 'undefined' && firebase.storage) {
+        try {
+            const storageRef = firebase.storage().ref();
+            const ext = (file.name || 'video.mp4').split('.').pop() || 'mp4';
+            const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+            const fileRef = storageRef.child(fileName);
+            
+            const snapshot = await fileRef.put(file);
+            const downloadUrl = await snapshot.ref.getDownloadURL();
+            if (downloadUrl) {
+                return downloadUrl;
+            }
+        } catch (e) {
+            console.warn("Firebase Storage 업로드 실패:", e);
+        }
+    }
+    return null;
+}
+
 async function uploadFileToActualCloud(file) {
-    // 본인 기기(A 노트북)에서의 100% 즉시 재생 보장을 위해 로컬 IndexedDB에 우선 보관
-    let localMediaUrl = '';
+    // 1. Firebase Cloud Storage 우선 업로드 (모든 유저 공유 가능)
     try {
-        localMediaUrl = await saveMediaFileLocally(file);
+        const cloudUrl = await uploadFileToFirebaseStorage(file, 'comments/videos');
+        if (cloudUrl) {
+            return cloudUrl;
+        }
     } catch (e) {
-        console.warn("로컬 미디어 DB 저장 실패:", e);
+        console.warn("Firebase Storage 1차 업로드 예외:", e);
     }
 
-    // 1. 파이어스토어 1MB 제한 안전 준수 (400KB 이하 소형 파일 안전 인라인)
+    // 2. 외부 3rd party 클라우드 (tmpfiles.org)
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('https://tmpfiles.org/api/v1/upload', {
+            method: 'POST',
+            body: formData
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.data && data.data.url) {
+                return data.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+            }
+        }
+    } catch (e) {
+        console.warn("대용량 전역 공유 2차 실패:", e);
+    }
+
+    // 3. 400KB 이하 소형 파일 인라인
     if (file.size <= 400 * 1024) {
         try {
             return await readFileAsDataURL(file);
@@ -3042,10 +3082,7 @@ async function uploadFileToActualCloud(file) {
         }
     }
 
-    if (localMediaUrl) {
-        return localMediaUrl;
-    }
-
+    // 4. 로컬 미디어 저장소 fallback
     return await saveMediaFileLocally(file);
 }
 
@@ -3342,14 +3379,14 @@ if (commentSubmitBtn && commentInput) {
 
             const commentVideoItems = await Promise.all(commentAttachedVideos.map(async v => {
                 let url = v.dataUrl || '';
-                // Firestore 1MB Payload Limit (약 900KB자 초과 시 IndexedDB로 안전 변환)
-                if (url.startsWith('data:') && url.length > 900 * 1024) {
-                    if (v.file) {
-                        url = await saveMediaFileLocally(v.file);
+                if (v.file && (!url || url.startsWith('localmedia://') || (url.startsWith('data:') && url.length > 400 * 1024))) {
+                    const cloudUrl = await uploadFileToFirebaseStorage(v.file, 'comments/videos');
+                    if (cloudUrl) {
+                        url = cloudUrl;
                     }
                 }
                 if (!url && v.file) {
-                    url = await saveMediaFileLocally(v.file);
+                    url = await uploadFileToActualCloud(v.file);
                 }
                 return { url: url, name: v.name };
             }));
