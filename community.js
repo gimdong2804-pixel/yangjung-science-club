@@ -3466,13 +3466,14 @@ if (commentSubmitBtn && commentInput) {
             const commentHtmlItems = commentAttachedHtmls.map(h => ({ url: h.dataUrl || '', name: h.name }));
 
             function sanitizeForFirestore(items) {
-                if (!Array.isArray(items)) return [];
-                return items.map(item => {
+                if (!items) return [];
+                const flatItems = Array.isArray(items) ? items.flat(Infinity) : [items];
+                return flatItems.map(item => {
                     if (item === undefined || item === null) return '';
                     if (typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean') {
-                        return item;
+                        return String(item);
                     }
-                    if (typeof item === 'object') {
+                    if (typeof item === 'object' && !Array.isArray(item)) {
                         const cleanObj = {};
                         for (const key in item) {
                             if (Object.prototype.hasOwnProperty.call(item, key)) {
@@ -3480,7 +3481,7 @@ if (commentSubmitBtn && commentInput) {
                                 if (val === undefined || val === null) {
                                     cleanObj[key] = '';
                                 } else if (typeof val === 'object' && val !== null && !(val instanceof Date)) {
-                                    cleanObj[key] = String(val.url || val.name || '');
+                                    cleanObj[key] = String(val.url || val.name || val.dataUrl || '');
                                 } else {
                                     cleanObj[key] = String(val);
                                 }
@@ -3488,7 +3489,7 @@ if (commentSubmitBtn && commentInput) {
                         }
                         return cleanObj;
                     }
-                    return String(item);
+                    return String(item || '');
                 });
             }
 
