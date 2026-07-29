@@ -989,24 +989,20 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
             const rawUrl = typeof v === 'string' ? v : (v ? v.url : '');
             const vidId = `c-vid-${safeCommentId}-${vIdx}`;
             if (rawUrl) {
-                const isLocal = rawUrl.startsWith('localmedia://');
-                const initialSrc = isLocal ? '' : escapeHtml(rawUrl);
-                html += `<video id="${vidId}" src="${initialSrc}" controls preload="metadata" playsinline style="max-width: 100%; max-height: 280px; border-radius: 8px; border: 1px solid var(--glass-border); background: #000;"></video>`;
-                if (isLocal) {
-                    const tryLoadLocal = async (attempts = 0) => {
-                        const el = document.getElementById(vidId);
-                        if (el) {
-                            const finalUrl = await window.resolveMediaUrl(rawUrl);
-                            if (finalUrl) {
-                                el.src = finalUrl;
-                                el.load();
-                            }
-                        } else if (attempts < 10) {
-                            setTimeout(() => tryLoadLocal(attempts + 1), 50);
+                html += `<video id="${vidId}" controls preload="metadata" playsinline style="max-width: 100%; max-height: 280px; border-radius: 8px; border: 1px solid var(--glass-border); background: #000;"></video>`;
+                const tryLoadMedia = async (attempts = 0) => {
+                    const el = document.getElementById(vidId);
+                    if (el) {
+                        const finalUrl = await window.resolveMediaUrl(rawUrl);
+                        if (finalUrl) {
+                            el.src = finalUrl;
+                            el.load();
                         }
-                    };
-                    setTimeout(() => tryLoadLocal(0), 50);
-                }
+                    } else if (attempts < 15) {
+                        setTimeout(() => tryLoadMedia(attempts + 1), 30);
+                    }
+                };
+                setTimeout(() => tryLoadMedia(0), 10);
             }
         });
         html += `</div>`;
@@ -2972,6 +2968,24 @@ async function saveMediaFileLocally(file) {
     }
 }
 
+function dataURLtoBlob(dataurl) {
+    try {
+        const arr = dataurl.split(',');
+        const mimeMatch = arr[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : 'video/mp4';
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], { type: mime });
+    } catch (e) {
+        console.error("dataURLtoBlob 변환 에러:", e);
+        return null;
+    }
+}
+
 window.resolveMediaUrl = async function (rawUrl) {
     if (!rawUrl) return '';
     if (rawUrl.startsWith('localmedia://')) {
@@ -2995,12 +3009,32 @@ window.resolveMediaUrl = async function (rawUrl) {
             return '';
         }
     }
+
+    if (rawUrl.startsWith('data:video/')) {
+        try {
+            const blob = dataURLtoBlob(rawUrl);
+            if (blob) {
+                return URL.createObjectURL(blob);
+            }
+        } catch (e) {
+            console.warn("Base64 video Blob 변환 실패:", e);
+        }
+    }
+
     return rawUrl;
 };
 
 async function uploadFileToActualCloud(file) {
-    // 1. 파이어스토어 1MB 제한 안전 준수 (600KB 이하 소형 파일 안전 인라인)
-    if (file.size <= 600 * 1024) {
+    // 본인 기기(A 노트북)에서의 100% 즉시 재생 보장을 위해 로컬 IndexedDB에 우선 보관
+    let localMediaUrl = '';
+    try {
+        localMediaUrl = await saveMediaFileLocally(file);
+    } catch (e) {
+        console.warn("로컬 미디어 DB 저장 실패:", e);
+    }
+
+    // 1. 파이어스토어 1MB 제한 안전 준수 (400KB 이하 소형 파일 안전 인라인)
+    if (file.size <= 400 * 1024) {
         try {
             return await readFileAsDataURL(file);
         } catch (e) {
@@ -3008,44 +3042,10 @@ async function uploadFileToActualCloud(file) {
         }
     }
 
-    // 2. 대용량 동영상 전역 공유 클라우드 전송 (태블릿/모바일 공유)
-    try {
-        const formData = new FormData();
-        formData.append('file', file);
-        const res = await fetch('https://tmpfiles.org/api/v1/upload', {
-            method: 'POST',
-            body: formData
-        });
-        if (res.ok) {
-            const data = await res.json();
-            if (data && data.data && data.data.url) {
-                return data.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-        }
-    } catch (e) {
-        console.warn("대용량 전역 공유 1차 실패:", e);
+    if (localMediaUrl) {
+        return localMediaUrl;
     }
 
-    try {
-        const formData = new FormData();
-        formData.append('reqtype', 'fileupload');
-        formData.append('fileToUpload', file);
-        const res = await fetch('https://catbox.moe/user/api.php', {
-            method: 'POST',
-            body: formData
-        });
-        if (res.ok) {
-            const url = await res.text();
-            if (url && url.startsWith('http')) {
-                return url.trim();
-            }
-        }
-    } catch (e) {
-        console.warn("대용량 전역 공유 2차 실패:", e);
-    }
-
-    // 3. 외부 서버 실패 시 로컬 IndexedDB에 저장 (절대 잃어버리지 않음)
-    console.log("외부 업로드 실패/제한으로 로컬 미디어 DB 저장을 적용합니다.");
     return await saveMediaFileLocally(file);
 }
 
