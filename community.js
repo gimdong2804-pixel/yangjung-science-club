@@ -3117,15 +3117,18 @@ if (commentAttachVideoBtn && commentVideoInput) {
 
         for (const file of files) {
             if (commentAttachedVideos.length >= 3) break;
+            if (file.size > 300 * 1024 * 1024) {
+                alert(`'${file.name}' 파일이 제한 용량(200MB)을 초과하여 제외되었습니다.`);
+                continue;
+            }
             try {
-                const dataUrl = await uploadFileToActualCloud(file);
                 commentAttachedVideos.push({
                     file: file,
-                    dataUrl: dataUrl,
+                    dataUrl: URL.createObjectURL(file),
                     name: file.name
                 });
             } catch (err) {
-                console.error("동영상 미리 로딩 오류:", err);
+                console.error("동영상 첨부 오류:", err);
             }
         }
         renderCommentAttachmentPreview();
@@ -3378,15 +3381,21 @@ if (commentSubmitBtn && commentInput) {
             }));
 
             const commentVideoItems = await Promise.all(commentAttachedVideos.map(async v => {
-                let url = v.dataUrl || '';
-                if (v.file && (!url || url.startsWith('localmedia://') || (url.startsWith('data:') && url.length > 400 * 1024))) {
-                    const cloudUrl = await uploadFileToFirebaseStorage(v.file, 'comments/videos');
-                    if (cloudUrl) {
-                        url = cloudUrl;
+                let url = '';
+                if (v.file) {
+                    try {
+                        const cloudUrl = await uploadFileToFirebaseStorage(v.file, 'comments/videos');
+                        if (cloudUrl) {
+                            url = cloudUrl;
+                        } else {
+                            url = await uploadFileToActualCloud(v.file);
+                        }
+                    } catch (e) {
+                        console.warn("비디오 클라우드 업로드 처리 오류:", e);
+                        url = await uploadFileToActualCloud(v.file);
                     }
-                }
-                if (!url && v.file) {
-                    url = await uploadFileToActualCloud(v.file);
+                } else if (v.dataUrl && !v.dataUrl.startsWith('blob:')) {
+                    url = v.dataUrl;
                 }
                 return { url: url, name: v.name };
             }));
