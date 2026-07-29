@@ -107,6 +107,20 @@
         </div>
     </div>
 
+    <!-- 전역 커스텀 Alert 모달 (취소 버튼이 아예 없는 100% 경고 전용) -->
+    <div id="customAlertModalOverlay" class="modal-overlay"></div>
+    <div id="customAlertModal" class="modal-container">
+        <h3 id="customAlertTitle" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-triangle-exclamation"
+                style="color: #ff6b6b;"></i> 경고</h3>
+        <p id="customAlertMessage"
+            style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; word-break: keep-all;">
+        </p>
+        <div class="modal-buttons" style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+            <button id="customAlertOk"
+                style="padding: 0.5rem 1.2rem; border: none; border-radius: 9999px; background: var(--accent-color); color: white; cursor: pointer; user-select: none; font-weight: 600;">확인</button>
+        </div>
+    </div>
+
     <!-- 직책 부여 페이지 (기존 모달에서 변경) -->
     <div id="roleManagePage" class="page hidden fade-out">
         <button class="greeting-back-btn" id="roleManageBackBtn">

@@ -85,15 +85,14 @@ window.customConfirm = function (message, title = '확인') {
     });
 };
 
-// 전역 커스텀 Alert 경고 모달 함수 (댓글 삭제 창과 100% 동일한 디자인 R값 통일 적용)
+// 전역 커스텀 Alert 경고 모달 함수 (독립 100% 경고 전용 모달 - 취소 버튼 물리적 존재 0%)
 window.customAlert = function (message, title = '경고') {
     return new Promise((resolve) => {
-        const overlay = document.getElementById('customConfirmModalOverlay');
-        const modal = document.getElementById('customConfirmModal');
-        const titleEl = document.getElementById('customConfirmTitle');
-        const msgEl = document.getElementById('customConfirmMessage');
-        const cancelBtn = document.getElementById('customConfirmCancel');
-        const okBtn = document.getElementById('customConfirmOk');
+        const overlay = document.getElementById('customAlertModalOverlay');
+        const modal = document.getElementById('customAlertModal');
+        const titleEl = document.getElementById('customAlertTitle');
+        const msgEl = document.getElementById('customAlertMessage');
+        const okBtn = document.getElementById('customAlertOk');
 
         if (!overlay || !modal || !okBtn) {
             alert(message);
@@ -104,8 +103,6 @@ window.customAlert = function (message, title = '경고') {
         if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: #ff6b6b;"></i> ${title}`;
         if (msgEl) msgEl.textContent = message;
 
-        if (cancelBtn) cancelBtn.style.display = 'none';
-
         history.pushState({ modal: 'customAlert' }, '', '');
         overlay.classList.add('active');
         modal.classList.add('active');
@@ -113,9 +110,6 @@ window.customAlert = function (message, title = '경고') {
         const cleanup = (fromPopState) => {
             overlay.classList.remove('active');
             modal.classList.remove('active');
-            setTimeout(() => {
-                if (cancelBtn) cancelBtn.style.display = '';
-            }, 350);
             okBtn.removeEventListener('click', onOk);
             overlay.removeEventListener('click', onOk);
             if (window._customAlertPopHandler) {
