@@ -3461,6 +3461,10 @@ if (commentSubmitBtn && commentInput) {
                     commentVideoItems[i] = { url: fallbackUrl, name: commentAttachedVideos[i].name };
                 }
             }
+            const commentAudioItems = commentAttachedAudios.map(a => ({ url: a.dataUrl || '', name: a.name }));
+            const commentPdfItems = commentAttachedPdfs.map(p => ({ url: p.dataUrl || '', name: p.name }));
+            const commentHtmlItems = commentAttachedHtmls.map(h => ({ url: h.dataUrl || '', name: h.name }));
+
             function sanitizeForFirestore(items) {
                 if (!Array.isArray(items)) return [];
                 return items.map(item => {
