@@ -986,17 +986,27 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
     if (comment.videos && Array.isArray(comment.videos) && comment.videos.length > 0) {
         html += `<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">`;
         comment.videos.forEach((v, vIdx) => {
-            const rawUrl = typeof v === 'string' ? v : v.url;
+            const rawUrl = typeof v === 'string' ? v : (v ? v.url : '');
             const vidId = `c-vid-${safeCommentId}-${vIdx}`;
             if (rawUrl) {
-                html += `<video id="${vidId}" controls preload="metadata" playsinline style="max-width: 100%; max-height: 280px; border-radius: 8px; border: 1px solid var(--glass-border); background: #000;"></video>`;
-                setTimeout(async () => {
-                    const el = document.getElementById(vidId);
-                    if (el) {
-                        const finalUrl = await window.resolveMediaUrl(rawUrl);
-                        if (finalUrl) el.src = finalUrl;
-                    }
-                }, 50);
+                const isLocal = rawUrl.startsWith('localmedia://');
+                const initialSrc = isLocal ? '' : escapeHtml(rawUrl);
+                html += `<video id="${vidId}" src="${initialSrc}" controls preload="metadata" playsinline style="max-width: 100%; max-height: 280px; border-radius: 8px; border: 1px solid var(--glass-border); background: #000;"></video>`;
+                if (isLocal) {
+                    const tryLoadLocal = async (attempts = 0) => {
+                        const el = document.getElementById(vidId);
+                        if (el) {
+                            const finalUrl = await window.resolveMediaUrl(rawUrl);
+                            if (finalUrl) {
+                                el.src = finalUrl;
+                                el.load();
+                            }
+                        } else if (attempts < 10) {
+                            setTimeout(() => tryLoadLocal(attempts + 1), 50);
+                        }
+                    };
+                    setTimeout(() => tryLoadLocal(0), 50);
+                }
             }
         });
         html += `</div>`;
@@ -2989,9 +2999,13 @@ window.resolveMediaUrl = async function (rawUrl) {
 };
 
 async function uploadFileToActualCloud(file) {
-    // 1. 파이어스토어 1MB 제한 안전 준수 (700KB 이하 소형 파일 안전 인라인)
-    if (file.size <= 700 * 1024) {
-        return await readFileAsDataURL(file);
+    // 1. 파이어스토어 1MB 제한 안전 준수 (600KB 이하 소형 파일 안전 인라인)
+    if (file.size <= 600 * 1024) {
+        try {
+            return await readFileAsDataURL(file);
+        } catch (e) {
+            console.warn("readFileAsDataURL 실패:", e);
+        }
     }
 
     // 2. 대용량 동영상 전역 공유 클라우드 전송 (태블릿/모바일 공유)
@@ -3030,7 +3044,8 @@ async function uploadFileToActualCloud(file) {
         console.warn("대용량 전역 공유 2차 실패:", e);
     }
 
-    // 3. 로컬 저장 fallback
+    // 3. 외부 서버 실패 시 로컬 IndexedDB에 저장 (절대 잃어버리지 않음)
+    console.log("외부 업로드 실패/제한으로 로컬 미디어 DB 저장을 적용합니다.");
     return await saveMediaFileLocally(file);
 }
 
@@ -3325,18 +3340,25 @@ if (commentSubmitBtn && commentInput) {
                 return img.dataUrl;
             }));
 
-            const commentVideoItems = commentAttachedVideos.map(v => {
+            const commentVideoItems = await Promise.all(commentAttachedVideos.map(async v => {
                 let url = v.dataUrl || '';
-                // Firestore 1MB Payload Limit 에러 원천 차단 (Base64 대용량 전송 차단)
-                if (url.startsWith('data:') && url.length > 700 * 1024) {
-                    url = '';
+                // Firestore 1MB Payload Limit (약 900KB자 초과 시 IndexedDB로 안전 변환)
+                if (url.startsWith('data:') && url.length > 900 * 1024) {
+                    if (v.file) {
+                        url = await saveMediaFileLocally(v.file);
+                    }
+                }
+                if (!url && v.file) {
+                    url = await saveMediaFileLocally(v.file);
                 }
                 return { url: url, name: v.name };
-            });
+            }));
 
             const invalidVideo = commentAttachedVideos.find((v, idx) => !commentVideoItems[idx] || !commentVideoItems[idx].url);
             if (invalidVideo) {
-                alert(`'${invalidVideo.name}' 동영상 파일의 클라우드 업로드가 연결되지 않았습니다. 네트워크 연결 상태를 확인해 주세요.`);
+                alert(`'${invalidVideo.name}' 동영상 업로드 연결에 실패했습니다. 다시 시도해 주세요.`);
+                commentSubmitBtn.innerHTML = '등록';
+                commentSubmitBtn.disabled = false;
                 return;
             }
             const commentAudioItems = commentAttachedAudios.map(a => ({ url: a.dataUrl || '', name: a.name }));
