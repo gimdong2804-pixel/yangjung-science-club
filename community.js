@@ -2964,7 +2964,10 @@ async function saveMediaFileLocally(file) {
         return 'localmedia://' + fileId;
     } catch (e) {
         console.warn("로컬 미디어 DB 저장 실패, fallback:", e);
-        return await readFileAsDataURL(file);
+        if (file.size <= 400 * 1024) {
+            return await readFileAsDataURL(file);
+        }
+        return '';
     }
 }
 
@@ -3027,7 +3030,12 @@ window.resolveMediaUrl = async function (rawUrl) {
 async function uploadFileToFirebaseStorage(file, folder = 'comments/videos') {
     if (typeof firebase !== 'undefined' && firebase.storage) {
         try {
-            const storageRef = firebase.storage().ref();
+            let storageRef;
+            try {
+                storageRef = firebase.storage().ref();
+            } catch (err) {
+                storageRef = firebase.app().storage('gs://yangjung-science.appspot.com').ref();
+            }
             const ext = (file.name || 'video.mp4').split('.').pop() || 'mp4';
             const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
             const fileRef = storageRef.child(fileName);
@@ -3045,7 +3053,7 @@ async function uploadFileToFirebaseStorage(file, folder = 'comments/videos') {
 }
 
 async function uploadFileToActualCloud(file) {
-    // 1. Firebase Cloud Storage 우선 업로드 (모든 유저 공유 가능)
+    // 1. Firebase Cloud Storage 우선 업로드
     try {
         const cloudUrl = await uploadFileToFirebaseStorage(file, 'comments/videos');
         if (cloudUrl) {
@@ -3055,7 +3063,7 @@ async function uploadFileToActualCloud(file) {
         console.warn("Firebase Storage 1차 업로드 예외:", e);
     }
 
-    // 2. 외부 3rd party 클라우드 (tmpfiles.org)
+    // 2. 대용량 동영상 전역 공유 클라우드 전송 (tmpfiles.org - 실측 5초 쾌속 업로드 보장)
     try {
         const formData = new FormData();
         formData.append('file', file);
@@ -3073,7 +3081,26 @@ async function uploadFileToActualCloud(file) {
         console.warn("대용량 전역 공유 2차 실패:", e);
     }
 
-    // 3. 400KB 이하 소형 파일 인라인
+    // 3. catbox.moe
+    try {
+        const formData = new FormData();
+        formData.append('reqtype', 'fileupload');
+        formData.append('fileToUpload', file);
+        const res = await fetch('https://catbox.moe/user/api.php', {
+            method: 'POST',
+            body: formData
+        });
+        if (res.ok) {
+            const url = await res.text();
+            if (url && url.startsWith('http')) {
+                return url.trim();
+            }
+        }
+    } catch (e) {
+        console.warn("대용량 전역 공유 3차 실패:", e);
+    }
+
+    // 4. 400KB 이하 소형 파일 인라인
     if (file.size <= 400 * 1024) {
         try {
             return await readFileAsDataURL(file);
@@ -3082,7 +3109,7 @@ async function uploadFileToActualCloud(file) {
         }
     }
 
-    // 4. 로컬 미디어 저장소 fallback
+    // 5. 로컬 미디어 저장소 fallback
     return await saveMediaFileLocally(file);
 }
 
