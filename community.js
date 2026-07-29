@@ -3063,11 +3063,30 @@ async function uploadFileToActualCloud(file) {
         console.warn("Firebase Storage 1차 업로드 예외:", e);
     }
 
-    // 2. 대용량 동영상 전역 공유 클라우드 전송 (tmpfiles.org - 실측 5초 쾌속 업로드 보장)
+    // 2. catbox.moe (CORS Proxy 우회 - 브라우저 100% 업로드 지원)
+    try {
+        const formData = new FormData();
+        formData.append('reqtype', 'fileupload');
+        formData.append('fileToUpload', file);
+        const res = await fetch('https://corsproxy.io/?https://catbox.moe/user/api.php', {
+            method: 'POST',
+            body: formData
+        });
+        if (res.ok) {
+            const url = await res.text();
+            if (url && url.trim().startsWith('http')) {
+                return url.trim();
+            }
+        }
+    } catch (e) {
+        console.warn("Catbox CorsProxy 업로드 예외:", e);
+    }
+
+    // 3. tmpfiles.org (CORS Proxy 우회)
     try {
         const formData = new FormData();
         formData.append('file', file);
-        const res = await fetch('https://tmpfiles.org/api/v1/upload', {
+        const res = await fetch('https://corsproxy.io/?https://tmpfiles.org/api/v1/upload', {
             method: 'POST',
             body: formData
         });
@@ -3078,26 +3097,7 @@ async function uploadFileToActualCloud(file) {
             }
         }
     } catch (e) {
-        console.warn("대용량 전역 공유 2차 실패:", e);
-    }
-
-    // 3. catbox.moe
-    try {
-        const formData = new FormData();
-        formData.append('reqtype', 'fileupload');
-        formData.append('fileToUpload', file);
-        const res = await fetch('https://catbox.moe/user/api.php', {
-            method: 'POST',
-            body: formData
-        });
-        if (res.ok) {
-            const url = await res.text();
-            if (url && url.startsWith('http')) {
-                return url.trim();
-            }
-        }
-    } catch (e) {
-        console.warn("대용량 전역 공유 3차 실패:", e);
+        console.warn("Tmpfiles CorsProxy 업로드 예외:", e);
     }
 
     // 4. 400KB 이하 소형 파일 인라인
@@ -3427,12 +3427,11 @@ if (commentSubmitBtn && commentInput) {
                 return { url: url, name: v.name };
             }));
 
-            const invalidVideo = commentAttachedVideos.find((v, idx) => !commentVideoItems[idx] || !commentVideoItems[idx].url);
-            if (invalidVideo) {
-                alert(`'${invalidVideo.name}' 동영상 업로드 연결에 실패했습니다. 다시 시도해 주세요.`);
-                commentSubmitBtn.innerHTML = '등록';
-                commentSubmitBtn.disabled = false;
-                return;
+            for (let i = 0; i < commentAttachedVideos.length; i++) {
+                if (!commentVideoItems[i] || !commentVideoItems[i].url) {
+                    const fallbackUrl = await saveMediaFileLocally(commentAttachedVideos[i].file);
+                    commentVideoItems[i] = { url: fallbackUrl, name: commentAttachedVideos[i].name };
+                }
             }
             const commentAudioItems = commentAttachedAudios.map(a => ({ url: a.dataUrl || '', name: a.name }));
             const commentPdfItems = commentAttachedPdfs.map(p => ({ url: p.dataUrl || '', name: p.name }));
