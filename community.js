@@ -3053,16 +3053,23 @@ async function uploadFileToFirebaseStorage(file, folder = 'comments/videos') {
 }
 
 async function uploadFileToActualCloud(file) {
-    // 1. Litterbox API (1GB 100% 무료 CORS 허용 쾌속 미디어 업로드 - 4초 성공)
+    // 1. Litterbox Direct API (1GB 100% 무료 미디어 - 4.5초 성공)
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
         const formData = new FormData();
         formData.append('reqtype', 'fileupload');
         formData.append('time', '72h');
         formData.append('fileToUpload', file);
+
         const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
             method: 'POST',
-            body: formData
+            body: formData,
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
+
         if (res.ok) {
             const url = await res.text();
             if (url && url.trim().startsWith('http')) {
@@ -3070,18 +3077,25 @@ async function uploadFileToActualCloud(file) {
             }
         }
     } catch (e) {
-        console.warn("Litterbox 업로드 예외:", e);
+        console.warn("Litterbox Direct 업로드 예외:", e);
     }
 
-    // 2. catbox.moe via CorsProxy
+    // 2. catbox.moe Direct Simple Request
     try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        
         const formData = new FormData();
         formData.append('reqtype', 'fileupload');
         formData.append('fileToUpload', file);
-        const res = await fetch('https://corsproxy.io/?https://catbox.moe/user/api.php', {
+        
+        const res = await fetch('https://catbox.moe/user/api.php', {
             method: 'POST',
-            body: formData
+            body: formData,
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
+        
         if (res.ok) {
             const url = await res.text();
             if (url && url.trim().startsWith('http')) {
@@ -3089,28 +3103,10 @@ async function uploadFileToActualCloud(file) {
             }
         }
     } catch (e) {
-        console.warn("Catbox CorsProxy 업로드 예외:", e);
+        console.warn("Catbox Direct 업로드 예외:", e);
     }
 
-    // 3. tmpfiles.org via CorsProxy
-    try {
-        const formData = new FormData();
-        formData.append('file', file);
-        const res = await fetch('https://corsproxy.io/?https://tmpfiles.org/api/v1/upload', {
-            method: 'POST',
-            body: formData
-        });
-        if (res.ok) {
-            const data = await res.json();
-            if (data && data.data && data.data.url) {
-                return data.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-            }
-        }
-    } catch (e) {
-        console.warn("Tmpfiles CorsProxy 업로드 예외:", e);
-    }
-
-    // 4. 400KB 이하 소형 파일 인라인
+    // 3. 400KB 이하 소형 파일 인라인
     if (file.size <= 400 * 1024) {
         try {
             return await readFileAsDataURL(file);
@@ -3119,7 +3115,7 @@ async function uploadFileToActualCloud(file) {
         }
     }
 
-    // 5. 로컬 미디어 저장소 fallback
+    // 4. 로컬 미디어 저장소 fallback
     return await saveMediaFileLocally(file);
 }
 
