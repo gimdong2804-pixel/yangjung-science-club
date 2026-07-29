@@ -3461,19 +3461,48 @@ if (commentSubmitBtn && commentInput) {
                     commentVideoItems[i] = { url: fallbackUrl, name: commentAttachedVideos[i].name };
                 }
             }
-            const commentAudioItems = commentAttachedAudios.map(a => ({ url: a.dataUrl || '', name: a.name }));
-            const commentPdfItems = commentAttachedPdfs.map(p => ({ url: p.dataUrl || '', name: p.name }));
-            const commentHtmlItems = commentAttachedHtmls.map(h => ({ url: h.dataUrl || '', name: h.name }));
+            function sanitizeForFirestore(items) {
+                if (!Array.isArray(items)) return [];
+                return items.map(item => {
+                    if (item === undefined || item === null) return '';
+                    if (typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean') {
+                        return item;
+                    }
+                    if (typeof item === 'object') {
+                        const cleanObj = {};
+                        for (const key in item) {
+                            if (Object.prototype.hasOwnProperty.call(item, key)) {
+                                const val = item[key];
+                                if (val === undefined || val === null) {
+                                    cleanObj[key] = '';
+                                } else if (typeof val === 'object' && val !== null && !(val instanceof Date)) {
+                                    cleanObj[key] = String(val.url || val.name || '');
+                                } else {
+                                    cleanObj[key] = String(val);
+                                }
+                            }
+                        }
+                        return cleanObj;
+                    }
+                    return String(item);
+                });
+            }
+
+            const cleanImages = sanitizeForFirestore(commentImageUrls);
+            const cleanVideos = sanitizeForFirestore(commentVideoItems);
+            const cleanAudios = sanitizeForFirestore(commentAudioItems);
+            const cleanPdfs = sanitizeForFirestore(commentPdfItems);
+            const cleanHtmls = sanitizeForFirestore(commentHtmlItems);
 
             if (window.editTarget) {
                 await db.collection('posts').doc(currentPostId)
                     .collection('comments').doc(window.editTarget.id).update({
                         body: body,
-                        images: commentImageUrls,
-                        videos: commentVideoItems,
-                        audios: commentAudioItems,
-                        pdfs: commentPdfItems,
-                        htmls: commentHtmlItems,
+                        images: cleanImages,
+                        videos: cleanVideos,
+                        audios: cleanAudios,
+                        pdfs: cleanPdfs,
+                        htmls: cleanHtmls,
                         edited: true,
                         editedAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
@@ -3493,11 +3522,11 @@ if (commentSubmitBtn && commentInput) {
                     userPhoto: currentUser.photoURL || '',
                     email: currentUser.email,
                     body: body,
-                    images: commentImageUrls,
-                    videos: commentVideoItems,
-                    audios: commentAudioItems,
-                    pdfs: commentPdfItems,
-                    htmls: commentHtmlItems,
+                    images: cleanImages,
+                    videos: cleanVideos,
+                    audios: cleanAudios,
+                    pdfs: cleanPdfs,
+                    htmls: cleanHtmls,
                     imageDescriptions: imgDescs,
                     parentId: parentId,
                     replyToAuthor: parentId && window.replyTarget ? window.replyTarget.author : '',
