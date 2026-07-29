@@ -3053,10 +3053,10 @@ async function uploadFileToFirebaseStorage(file, folder = 'comments/videos') {
 }
 
 async function uploadFileToActualCloud(file) {
-    // 1. Litterbox Direct API (1GB 100% 무료 미디어 - 4.5초 성공)
+    // 1. Litterbox Direct API (1GB 100% 무료 미디어 - 10초 타임아웃)
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
         const formData = new FormData();
         formData.append('reqtype', 'fileupload');
@@ -3080,10 +3080,10 @@ async function uploadFileToActualCloud(file) {
         console.warn("Litterbox Direct 업로드 예외:", e);
     }
 
-    // 2. catbox.moe Direct Simple Request
+    // 2. catbox.moe Direct Simple Request (10초 타임아웃)
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         
         const formData = new FormData();
         formData.append('reqtype', 'fileupload');
@@ -3454,7 +3454,10 @@ if (commentSubmitBtn && commentInput) {
 
             for (let i = 0; i < commentAttachedVideos.length; i++) {
                 if (!commentVideoItems[i] || !commentVideoItems[i].url) {
-                    const fallbackUrl = await saveMediaFileLocally(commentAttachedVideos[i].file);
+                    let fallbackUrl = await saveMediaFileLocally(commentAttachedVideos[i].file);
+                    if (!fallbackUrl) {
+                        fallbackUrl = commentAttachedVideos[i].dataUrl || (commentAttachedVideos[i].file ? URL.createObjectURL(commentAttachedVideos[i].file) : '');
+                    }
                     commentVideoItems[i] = { url: fallbackUrl, name: commentAttachedVideos[i].name };
                 }
             }
