@@ -85,6 +85,58 @@ window.customConfirm = function (message, title = '확인') {
     });
 };
 
+// 전역 커스텀 Alert 경고 모달 함수 (댓글 삭제 창과 100% 동일한 디자인 R값 통일 적용)
+window.customAlert = function (message, title = '경고') {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('customConfirmModalOverlay');
+        const modal = document.getElementById('customConfirmModal');
+        const titleEl = document.getElementById('customConfirmTitle');
+        const msgEl = document.getElementById('customConfirmMessage');
+        const cancelBtn = document.getElementById('customConfirmCancel');
+        const okBtn = document.getElementById('customConfirmOk');
+
+        if (!overlay || !modal || !okBtn) {
+            alert(message);
+            resolve();
+            return;
+        }
+
+        if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: #ff6b6b;"></i> ${title}`;
+        if (msgEl) msgEl.textContent = message;
+
+        if (cancelBtn) cancelBtn.style.display = 'none';
+
+        history.pushState({ modal: 'customAlert' }, '', '');
+        overlay.classList.add('active');
+        modal.classList.add('active');
+
+        const cleanup = (fromPopState) => {
+            overlay.classList.remove('active');
+            modal.classList.remove('active');
+            if (cancelBtn) cancelBtn.style.display = '';
+            okBtn.removeEventListener('click', onOk);
+            overlay.removeEventListener('click', onOk);
+            if (window._customAlertPopHandler) {
+                window.removeEventListener('popstate', window._customAlertPopHandler);
+                window._customAlertPopHandler = null;
+            }
+            if (!fromPopState && history.state && history.state.modal === 'customAlert') {
+                window._isProgrammaticBack = true;
+                history.back();
+            }
+            resolve();
+        };
+
+        const onOk = () => cleanup(false);
+
+        okBtn.addEventListener('click', onOk);
+        overlay.addEventListener('click', onOk);
+
+        window._customAlertPopHandler = () => cleanup(true);
+        window.addEventListener('popstate', window._customAlertPopHandler, { once: true });
+    });
+};
+
 // 테마 토글 로직
 const themeToggleBtn = document.getElementById('themeToggleBtn');
 const rootElement = document.documentElement;

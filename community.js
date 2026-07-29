@@ -3127,11 +3127,15 @@ async function uploadFileToStorageWithRollover(file, folder = 'comments') {
     return await uploadFileToStorage(file, folder);
 }
 
-// 2. 동영상 첨부 (최대 3개)
+// 2. 동영상 첨부 (최대 5개)
 if (commentAttachVideoBtn && commentVideoInput) {
-    commentAttachVideoBtn.addEventListener('click', () => {
-        if (commentAttachedVideos.length >= 3) {
-            alert('동영상은 최대 3개까지만 첨부할 수 있습니다.');
+    commentAttachVideoBtn.addEventListener('click', async () => {
+        if (commentAttachedVideos.length >= 5) {
+            if (typeof window.customAlert === 'function') {
+                await window.customAlert('동영상은 최대 5개까지만 첨부할 수 있습니다.', '첨부 제한 초과');
+            } else {
+                alert('동영상은 최대 5개까지만 첨부할 수 있습니다.');
+            }
             return;
         }
         commentVideoInput.click();
@@ -3143,15 +3147,27 @@ if (commentAttachVideoBtn && commentVideoInput) {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
 
-        if (commentAttachedVideos.length + files.length > 3) {
-            alert('동영상은 최대 3개까지만 첨부할 수 있습니다.');
+        if (commentAttachedVideos.length + files.length > 5) {
+            if (typeof window.customAlert === 'function') {
+                await window.customAlert('동영상은 최대 5개까지만 첨부할 수 있습니다.', '첨부 제한 초과');
+            } else {
+                alert('동영상은 최대 5개까지만 첨부할 수 있습니다.');
+            }
+            commentVideoInput.value = '';
             return;
         }
 
+        const maxSizeBytes = 1024 * 1024 * 1024; // 1GB (1,073,741,824 bytes)
+
         for (const file of files) {
-            if (commentAttachedVideos.length >= 3) break;
-            if (file.size > 300 * 1024 * 1024) {
-                alert(`'${file.name}' 파일이 제한 용량(200MB)을 초과하여 제외되었습니다.`);
+            if (commentAttachedVideos.length >= 5) break;
+            if (file.size > maxSizeBytes) {
+                const msg = `[용량 초과] "${file.name}" 파일 크기가 제한 용량(1GB)을 초과합니다.\n1GB 이하의 동영상만 선택해 주세요.`;
+                if (typeof window.customAlert === 'function') {
+                    await window.customAlert(msg, '용량 제한 초과');
+                } else {
+                    alert(msg);
+                }
                 continue;
             }
             try {
