@@ -3053,17 +3053,27 @@ async function uploadFileToFirebaseStorage(file, folder = 'comments/videos') {
 }
 
 async function uploadFileToActualCloud(file) {
-    // 1. Firebase Cloud Storage 우선 업로드
+    // 1. Litterbox API (1GB 100% 무료 CORS 허용 쾌속 미디어 업로드 - 4초 성공)
     try {
-        const cloudUrl = await uploadFileToFirebaseStorage(file, 'comments/videos');
-        if (cloudUrl) {
-            return cloudUrl;
+        const formData = new FormData();
+        formData.append('reqtype', 'fileupload');
+        formData.append('time', '72h');
+        formData.append('fileToUpload', file);
+        const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+            method: 'POST',
+            body: formData
+        });
+        if (res.ok) {
+            const url = await res.text();
+            if (url && url.trim().startsWith('http')) {
+                return url.trim();
+            }
         }
     } catch (e) {
-        console.warn("Firebase Storage 1차 업로드 예외:", e);
+        console.warn("Litterbox 업로드 예외:", e);
     }
 
-    // 2. catbox.moe (CORS Proxy 우회 - 브라우저 100% 업로드 지원)
+    // 2. catbox.moe via CorsProxy
     try {
         const formData = new FormData();
         formData.append('reqtype', 'fileupload');
@@ -3082,7 +3092,7 @@ async function uploadFileToActualCloud(file) {
         console.warn("Catbox CorsProxy 업로드 예외:", e);
     }
 
-    // 3. tmpfiles.org (CORS Proxy 우회)
+    // 3. tmpfiles.org via CorsProxy
     try {
         const formData = new FormData();
         formData.append('file', file);
