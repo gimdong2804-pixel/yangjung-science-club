@@ -971,6 +971,24 @@ function getCommentAvatar(comment, isPresidentComment, isDeleted) {
     return `<div class="board-author-avatar" style="background: ${isPresidentComment ? 'var(--accent-color)' : '#9ca3af'}; width: 32px; height: 32px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;">${isPresidentComment ? '<i class="fa-solid fa-crown" style="font-size: 0.6rem;"></i>' : escapeHtml(initial)}</div>`;
 }
 
+function parseAttachmentItem(item, defaultName = '파일') {
+    if (!item) return { url: '', name: defaultName };
+    if (typeof item === 'object' && item !== null) {
+        return { url: item.url || item.dataUrl || '', name: item.name || defaultName };
+    }
+    if (typeof item === 'string') {
+        const trimmed = item.trim();
+        if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                return { url: parsed.url || parsed.dataUrl || '', name: parsed.name || defaultName };
+            } catch (e) { }
+        }
+        return { url: trimmed, name: defaultName };
+    }
+    return { url: String(item), name: defaultName };
+}
+
 function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDeleted) {
     if (isDeleted) return '';
     let html = '';
@@ -986,7 +1004,8 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
     if (comment.videos && Array.isArray(comment.videos) && comment.videos.length > 0) {
         html += `<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">`;
         comment.videos.forEach((v, vIdx) => {
-            const rawUrl = typeof v === 'string' ? v : (v ? v.url : '');
+            const parsed = parseAttachmentItem(v, '동영상');
+            const rawUrl = parsed.url;
             const vidId = `c-vid-${safeCommentId}-${vIdx}`;
             if (rawUrl) {
                 html += `<video id="${vidId}" controls preload="metadata" playsinline style="max-width: 100%; max-height: 280px; border-radius: 8px; border: 1px solid var(--glass-border); background: #000;"></video>`;
@@ -1011,8 +1030,9 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
     if (comment.audios && Array.isArray(comment.audios) && comment.audios.length > 0) {
         html += `<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">`;
         comment.audios.forEach(a => {
-            const url = typeof a === 'string' ? a : a.url;
-            const name = typeof a === 'string' ? '음성 파일' : (a.name || '음성 파일');
+            const parsed = parseAttachmentItem(a, '음성 파일');
+            const url = parsed.url;
+            const name = parsed.name;
             if (url) {
                 html += `<div style="display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-microphone" style="color:#51cf66;"></i><span style="font-size:0.85rem;">${escapeHtml(name)}</span><audio src="${escapeHtml(url)}" controls style="height:32px; max-width:240px;"></audio></div>`;
             }
@@ -1023,8 +1043,9 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
     if (comment.pdfs && Array.isArray(comment.pdfs) && comment.pdfs.length > 0) {
         html += `<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">`;
         comment.pdfs.forEach(p => {
-            const url = typeof p === 'string' ? p : p.url;
-            const name = typeof p === 'string' ? 'PDF 문서' : (p.name || 'PDF 문서');
+            const parsed = parseAttachmentItem(p, 'PDF 문서');
+            const url = parsed.url;
+            const name = parsed.name;
             if (url) {
                 html += `<a href="${escapeHtml(url)}" target="_blank" download="${escapeHtml(name)}" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.8rem; background:var(--card-bg, rgba(255,255,255,0.05)); border:1px solid var(--glass-border); border-radius:8px; color:var(--text-primary); text-decoration:none; font-size:0.85rem;"><i class="fa-solid fa-file-pdf" style="color:#ff922b;"></i> ${escapeHtml(name)}</a>`;
             }
@@ -1035,8 +1056,9 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
     if (comment.htmls && Array.isArray(comment.htmls) && comment.htmls.length > 0) {
         html += `<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">`;
         comment.htmls.forEach(h => {
-            const url = typeof h === 'string' ? h : h.url;
-            const name = typeof h === 'string' ? 'HTML 문서' : (h.name || 'HTML 문서');
+            const parsed = parseAttachmentItem(h, 'HTML 문서');
+            const url = parsed.url;
+            const name = parsed.name;
             if (url) {
                 html += `<a href="${escapeHtml(url)}" target="_blank" download="${escapeHtml(name)}" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.8rem; background:var(--card-bg, rgba(255,255,255,0.05)); border:1px solid var(--glass-border); border-radius:8px; color:var(--text-primary); text-decoration:none; font-size:0.85rem;"><i class="fa-solid fa-file-code" style="color:#cc5de8;"></i> ${escapeHtml(name)}</a>`;
             }
@@ -3434,8 +3456,16 @@ if (commentSubmitBtn && commentInput) {
 
         try {
             const commentImageUrls = await Promise.all(commentAttachedImages.map(async img => {
-                if (img.file) return await uploadFileToStorageWithRollover(img.file, 'comments/images');
-                return img.dataUrl;
+                if (img.file) {
+                    try {
+                        let url = await uploadFileToActualCloud(img.file);
+                        if (!url) url = await uploadFileToFirebaseStorage(img.file, 'comments/images');
+                        if (url) return url;
+                    } catch (e) {
+                        console.warn("이미지 업로드 오류:", e);
+                    }
+                }
+                return img.dataUrl || '';
             }));
 
             const commentVideoItems = await Promise.all(commentAttachedVideos.map(async v => {
@@ -3443,54 +3473,80 @@ if (commentSubmitBtn && commentInput) {
                 if (v.file) {
                     try {
                         url = await uploadFileToActualCloud(v.file);
+                        if (!url) url = await uploadFileToFirebaseStorage(v.file, 'comments/videos');
                     } catch (e) {
-                        console.warn("비디오 클라우드 업로드 처리 오류:", e);
+                        console.warn("비디오 업로드 오류:", e);
                     }
                 } else if (v.dataUrl && !v.dataUrl.startsWith('blob:')) {
                     url = v.dataUrl;
                 }
-                return { url: url, name: v.name };
+                if (!url && v.file) {
+                    url = await saveMediaFileLocally(v.file) || v.dataUrl || '';
+                }
+                return { url: url || '', name: v.name || '동영상' };
             }));
 
-            for (let i = 0; i < commentAttachedVideos.length; i++) {
-                if (!commentVideoItems[i] || !commentVideoItems[i].url) {
-                    let fallbackUrl = await saveMediaFileLocally(commentAttachedVideos[i].file);
-                    if (!fallbackUrl) {
-                        fallbackUrl = commentAttachedVideos[i].dataUrl || (commentAttachedVideos[i].file ? URL.createObjectURL(commentAttachedVideos[i].file) : '');
+            const commentAudioItems = await Promise.all(commentAttachedAudios.map(async a => {
+                let url = '';
+                if (a.file) {
+                    try {
+                        url = await uploadFileToActualCloud(a.file);
+                        if (!url) url = await uploadFileToFirebaseStorage(a.file, 'comments/audios');
+                    } catch (e) {
+                        console.warn("음성 업로드 오류:", e);
                     }
-                    commentVideoItems[i] = { url: fallbackUrl, name: commentAttachedVideos[i].name };
                 }
-            }
-            const commentAudioItems = commentAttachedAudios.map(a => ({ url: a.dataUrl || '', name: a.name }));
-            const commentPdfItems = commentAttachedPdfs.map(p => ({ url: p.dataUrl || '', name: p.name }));
-            const commentHtmlItems = commentAttachedHtmls.map(h => ({ url: h.dataUrl || '', name: h.name }));
+                if (!url) url = a.dataUrl || '';
+                return { url: url || '', name: a.name || '음성 파일' };
+            }));
+
+            const commentPdfItems = await Promise.all(commentAttachedPdfs.map(async p => {
+                let url = '';
+                if (p.file) {
+                    try {
+                        url = await uploadFileToActualCloud(p.file);
+                        if (!url) url = await uploadFileToFirebaseStorage(p.file, 'comments/pdfs');
+                    } catch (e) {
+                        console.warn("PDF 업로드 오류:", e);
+                    }
+                }
+                if (!url) url = p.dataUrl || '';
+                return { url: url || '', name: p.name || 'PDF 문서' };
+            }));
+
+            const commentHtmlItems = await Promise.all(commentAttachedHtmls.map(async h => {
+                let url = '';
+                if (h.file) {
+                    try {
+                        url = await uploadFileToActualCloud(h.file);
+                        if (!url) url = await uploadFileToFirebaseStorage(h.file, 'comments/htmls');
+                    } catch (e) {
+                        console.warn("HTML 업로드 오류:", e);
+                    }
+                }
+                if (!url) url = h.dataUrl || '';
+                return { url: url || '', name: h.name || 'HTML 문서' };
+            }));
 
             function sanitizeForFirestore(items) {
                 if (!items) return [];
                 const flatItems = Array.isArray(items) ? items.flat(Infinity) : [items];
                 return flatItems.map(item => {
                     if (item === undefined || item === null) return '';
-                    if (typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean') {
-                        return String(item);
-                    }
-                    if (typeof item === 'object' && !Array.isArray(item)) {
-                        const cleanObj = {};
-                        for (const key in item) {
-                            if (Object.prototype.hasOwnProperty.call(item, key)) {
-                                const val = item[key];
-                                if (val === undefined || val === null) {
-                                    cleanObj[key] = '';
-                                } else if (typeof val === 'object' && val !== null && !(val instanceof Date)) {
-                                    cleanObj[key] = String(val.url || val.name || val.dataUrl || '');
-                                } else {
-                                    cleanObj[key] = String(val);
-                                }
-                            }
+                    if (typeof item === 'string') return item;
+                    if (typeof item === 'number' || typeof item === 'boolean') return String(item);
+                    if (typeof item === 'object') {
+                        try {
+                            return JSON.stringify({
+                                url: item.url || item.dataUrl || '',
+                                name: item.name || ''
+                            });
+                        } catch (e) {
+                            return String(item.url || item.name || '');
                         }
-                        return cleanObj;
                     }
                     return String(item || '');
-                });
+                }).filter(s => s !== '');
             }
 
             const cleanImages = sanitizeForFirestore(commentImageUrls);

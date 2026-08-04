@@ -97,12 +97,26 @@
         <h3 id="customConfirmTitle" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-circle-exclamation"
                 style="color: var(--accent-color);"></i> 알림</h3>
         <p id="customConfirmMessage"
-            style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap;">
+            style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; word-break: keep-all;">
         </p>
         <div class="modal-buttons" style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
             <button id="customConfirmCancel"
                 style="padding: 0.5rem 1.2rem; border: none; border-radius: 9999px; background: var(--glass-border); color: var(--text-primary); cursor: pointer; user-select: none; font-weight: 600;">취소</button>
             <button id="customConfirmOk"
+                style="padding: 0.5rem 1.2rem; border: none; border-radius: 9999px; background: var(--accent-color); color: white; cursor: pointer; user-select: none; font-weight: 600;">확인</button>
+        </div>
+    </div>
+
+    <!-- 전역 커스텀 Alert 모달 (취소 버튼이 아예 없는 100% 경고 전용) -->
+    <div id="customAlertModalOverlay" class="modal-overlay"></div>
+    <div id="customAlertModal" class="modal-container">
+        <h3 id="customAlertTitle" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-triangle-exclamation"
+                style="color: #ff6b6b;"></i> 경고</h3>
+        <p id="customAlertMessage"
+            style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; word-break: keep-all;">
+        </p>
+        <div class="modal-buttons" style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+            <button id="customAlertOk"
                 style="padding: 0.5rem 1.2rem; border: none; border-radius: 9999px; background: var(--accent-color); color: white; cursor: pointer; user-select: none; font-weight: 600;">확인</button>
         </div>
     </div>
@@ -864,7 +878,7 @@
                                     </button>
                                     <button type="button" class="comment-attach-option" id="commentAttachVideoBtn">
                                         <i class="fa-solid fa-video" style="color: #ff6b6b;"></i>
-                                        <span>동영상 (최대 3개)</span>
+                                        <span>동영상 (최대 5개)</span>
                                     </button>
                                     <button type="button" class="comment-attach-option" id="commentAttachAudioBtn">
                                         <i class="fa-solid fa-microphone" style="color: #51cf66;"></i>
@@ -1039,8 +1053,8 @@
         <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
         <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
-        <script src="script.js"></script>
-        <script src="community.js"></script>
+        <script src="script.js?v=1.0.5"></script>
+        <script src="community.js?v=1.0.5"></script>
 </body>
 
 </html>
