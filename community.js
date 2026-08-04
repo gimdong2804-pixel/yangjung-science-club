@@ -1016,7 +1016,7 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
 
                 html += `
                     <div class="comment-video-wrapper" style="width: 100%;">
-                        <video id="${vidId}" controls playsinline preload="metadata" style="max-width: 100%; max-height: 320px; border-radius: 8px; border: 1px solid var(--glass-border); background: #000;">
+                        <video id="${vidId}" controls playsinline preload="auto" crossorigin="anonymous" style="max-width: 100%; max-height: 320px; border-radius: 8px; border: 1px solid var(--glass-border); background: #000;">
                             <source id="${vidId}-src" src="" type="${mimeType}">
                             <p style="color: var(--text-secondary); font-size: 0.85rem; padding: 0.5rem;">웹 브라우저가 이 동영상을 재생할 수 없습니다.</p>
                         </video>
@@ -3156,8 +3156,21 @@ async function uploadFileToFirebaseStorage(file, folder = 'comments/videos') {
 async function uploadFileToActualCloud(file) {
     console.log(`[클라우드 파이프라인 시작] 파일: ${file.name || '미상'}, 용량: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
 
-    // 0. tmpfiles.org 시도 (CORS 완전 허용 미디어 클라우드, 30초 제한)
+    // 0. Google Cloud CDN 기반 Firebase Storage 0순위 시도 (초고속 CDN 스트리밍 지원, 25초 제한)
     try {
+        console.log(`[클라우드 파이프라인 0순위] Firebase Storage (Google Cloud CDN) 업로드 시도...`);
+        const fbUrl = await uploadFileToFirebaseStorage(file, 'comments/cloud');
+        if (fbUrl && fbUrl.startsWith('http')) {
+            console.log(`[클라우드 파이프라인 성공] Firebase Storage 완료 -> 초고속 스트리밍 준비 완료`);
+            return fbUrl;
+        }
+    } catch (e) {
+        console.warn("[클라우드 파이프라인] Firebase Storage 건너뜀:", e.message || e);
+    }
+
+    // 1. tmpfiles.org 시도 (15초 제한)
+    try {
+        console.log(`[클라우드 파이프라인 1순위] tmpfiles.org 시도...`);
         const tmpUrl = await uploadFileToTmpFiles(file);
         if (tmpUrl && tmpUrl.startsWith('http')) {
             console.log(`[클라우드 파이프라인 성공] tmpfiles.org 완료`);
@@ -3167,20 +3180,9 @@ async function uploadFileToActualCloud(file) {
         console.warn("[클라우드 파이프라인] tmpfiles.org 건너뜀:", e.message || e);
     }
 
-    // 1. Firebase Storage 시도 (45초 제한)
+    // 2. Litterbox Direct API (15초 제한)
     try {
-        const fbUrl = await uploadFileToFirebaseStorage(file, 'comments/cloud');
-        if (fbUrl && fbUrl.startsWith('http')) {
-            console.log(`[클라우드 파이프라인 성공] Firebase Storage 완료`);
-            return fbUrl;
-        }
-    } catch (e) {
-        console.warn("[클라우드 파이프라인] Firebase Storage 건너뜀:", e.message || e);
-    }
-
-    // 2. Litterbox Direct API (20초 제한)
-    try {
-        console.log(`[클라우드 파이프라인] Litterbox 업로드 시도...`);
+        console.log(`[클라우드 파이프라인 2순위] Litterbox 업로드 시도...`);
         const lbTask = (async () => {
             const formData = new FormData();
             formData.append('reqtype', 'fileupload');
@@ -3201,7 +3203,7 @@ async function uploadFileToActualCloud(file) {
             return null;
         })();
 
-        const lbUrl = await withTimeout(lbTask, 20000, 'Litterbox 업로드');
+        const lbUrl = await withTimeout(lbTask, 15000, 'Litterbox 업로드');
         if (lbUrl) {
             console.log(`[클라우드 파이프라인 성공] Litterbox 완료: ${lbUrl}`);
             return lbUrl;
@@ -3210,9 +3212,9 @@ async function uploadFileToActualCloud(file) {
         console.warn("[클라우드 파이프라인] Litterbox 실패:", e.message || e);
     }
 
-    // 3. Catbox Direct API (20초 제한)
+    // 3. Catbox Direct API (15초 제한)
     try {
-        console.log(`[클라우드 파이프라인] Catbox 업로드 시도...`);
+        console.log(`[클라우드 파이프라인 3순위] Catbox 업로드 시도...`);
         const cbTask = (async () => {
             const formData = new FormData();
             formData.append('reqtype', 'fileupload');
@@ -3232,7 +3234,7 @@ async function uploadFileToActualCloud(file) {
             return null;
         })();
 
-        const cbUrl = await withTimeout(cbTask, 20000, 'Catbox 업로드');
+        const cbUrl = await withTimeout(cbTask, 15000, 'Catbox 업로드');
         if (cbUrl) {
             console.log(`[클라우드 파이프라인 성공] Catbox 완료: ${cbUrl}`);
             return cbUrl;
