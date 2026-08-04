@@ -3073,105 +3073,143 @@ window.resolveMediaUrl = async function (rawUrl) {
     return rawUrl;
 };
 
+function withTimeout(promise, ms = 15000, label = '작업') {
+    let timeoutId;
+    const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+            reject(new Error(`[타임아웃] ${label} (${ms / 1000}초 제한 초과)`));
+        }, ms);
+    });
+
+    return Promise.race([
+        promise,
+        timeoutPromise
+    ]).finally(() => {
+        clearTimeout(timeoutId);
+    });
+}
+
 async function uploadFileToFirebaseStorage(file, folder = 'comments/videos') {
     if (typeof firebase !== 'undefined' && firebase.storage) {
+        console.log(`[Firebase Storage] 업로드 시작: ${file.name || '파일'}, 크기: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
         try {
-            let storageRef;
-            try {
-                storageRef = firebase.storage().ref();
-            } catch (err) {
-                storageRef = firebase.app().storage('gs://yangjung-science.appspot.com').ref();
-            }
-            const ext = (file.name || 'video.mp4').split('.').pop() || 'mp4';
-            const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
-            const fileRef = storageRef.child(fileName);
-            
-            const snapshot = await fileRef.put(file);
-            const downloadUrl = await snapshot.ref.getDownloadURL();
-            if (downloadUrl) {
-                return downloadUrl;
+            const uploadTask = (async () => {
+                let storageRef;
+                try {
+                    storageRef = firebase.storage().ref();
+                } catch (err) {
+                    storageRef = firebase.app().storage('gs://yangjung-science.appspot.com').ref();
+                }
+                const ext = (file.name || 'video.mp4').split('.').pop() || 'mp4';
+                const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
+                const fileRef = storageRef.child(fileName);
+
+                const snapshot = await fileRef.put(file);
+                const downloadUrl = await snapshot.ref.getDownloadURL();
+                return downloadUrl || null;
+            })();
+
+            const url = await withTimeout(uploadTask, 12000, 'Firebase Storage 업로드');
+            if (url) {
+                console.log(`[Firebase Storage] 업로드 완료: ${url}`);
+                return url;
             }
         } catch (e) {
-            console.warn("Firebase Storage 업로드 실패:", e);
+            console.warn("[Firebase Storage] 업로드 예외/타임아웃:", e.message || e);
         }
     }
     return null;
 }
 
 async function uploadFileToActualCloud(file) {
-    // 0. Firebase Storage 최우선 시도
+    console.log(`[클라우드 파이프라인 시작] 파일: ${file.name || '미상'}, 용량: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+
+    // 0. Firebase Storage 시도 (12초 제한)
     try {
         const fbUrl = await uploadFileToFirebaseStorage(file, 'comments/cloud');
         if (fbUrl && fbUrl.startsWith('http')) {
+            console.log(`[클라우드 파이프라인 성공] Firebase Storage 완료`);
             return fbUrl;
         }
     } catch (e) {
-        console.warn("Firebase Storage 업로드 시도 예외:", e);
+        console.warn("[클라우드 파이프라인] Firebase Storage 건너뜀:", e.message || e);
     }
 
-    // 1. Litterbox Direct API (1GB 100% 무료 미디어 - 60초 타임아웃)
+    // 1. Litterbox Direct API (15초 제한)
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000);
+        console.log(`[클라우드 파이프라인] Litterbox 업로드 시도...`);
+        const lbTask = (async () => {
+            const formData = new FormData();
+            formData.append('reqtype', 'fileupload');
+            formData.append('time', '72h');
+            formData.append('fileToUpload', file);
 
-        const formData = new FormData();
-        formData.append('reqtype', 'fileupload');
-        formData.append('time', '72h');
-        formData.append('fileToUpload', file);
+            const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+                method: 'POST',
+                body: formData
+            });
 
-        const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
-            method: 'POST',
-            body: formData,
-            signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-
-        if (res.ok) {
-            const url = await res.text();
-            if (url && url.trim().startsWith('http')) {
-                return url.trim();
+            if (res.ok) {
+                const url = await res.text();
+                if (url && url.trim().startsWith('http')) {
+                    return url.trim();
+                }
             }
+            return null;
+        })();
+
+        const lbUrl = await withTimeout(lbTask, 15000, 'Litterbox 업로드');
+        if (lbUrl) {
+            console.log(`[클라우드 파이프라인 성공] Litterbox 완료: ${lbUrl}`);
+            return lbUrl;
         }
     } catch (e) {
-        console.warn("Litterbox Direct 업로드 예외:", e);
+        console.warn("[클라우드 파이프라인] Litterbox 실패:", e.message || e);
     }
 
-    // 2. catbox.moe Direct Simple Request (60초 타임아웃)
+    // 2. Catbox Direct API (15초 제한)
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000);
-        
-        const formData = new FormData();
-        formData.append('reqtype', 'fileupload');
-        formData.append('fileToUpload', file);
-        
-        const res = await fetch('https://catbox.moe/user/api.php', {
-            method: 'POST',
-            body: formData,
-            signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-        
-        if (res.ok) {
-            const url = await res.text();
-            if (url && url.trim().startsWith('http')) {
-                return url.trim();
+        console.log(`[클라우드 파이프라인] Catbox 업로드 시도...`);
+        const cbTask = (async () => {
+            const formData = new FormData();
+            formData.append('reqtype', 'fileupload');
+            formData.append('fileToUpload', file);
+
+            const res = await fetch('https://catbox.moe/user/api.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (res.ok) {
+                const url = await res.text();
+                if (url && url.trim().startsWith('http')) {
+                    return url.trim();
+                }
             }
+            return null;
+        })();
+
+        const cbUrl = await withTimeout(cbTask, 15000, 'Catbox 업로드');
+        if (cbUrl) {
+            console.log(`[클라우드 파이프라인 성공] Catbox 완료: ${cbUrl}`);
+            return cbUrl;
         }
     } catch (e) {
-        console.warn("Catbox Direct 업로드 예외:", e);
+        console.warn("[클라우드 파이프라인] Catbox 실패:", e.message || e);
     }
 
     // 3. 400KB 이하 소형 파일 인라인
     if (file.size <= 400 * 1024) {
         try {
+            console.log(`[클라우드 파이프라인] 400KB 이하 소형 파일 DataURL 처리`);
             return await readFileAsDataURL(file);
         } catch (e) {
-            console.warn("readFileAsDataURL 실패:", e);
+            console.warn("[클라우드 파이프라인] readFileAsDataURL 실패:", e);
         }
     }
 
-    // 4. 로컬 미디어 저장소 fallback
+    // 4. 로컬 미디어 저장소 (IndexedDB) fallback
+    console.log(`[클라우드 파이프라인] 로컬 저장소(IndexedDB) Fallback 실행`);
     return await saveMediaFileLocally(file);
 }
 
@@ -3485,31 +3523,32 @@ if (commentSubmitBtn && commentInput) {
         const totalAttachments = commentAttachedImages.length + commentAttachedVideos.length + commentAttachedAudios.length + commentAttachedPdfs.length + commentAttachedHtmls.length;
         if (body === '' && totalAttachments === 0) return;
 
+        console.log(`[댓글 제출 시작] 내용: "${body}", 첨부파일 총 ${totalAttachments}개`);
+
         commentSubmitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
         commentSubmitBtn.disabled = true;
 
         try {
+            console.log(`[댓글 제출] 이미지 첨부 처리 중... (${commentAttachedImages.length}개)`);
             const commentImageUrls = await Promise.all(commentAttachedImages.map(async img => {
                 if (img.file) {
                     try {
-                        let url = await uploadFileToActualCloud(img.file);
-                        if (!url) url = await uploadFileToFirebaseStorage(img.file, 'comments/images');
-                        if (url) return url;
+                        return await uploadFileToActualCloud(img.file);
                     } catch (e) {
-                        console.warn("이미지 업로드 오류:", e);
+                        console.warn("이미지 업로드 예외:", e);
                     }
                 }
                 return img.dataUrl || '';
             }));
 
+            console.log(`[댓글 제출] 동영상 첨부 처리 중... (${commentAttachedVideos.length}개)`);
             const commentVideoItems = await Promise.all(commentAttachedVideos.map(async v => {
                 let url = '';
                 if (v.file) {
                     try {
                         url = await uploadFileToActualCloud(v.file);
-                        if (!url) url = await uploadFileToFirebaseStorage(v.file, 'comments/videos');
                     } catch (e) {
-                        console.warn("비디오 업로드 오류:", e);
+                        console.warn("비디오 업로드 예외:", e);
                     }
                 } else if (v.dataUrl && !v.dataUrl.startsWith('blob:')) {
                     url = v.dataUrl;
@@ -3520,42 +3559,42 @@ if (commentSubmitBtn && commentInput) {
                 return { url: url || '', name: v.name || '동영상' };
             }));
 
+            console.log(`[댓글 제출] 음성 첨부 처리 중... (${commentAttachedAudios.length}개)`);
             const commentAudioItems = await Promise.all(commentAttachedAudios.map(async a => {
                 let url = '';
                 if (a.file) {
                     try {
                         url = await uploadFileToActualCloud(a.file);
-                        if (!url) url = await uploadFileToFirebaseStorage(a.file, 'comments/audios');
                     } catch (e) {
-                        console.warn("음성 업로드 오류:", e);
+                        console.warn("음성 업로드 예외:", e);
                     }
                 }
                 if (!url) url = a.dataUrl || '';
                 return { url: url || '', name: a.name || '음성 파일' };
             }));
 
+            console.log(`[댓글 제출] PDF 첨부 처리 중... (${commentAttachedPdfs.length}개)`);
             const commentPdfItems = await Promise.all(commentAttachedPdfs.map(async p => {
                 let url = '';
                 if (p.file) {
                     try {
                         url = await uploadFileToActualCloud(p.file);
-                        if (!url) url = await uploadFileToFirebaseStorage(p.file, 'comments/pdfs');
                     } catch (e) {
-                        console.warn("PDF 업로드 오류:", e);
+                        console.warn("PDF 업로드 예외:", e);
                     }
                 }
                 if (!url) url = p.dataUrl || '';
                 return { url: url || '', name: p.name || 'PDF 문서' };
             }));
 
+            console.log(`[댓글 제출] HTML 첨부 처리 중... (${commentAttachedHtmls.length}개)`);
             const commentHtmlItems = await Promise.all(commentAttachedHtmls.map(async h => {
                 let url = '';
                 if (h.file) {
                     try {
                         url = await uploadFileToActualCloud(h.file);
-                        if (!url) url = await uploadFileToFirebaseStorage(h.file, 'comments/htmls');
                     } catch (e) {
-                        console.warn("HTML 업로드 오류:", e);
+                        console.warn("HTML 업로드 예외:", e);
                     }
                 }
                 if (!url) url = h.dataUrl || '';
@@ -3589,6 +3628,8 @@ if (commentSubmitBtn && commentInput) {
             const cleanPdfs = sanitizeForFirestore(commentPdfItems);
             const cleanHtmls = sanitizeForFirestore(commentHtmlItems);
 
+            console.log(`[댓글 DB 전송 준비 완료] DB 저장 진행 중...`);
+
             if (window.editTarget) {
                 await db.collection('posts').doc(currentPostId)
                     .collection('comments').doc(window.editTarget.id).update({
@@ -3603,6 +3644,7 @@ if (commentSubmitBtn && commentInput) {
                     });
 
                 window.editTarget = null;
+                console.log(`[댓글 수정 성공] DB 업데이트 완료`);
             } else {
                 const parentId = (window.replyTarget && window.replyTarget.postId === currentPostId) ? window.replyTarget.id : null;
 
@@ -3634,6 +3676,7 @@ if (commentSubmitBtn && commentInput) {
                 if (parentId) {
                     window.expandCommentLineage(parentId);
                 }
+                console.log(`[댓글 작성 성공] DB 등록 완료`);
             }
 
             commentInput.value = '';
@@ -3646,12 +3689,13 @@ if (commentSubmitBtn && commentInput) {
             window.replyTarget = null;
             updateReplyTargetUI('');
         } catch (e) {
-            console.error("댓글 작성/수정 실패", e);
-            alert(e.message || '댓글 작성 중 오류가 발생했습니다.');
+            console.error("댓글 작성/수정 실패 예외 처리:", e);
+            alert(e.message || '댓글 작성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
             updateReplyTargetUI('');
         } finally {
             commentSubmitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
             commentSubmitBtn.disabled = false;
+            console.log(`[댓글 제출 완료] 파란색 스피너 해제 및 버튼 상태 복구 완료`);
         }
     });
 
