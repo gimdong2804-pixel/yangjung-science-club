@@ -1016,8 +1016,8 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
 
                 html += `
                     <div class="comment-video-wrapper" style="width: 100%;">
-                        <video id="${vidId}" controls playsinline preload="auto" crossorigin="anonymous" style="max-width: 100%; max-height: 320px; border-radius: 8px; border: 1px solid var(--glass-border); background: #000;">
-                            <source id="${vidId}-src" src="" type="${mimeType}">
+                        <video id="${vidId}" controls playsinline preload="metadata" style="max-width: 100%; max-height: 320px; border-radius: 8px; border: 1px solid var(--glass-border); background: #000;">
+                            <source id="${vidId}-src" src="">
                             <p style="color: var(--text-secondary); font-size: 0.85rem; padding: 0.5rem;">웹 브라우저가 이 동영상을 재생할 수 없습니다.</p>
                         </video>
                     </div>
@@ -1029,6 +1029,9 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
                     if (el) {
                         const finalUrl = await window.resolveMediaUrl(rawUrl);
                         if (finalUrl) {
+                            // Firebase serves the original Content-Type. Leaving the
+                            // source type unset lets each browser choose its native
+                            // decoder instead of incorrectly forcing every upload to MP4.
                             if (srcEl) {
                                 srcEl.src = finalUrl;
                             } else {
@@ -3258,12 +3261,81 @@ async function uploadFileToActualCloud(file) {
     return await saveMediaFileLocally(file);
 }
 
+// Files recorded in Firestore must always point to shared storage.  The former
+// device-local fallback (localmedia://) can only be opened on the uploader's
+// browser, which is why videos were unavailable on other phones and laptops.
+function getUploadContentType(file) {
+    if (file.type) return file.type;
+    const extension = (file.name || '').split('.').pop().toLowerCase();
+    const types = {
+        mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime',
+        m4v: 'video/x-m4v', ogv: 'video/ogg', mp3: 'audio/mpeg',
+        m4a: 'audio/mp4', wav: 'audio/wav', pdf: 'application/pdf'
+    };
+    return types[extension] || 'application/octet-stream';
+}
+
+function getMediaFolder(file) {
+    if (file.type.startsWith('video/')) return 'comments/videos';
+    if (file.type.startsWith('audio/')) return 'comments/audios';
+    if (file.type.startsWith('image/')) return 'comments/images';
+    return 'comments/files';
+}
+
+function updateCommentUploadProgress(file, transferred, total) {
+    if (!commentSubmitBtn || !total) return;
+    const progress = Math.min(100, Math.round((transferred / total) * 100));
+    commentSubmitBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i><span>${progress}%</span>`;
+    commentSubmitBtn.title = `${file.name || 'File'} upload ${progress}%`;
+}
+
+async function uploadFileToFirebaseStorage(file, folder = getMediaFolder(file)) {
+    if (typeof firebase === 'undefined' || !firebase.storage) {
+        throw new Error('Shared media storage is unavailable.');
+    }
+
+    const storageRef = (window.storage || firebase.storage()).ref();
+    const extension = (file.name || 'file').split('.').pop().toLowerCase() || 'bin';
+    const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 10)}.${extension}`;
+    const metadata = {
+        contentType: getUploadContentType(file),
+        contentDisposition: 'inline',
+        cacheControl: 'public,max-age=31536000,immutable'
+    };
+    const task = storageRef.child(fileName).put(file, metadata);
+
+    return new Promise((resolve, reject) => {
+        task.on('state_changed',
+            snapshot => updateCommentUploadProgress(file, snapshot.bytesTransferred, snapshot.totalBytes),
+            error => reject(error),
+            async () => {
+                try {
+                    const url = await task.snapshot.ref.getDownloadURL();
+                    if (!url || !url.startsWith('https://')) throw new Error('Could not create a shared media URL.');
+                    resolve(url);
+                } catch (error) {
+                    reject(error);
+                }
+            }
+        );
+    });
+}
+
+async function uploadFileToActualCloud(file) {
+    return uploadFileToFirebaseStorage(file);
+}
+
 async function uploadFileToStorage(file, folder = 'comments') {
     return await uploadFileToActualCloud(file);
 }
 
 async function uploadFileToStorageWithRollover(file, folder = 'comments') {
     return await uploadFileToStorage(file, folder);
+}
+
+function isCrossDeviceVideoFile(file) {
+    const extension = (file.name || '').split('.').pop().toLowerCase();
+    return file.type === 'video/mp4' || file.type === 'video/webm' || extension === 'mp4' || extension === 'webm';
 }
 
 // 2. 동영상 첨부 (최대 5개)
@@ -3299,6 +3371,8 @@ if (commentAttachVideoBtn && commentVideoInput) {
         const maxSizeBytes = 1024 * 1024 * 1024; // 1GB (1,073,741,824 bytes)
         const oversizedFiles = files.filter(f => f.size > maxSizeBytes);
         const validFiles = files.filter(f => f.size <= maxSizeBytes);
+        const unsupportedFiles = validFiles.filter(f => !isCrossDeviceVideoFile(f));
+        const uploadableFiles = validFiles.filter(isCrossDeviceVideoFile);
 
         if (oversizedFiles.length > 0) {
             let msg = '';
@@ -3316,7 +3390,17 @@ if (commentAttachVideoBtn && commentVideoInput) {
             }
         }
 
-        for (const file of validFiles) {
+        if (unsupportedFiles.length > 0) {
+            const names = unsupportedFiles.map(f => `• ${f.name}`).join('\n');
+            const message = `아래 파일은 모든 휴대폰과 노트북에서 재생을 보장할 수 없어 첨부하지 않았습니다.\n${names}\n\nMP4(H.264/AAC) 또는 WebM 파일로 변환한 뒤 다시 선택해 주세요.`;
+            if (typeof window.customAlert === 'function') {
+                await window.customAlert(message, '지원하지 않는 동영상 형식');
+            } else {
+                alert(message);
+            }
+        }
+
+        for (const file of uploadableFiles) {
             if (commentAttachedVideos.length >= 5) break;
             try {
                 commentAttachedVideos.push({
@@ -3598,8 +3682,8 @@ if (commentSubmitBtn && commentInput) {
                 } else if (v.dataUrl && !v.dataUrl.startsWith('blob:')) {
                     url = v.dataUrl;
                 }
-                if (!url && v.file) {
-                    url = await saveMediaFileLocally(v.file) || v.dataUrl || '';
+                if (!url) {
+                    throw new Error('동영상을 공용 저장소에 업로드하지 못했습니다. 인터넷 연결과 저장소 권한을 확인한 뒤 다시 시도해 주세요.');
                 }
                 return { url: url || '', name: v.name || '동영상' };
             }));
@@ -3740,6 +3824,7 @@ if (commentSubmitBtn && commentInput) {
         } finally {
             commentSubmitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
             commentSubmitBtn.disabled = false;
+            commentSubmitBtn.removeAttribute('title');
             console.log(`[댓글 제출 완료] 파란색 스피너 해제 및 버튼 상태 복구 완료`);
         }
     });
