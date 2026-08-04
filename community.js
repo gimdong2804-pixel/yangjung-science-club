@@ -1008,14 +1008,38 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
             const rawUrl = parsed.url;
             const vidId = `c-vid-${safeCommentId}-${vIdx}`;
             if (rawUrl) {
-                html += `<video id="${vidId}" controls preload="metadata" playsinline style="max-width: 100%; max-height: 280px; border-radius: 8px; border: 1px solid var(--glass-border); background: #000;"></video>`;
+                let mimeType = 'video/mp4';
+                const lower = rawUrl.toLowerCase();
+                if (lower.includes('.webm')) mimeType = 'video/webm';
+                else if (lower.includes('.mov')) mimeType = 'video/quicktime';
+                else if (lower.includes('.ogg')) mimeType = 'video/ogg';
+
+                html += `
+                    <div class="comment-video-wrapper" style="width: 100%;">
+                        <video id="${vidId}" controls playsinline preload="metadata" style="max-width: 100%; max-height: 320px; border-radius: 8px; border: 1px solid var(--glass-border); background: #000;">
+                            <source id="${vidId}-src" src="" type="${mimeType}">
+                            <p style="color: var(--text-secondary); font-size: 0.85rem; padding: 0.5rem;">웹 브라우저가 이 동영상을 재생할 수 없습니다.</p>
+                        </video>
+                    </div>
+                `;
+
                 const tryLoadMedia = async (attempts = 0) => {
                     const el = document.getElementById(vidId);
+                    const srcEl = document.getElementById(`${vidId}-src`);
                     if (el) {
                         const finalUrl = await window.resolveMediaUrl(rawUrl);
                         if (finalUrl) {
-                            el.src = finalUrl;
+                            if (srcEl) {
+                                srcEl.src = finalUrl;
+                            } else {
+                                el.src = finalUrl;
+                            }
                             el.load();
+                        } else if (rawUrl.startsWith('localmedia://')) {
+                            const wrapper = el.closest('.comment-video-wrapper');
+                            if (wrapper) {
+                                wrapper.innerHTML = `<div style="padding: 0.75rem; background: rgba(255, 107, 107, 0.1); border: 1px solid rgba(255, 107, 107, 0.3); border-radius: 8px; color: #ff6b6b; font-size: 0.85rem; display: flex; align-items: center; gap: 0.5rem;"><i class="fa-solid fa-triangle-exclamation"></i> <span>작성자 스마트폰의 로컬 저장소에만 저장된 동영상입니다. (클라우드 전송 실패)</span></div>`;
+                            }
                         }
                     } else if (attempts < 15) {
                         setTimeout(() => tryLoadMedia(attempts + 1), 30);
@@ -3075,10 +3099,20 @@ async function uploadFileToFirebaseStorage(file, folder = 'comments/videos') {
 }
 
 async function uploadFileToActualCloud(file) {
-    // 1. Litterbox Direct API (1GB 100% 무료 미디어 - 10초 타임아웃)
+    // 0. Firebase Storage 최우선 시도
+    try {
+        const fbUrl = await uploadFileToFirebaseStorage(file, 'comments/cloud');
+        if (fbUrl && fbUrl.startsWith('http')) {
+            return fbUrl;
+        }
+    } catch (e) {
+        console.warn("Firebase Storage 업로드 시도 예외:", e);
+    }
+
+    // 1. Litterbox Direct API (1GB 100% 무료 미디어 - 60초 타임아웃)
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
 
         const formData = new FormData();
         formData.append('reqtype', 'fileupload');
@@ -3102,10 +3136,10 @@ async function uploadFileToActualCloud(file) {
         console.warn("Litterbox Direct 업로드 예외:", e);
     }
 
-    // 2. catbox.moe Direct Simple Request (10초 타임아웃)
+    // 2. catbox.moe Direct Simple Request (60초 타임아웃)
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
         
         const formData = new FormData();
         formData.append('reqtype', 'fileupload');
