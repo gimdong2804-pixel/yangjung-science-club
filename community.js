@@ -3089,6 +3089,38 @@ function withTimeout(promise, ms = 15000, label = '작업') {
     });
 }
 
+async function uploadFileToTmpFiles(file) {
+    console.log(`[tmpfiles.org] 업로드 시도: ${file.name || '파일'}, 크기: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+    try {
+        const task = (async () => {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const res = await fetch('https://tmpfiles.org/api/v1/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (res.ok) {
+                const json = await res.json();
+                if (json && json.status === 'success' && json.data && json.data.url) {
+                    const rawUrl = json.data.url;
+                    // https://tmpfiles.org/12345/video.mp4 -> https://tmpfiles.org/dl/12345/video.mp4
+                    const directUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+                    console.log(`[tmpfiles.org] 업로드 성공: ${directUrl}`);
+                    return directUrl;
+                }
+            }
+            return null;
+        })();
+
+        return await withTimeout(task, 30000, 'tmpfiles.org 업로드');
+    } catch (e) {
+        console.warn("[tmpfiles.org] 업로드 예외:", e.message || e);
+        return null;
+    }
+}
+
 async function uploadFileToFirebaseStorage(file, folder = 'comments/videos') {
     if (typeof firebase !== 'undefined' && firebase.storage) {
         console.log(`[Firebase Storage] 업로드 시작: ${file.name || '파일'}, 크기: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
@@ -3109,7 +3141,7 @@ async function uploadFileToFirebaseStorage(file, folder = 'comments/videos') {
                 return downloadUrl || null;
             })();
 
-            const url = await withTimeout(uploadTask, 12000, 'Firebase Storage 업로드');
+            const url = await withTimeout(uploadTask, 45000, 'Firebase Storage 업로드');
             if (url) {
                 console.log(`[Firebase Storage] 업로드 완료: ${url}`);
                 return url;
@@ -3124,7 +3156,18 @@ async function uploadFileToFirebaseStorage(file, folder = 'comments/videos') {
 async function uploadFileToActualCloud(file) {
     console.log(`[클라우드 파이프라인 시작] 파일: ${file.name || '미상'}, 용량: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
 
-    // 0. Firebase Storage 시도 (12초 제한)
+    // 0. tmpfiles.org 시도 (CORS 완전 허용 미디어 클라우드, 30초 제한)
+    try {
+        const tmpUrl = await uploadFileToTmpFiles(file);
+        if (tmpUrl && tmpUrl.startsWith('http')) {
+            console.log(`[클라우드 파이프라인 성공] tmpfiles.org 완료`);
+            return tmpUrl;
+        }
+    } catch (e) {
+        console.warn("[클라우드 파이프라인] tmpfiles.org 건너뜀:", e.message || e);
+    }
+
+    // 1. Firebase Storage 시도 (45초 제한)
     try {
         const fbUrl = await uploadFileToFirebaseStorage(file, 'comments/cloud');
         if (fbUrl && fbUrl.startsWith('http')) {
@@ -3135,7 +3178,7 @@ async function uploadFileToActualCloud(file) {
         console.warn("[클라우드 파이프라인] Firebase Storage 건너뜀:", e.message || e);
     }
 
-    // 1. Litterbox Direct API (15초 제한)
+    // 2. Litterbox Direct API (20초 제한)
     try {
         console.log(`[클라우드 파이프라인] Litterbox 업로드 시도...`);
         const lbTask = (async () => {
@@ -3158,7 +3201,7 @@ async function uploadFileToActualCloud(file) {
             return null;
         })();
 
-        const lbUrl = await withTimeout(lbTask, 15000, 'Litterbox 업로드');
+        const lbUrl = await withTimeout(lbTask, 20000, 'Litterbox 업로드');
         if (lbUrl) {
             console.log(`[클라우드 파이프라인 성공] Litterbox 완료: ${lbUrl}`);
             return lbUrl;
@@ -3167,7 +3210,7 @@ async function uploadFileToActualCloud(file) {
         console.warn("[클라우드 파이프라인] Litterbox 실패:", e.message || e);
     }
 
-    // 2. Catbox Direct API (15초 제한)
+    // 3. Catbox Direct API (20초 제한)
     try {
         console.log(`[클라우드 파이프라인] Catbox 업로드 시도...`);
         const cbTask = (async () => {
@@ -3189,7 +3232,7 @@ async function uploadFileToActualCloud(file) {
             return null;
         })();
 
-        const cbUrl = await withTimeout(cbTask, 15000, 'Catbox 업로드');
+        const cbUrl = await withTimeout(cbTask, 20000, 'Catbox 업로드');
         if (cbUrl) {
             console.log(`[클라우드 파이프라인 성공] Catbox 완료: ${cbUrl}`);
             return cbUrl;
