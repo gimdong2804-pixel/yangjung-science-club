@@ -3288,6 +3288,7 @@ function updateCommentUploadProgress(file, transferred, total) {
     commentSubmitBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i><span>${progress}%</span>`;
     commentSubmitBtn.title = `${file.name || 'File'} upload ${progress}%`;
 }
+window.updateCommentUploadProgress = updateCommentUploadProgress;
 
 async function uploadFileToFirebaseStorage(file, folder = getMediaFolder(file)) {
     if (typeof firebase === 'undefined' || !firebase.storage) {
@@ -3322,7 +3323,31 @@ async function uploadFileToFirebaseStorage(file, folder = getMediaFolder(file)) 
 }
 
 async function uploadFileToActualCloud(file) {
+    const isVideo = file && (file.type.startsWith('video/') || /\.(mp4|webm)$/i.test(file.name || ''));
+    if (isVideo && typeof window.uploadCommunityVideo === 'function') {
+        return window.uploadCommunityVideo(file);
+    }
     return uploadFileToFirebaseStorage(file);
+}
+
+function getMediaUploadFailureMessage(error) {
+    const code = error && error.code ? error.code : '';
+    if (code === 'storage/quota-exceeded') {
+        return '동영상 저장소가 현재 무료 요금제 제한으로 비활성화되어 업로드할 수 없습니다. Firebase 프로젝트를 Blaze 요금제로 전환한 뒤 다시 시도해 주세요.';
+    }
+    if (code === 'storage/unauthorized' || code === 'storage/unauthenticated') {
+        return '동영상 저장 권한이 없습니다. Firebase Storage 규칙에서 로그인한 사용자의 comments/videos 업로드를 허용해야 합니다.';
+    }
+    if (code === 'storage/bucket-not-found' || code === 'storage/no-default-bucket') {
+        return 'Firebase Storage가 아직 만들어지지 않았거나 저장소 주소가 잘못되었습니다. Firebase 콘솔에서 Storage를 활성화해 주세요.';
+    }
+    if (code === 'storage/retry-limit-exceeded') {
+        return '네트워크 연결이 끊겨 동영상 업로드가 중단되었습니다. Wi-Fi 또는 안정적인 데이터 연결에서 다시 시도해 주세요.';
+    }
+    if (code === 'cloudinary/upload-failed') {
+        return error.message || '무료 동영상 저장소에 업로드하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+    }
+    return `동영상을 공용 저장소에 업로드하지 못했습니다${code ? ` (${code})` : ''}. 잠시 후 다시 시도해 주세요.`;
 }
 
 async function uploadFileToStorage(file, folder = 'comments') {
@@ -3368,7 +3393,9 @@ if (commentAttachVideoBtn && commentVideoInput) {
             return;
         }
 
-        const maxSizeBytes = 1024 * 1024 * 1024; // 1GB (1,073,741,824 bytes)
+        const maxSizeBytes = typeof window.getCommunityVideoLimit === 'function'
+            ? window.getCommunityVideoLimit()
+            : 100 * 1024 * 1024;
         const oversizedFiles = files.filter(f => f.size > maxSizeBytes);
         const validFiles = files.filter(f => f.size <= maxSizeBytes);
         const unsupportedFiles = validFiles.filter(f => !isCrossDeviceVideoFile(f));
@@ -3673,17 +3700,19 @@ if (commentSubmitBtn && commentInput) {
             console.log(`[댓글 제출] 동영상 첨부 처리 중... (${commentAttachedVideos.length}개)`);
             const commentVideoItems = await Promise.all(commentAttachedVideos.map(async v => {
                 let url = '';
+                let uploadError = null;
                 if (v.file) {
                     try {
                         url = await uploadFileToActualCloud(v.file);
                     } catch (e) {
+                        uploadError = e;
                         console.warn("비디오 업로드 예외:", e);
                     }
                 } else if (v.dataUrl && !v.dataUrl.startsWith('blob:')) {
                     url = v.dataUrl;
                 }
                 if (!url) {
-                    throw new Error('동영상을 공용 저장소에 업로드하지 못했습니다. 인터넷 연결과 저장소 권한을 확인한 뒤 다시 시도해 주세요.');
+                    throw new Error(getMediaUploadFailureMessage(uploadError));
                 }
                 return { url: url || '', name: v.name || '동영상' };
             }));
