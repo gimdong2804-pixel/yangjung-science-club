@@ -15,12 +15,19 @@
         return MAX_VIDEO_SIZE_BYTES;
     };
 
-    window.uploadCommunityVideo = function (file) {
+    function getResourceType(file) {
+        const type = file.type || '';
+        if (type.startsWith('image/')) return 'image';
+        if (type.startsWith('video/') || type.startsWith('audio/')) return 'video';
+        return 'raw';
+    }
+
+    window.uploadCommunityMedia = function (file) {
         if (!file) {
             return Promise.reject(createUploadError('동영상 파일을 찾을 수 없습니다.'));
         }
         if (file.size > MAX_VIDEO_SIZE_BYTES) {
-            return Promise.reject(createUploadError('무료 영상 업로드는 파일당 100MB까지 가능합니다.'));
+            return Promise.reject(createUploadError('무료 첨부파일은 파일당 100MB까지 가능합니다.'));
         }
 
         return new Promise((resolve, reject) => {
@@ -30,7 +37,7 @@
             formData.append('folder', 'club-community-videos');
 
             const request = new XMLHttpRequest();
-            request.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/video/upload`, true);
+            request.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${getResourceType(file)}/upload`, true);
             request.responseType = 'json';
 
             request.upload.onprogress = (event) => {
@@ -54,4 +61,6 @@
             request.send(formData);
         });
     };
+
+    window.uploadCommunityVideo = window.uploadCommunityMedia;
 })();

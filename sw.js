@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yangjung-science-club-v6';
+const CACHE_NAME = 'yangjung-science-club-v7';
 const urlsToCache = [
   './',
   './index.html',

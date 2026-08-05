@@ -3286,7 +3286,7 @@ function updateCommentUploadProgress(file, transferred, total) {
     if (!commentSubmitBtn || !total) return;
     const progress = Math.min(100, Math.round((transferred / total) * 100));
     commentSubmitBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i><span>${progress}%</span>`;
-    commentSubmitBtn.title = `${file.name || 'File'} upload ${progress}%`;
+    commentSubmitBtn.title = `${file.name || '파일'} 업로드 ${progress}%`;
 }
 window.updateCommentUploadProgress = updateCommentUploadProgress;
 
@@ -3323,9 +3323,8 @@ async function uploadFileToFirebaseStorage(file, folder = getMediaFolder(file)) 
 }
 
 async function uploadFileToActualCloud(file) {
-    const isVideo = file && (file.type.startsWith('video/') || /\.(mp4|webm)$/i.test(file.name || ''));
-    if (isVideo && typeof window.uploadCommunityVideo === 'function') {
-        return window.uploadCommunityVideo(file);
+    if (file && typeof window.uploadCommunityMedia === 'function') {
+        return window.uploadCommunityMedia(file);
     }
     return uploadFileToFirebaseStorage(file);
 }
