@@ -576,6 +576,7 @@ if (commentAttachVideoBtn) {
     commentAttachVideoBtn.onclick = handleVideoBtnClick;
 }
 
+if (commentVideoInput) {
     commentVideoInput.addEventListener('change', async (e) => {
         const files = Array.from(e.target.files);
         if (files.length === 0) return;
