@@ -142,8 +142,8 @@ const COMMENT_ATTACHMENT_SIZE_LIMITS = {
     image: 100 * 1024 * 1024,
     video: 1024 * 1024 * 1024,
     audio: 100 * 1024 * 1024,
-    pdf: 50 * 1024 * 1024,
-    html: 10 * 1024 * 1024
+    pdf: 100 * 1024 * 1024,
+    html: 100 * 1024 * 1024
 };
 
 function showAttachmentCountAlert(typeName) {

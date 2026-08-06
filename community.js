@@ -246,12 +246,35 @@ if (writePostBackBtn) {
 // 이미지 업로드 로직
 let selectedImages = [];
 const imageFileInput = document.getElementById('imageFileInput');
-const imageUploadArea = document.getElementById('imageUploadArea');
 const imagePreviewContainer = document.getElementById('imagePreviewContainer');
 const imageCountInfo = document.getElementById('imageCountInfo');
 const imagePreviewWrapper = document.getElementById('imagePreviewWrapper');
 const imagePreviewInner = document.getElementById('imagePreviewInner');
-const MAX_IMAGES = 10;
+const MAX_IMAGES = 40;
+const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024; // 100MB
+
+// 첨부 기준 안내 모달 이벤트
+const attachGuideBtn = document.getElementById('attachGuideBtn');
+const attachGuideModal = document.getElementById('attachGuideModal');
+const attachGuideOverlay = document.getElementById('attachGuideOverlay');
+const attachGuideCloseBtn = document.getElementById('attachGuideCloseBtn');
+
+function openAttachGuideModal() {
+    if (attachGuideModal && attachGuideOverlay) {
+        attachGuideModal.classList.add('active');
+        attachGuideOverlay.classList.add('active');
+    }
+}
+function closeAttachGuideModal() {
+    if (attachGuideModal && attachGuideOverlay) {
+        attachGuideModal.classList.remove('active');
+        attachGuideOverlay.classList.remove('active');
+    }
+}
+
+if (attachGuideBtn) attachGuideBtn.addEventListener('click', openAttachGuideModal);
+if (attachGuideCloseBtn) attachGuideCloseBtn.addEventListener('click', closeAttachGuideModal);
+if (attachGuideOverlay) attachGuideOverlay.addEventListener('click', closeAttachGuideModal);
 
 if (imagePreviewWrapper && imagePreviewInner) {
     new ResizeObserver(() => {
@@ -267,13 +290,11 @@ if (imageFileInput) {
     imageFileInput.addEventListener('change', (e) => {
         const files = Array.from(e.target.files);
         if (selectedImages.length + files.length > MAX_IMAGES) {
-            alert(`사진은 최대 ${MAX_IMAGES}장까지만 추가할 수 있습니다.`);
+            alert(`첨부파일은 최대 ${MAX_IMAGES}개까지만 추가할 수 있습니다.`);
             return;
         }
         files.forEach(file => {
-            if (file.type.startsWith('image/')) {
-                selectedImages.push(file);
-            }
+            selectedImages.push(file);
         });
         updateImagePreview();
         imageFileInput.value = '';
@@ -292,7 +313,7 @@ function updateImagePreview() {
         }
     }
     if (imageCountInfo) {
-        imageCountInfo.textContent = `${selectedImages.length} / ${MAX_IMAGES}장`;
+        imageCountInfo.textContent = `첨부 파일 ${selectedImages.length}개 / ${MAX_IMAGES}개`;
         if (selectedImages.length >= MAX_IMAGES) {
             imageCountInfo.classList.add('warning');
         } else {
