@@ -535,12 +535,25 @@ function isCrossDeviceVideoFile(file) {
     return file.type === 'video/mp4' || file.type === 'video/webm' || extension === 'mp4' || extension === 'webm';
 }
 
-// 2. 동영상 첨부 (최대 5개)
-if (commentAttachVideoBtn && commentVideoInput) {
-    commentAttachVideoBtn.addEventListener('click', (e) => {
+// 2. 동영상 (유튜브 모달 오픈 및 파일 선택창 실행 금지)
+if (commentVideoInput) {
+    commentVideoInput.disabled = true;
+    commentVideoInput.addEventListener('click', (e) => {
         if (e) {
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation();
+        }
+        return false;
+    }, true);
+}
+
+if (commentAttachVideoBtn) {
+    const handleVideoBtnClick = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
         }
         if (typeof window.openYoutubeSelectModal === 'function') {
             window.openYoutubeSelectModal();
@@ -556,7 +569,12 @@ if (commentAttachVideoBtn && commentVideoInput) {
         }
         if (commentAttachMenu) commentAttachMenu.classList.remove('active');
         if (commentAttachBtn) commentAttachBtn.classList.remove('open');
-    });
+        return false;
+    };
+
+    commentAttachVideoBtn.addEventListener('click', handleVideoBtnClick, true);
+    commentAttachVideoBtn.onclick = handleVideoBtnClick;
+}
 
     commentVideoInput.addEventListener('change', async (e) => {
         const files = Array.from(e.target.files);
