@@ -32,11 +32,11 @@ function renderTextWithYoutubeLinks(text) {
     // 유튜브 카드 HTML 생성
     let cardsHtml = '';
     if (youtubeCards.length > 0) {
-        cardsHtml = '<div class="youtube-cards-container" style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">';
+        cardsHtml = '<div class="youtube-cards-container">';
         youtubeCards.forEach(card => {
             const thumbUrl = `https://img.youtube.com/vi/${card.videoId}/hqdefault.jpg`;
             cardsHtml += `
-                <div class="youtube-card" style="max-width: 360px; border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border, rgba(255,255,255,0.12)); transition: transform 0.2s, box-shadow 0.2s;">
+                <div class="youtube-card">
                     <a href="${card.url}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; display: block;">
                         <div style="position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; background: #000;">
                             <img src="${thumbUrl}" alt="유튜브 동영상 썸네일" style="width: 100%; height: 100%; object-fit: cover;" loading="lazy">
@@ -44,7 +44,7 @@ function renderTextWithYoutubeLinks(text) {
                                 <i class="fa-solid fa-play" style="margin-left: 3px;"></i>
                             </div>
                         </div>
-                        <div style="padding: 8px 12px; font-size: 0.82rem; color: var(--text-secondary, #a0aec0); display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.03);">
+                        <div class="youtube-card-footer">
                             <span style="display: flex; align-items: center; gap: 5px;"><i class="fa-brands fa-youtube" style="color: #ff0000; font-size: 1rem;"></i> YouTube에서 재생</span>
                             <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.75rem; opacity: 0.8;"></i>
                         </div>

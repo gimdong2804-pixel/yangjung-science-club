@@ -286,6 +286,15 @@ if (imagePreviewWrapper && imagePreviewInner) {
     }).observe(imagePreviewInner);
 }
 
+const imageUploadArea = document.getElementById('imageUploadArea');
+if (imageUploadArea && imageFileInput) {
+    imageUploadArea.addEventListener('click', (e) => {
+        if (e.target !== imageFileInput) {
+            imageFileInput.click();
+        }
+    });
+}
+
 if (imageFileInput) {
     imageFileInput.addEventListener('change', (e) => {
         const files = Array.from(e.target.files);

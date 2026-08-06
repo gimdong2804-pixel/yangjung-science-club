@@ -21,24 +21,70 @@
 .youtube-cards-container {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     margin-top: 10px;
+    margin-bottom: 12px;
+    padding: 8px 12px 12px 14px !important;
+    overflow: visible !important;
+    box-sizing: border-box;
 }
 
 .youtube-card {
-    max-width: 380px;
+    width: calc(100% - 20px);
+    max-width: 350px;
+    margin-left: 6px !important;
     border-radius: 14px;
     overflow: hidden;
     background: rgba(15, 23, 42, 0.6);
     border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
     backdrop-filter: blur(8px);
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+    will-change: transform, box-shadow;
+    box-sizing: border-box;
+}
+
+/* 하단 바 (기본 다크 모드) */
+.youtube-card-footer {
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    color: var(--text-secondary, #a0aec0);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.04);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    transition: background 0.25s ease, color 0.25s ease;
+}
+
+#detailPostArea,
+.post-content-area,
+.post-body {
+    overflow: visible !important;
 }
 
 .youtube-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
     border-color: rgba(255, 0, 0, 0.4);
+}
+
+/* 라이트 모드 ([data-theme="light"]) 적용 시 완전 하얀색 (#ffffff) */
+html[data-theme="light"] .youtube-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+}
+
+html[data-theme="light"] .youtube-card-footer {
+    background: #ffffff !important;
+    color: #475569 !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+html[data-theme="light"] .youtube-card:hover {
+    background: #ffffff !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12) !important;
+    border-color: rgba(255, 0, 0, 0.4) !important;
 }
 
 .youtube-card a {
@@ -244,6 +290,81 @@
 .write-submit-pill:hover {
     transform: translateY(-2px) scale(1.02) !important;
     box-shadow: 0 8px 24px rgba(59, 130, 246, 0.45) !important;
+}
+
+/* 평소 헤더 정렬 (스크롤 0 일 때) */
+.side-detail-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding-bottom: 0.8rem !important;
+    margin-bottom: 1rem !important;
+    background: transparent !important;
+    margin-top: 0 !important;
+    position: relative !important;
+}
+
+#closeSideDetailBtn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    color: var(--text-secondary, #94a3b8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    box-shadow: none;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    margin-left: auto;
+    position: relative;
+    top: auto;
+    right: auto;
+}
+
+/* 호버 시 배경 변경 없이 오직 X 아이콘 글씨 색상만 파란색 변경 */
+#closeSideDetailBtn:hover {
+    color: var(--accent-color, #3b82f6) !important;
+}
+
+/* 스크롤할 때 (.side-detail-scroll-area.has-scrolled #closeSideDetailBtn) :
+   부드럽게 반투명 원형 블러 배경 생기고 상단 고정 */
+.side-detail-scroll-area.has-scrolled #closeSideDetailBtn,
+.side-detail-container.has-scrolled-detail #closeSideDetailBtn {
+    position: fixed !important;
+    top: 1rem !important;
+    right: 1.25rem !important;
+    z-index: 1000 !important;
+    background: rgba(15, 23, 42, 0.78) !important;
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.18)) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    color: var(--text-primary, #ffffff) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+}
+
+.side-detail-scroll-area.has-scrolled #closeSideDetailBtn:hover,
+.side-detail-container.has-scrolled-detail #closeSideDetailBtn:hover {
+    color: var(--accent-color, #3b82f6) !important;
+}
+
+/* 라이트 모드 ([data-theme="light"]) 스크롤 시 원형 블러 배경 */
+html[data-theme="light"] .side-detail-scroll-area.has-scrolled #closeSideDetailBtn,
+html[data-theme="light"] .side-detail-container.has-scrolled-detail #closeSideDetailBtn {
+    background: rgba(255, 255, 255, 0.88) !important;
+    color: #1e293b !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+html[data-theme="light"] #closeSideDetailBtn:hover,
+html[data-theme="light"] .side-detail-scroll-area.has-scrolled #closeSideDetailBtn:hover,
+html[data-theme="light"] .side-detail-container.has-scrolled-detail #closeSideDetailBtn:hover {
+    color: #2563eb !important;
 }
 
 /* 모달 헤더 및 닫기 버튼 정렬 */

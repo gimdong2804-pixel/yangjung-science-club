@@ -113,12 +113,24 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
         setTimeout(() => {
             sideDetailContainer.classList.remove('detail-hidden');
             sideDetailContainer.scrollTop = 0;
+
+            const scrollArea = sideDetailContainer.querySelector('.side-detail-scroll-area');
+            if (scrollArea && !scrollArea.dataset.scrollListenerAttached) {
+                scrollArea.dataset.scrollListenerAttached = 'true';
+                scrollArea.addEventListener('scroll', () => {
+                    if (scrollArea.scrollTop > 15) {
+                        scrollArea.classList.add('has-scrolled');
+                        sideDetailContainer.classList.add('has-scrolled-detail');
+                    } else {
+                        scrollArea.classList.remove('has-scrolled');
+                        sideDetailContainer.classList.remove('has-scrolled-detail');
+                    }
+                });
+            }
         }, 10);
     });
 
     const area = document.getElementById('detailPostArea');
-
-    // 조회수 증가 (계정 당 1회 또는 브라우저 당 1회)
     if (currentUser) {
         const viewedBy = post.viewedBy || [];
         if (!viewedBy.includes(currentUser.uid)) {
