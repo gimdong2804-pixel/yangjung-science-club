@@ -211,7 +211,7 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                         </div>
                         
                         <div class="post-body" style="font-size: 1.05rem; line-height: 1.7; color: var(--text-primary); padding-bottom: 1rem;">
-                            ${currentPost.body.replace(/\n/g, '<br>')}
+                            ${typeof window.renderTextWithYoutubeLinks === 'function' ? window.renderTextWithYoutubeLinks(currentPost.body.replace(/\n/g, '<br>')) : currentPost.body.replace(/\n/g, '<br>')}
                         </div>
                         ${currentPost.images && currentPost.images.length > 0 ? `
                             <div class="post-image-gallery">

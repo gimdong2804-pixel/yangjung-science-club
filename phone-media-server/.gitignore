@@ -1,0 +1,5 @@
+node_modules/
+server-config.json
+media-data/
+.test-media-data/
+*.log

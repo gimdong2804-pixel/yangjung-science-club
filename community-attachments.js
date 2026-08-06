@@ -139,7 +139,7 @@ if (commentAttachImageBtn && commentImageInput) {
 // --- 100% 무료 내장 대용량 미디어 엔지니어링 (신용카드/결제 0원) ---
 const MAX_COMMENT_ATTACHMENTS = 10;
 const COMMENT_ATTACHMENT_SIZE_LIMITS = {
-    image: 20 * 1024 * 1024,
+    image: 100 * 1024 * 1024,
     video: 1024 * 1024 * 1024,
     audio: 100 * 1024 * 1024,
     pdf: 50 * 1024 * 1024,
@@ -537,18 +537,23 @@ function isCrossDeviceVideoFile(file) {
 
 // 2. 동영상 첨부 (최대 5개)
 if (commentAttachVideoBtn && commentVideoInput) {
-    commentAttachVideoBtn.addEventListener('click', async () => {
-        if (commentAttachedVideos.length >= MAX_COMMENT_ATTACHMENTS) {
-            showAttachmentCountAlert('동영상');
-            return;
-            if (typeof window.customAlert === 'function') {
-                await window.customAlert('동영상은 최대 5개까지만 첨부할 수 있습니다.', '첨부 제한 초과');
-            } else {
-                alert('동영상은 최대 5개까지만 첨부할 수 있습니다.');
-            }
-            return;
+    commentAttachVideoBtn.addEventListener('click', (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
         }
-        commentVideoInput.click();
+        if (typeof window.openYoutubeSelectModal === 'function') {
+            window.openYoutubeSelectModal();
+        } else {
+            const modal = document.getElementById('youtubeSelectModal');
+            const overlay = document.getElementById('youtubeSelectOverlay');
+            if (modal && overlay) {
+                modal.classList.add('active');
+                overlay.classList.add('active');
+            } else {
+                window.open('https://www.youtube.com/channel/UCKtLefVrKe2C7BwhbXb2lSA', '_blank', 'noopener,noreferrer');
+            }
+        }
         if (commentAttachMenu) commentAttachMenu.classList.remove('active');
         if (commentAttachBtn) commentAttachBtn.classList.remove('open');
     });

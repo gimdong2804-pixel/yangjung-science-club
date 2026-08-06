@@ -2,9 +2,8 @@
 (function () {
     const CLOUDINARY_CLOUD_NAME = 'fsfobwwl';
     const CLOUDINARY_UPLOAD_PRESET = 'club_video_upload';
-    const MAX_VIDEO_SIZE_BYTES = 1024 * 1024 * 1024;
-    const DIRECT_UPLOAD_LIMIT_BYTES = 100 * 1024 * 1024;
-    const CHUNK_SIZE_BYTES = 6 * 1024 * 1024;
+    // Cloudinary 무료 요금제의 동영상 1개당 실제 한도입니다.
+    const MAX_VIDEO_SIZE_BYTES = 100 * 1024 * 1024;
 
     function createUploadError(message, status) {
         const error = new Error(message);
@@ -19,7 +18,7 @@
 
     function getResourceType(file) {
         const type = file.type || '';
-        if (type.startsWith('image/')) return 'image';
+        if (type.startsWith('image/') || type === 'application/pdf' || /\.pdf$/i.test(file.name || '')) return 'image';
         if (type.startsWith('video/') || type.startsWith('audio/')) return 'video';
         return 'raw';
     }
@@ -74,50 +73,26 @@
         });
     }
 
-    async function uploadVideoInChunks(file) {
-        const uploadId = (window.crypto && crypto.randomUUID)
-            ? crypto.randomUUID()
-            : `club-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        let start = 0;
-        let finalResult = null;
-
-        while (start < file.size) {
-            const end = Math.min(start + CHUNK_SIZE_BYTES, file.size);
-            const response = await fetch(getUploadUrl(file), {
-                method: 'POST',
-                headers: {
-                    'X-Unique-Upload-Id': uploadId,
-                    'Content-Range': `bytes ${start}-${end - 1}/${file.size}`
-                },
-                body: createFormData(file.slice(start, end), file.name)
-            });
-            const result = parseResponse(await response.text());
-            if (!response.ok) {
-                const detail = result && result.error && result.error.message;
-                throw createUploadError(detail || '큰 동영상 조각 업로드에 실패했습니다.', response.status);
-            }
-            start = end;
-            updateProgress(file, start, file.size);
-            if (result.secure_url) finalResult = result;
-        }
-
-        if (!finalResult || !finalResult.secure_url) {
-            throw createUploadError('동영상 업로드 완료 주소를 받지 못했습니다.');
-        }
-        return finalResult.secure_url;
-    }
-
     window.getCommunityVideoLimit = function () {
-        return MAX_VIDEO_SIZE_BYTES;
+        const phoneServerLimit = typeof window.getPhoneMediaServerVideoLimit === 'function'
+            ? Number(window.getPhoneMediaServerVideoLimit())
+            : 0;
+        return phoneServerLimit > MAX_VIDEO_SIZE_BYTES ? phoneServerLimit : MAX_VIDEO_SIZE_BYTES;
     };
 
     window.uploadCommunityMedia = function (file) {
         if (!file) return Promise.reject(createUploadError('첨부파일을 찾을 수 없습니다.'));
-        if (isVideo(file) && file.size > MAX_VIDEO_SIZE_BYTES) {
-            return Promise.reject(createUploadError('동영상은 파일당 1GB까지 업로드할 수 있습니다.'));
-        }
-        if (isVideo(file) && file.size > DIRECT_UPLOAD_LIMIT_BYTES) {
-            return uploadVideoInChunks(file);
+        if (isVideo(file)) {
+            const videoLimit = window.getCommunityVideoLimit();
+            if (file.size > videoLimit) {
+                return Promise.reject(createUploadError(`동영상은 파일당 ${Math.round(videoLimit / 1024 / 1024)}MB까지 업로드할 수 있습니다.`));
+            }
+            if (file.size > MAX_VIDEO_SIZE_BYTES) {
+                if (typeof window.uploadVideoToPhoneServer === 'function') {
+                    return window.uploadVideoToPhoneServer(file);
+                }
+                return Promise.reject(createUploadError('대용량 영상 저장소가 아직 연결되지 않았습니다. 현재는 100MB 이하 영상만 올릴 수 있습니다.'));
+            }
         }
         return uploadDirectly(file);
     };

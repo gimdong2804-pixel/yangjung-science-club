@@ -14,4 +14,4 @@
 
 파일 업로드 관련 수정은 먼저 `community-attachments.js`를 보고, 실제 클라우드 전송 방식 수정이 필요할 때만 `media-upload.js`를 수정하면 됩니다.
 
-현재 첨부 파일 공통 개수 제한은 종류별 최대 10개입니다. 파일당 용량 제한은 이미지 20MB, 동영상 1GB, 오디오 100MB, PDF 50MB, HTML 10MB입니다.
+현재 첨부 파일 공통 개수 제한은 종류별 최대 10개입니다. 이미지 10MB, 오디오 100MB, PDF 10MB, HTML 10MB입니다. 동영상은 기본적으로 Cloudinary 무료 한도인 100MB까지 올라가며, `phone-media-config.js`에서 폰 서버를 연결한 뒤에는 1GB까지 올릴 수 있습니다. 대용량 영상 전송·재생 서버 파일은 `phone-media-server` 폴더에 있습니다.

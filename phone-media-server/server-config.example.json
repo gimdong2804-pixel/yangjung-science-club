@@ -1,0 +1,16 @@
+{
+  "port": 8787,
+  "publicBaseUrl": "https://여기에-폰-서버-공개주소를-넣으세요",
+  "storagePath": "/storage/1234-ABCD/yangjung-media",
+  "firebaseProjectId": "yangjung-science",
+  "allowedOrigins": [
+    "https://gimdong2804-pixel.github.io"
+  ],
+  "adminEmails": [
+    "gimdong2804@gmail.com",
+    "sjh20110407@gmail.com"
+  ],
+  "maxVideoSizeBytes": 1073741824,
+  "chunkSizeBytes": 8388608,
+  "maxActiveUploadsPerUser": 2
+}

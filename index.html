@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="ui-components.css">
     <link rel="stylesheet" href="community.css">
+    <link rel="stylesheet" href="youtube-style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2c52ed">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg">
@@ -874,11 +875,11 @@
                                 <div class="comment-attach-menu" id="commentAttachMenu">
                                     <button type="button" class="comment-attach-option" id="commentAttachImageBtn">
                                         <i class="fa-solid fa-image" style="color: #4dadf7;"></i>
-                                        <span>이미지 (최대 10개, 파일당 20MB)</span>
+                                        <span>이미지 (최대 10개, 파일당 100MB)</span>
                                     </button>
                                     <button type="button" class="comment-attach-option" id="commentAttachVideoBtn">
-                                        <i class="fa-solid fa-video" style="color: #ff6b6b;"></i>
-                                        <span>동영상 (최대 10개, 파일당 1GB)</span>
+                                        <i class="fa-brands fa-youtube" style="color: #ff0000;"></i>
+                                        <span id="commentVideoLimitLabel">동영상 (유튜브로)</span>
                                     </button>
                                     <button type="button" class="comment-attach-option" id="commentAttachAudioBtn">
                                         <i class="fa-solid fa-microphone" style="color: #51cf66;"></i>
@@ -1015,8 +1016,47 @@
                     style="width: 100%; height: 100%; border: none; background: #fff; border-radius: 8px;"></iframe>
             </div>
         </div>
-        <i class="fa-solid fa-pen"></i>
-        </button>
+    </div>
+
+    <!-- 유튜브 선택 모달 -->
+    <div class="youtube-select-overlay" id="youtubeSelectOverlay"></div>
+    <div class="youtube-select-modal" id="youtubeSelectModal">
+        <div class="youtube-select-header">
+            <div class="youtube-select-title">
+                <i class="fa-brands fa-youtube" style="color: #ff0000; font-size: 1.3rem;"></i>
+                <span>양중과학동아리 유튜브</span>
+            </div>
+            <button type="button" class="youtube-select-close" id="youtubeSelectCloseBtn">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="youtube-select-body">
+            <p class="youtube-select-desc">이동할 유튜브 페이지를 선택해 주세요.</p>
+            <div class="youtube-option-grid">
+                <button type="button" class="youtube-option-card" id="youtubeChannelBtn">
+                    <div class="youtube-option-icon" style="background: rgba(255, 0, 0, 0.15); color: #ff4e4e;">
+                        <i class="fa-brands fa-youtube"></i>
+                    </div>
+                    <div class="youtube-option-info">
+                        <div class="youtube-option-title">유튜브 채널</div>
+                        <div class="youtube-option-sub">동아리 영상 및 소식 시청</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right youtube-option-arrow"></i>
+                </button>
+                
+                <button type="button" class="youtube-option-card" id="youtubeStudioBtn">
+                    <div class="youtube-option-icon" style="background: rgba(255, 146, 43, 0.15); color: #ff922b;">
+                        <i class="fa-solid fa-sliders"></i>
+                    </div>
+                    <div class="youtube-option-info">
+                        <div class="youtube-option-title">유튜브 스튜디오</div>
+                        <div class="youtube-option-sub">동영상 업로드 및 채널 관리</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right youtube-option-arrow"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 
         <!-- AI 챗봇 비서 (기본적으로 숨김 처리되고, Firestore 설정을 로드하여 켜져있을 때만 JS로 표시) -->
         <button class="ai-chatbot-fab" id="aiChatbotFab" style="display: none;" aria-label="AI 도우미">
@@ -1054,6 +1094,7 @@
         <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
         <script src="script.js?v=1.0.5"></script>
+        <script src="youtube-utils.js?v=1.0.0"></script>
         <!-- 커뮤니티는 역할별 파일로 나누어, 수정할 때 해당 기능만 찾을 수 있게 했습니다. -->
         <script src="community.js?v=2.0.0"></script>
         <script src="community-comment-render.js?v=2.0.0"></script>

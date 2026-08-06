@@ -1,0 +1,14 @@
+{
+  "name": "yangjung-phone-media-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "양중과학동아리 대용량 영상용 폰 서버",
+  "scripts": {
+    "start": "node server.js",
+    "start:config": "node server.js server-config.json"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {}
+}

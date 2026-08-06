@@ -262,7 +262,9 @@ function renderFlatReply(comment, tree, postId, depth = 1) {
     const mentionHtml = (parentComment && !isDeleted) ? `<span class="flat-reply-mention">@${escapeHtml(parentComment.author || '사용자')}</span> ` : '';
     const bodyHtml = isDeleted
         ? '<span class="comment-deleted-text">삭제된 댓글입니다.</span>'
-        : mentionHtml + escapeHtml(comment.body || '').replace(/\n/g, '<br>');
+        : mentionHtml + (typeof window.renderTextWithYoutubeLinks === 'function' 
+            ? window.renderTextWithYoutubeLinks(escapeHtml(comment.body || '').replace(/\n/g, '<br>')) 
+            : escapeHtml(comment.body || '').replace(/\n/g, '<br>'));
 
     const attachmentsHtml = renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDeleted);
 
@@ -405,7 +407,9 @@ function renderCommentBranch(comment, depth, tree, postId) {
     const itemStyle = '';
     const bodyHtml = isDeleted
         ? '<span class="comment-deleted-text">삭제된 댓글입니다.</span>'
-        : escapeHtml(comment.body || '').replace(/\n/g, '<br>');
+        : (typeof window.renderTextWithYoutubeLinks === 'function' 
+            ? window.renderTextWithYoutubeLinks(escapeHtml(comment.body || '').replace(/\n/g, '<br>')) 
+            : escapeHtml(comment.body || '').replace(/\n/g, '<br>'));
 
     const attachmentsHtml = renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDeleted);
 
