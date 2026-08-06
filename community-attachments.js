@@ -456,10 +456,12 @@ function getMediaFolder(file) {
 }
 
 function updateCommentUploadProgress(file, transferred, total) {
-    if (!commentSubmitBtn || !total) return;
-    const progress = Math.min(100, Math.round((transferred / total) * 100));
-    commentSubmitBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-up"></i><span>${progress}%</span>`;
-    commentSubmitBtn.title = `${file.name || '파일'} 업로드 ${progress}%`;
+    if (!commentSubmitBtn) return;
+    commentSubmitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+    if (total) {
+        const progress = Math.min(100, Math.round((transferred / total) * 100));
+        commentSubmitBtn.title = `${file.name || '파일'} 업로드 중... (${progress}%)`;
+    }
 }
 window.updateCommentUploadProgress = updateCommentUploadProgress;
 
