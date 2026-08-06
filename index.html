@@ -802,26 +802,20 @@
 
         <div class="community-layout">
             <div class="board-container">
-                <div class="board-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+                <div class="board-header">
                     <span style="color: var(--text-secondary); font-size: 0.9rem;">전체 게시글 <span
                             style="color: var(--accent-color); font-weight: bold;">0</span>개</span>
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <div class="custom-dropdown-container" id="customSortDropdown">
-                            <div class="custom-dropdown-selected" id="customSortSelected">
-                                <span><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</span>
-                                <i class="fa-solid fa-chevron-down arrow-icon"></i>
-                            </div>
-                            <ul class="custom-dropdown-options" id="customSortOptions">
-                                <li class="custom-dropdown-option active" data-value="latest"><i
-                                        class="fa-solid fa-arrow-down-short-wide"></i> 최신순</li>
-                                <li class="custom-dropdown-option" data-value="popular"><i class="fa-solid fa-fire"></i> 인기순
-                                </li>
-                            </ul>
+                    <div class="custom-dropdown-container" id="customSortDropdown">
+                        <div class="custom-dropdown-selected" id="customSortSelected">
+                            <span><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</span>
+                            <i class="fa-solid fa-chevron-down arrow-icon"></i>
                         </div>
-                        <button type="button" class="write-post-btn" id="writePostBtn">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                            <span>글쓰기</span>
-                        </button>
+                        <ul class="custom-dropdown-options" id="customSortOptions">
+                            <li class="custom-dropdown-option active" data-value="latest"><i
+                                    class="fa-solid fa-arrow-down-short-wide"></i> 최신순</li>
+                            <li class="custom-dropdown-option" data-value="popular"><i class="fa-solid fa-fire"></i> 인기순
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -1063,6 +1057,10 @@
             </div>
         </div>
     </div>
+
+    <button class="fab fab-hidden" id="writePostBtn" aria-label="글쓰기">
+        <i class="fa-solid fa-pen"></i>
+    </button>
 
         <!-- AI 챗봇 비서 (기본적으로 숨김 처리되고, Firestore 설정을 로드하여 켜져있을 때만 JS로 표시) -->
         <button class="ai-chatbot-fab" id="aiChatbotFab" style="display: none;" aria-label="AI 도우미">

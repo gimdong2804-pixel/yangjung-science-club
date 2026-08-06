@@ -1309,33 +1309,6 @@ body.multi-select-active .reply-target-bar {
     transform: scale(1.1);
 }
 
-/* 커뮤니티 글쓰기 버튼 스타일 */
-.write-post-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    padding: 0.5rem 1rem;
-    background: var(--accent-color, #3b82f6);
-    color: #ffffff;
-    border: none;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 0.88rem;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-    transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), background 0.2s, box-shadow 0.2s;
-}
-
-.write-post-btn:hover {
-    background: #2563eb;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
-}
-
-.write-post-btn:active {
-    transform: translateY(0);
-}
-
 .image-count-info {
     font-size: 0.8rem;
     color: var(--text-secondary);
