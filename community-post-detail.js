@@ -1351,23 +1351,45 @@ window.openHtmlPreviewModal = function (url, filename = 'HTML 문서') {
         downloadBtn.onclick = () => window.downloadFileAttachment(url, filename);
     }
 
+    // 초기 로딩 상태 설정
+    iframe.removeAttribute('src');
+    iframe.srcdoc = `
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#64748b; background:#f8fafc;">
+            <div style="border:3px solid #e2e8f0; border-top-color:#7c3aed; border-radius:50%; width:36px; height:36px; animation:spin 0.8s linear infinite; margin-bottom:12px;"></div>
+            <style>@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}</style>
+            <div style="font-size:14px; font-weight:600;">HTML 문서를 불러오는 중입니다...</div>
+        </div>
+    `;
+
+    overlay.classList.add('active');
+    modal.classList.add('active');
+
     if (url.startsWith('data:')) {
-        // 모든 data: URL에 대해 base64를 해제하여 HTML String으로 iframe.srcdoc 주입
-        // (application/octet-stream 등 mimeType 관련 브라우저 자동 다운로드 트리거 완벽 차단)
         const htmlText = parseDataUrlToText(url);
         if (htmlText) {
-            iframe.removeAttribute('src');
             iframe.srcdoc = htmlText;
         } else {
             iframe.srcdoc = '<div style="padding:2rem; font-family:sans-serif; color:#475569;">HTML 문서 내용을 표시할 수 없습니다.</div>';
         }
+    } else if (url.startsWith('http')) {
+        fetch(url)
+            .then(res => {
+                if (!res.ok) throw new Error('Network response error');
+                return res.text();
+            })
+            .then(htmlText => {
+                iframe.removeAttribute('src');
+                iframe.srcdoc = htmlText;
+            })
+            .catch(err => {
+                console.warn('HTML fetch preview error:', err);
+                iframe.removeAttribute('srcdoc');
+                iframe.src = url;
+            });
     } else {
         iframe.removeAttribute('srcdoc');
         iframe.src = url;
     }
-
-    overlay.classList.add('active');
-    modal.classList.add('active');
 };
 
 window.openPdfPreviewModal = function (url, filename = 'PDF 문서') {
@@ -1388,7 +1410,17 @@ window.openPdfPreviewModal = function (url, filename = 'PDF 문서') {
         downloadBtn.onclick = () => window.downloadFileAttachment(url, filename);
     }
 
-    iframe.removeAttribute('srcdoc');
+    iframe.removeAttribute('src');
+    iframe.srcdoc = `
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#64748b; background:#f8fafc;">
+            <div style="border:3px solid #e2e8f0; border-top-color:#ea580c; border-radius:50%; width:36px; height:36px; animation:spin 0.8s linear infinite; margin-bottom:12px;"></div>
+            <style>@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}</style>
+            <div style="font-size:14px; font-weight:600;">PDF 문서를 불러오는 중입니다...</div>
+        </div>
+    `;
+
+    overlay.classList.add('active');
+    modal.classList.add('active');
 
     if (url.startsWith('data:')) {
         try {
@@ -1399,16 +1431,33 @@ window.openPdfPreviewModal = function (url, filename = 'PDF 문서') {
             while (n--) u8arr[n] = bstr.charCodeAt(n);
             const blob = new Blob([u8arr], { type: 'application/pdf' });
             const blobUrl = URL.createObjectURL(blob);
+            iframe.removeAttribute('srcdoc');
             iframe.src = blobUrl;
         } catch (e) {
+            iframe.removeAttribute('srcdoc');
             iframe.src = url;
         }
+    } else if (url.startsWith('http')) {
+        fetch(url)
+            .then(res => {
+                if (!res.ok) throw new Error('PDF fetch error');
+                return res.blob();
+            })
+            .then(blob => {
+                const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+                const blobUrl = URL.createObjectURL(pdfBlob);
+                iframe.removeAttribute('srcdoc');
+                iframe.src = blobUrl;
+            })
+            .catch(err => {
+                console.warn('PDF fetch preview error:', err);
+                iframe.removeAttribute('srcdoc');
+                iframe.src = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+            });
     } else {
+        iframe.removeAttribute('srcdoc');
         iframe.src = url;
     }
-
-    overlay.classList.add('active');
-    modal.classList.add('active');
 };
 
 window.closeFilePreviewModal = function () {
