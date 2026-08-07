@@ -310,15 +310,15 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                         ` : ''}
 
                         ${displayAttachments.length > 0 ? `
-                            <div class="post-attachments-section" style="margin-top: 1.2rem; padding: 1rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 14px;">
-                                <div style="font-size: 0.88rem; font-weight: 700; color: var(--accent-color); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
-                                    <i class="fa-solid fa-paperclip"></i>
+                            <div class="post-attachments-section" style="margin-top: 1.5rem; padding: 1.25rem; background: var(--card-bg, #ffffff); border: 1px solid var(--glass-border); border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.06);">
+                                <div style="font-size: 0.95rem; font-weight: 700; color: var(--accent-color); margin-bottom: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
+                                    <i class="fa-solid fa-paperclip" style="font-size: 1.1rem;"></i>
                                     <span>첨부파일 목록 (${displayAttachments.length})</span>
                                 </div>
-                                <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+                                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                                     ${displayAttachments.map(att => {
                 let iconClass = 'fa-solid fa-file-lines';
-                let iconColor = '#4dadf7';
+                let iconColor = '#2563eb';
                 let isHtml = false;
                 let isPdf = false;
                 let isAudio = false;
@@ -330,30 +330,32 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                 const type = (att.type || '').toLowerCase();
 
                 if (type.includes('html') || lowerAttUrl.startsWith('data:text/html') || /\.(html|htm)$/i.test(lowerAttName)) {
-                    iconClass = 'fa-solid fa-file-code'; iconColor = '#cc5de8'; isHtml = true;
+                    iconClass = 'fa-solid fa-file-code'; iconColor = '#7c3aed'; isHtml = true;
                 } else if (type.includes('pdf') || lowerAttUrl.startsWith('data:application/pdf') || /\.pdf$/i.test(lowerAttName)) {
-                    iconClass = 'fa-solid fa-file-pdf'; iconColor = '#ff922b'; isPdf = true;
+                    iconClass = 'fa-solid fa-file-pdf'; iconColor = '#ea580c'; isPdf = true;
                 } else if (type.startsWith('audio/') || lowerAttUrl.startsWith('data:audio/') || /\.(mp3|wav|ogg|m4a)$/i.test(lowerAttName)) {
-                    iconClass = 'fa-solid fa-file-audio'; iconColor = '#51cf66'; isAudio = true;
+                    iconClass = 'fa-solid fa-file-audio'; iconColor = '#16a34a'; isAudio = true;
                 } else if (type.startsWith('video/') || lowerAttUrl.startsWith('data:video/') || /\.(mp4|webm|mov)$/i.test(lowerAttName)) {
-                    iconClass = 'fa-solid fa-file-video'; iconColor = '#ff6b6b'; isVideo = true;
+                    iconClass = 'fa-solid fa-file-video'; iconColor = '#dc2626'; isVideo = true;
                 }
 
                 return `
-                                            <div style="padding: 0.75rem 0.9rem; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border); border-radius: 12px; display: flex; flex-direction: column; gap: 0.5rem;">
-                                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;">
-                                                    <div style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden; flex: 1;">
-                                                        <i class="${iconClass}" style="font-size: 1.25rem; color: ${iconColor}; flex-shrink: 0;"></i>
-                                                        <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(attName)}</span>
+                                            <div style="padding: 0.9rem 1.1rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; flex-direction: column; gap: 0.6rem; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap;">
+                                                    <div style="display: flex; align-items: center; gap: 0.7rem; overflow: hidden; flex: 1; min-width: 180px;">
+                                                        <div style="width: 38px; height: 38px; border-radius: 10px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                                            <i class="${iconClass}" style="font-size: 1.35rem; color: ${iconColor};"></i>
+                                                        </div>
+                                                        <span style="font-size: 0.95rem; font-weight: 700; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(attName)}</span>
                                                     </div>
-                                                    <div style="display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;">
-                                                        ${isHtml ? `<button type="button" onclick="openHtmlPreviewModal('${toJsString(att.url)}', '${toJsString(attName)}')" style="padding: 0.35rem 0.75rem; border: none; border-radius: 6px; background: rgba(204, 93, 232, 0.2); color: #cc5de8; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem;"><i class="fa-solid fa-eye"></i> 미리보기</button>` : ''}
-                                                        ${isPdf ? `<button type="button" onclick="openPdfPreviewModal('${toJsString(att.url)}', '${toJsString(attName)}')" style="padding: 0.35rem 0.75rem; border: none; border-radius: 6px; background: rgba(255, 146, 43, 0.2); color: #ff922b; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem;"><i class="fa-solid fa-eye"></i> 미리보기</button>` : ''}
-                                                        <button type="button" onclick="downloadFileAttachment('${toJsString(att.url)}', '${toJsString(attName)}')" style="padding: 0.35rem 0.75rem; border: none; border-radius: 6px; background: rgba(59, 130, 246, 0.2); color: var(--accent-color); font-size: 0.8rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem;"><i class="fa-solid fa-download"></i> 다운로드</button>
+                                                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
+                                                        ${isHtml ? `<button type="button" onclick="openHtmlPreviewModal('${toJsString(att.url)}', '${toJsString(attName)}')" style="padding: 0.45rem 0.9rem; border: none; border-radius: 8px; background: #7c3aed; color: #ffffff; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25); transition: background 0.15s, transform 0.1s;"><i class="fa-solid fa-eye"></i> 미리보기</button>` : ''}
+                                                        ${isPdf ? `<button type="button" onclick="openPdfPreviewModal('${toJsString(att.url)}', '${toJsString(attName)}')" style="padding: 0.45rem 0.9rem; border: none; border-radius: 8px; background: #ea580c; color: #ffffff; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 2px 6px rgba(234, 88, 12, 0.25); transition: background 0.15s, transform 0.1s;"><i class="fa-solid fa-eye"></i> 미리보기</button>` : ''}
+                                                        <button type="button" onclick="downloadFileAttachment('${toJsString(att.url)}', '${toJsString(attName)}')" style="padding: 0.45rem 0.9rem; border: none; border-radius: 8px; background: #2563eb; color: #ffffff; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25); transition: background 0.15s, transform 0.1s;"><i class="fa-solid fa-download"></i> 다운로드</button>
                                                     </div>
                                                 </div>
-                                                ${isAudio ? `<audio controls src="${escapeHtml(att.url)}" style="width: 100%; height: 36px; margin-top: 0.2rem; border-radius: 8px;"></audio>` : ''}
-                                                ${isVideo ? `<video controls playsinline src="${escapeHtml(att.url)}" style="max-width: 100%; max-height: 360px; border-radius: 8px; margin-top: 0.2rem;"></video>` : ''}
+                                                ${isAudio ? `<audio controls src="${escapeHtml(att.url)}" style="width: 100%; height: 38px; margin-top: 0.3rem; border-radius: 8px;"></audio>` : ''}
+                                                ${isVideo ? `<video controls playsinline src="${escapeHtml(att.url)}" style="max-width: 100%; max-height: 380px; border-radius: 10px; margin-top: 0.3rem;"></video>` : ''}
                                             </div>
                                         `;
             }).join('')}
@@ -1272,6 +1274,30 @@ window.deleteComment = async function (postId, commentId, isReply = false) {
 };
 
 // --- 전역 첨부파일 미리보기 및 안전 다운로드 헬퍼 ---
+function parseDataUrlToText(dataUrl) {
+    if (!dataUrl) return '';
+    try {
+        const parts = dataUrl.split(',');
+        if (parts.length < 2) return '';
+        const meta = parts[0];
+        const rawData = parts[1];
+        if (meta.includes(';base64')) {
+            const binaryStr = atob(rawData);
+            const len = binaryStr.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryStr.charCodeAt(i);
+            }
+            return new TextDecoder('utf-8').decode(bytes);
+        } else {
+            return decodeURIComponent(rawData);
+        }
+    } catch (e) {
+        console.error('Data URL decoding error:', e);
+        return '';
+    }
+}
+
 window.downloadFileAttachment = function (url, filename = 'download') {
     if (!url) return;
     try {
@@ -1319,27 +1345,24 @@ window.openHtmlPreviewModal = function (url, filename = 'HTML 문서') {
 
     if (titleEl) titleEl.textContent = filename || 'HTML 미리보기';
     if (iconEl) iconEl.className = 'fa-solid fa-file-code';
-    if (iconEl) iconEl.style.color = '#cc5de8';
+    if (iconEl) iconEl.style.color = '#7c3aed';
 
     if (downloadBtn) {
         downloadBtn.onclick = () => window.downloadFileAttachment(url, filename);
     }
 
-    if (url.startsWith('data:text/html')) {
-        try {
-            if (url.includes(';base64,')) {
-                const base64Data = url.split(';base64,')[1];
-                const decodedText = decodeURIComponent(escape(atob(base64Data)));
-                iframe.srcdoc = decodedText;
-            } else {
-                const textData = decodeURIComponent(url.split('data:text/html,')[1] || url.split('data:text/html;charset=utf-8,')[1] || '');
-                iframe.srcdoc = textData || '<html><body>내용 없음</body></html>';
-            }
-        } catch (e) {
-            console.warn('HTML data url parse error:', e);
-            iframe.src = url;
+    if (url.startsWith('data:')) {
+        // 모든 data: URL에 대해 base64를 해제하여 HTML String으로 iframe.srcdoc 주입
+        // (application/octet-stream 등 mimeType 관련 브라우저 자동 다운로드 트리거 완벽 차단)
+        const htmlText = parseDataUrlToText(url);
+        if (htmlText) {
+            iframe.removeAttribute('src');
+            iframe.srcdoc = htmlText;
+        } else {
+            iframe.srcdoc = '<div style="padding:2rem; font-family:sans-serif; color:#475569;">HTML 문서 내용을 표시할 수 없습니다.</div>';
         }
     } else {
+        iframe.removeAttribute('srcdoc');
         iframe.src = url;
     }
 
@@ -1359,13 +1382,15 @@ window.openPdfPreviewModal = function (url, filename = 'PDF 문서') {
 
     if (titleEl) titleEl.textContent = filename || 'PDF 미리보기';
     if (iconEl) iconEl.className = 'fa-solid fa-file-pdf';
-    if (iconEl) iconEl.style.color = '#ff922b';
+    if (iconEl) iconEl.style.color = '#ea580c';
 
     if (downloadBtn) {
         downloadBtn.onclick = () => window.downloadFileAttachment(url, filename);
     }
 
-    if (url.startsWith('data:application/pdf')) {
+    iframe.removeAttribute('srcdoc');
+
+    if (url.startsWith('data:')) {
         try {
             const arr = url.split(',');
             const bstr = atob(arr[1]);
@@ -1393,7 +1418,10 @@ window.closeFilePreviewModal = function () {
 
     if (overlay) overlay.classList.remove('active');
     if (modal) modal.classList.remove('active');
-    if (iframe) iframe.src = 'about:blank';
+    if (iframe) {
+        iframe.removeAttribute('srcdoc');
+        iframe.src = 'about:blank';
+    }
 };
 
 document.addEventListener('DOMContentLoaded', () => {

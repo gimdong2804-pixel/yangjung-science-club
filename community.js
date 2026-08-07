@@ -377,13 +377,14 @@ function updateImagePreview() {
                 align-items: center;
                 justify-content: center;
                 padding: 0.75rem 0.5rem;
-                background: rgba(255, 255, 255, 0.05);
-                border: 1px solid var(--glass-border);
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
                 border-radius: 12px;
                 text-align: center;
                 gap: 0.4rem;
                 position: relative;
                 min-height: 100px;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
             `;
             div.innerHTML = `
                 <i class="${iconInfo.icon}" style="font-size: 2.2rem; color: ${iconInfo.color}; margin-bottom: 0.2rem;"></i>
