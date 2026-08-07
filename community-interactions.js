@@ -163,6 +163,13 @@ window.addEventListener('popstate', (e) => {
         }
         return;
     }
+    const aiChatbotWindow = document.getElementById('aiChatbotWindow');
+    if (aiChatbotWindow && aiChatbotWindow.classList.contains('active')) {
+        if (typeof window.closeAiChatbotModal === 'function') {
+            window.closeAiChatbotModal(true);
+        }
+        return;
+    }
     const sideDrawer = document.getElementById('sideDrawer');
     if (sideDrawer && sideDrawer.classList.contains('active')) {
         closeDrawer(true);

@@ -114,6 +114,11 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
             sideDetailContainer.classList.remove('detail-hidden');
             sideDetailContainer.scrollTop = 0;
 
+            // [수정] 디테일이 실제로 열린 후 제미나이 버튼 위치 복원
+            if (typeof updateWriteButtonVisibility === 'function') {
+                updateWriteButtonVisibility();
+            }
+
             const scrollArea = sideDetailContainer.querySelector('.side-detail-scroll-area');
             if (scrollArea && !scrollArea.dataset.scrollListenerAttached) {
                 scrollArea.dataset.scrollListenerAttached = 'true';

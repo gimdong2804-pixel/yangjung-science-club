@@ -460,7 +460,7 @@
                                         <div style="font-weight: 600; font-size: 1.05rem;">스크롤 시 메뉴 숨김</div>
                                         <div
                                             style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4;">
-                                            스크롤할 때 상단 로고, 메뉴 버튼 및 커뮤니티 창 하단 글쓰기 버튼을 자동으로 숨겨 화면을 넓게 사용합니다.
+                                            스크롤할 때 상단 로고, 메뉴 버튼 및 커뮤니티 창 하단 버튼들을 자동으로 숨겨 화면을 넓게 사용합니다.
                                         </div>
                                     </div>
                                 </div>
@@ -1160,11 +1160,11 @@
 
     <!-- AI 챗봇 비서 (기본적으로 숨김 처리되고, Firestore 설정을 로드하여 켜져있을 때만 JS로 표시) -->
     <button class="ai-chatbot-fab" id="aiChatbotFab" style="display: none;" aria-label="AI 도우미">
-        <img src="gemini-color.svg" style="width: 28px; height: 28px; object-fit: contain;" alt="Gemini AI">
+        <img src="gemini-color.svg" style="width: 32px; height: 32px; object-fit: contain;" alt="Gemini AI">
     </button>
 
     <div id="aiChatbotModalOverlay" class="modal-overlay"></div>
-    <div class="ai-chatbot-window modal-container hidden" id="aiChatbotWindow">
+    <div class="ai-chatbot-window modal-container" id="aiChatbotWindow">
         <div class="ai-chatbot-header">
             <div class="ai-chatbot-header-title">
                 <img src="gemini-color.svg" style="width: 24px; height: 24px; object-fit: contain;" alt="Gemini AI">
@@ -1202,17 +1202,6 @@
                             </div>
                         </div>
                     </li>
-                    <li class="custom-dropdown-option model-option-card" data-value="gemini-3.1-pro-preview"
-                        data-title="Gemini 3.1 Pro Preview">
-                        <div class="model-option-left">
-                            <span class="model-check-icon"><i class="fa-solid fa-check"></i></span>
-                            <img src="gemini-color.svg" class="model-option-logo" alt="Gemini">
-                            <div class="model-option-text">
-                                <div class="model-title">Gemini 3.1 Pro Preview</div>
-                                <div class="model-desc">고급 수학 및 코딩</div>
-                            </div>
-                        </div>
-                    </li>
                 </ul>
                 <input type="hidden" id="aiModelSelect" value="gemini-3.6-flash" />
             </div>
@@ -1226,8 +1215,48 @@
                 안녕하세요! 양중과학동아리 AI 비서입니다. 🧪✨<br>과학 현상에 대한 질문이나 동아리 활동에 대해 궁금한 점이 있다면 무엇이든 물어보세요!
             </div>
         </div>
+        <div class="ai-chatbot-scrollbar" id="aiChatbotScrollbar">
+            <div class="ai-chatbot-scrollbar-thumb" id="aiChatbotScrollbarThumb"></div>
+        </div>
         <div class="ai-chatbot-input-container">
+            <!-- 숨겨진 파일 Input 목록 -->
+            <input type="file" id="aiImageInput" accept="image/*" multiple style="display: none;" />
+            <input type="file" id="aiPdfInput" accept="application/pdf" multiple style="display: none;" />
+            <input type="file" id="aiAudioInput" accept="audio/*" multiple style="display: none;" />
+            <input type="file" id="aiHtmlInput" accept=".html,.htm,text/html" multiple style="display: none;" />
+            <input type="file" id="aiVideoInput" accept="video/*" multiple style="display: none;" />
+
+            <!-- 첨부파일 미리보기 카드 컨테이너 -->
+            <div class="ai-chatbot-preview-container" id="aiChatbotPreviewContainer" style="display: none;"></div>
+
             <div class="ai-chatbot-input-wrapper">
+                <!-- AI 챗봇 첨부파일 팝업 메뉴 (+ 버튼 바로 위 위치 지정) -->
+                <div class="comment-attach-menu" id="aiChatbotAttachMenu">
+                    <button type="button" class="comment-attach-option" id="aiAttachImageBtn">
+                        <i class="fa-solid fa-image" style="color: #4dadf7;"></i>
+                        <span>이미지 (최대 10개, 파일당 100MB)</span>
+                    </button>
+                    <button type="button" class="comment-attach-option" id="aiAttachVideoBtn">
+                        <i class="fa-brands fa-youtube" style="color: #ff0000;"></i>
+                        <span>동영상 (유튜브로)</span>
+                    </button>
+                    <button type="button" class="comment-attach-option" id="aiAttachAudioBtn">
+                        <i class="fa-solid fa-microphone" style="color: #51cf66;"></i>
+                        <span>음성/오디오 (최대 10개, 파일당 100MB)</span>
+                    </button>
+                    <button type="button" class="comment-attach-option" id="aiAttachPdfBtn">
+                        <i class="fa-solid fa-file-pdf" style="color: #ff922b;"></i>
+                        <span>PDF 파일 (최대 10개, 파일당 100MB)</span>
+                    </button>
+                    <button type="button" class="comment-attach-option" id="aiAttachHtmlBtn">
+                        <i class="fa-solid fa-file-code" style="color: #cc5de8;"></i>
+                        <span>HTML 파일 (최대 10개, 파일당 100MB)</span>
+                    </button>
+                </div>
+
+                <button type="button" class="ai-chatbot-attach-btn" id="aiChatbotAttachBtn" aria-label="파일 첨부">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
                 <input type="text" class="ai-chatbot-input" id="aiChatbotInput" placeholder="Gemini에게 물어보기..." />
                 <button class="ai-chatbot-send-btn" id="aiChatbotSendBtn" aria-label="전송">
                     <i class="fa-solid fa-paper-plane"></i>

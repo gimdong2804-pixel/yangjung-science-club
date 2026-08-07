@@ -469,6 +469,7 @@ function switchPage(fromPage, toPage, skipHistory = false, replaceState = false)
 // [추가] 작성 버튼 가시성 통합 제어 함수
 function updateWriteButtonVisibility(page) {
     const btn = document.getElementById('writePostBtn');
+    const aiFab = document.getElementById('aiChatbotFab');
     if (!btn) return;
     const targetPage = page || currentPage;
     const sideDetail = document.getElementById('sideDetailContainer');
@@ -480,12 +481,14 @@ function updateWriteButtonVisibility(page) {
         btn.style.pointerEvents = 'auto';
         btn.style.visibility = 'visible';
         btn.style.transform = 'scale(1) rotate(0)';
+        if (aiFab) aiFab.classList.add('shift-left');
     } else {
         btn.classList.add('fab-hidden');
         btn.style.opacity = '0';
         btn.style.pointerEvents = 'none';
         btn.style.visibility = 'hidden';
         btn.style.transform = 'scale(0.8) rotate(45deg)';
+        if (aiFab) aiFab.classList.remove('shift-left');
     }
 }
 
@@ -744,10 +747,10 @@ async function loadAiConfig() {
         if (doc.exists) {
             const data = doc.data();
             let modelValue = data.model || 'gemini-3.6-flash';
-            if (modelValue === 'gemini-3.1-flash-lite' || modelValue === 'gemini-3.5-flash') {
+            if (modelValue === 'gemini-3.1-flash-lite' || modelValue === 'gemini-3.5-flash' || modelValue === 'gemini-3.1-pro-preview') {
                 modelValue = 'gemini-3.5-flash-lite';
             }
-            const allowedModels = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-pro-preview'];
+            const allowedModels = ['gemini-3.6-flash', 'gemini-3.5-flash-lite'];
             if (!allowedModels.includes(modelValue)) {
                 modelValue = 'gemini-3.6-flash';
             }
@@ -817,10 +820,10 @@ if (aiSettingsMenuBtn) {
         aiApiKeyInput.value = window.aiConfig.apiKey;
         if (aiModelSelect) {
             let modelValue = window.aiConfig.model || 'gemini-3.6-flash';
-            if (modelValue === 'gemini-3.1-flash-lite' || modelValue === 'gemini-3.5-flash') {
+            if (modelValue === 'gemini-3.1-flash-lite' || modelValue === 'gemini-3.5-flash' || modelValue === 'gemini-3.1-pro-preview') {
                 modelValue = 'gemini-3.5-flash-lite';
             }
-            const allowedModels = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-pro-preview'];
+            const allowedModels = ['gemini-3.6-flash', 'gemini-3.5-flash-lite'];
             if (!allowedModels.includes(modelValue)) {
                 modelValue = 'gemini-3.6-flash';
             }
@@ -916,15 +919,23 @@ if (aiSaveBtn) {
     });
 }
 
-// Gemini API 호출 헬퍼
-async function callGeminiAPI(apiKey, prompt) {
+// Gemini API 호출 헬퍼 (단일 텍스트 프롬프트 및 멀티모달 parts 지원)
+async function callGeminiAPI(apiKey, promptOrParts) {
     const model = window.aiConfig.model || 'gemini-3.6-flash';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+    let parts = [];
+    if (typeof promptOrParts === 'string') {
+        parts = [{ text: promptOrParts }];
+    } else if (Array.isArray(promptOrParts)) {
+        parts = promptOrParts;
+    }
+
     const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }]
+            contents: [{ parts: parts }]
         })
     });
     if (!response.ok) {
@@ -966,65 +977,397 @@ if (aiTestBtn) {
     });
 }
 
+// AI 챗봇 첨부파일 상태 관리 & 파일 업로드 핸들러
+let aiAttachedFiles = [];
+
+const aiChatbotAttachBtn = document.getElementById('aiChatbotAttachBtn');
+const aiChatbotAttachMenu = document.getElementById('aiChatbotAttachMenu');
+const aiChatbotPreviewContainer = document.getElementById('aiChatbotPreviewContainer');
+
+const aiAttachImageBtn = document.getElementById('aiAttachImageBtn');
+const aiAttachPdfBtn = document.getElementById('aiAttachPdfBtn');
+const aiAttachAudioBtn = document.getElementById('aiAttachAudioBtn');
+const aiAttachHtmlBtn = document.getElementById('aiAttachHtmlBtn');
+const aiAttachVideoBtn = document.getElementById('aiAttachVideoBtn');
+
+const aiImageInput = document.getElementById('aiImageInput');
+const aiPdfInput = document.getElementById('aiPdfInput');
+const aiAudioInput = document.getElementById('aiAudioInput');
+const aiHtmlInput = document.getElementById('aiHtmlInput');
+const aiVideoInput = document.getElementById('aiVideoInput');
+
+if (aiChatbotAttachBtn) {
+    aiChatbotAttachBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        aiChatbotAttachBtn.classList.toggle('open');
+        if (aiChatbotAttachMenu) aiChatbotAttachMenu.classList.toggle('active');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (aiChatbotAttachBtn && aiChatbotAttachMenu && !aiChatbotAttachBtn.contains(e.target) && !aiChatbotAttachMenu.contains(e.target)) {
+            aiChatbotAttachBtn.classList.remove('open');
+            aiChatbotAttachMenu.classList.remove('active');
+        }
+    });
+}
+
+function handleAiFileSelect(inputElement, fileType) {
+    if (!inputElement) return;
+    inputElement.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+
+        if (aiAttachedFiles.length + files.length > 10) {
+            alert('첨부파일은 최대 10개까지 첨부할 수 있습니다.');
+            inputElement.value = '';
+            return;
+        }
+
+        for (const file of files) {
+            if (file.size > 100 * 1024 * 1024) {
+                alert(`파일 "${file.name}"이 100MB를 초과합니다.`);
+                continue;
+            }
+
+            try {
+                const dataUrl = await readFileAsDataURL(file);
+                aiAttachedFiles.push({
+                    id: 'aifile-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                    name: file.name,
+                    size: formatAiFileSize(file.size),
+                    type: fileType,
+                    mimeType: file.type || getAiMimeTypeFromExtension(file.name, fileType),
+                    dataUrl: dataUrl
+                });
+            } catch (err) {
+                console.error('AI 첨부파일 읽기 오류:', err);
+            }
+        }
+
+        inputElement.value = '';
+        if (aiChatbotAttachBtn) aiChatbotAttachBtn.classList.remove('open');
+        if (aiChatbotAttachMenu) aiChatbotAttachMenu.classList.remove('active');
+        renderAiAttachedFiles();
+    });
+}
+
+function getAiMimeTypeFromExtension(fileName, fileType) {
+    const ext = fileName.split('.').pop().toLowerCase();
+    if (ext === 'pdf') return 'application/pdf';
+    if (ext === 'html' || ext === 'htm') return 'text/html';
+    if (ext === 'txt') return 'text/plain';
+    if (fileType === 'image') return 'image/jpeg';
+    if (fileType === 'audio') return 'audio/mp3';
+    if (fileType === 'video') return 'video/mp4';
+    return 'application/octet-stream';
+}
+
+function formatAiFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function escapeAiHtml(text) {
+    if (!text) return '';
+    return text.replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+if (aiAttachImageBtn && aiImageInput) {
+    aiAttachImageBtn.addEventListener('click', () => aiImageInput.click());
+    handleAiFileSelect(aiImageInput, 'image');
+}
+if (aiAttachPdfBtn && aiPdfInput) {
+    aiAttachPdfBtn.addEventListener('click', () => aiPdfInput.click());
+    handleAiFileSelect(aiPdfInput, 'pdf');
+}
+if (aiAttachAudioBtn && aiAudioInput) {
+    aiAttachAudioBtn.addEventListener('click', () => aiAudioInput.click());
+    handleAiFileSelect(aiAudioInput, 'audio');
+}
+if (aiAttachHtmlBtn && aiHtmlInput) {
+    aiAttachHtmlBtn.addEventListener('click', () => aiHtmlInput.click());
+    handleAiFileSelect(aiHtmlInput, 'html');
+}
+if (aiAttachVideoBtn && aiVideoInput) {
+    aiAttachVideoBtn.addEventListener('click', () => aiVideoInput.click());
+    handleAiFileSelect(aiVideoInput, 'video');
+}
+
+function renderAiAttachedFiles() {
+    if (!aiChatbotPreviewContainer) return;
+
+    if (aiAttachedFiles.length === 0) {
+        aiChatbotPreviewContainer.style.display = 'none';
+        aiChatbotPreviewContainer.innerHTML = '';
+        return;
+    }
+
+    aiChatbotPreviewContainer.style.display = 'flex';
+    aiChatbotPreviewContainer.innerHTML = aiAttachedFiles.map((file, idx) => {
+        let iconHtml = '<i class="fa-solid fa-file" style="color: #60a5fa;"></i>';
+        if (file.type === 'image') {
+            iconHtml = `<img src="${file.dataUrl}" class="thumb" alt="미리보기" />`;
+        } else if (file.type === 'pdf') {
+            iconHtml = '<i class="fa-regular fa-file-pdf" style="font-size: 1.3rem; color: #ff922b;"></i>';
+        } else if (file.type === 'audio') {
+            iconHtml = '<i class="fa-solid fa-microphone" style="font-size: 1.3rem; color: #51cf66;"></i>';
+        } else if (file.type === 'html') {
+            iconHtml = '<i class="fa-solid fa-file-code" style="font-size: 1.3rem; color: #cc5de8;"></i>';
+        } else if (file.type === 'video') {
+            iconHtml = '<i class="fa-regular fa-file-video" style="font-size: 1.3rem; color: #f76707;"></i>';
+        }
+
+        return `
+            <div class="ai-preview-card">
+                ${iconHtml}
+                <div class="ai-preview-card-info">
+                    <span class="ai-preview-card-name">${escapeAiHtml(file.name)}</span>
+                    <span class="ai-preview-card-size">${file.size}</span>
+                </div>
+                <button type="button" class="ai-preview-card-remove" onclick="removeAiAttachedFile(${idx})" aria-label="삭제">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+window.removeAiAttachedFile = function (index) {
+    if (index >= 0 && index < aiAttachedFiles.length) {
+        aiAttachedFiles.splice(index, 1);
+        renderAiAttachedFiles();
+    }
+};
+
 // AI 챗봇 클라이언트 인터랙션 (설정 모달과 동일한 사이즈 및 오버레이 모달)
 const aiChatbotModalOverlay = document.getElementById('aiChatbotModalOverlay');
+const aiChatbotScrollbar = document.getElementById('aiChatbotScrollbar');
+const aiChatbotScrollbarThumb = document.getElementById('aiChatbotScrollbarThumb');
 
-function openAiChatbotModal() {
-    if (aiChatbotModalOverlay) aiChatbotModalOverlay.classList.add('active');
-    if (aiChatbotWindow) {
-        aiChatbotWindow.classList.remove('hidden');
+let aiScrollTimeout;
+let isHoveringAiScrollbar = false;
+let isAiDragging = false;
+let aiStartY = 0;
+let aiStartScrollTop = 0;
+
+function updateAiChatbotScrollbar() {
+    if (!aiChatbotMessages || !aiChatbotScrollbar || !aiChatbotScrollbarThumb) return;
+
+    const scrollHeight = aiChatbotMessages.scrollHeight;
+    const clientHeight = aiChatbotMessages.clientHeight;
+    const scrollTop = aiChatbotMessages.scrollTop;
+
+    // AI 챗봇 모달이 비활성화 상태이거나 내용이 적어 스크롤이 불필요하면 숨김
+    if (!aiChatbotWindow || !aiChatbotWindow.classList.contains('active') || scrollHeight <= clientHeight) {
+        aiChatbotScrollbar.classList.remove('visible');
+        return;
+    }
+
+    const trackHeight = aiChatbotScrollbar.clientHeight;
+    // 썸 최소 높이 30px 설정
+    const thumbHeight = Math.max(30, (clientHeight / scrollHeight) * trackHeight);
+    const maxScrollTop = scrollHeight - clientHeight;
+    const maxThumbTop = trackHeight - thumbHeight;
+
+    const thumbTop = maxScrollTop > 0 ? (scrollTop / maxScrollTop) * maxThumbTop : 0;
+
+    aiChatbotScrollbarThumb.style.height = `${thumbHeight}px`;
+    aiChatbotScrollbarThumb.style.transform = `translateY(${thumbTop}px)`;
+
+    // 스크롤 시 보이게 함
+    aiChatbotScrollbar.classList.add('visible');
+
+    // 타이머 재설정 (사용 중이 아닐 때 1.5초 후 페이드 아웃)
+    clearTimeout(aiScrollTimeout);
+    if (!isAiDragging && !isHoveringAiScrollbar) {
+        aiScrollTimeout = setTimeout(() => {
+            aiChatbotScrollbar.classList.remove('visible');
+        }, 1500);
+    }
+}
+
+if (aiChatbotMessages) {
+    aiChatbotMessages.addEventListener('scroll', updateAiChatbotScrollbar, { passive: true });
+}
+
+if (aiChatbotScrollbar) {
+    aiChatbotScrollbar.addEventListener('mouseenter', () => {
+        isHoveringAiScrollbar = true;
+        updateAiChatbotScrollbar();
+    });
+    aiChatbotScrollbar.addEventListener('mouseleave', () => {
+        isHoveringAiScrollbar = false;
+        if (!isAiDragging) {
+            clearTimeout(aiScrollTimeout);
+            aiScrollTimeout = setTimeout(() => {
+                aiChatbotScrollbar.classList.remove('visible');
+            }, 1500);
+        }
+    });
+}
+
+if (aiChatbotScrollbarThumb) {
+    aiChatbotScrollbarThumb.addEventListener('mousedown', (e) => {
+        isAiDragging = true;
+        aiStartY = e.clientY;
+        aiStartScrollTop = aiChatbotMessages.scrollTop;
+        aiChatbotScrollbarThumb.classList.add('dragging');
+        document.body.style.userSelect = 'none';
+
+        const onMouseMove = (moveEvent) => {
+            if (!isAiDragging) return;
+            const deltaY = moveEvent.clientY - aiStartY;
+            const trackHeight = aiChatbotScrollbar.clientHeight;
+            const thumbHeight = parseFloat(aiChatbotScrollbarThumb.style.height) || 30;
+            const maxScrollTop = aiChatbotMessages.scrollHeight - aiChatbotMessages.clientHeight;
+            const maxThumbTop = trackHeight - thumbHeight;
+
+            if (maxThumbTop > 0) {
+                const scrollDelta = (deltaY / maxThumbTop) * maxScrollTop;
+                aiChatbotMessages.scrollTop = aiStartScrollTop + scrollDelta;
+            }
+        };
+
+        const onMouseUp = () => {
+            isAiDragging = false;
+            aiChatbotScrollbarThumb.classList.remove('dragging');
+            document.body.style.userSelect = '';
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            if (!isHoveringAiScrollbar) {
+                clearTimeout(aiScrollTimeout);
+                aiScrollTimeout = setTimeout(() => {
+                    aiChatbotScrollbar.classList.remove('visible');
+                }, 1500);
+            }
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+    });
+}
+
+window.openAiChatbotModal = function () {
+    if (aiChatbotModalOverlay && aiChatbotWindow) {
+        history.pushState({ modal: 'aiChatbotModal' }, '', '');
+        aiChatbotModalOverlay.classList.add('active');
         aiChatbotWindow.classList.add('active');
+        if (aiChatbotInput) aiChatbotInput.focus();
+        if (aiChatbotMessages) aiChatbotMessages.scrollTop = aiChatbotMessages.scrollHeight;
+        setTimeout(updateAiChatbotScrollbar, 100);
     }
-    if (aiChatbotInput) aiChatbotInput.focus();
-    if (aiChatbotMessages) aiChatbotMessages.scrollTop = aiChatbotMessages.scrollHeight;
-}
+};
 
-function closeAiChatbotModal() {
-    if (aiChatbotModalOverlay) aiChatbotModalOverlay.classList.remove('active');
-    if (aiChatbotWindow) {
-        aiChatbotWindow.classList.add('hidden');
+window.closeAiChatbotModal = function (popHistory = true) {
+    if (aiChatbotModalOverlay && aiChatbotWindow) {
+        aiChatbotModalOverlay.classList.remove('active');
         aiChatbotWindow.classList.remove('active');
+        if (aiChatbotScrollbar) aiChatbotScrollbar.classList.remove('visible');
+        if (popHistory && history.state && history.state.modal === 'aiChatbotModal') {
+            history.back();
+        }
     }
-}
+};
 
 if (aiChatbotFab) {
     aiChatbotFab.addEventListener('click', () => {
         if (aiChatbotWindow && aiChatbotWindow.classList.contains('active')) {
-            closeAiChatbotModal();
+            window.closeAiChatbotModal();
         } else {
-            openAiChatbotModal();
+            window.openAiChatbotModal();
         }
     });
 }
 
 if (closeAiChatbot) {
-    closeAiChatbot.addEventListener('click', closeAiChatbotModal);
+    closeAiChatbot.addEventListener('click', () => window.closeAiChatbotModal());
 }
 
 if (aiChatbotModalOverlay) {
-    aiChatbotModalOverlay.addEventListener('click', closeAiChatbotModal);
+    aiChatbotModalOverlay.addEventListener('click', () => window.closeAiChatbotModal());
 }
+
+window.addEventListener('resize', () => {
+    updateScrollbar();
+    updateAiChatbotScrollbar();
+});
 
 async function sendChatbotMessage() {
     const message = aiChatbotInput.value.trim();
-    if (!message) return;
+    if (!message && aiAttachedFiles.length === 0) return;
 
-    appendChatbotMessage('user', message);
+    // 사용자 화면 메시지 HTML 생성
+    let userMsgHtml = '';
+    if (message) {
+        userMsgHtml += escapeAiHtml(message).replace(/\n/g, '<br>');
+    }
+
+    if (aiAttachedFiles.length > 0) {
+        const attachCardsHtml = aiAttachedFiles.map(file => {
+            if (file.type === 'image') {
+                return `<div style="margin-top: 6px;"><img src="${file.dataUrl}" style="max-width: 100%; max-height: 220px; border-radius: 8px; object-fit: contain; border: 1px solid rgba(255,255,255,0.15);" /></div>`;
+            } else {
+                let fileIcon = 'fa-file';
+                if (file.type === 'pdf') fileIcon = 'fa-file-pdf';
+                if (file.type === 'audio') fileIcon = 'fa-microphone';
+                if (file.type === 'html') fileIcon = 'fa-file-code';
+                if (file.type === 'video') fileIcon = 'fa-file-video';
+
+                return `<div style="margin-top: 6px; display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 8px; font-size: 0.82rem;">
+                    <i class="fa-solid ${fileIcon}"></i> ${escapeAiHtml(file.name)} (${file.size})
+                </div>`;
+            }
+        }).join('');
+
+        userMsgHtml += `<div style="margin-top: 4px;">${attachCardsHtml}</div>`;
+    }
+
+    const currentFiles = [...aiAttachedFiles];
+    aiAttachedFiles = [];
+    renderAiAttachedFiles();
+
     aiChatbotInput.value = '';
     aiChatbotInput.focus();
 
-    const loadingId = appendChatbotMessage('assistant', '<i class="fa-solid fa-circle-notch fa-spin"></i> AI 비서가 고민하고 있습니다...');
+    appendChatbotMessage('user', userMsgHtml);
+
+    const loadingId = appendChatbotMessage('assistant', '<i class="fa-solid fa-circle-notch fa-spin"></i> AI 비서가 분석 후 고민하고 있습니다...');
 
     try {
-        const systemPrompt = `너는 양중과학동아리의 AI 비서/도우미야. 부원들이 과학 원리를 묻거나 동아리 소통에 대해 이야기하면 친절하고 유머러스하게 중학생 눈높이에서 답변해줘. 마크다운 기호 없이 가독성 좋고 부러운 줄바꿈으로 한국어로 답변해줘.
-사용자 질문: ${message}`;
+        const parts = [];
+        let systemPromptText = `너는 양중과학동아리의 AI 비서/도우미야. 부원들이 과학 원리를 묻거나 첨부된 사진, 문서, 자료에 대해 이야기하면 친절하고 유머러스하게 중학생 눈높이에서 답변해줘. 마크다운 기호 없이 가독성 좋고 깔끔한 줄바꿈으로 한국어로 답변해줘.`;
+        if (message) {
+            systemPromptText += `\n사용자 질문: ${message}`;
+        } else {
+            systemPromptText += `\n사용자가 첨부파일을 전송했습니다. 첨부된 파일 내용을 확인하고 친절하게 설명해줘.`;
+        }
 
-        const reply = await callGeminiAPI(window.aiConfig.apiKey, systemPrompt);
+        parts.push({ text: systemPromptText });
+
+        // Gemini 멀티모달 inlineData 구조체 생성
+        currentFiles.forEach(f => {
+            const base64Match = f.dataUrl.match(/^data:(.*?);base64,(.*)$/);
+            if (base64Match) {
+                parts.push({
+                    inlineData: {
+                        mimeType: base64Match[1] || f.mimeType,
+                        data: base64Match[2]
+                    }
+                });
+            }
+        });
+
+        const reply = await callGeminiAPI(window.aiConfig.apiKey, parts);
         removeChatbotMessage(loadingId);
         appendChatbotMessage('assistant', reply.replace(/\n/g, '<br>'));
     } catch (e) {
         removeChatbotMessage(loadingId);
-        appendChatbotMessage('assistant', `<span style="color: #f87171;"><i class="fa-solid fa-triangle-exclamation"></i> 에러 발생: ${e.message}<br>API 키 만료나 네트워크 환경을 확인해 주세요.</span>`);
+        appendChatbotMessage('assistant', `<span style="color: #f87171;"><i class="fa-solid fa-triangle-exclamation"></i> 에러 발생: ${e.message}<br>API 키 만료나 파일 형식, 네트워크 환경을 확인해 주세요.</span>`);
     }
 }
 
@@ -1036,12 +1379,14 @@ function appendChatbotMessage(sender, text) {
     msgDiv.innerHTML = text;
     aiChatbotMessages.appendChild(msgDiv);
     aiChatbotMessages.scrollTop = aiChatbotMessages.scrollHeight;
+    setTimeout(updateAiChatbotScrollbar, 50);
     return msgId;
 }
 
 function removeChatbotMessage(id) {
     const el = document.getElementById(id);
     if (el) el.remove();
+    setTimeout(updateAiChatbotScrollbar, 50);
 }
 
 if (aiChatbotSendBtn) {
@@ -1896,6 +2241,7 @@ let _isScrollHideEnabled = localStorage.getItem('setting_scroll_hide') !== 'fals
 const _logoHomeBtn = document.getElementById('logoHomeBtn');
 const _headerActions = document.querySelector('.header-actions');
 const _writePostBtnGlob = document.getElementById('writePostBtn');
+const _aiChatbotFabGlob = document.getElementById('aiChatbotFab');
 
 const scrollHideToggle = document.getElementById('scrollHideToggle');
 if (scrollHideToggle) {
@@ -1923,6 +2269,10 @@ function _hideTopButtons() {
             _writePostBtnGlob.style.opacity = '0';
             _writePostBtnGlob.style.pointerEvents = 'none';
         }
+        if (_aiChatbotFabGlob) {
+            _aiChatbotFabGlob.style.opacity = '0';
+            _aiChatbotFabGlob.style.pointerEvents = 'none';
+        }
         _isTopButtonsHidden = true;
     }
 }
@@ -1940,6 +2290,10 @@ function _showTopButtons() {
         if (_writePostBtnGlob) {
             _writePostBtnGlob.style.opacity = '';
             _writePostBtnGlob.style.pointerEvents = '';
+        }
+        if (_aiChatbotFabGlob) {
+            _aiChatbotFabGlob.style.opacity = '';
+            _aiChatbotFabGlob.style.pointerEvents = '';
         }
         _isTopButtonsHidden = false;
     }
