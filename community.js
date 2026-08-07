@@ -240,18 +240,23 @@ function closeWritePage(e) {
     document.getElementById('postBody').value = '';
     if (typeof window.updateImagePreview === 'function') window.updateImagePreview();
 
-    switchPage(currentPage, suggestionPage, true);
-    if (fromPopState !== true && history.state && history.state.modal === 'writePage') {
-        window._isProgrammaticBack = true;
-        history.back();
-    }
-
-    // 상세 보기에서 수정한 경우: 수정된 게시글 상세를 다시 열기
     if (wasEditFromDetail && editingId) {
-        setTimeout(() => {
-            const card = document.querySelector(`.board-card[data-id="${editingId}"]`);
-            if (card) card.click();
-        }, 400);
+        // 상세 보기에서 수정한 경우: 목록 화면으로의 400ms 지연 및 딜레이 애니메이션 없이 즉시 상세 페이지 열기
+        switchPage(currentPage, suggestionPage, false);
+        if (fromPopState !== true && history.state && history.state.modal === 'writePage') {
+            window._isProgrammaticBack = true;
+            history.back();
+        }
+        const card = document.querySelector(`.board-card[data-id="${editingId}"]`);
+        if (card) {
+            card.click();
+        }
+    } else {
+        switchPage(currentPage, suggestionPage, true);
+        if (fromPopState !== true && history.state && history.state.modal === 'writePage') {
+            window._isProgrammaticBack = true;
+            history.back();
+        }
     }
 }
 if (writePostBackBtn) {
@@ -444,7 +449,7 @@ window.updateImagePreview = function updateImagePreview() {
         `;
         div.innerHTML = `
             <i class="${iconInfo.icon}" style="font-size: 2.2rem; color: ${iconInfo.color}; margin-bottom: 0.2rem;"></i>
-            <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-primary); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(attName)}">${escapeHtml(attName)}</span>
+            <span style="font-size: 0.72rem; font-weight: 600; color: var(--text-primary); max-width: 95px; word-break: break-all; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25;" title="${escapeHtml(attName)}">${escapeHtml(attName)}</span>
             <span style="font-size: 0.65rem; color: #64748b; font-weight: 500;">기존 첨부</span>
             <button type="button" class="image-preview-remove" onclick="removeExistingAttachment(${index})" title="삭제"><i class="fa-solid fa-xmark"></i></button>
         `;
@@ -484,7 +489,7 @@ window.updateImagePreview = function updateImagePreview() {
             `;
             div.innerHTML = `
                 <i class="${iconInfo.icon}" style="font-size: 2.2rem; color: ${iconInfo.color}; margin-bottom: 0.2rem;"></i>
-                <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-primary); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</span>
+                <span style="font-size: 0.72rem; font-weight: 600; color: var(--text-primary); max-width: 95px; word-break: break-all; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25;" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</span>
                 <span style="font-size: 0.65rem; color: #64748b; font-weight: 500;">${(file.size / 1024).toFixed(1)} KB</span>
                 <button type="button" class="image-preview-remove" onclick="removeImage(${index})" title="삭제"><i class="fa-solid fa-xmark"></i></button>
             `;

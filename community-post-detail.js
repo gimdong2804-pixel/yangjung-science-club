@@ -342,11 +342,11 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                 return `
                                             <div style="padding: 0.9rem 1.1rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; flex-direction: column; gap: 0.6rem; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
                                                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap;">
-                                                    <div style="display: flex; align-items: center; gap: 0.7rem; overflow: hidden; flex: 1; min-width: 180px;">
+                                                    <div style="display: flex; align-items: center; gap: 0.7rem; flex: 1; min-width: 180px;">
                                                         <div style="width: 38px; height: 38px; border-radius: 10px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                                             <i class="${iconClass}" style="font-size: 1.35rem; color: ${iconColor};"></i>
                                                         </div>
-                                                        <span style="font-size: 0.95rem; font-weight: 700; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(attName)}</span>
+                                                        <span style="font-size: 0.95rem; font-weight: 700; color: #0f172a; word-break: break-all; white-space: normal; line-height: 1.35; flex: 1;">${escapeHtml(attName)}</span>
                                                     </div>
                                                     <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
                                                         ${isHtml ? `<button type="button" onclick="openHtmlPreviewModal('${toJsString(att.url)}', '${toJsString(attName)}')" style="padding: 0.45rem 0.9rem; border: none; border-radius: 8px; background: #7c3aed; color: #ffffff; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25); transition: background 0.15s, transform 0.1s;"><i class="fa-solid fa-eye"></i> 미리보기</button>` : ''}

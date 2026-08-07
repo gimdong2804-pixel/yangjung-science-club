@@ -225,11 +225,13 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
             const name = parsed.name;
             if (url) {
                 html += `
-                    <div style="display:inline-flex; align-items:center; gap:0.6rem; padding:0.55rem 0.9rem; background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; color:#0f172a; font-size:0.88rem; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
-                        <i class="fa-solid fa-file-pdf" style="color:#ea580c; font-size: 1.1rem;"></i>
-                        <span style="font-weight: 600; color: #0f172a;">${escapeHtml(name)}</span>
-                        <button type="button" onclick="event.stopPropagation(); openPdfPreviewModal('${toJsString(url)}', '${toJsString(name)}')" style="padding: 0.3rem 0.65rem; border: none; border-radius: 6px; background: #ea580c; color: #ffffff; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;"><i class="fa-solid fa-eye"></i> 미리보기</button>
-                        <button type="button" onclick="event.stopPropagation(); downloadFileAttachment('${toJsString(url)}', '${toJsString(name)}')" style="padding: 0.3rem 0.65rem; border: none; border-radius: 6px; background: #2563eb; color: #ffffff; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;"><i class="fa-solid fa-download"></i> 다운로드</button>
+                    <div style="display:inline-flex; align-items:center; gap:0.6rem; padding:0.55rem 0.9rem; background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; color:#0f172a; font-size:0.88rem; box-shadow:0 2px 6px rgba(0,0,0,0.04); max-width: 100%; flex-wrap: wrap;">
+                        <i class="fa-solid fa-file-pdf" style="color:#ea580c; font-size: 1.1rem; flex-shrink: 0;"></i>
+                        <span style="font-weight: 600; color: #0f172a; word-break: break-all; white-space: normal; line-height: 1.3; flex: 1; min-width: 100px;">${escapeHtml(name)}</span>
+                        <div style="display: inline-flex; align-items: center; gap: 0.35rem; flex-shrink: 0;">
+                            <button type="button" onclick="event.stopPropagation(); openPdfPreviewModal('${toJsString(url)}', '${toJsString(name)}')" style="padding: 0.3rem 0.65rem; border: none; border-radius: 6px; background: #ea580c; color: #ffffff; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;"><i class="fa-solid fa-eye"></i> 미리보기</button>
+                            <button type="button" onclick="event.stopPropagation(); downloadFileAttachment('${toJsString(url)}', '${toJsString(name)}')" style="padding: 0.3rem 0.65rem; border: none; border-radius: 6px; background: #2563eb; color: #ffffff; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;"><i class="fa-solid fa-download"></i> 다운로드</button>
+                        </div>
                     </div>
                 `;
             }
@@ -245,11 +247,13 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
             const name = parsed.name;
             if (url) {
                 html += `
-                    <div style="display:inline-flex; align-items:center; gap:0.6rem; padding:0.55rem 0.9rem; background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; color:#0f172a; font-size:0.88rem; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
-                        <i class="fa-solid fa-file-code" style="color:#7c3aed; font-size: 1.1rem;"></i>
-                        <span style="font-weight: 600; color: #0f172a;">${escapeHtml(name)}</span>
-                        <button type="button" onclick="event.stopPropagation(); openHtmlPreviewModal('${toJsString(url)}', '${toJsString(name)}')" style="padding: 0.3rem 0.65rem; border: none; border-radius: 6px; background: #7c3aed; color: #ffffff; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;"><i class="fa-solid fa-eye"></i> 미리보기</button>
-                        <button type="button" onclick="event.stopPropagation(); downloadFileAttachment('${toJsString(url)}', '${toJsString(name)}')" style="padding: 0.3rem 0.65rem; border: none; border-radius: 6px; background: #2563eb; color: #ffffff; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;"><i class="fa-solid fa-download"></i> 다운로드</button>
+                    <div style="display:inline-flex; align-items:center; gap:0.6rem; padding:0.55rem 0.9rem; background:#ffffff; border:1px solid #e2e8f0; border-radius:10px; color:#0f172a; font-size:0.88rem; box-shadow:0 2px 6px rgba(0,0,0,0.04); max-width: 100%; flex-wrap: wrap;">
+                        <i class="fa-solid fa-file-code" style="color:#7c3aed; font-size: 1.1rem; flex-shrink: 0;"></i>
+                        <span style="font-weight: 600; color: #0f172a; word-break: break-all; white-space: normal; line-height: 1.3; flex: 1; min-width: 100px;">${escapeHtml(name)}</span>
+                        <div style="display: inline-flex; align-items: center; gap: 0.35rem; flex-shrink: 0;">
+                            <button type="button" onclick="event.stopPropagation(); openHtmlPreviewModal('${toJsString(url)}', '${toJsString(name)}')" style="padding: 0.3rem 0.65rem; border: none; border-radius: 6px; background: #7c3aed; color: #ffffff; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;"><i class="fa-solid fa-eye"></i> 미리보기</button>
+                            <button type="button" onclick="event.stopPropagation(); downloadFileAttachment('${toJsString(url)}', '${toJsString(name)}')" style="padding: 0.3rem 0.65rem; border: none; border-radius: 6px; background: #2563eb; color: #ffffff; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.25rem;"><i class="fa-solid fa-download"></i> 다운로드</button>
+                        </div>
                     </div>
                 `;
             }

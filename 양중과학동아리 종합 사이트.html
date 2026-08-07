@@ -1217,10 +1217,11 @@
         style="max-width: 950px; width: 95vw; height: 88vh; display: flex; flex-direction: column; padding: 1.2rem; gap: 0.8rem; z-index: 10005; border-radius: 20px; background: var(--card-bg, #ffffff);">
         <div
             style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.8rem;">
-            <div style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden;">
-                <i id="filePreviewIcon" class="fa-solid fa-file-code" style="font-size: 1.4rem; color: #7c3aed;"></i>
+            <div style="display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0; margin-right: 0.5rem;">
+                <i id="filePreviewIcon" class="fa-solid fa-file-code"
+                    style="font-size: 1.4rem; color: #7c3aed; flex-shrink: 0;"></i>
                 <h3 id="filePreviewTitle"
-                    style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin: 0; word-break: break-all; white-space: normal; line-height: 1.35; max-height: 2.7em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;">
                     첨부파일 미리보기</h3>
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
