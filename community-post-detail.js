@@ -225,9 +225,43 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                         <div class="post-body" style="font-size: 1.05rem; line-height: 1.7; color: var(--text-primary); padding-bottom: 1rem;">
                             ${typeof window.renderTextWithYoutubeLinks === 'function' ? window.renderTextWithYoutubeLinks(currentPost.body.replace(/\n/g, '<br>')) : currentPost.body.replace(/\n/g, '<br>')}
                         </div>
+
                         ${currentPost.images && currentPost.images.length > 0 ? `
                             <div class="post-image-gallery">
                                 ${currentPost.images.map((url, imgIdx) => `<img src="${url}" alt="게시글 첨부 사진" style="cursor: pointer;" onclick="openLightbox('${url}', {postId:'${currentPostId}', commentId:null, authorUid:'${currentPost.uid || ''}', imageIndex:${imgIdx}})">`).join('')}
+                            </div>
+                        ` : ''}
+
+                        ${currentPost.attachments && currentPost.attachments.length > 0 ? `
+                            <div class="post-attachments-section" style="margin-top: 1.2rem; padding: 1rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 14px;">
+                                <div style="font-size: 0.88rem; font-weight: 700; color: var(--accent-color); margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+                                    <i class="fa-solid fa-paperclip"></i>
+                                    <span>첨부파일 목록 (${currentPost.attachments.length})</span>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                    ${currentPost.attachments.map(att => {
+                                        let iconClass = 'fa-solid fa-file-lines';
+                                        let iconColor = '#4dadf7';
+                                        const name = att.name || '';
+                                        const type = att.type || '';
+                                        if (type.includes('pdf') || /\.pdf$/i.test(name)) {
+                                            iconClass = 'fa-solid fa-file-pdf'; iconColor = '#ff922b';
+                                        } else if (type.includes('html') || /\.(html|htm)$/i.test(name)) {
+                                            iconClass = 'fa-solid fa-file-code'; iconColor = '#cc5de8';
+                                        } else if (type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a)$/i.test(name)) {
+                                            iconClass = 'fa-solid fa-file-audio'; iconColor = '#51cf66';
+                                        } else if (type.startsWith('video/') || /\.(mp4|webm)$/i.test(name)) {
+                                            iconClass = 'fa-solid fa-file-video'; iconColor = '#ff6b6b';
+                                        }
+                                        return `
+                                            <a href="${att.url}" target="_blank" download="${att.name}" style="display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: var(--text-primary); padding: 0.55rem 0.85rem; background: rgba(0, 0, 0, 0.2); border-radius: 10px; font-size: 0.88rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(59,130,246,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.2)'">
+                                                <i class="${iconClass}" style="font-size: 1.15rem; color: ${iconColor};"></i>
+                                                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">${att.name}</span>
+                                                <i class="fa-solid fa-download" style="font-size: 0.85rem; opacity: 0.7;"></i>
+                                            </a>
+                                        `;
+                                    }).join('')}
+                                </div>
                             </div>
                         ` : ''}
 

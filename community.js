@@ -310,6 +310,32 @@ if (imageFileInput) {
     });
 }
 
+function isImageFile(file) {
+    if (!file) return false;
+    if (file.type && file.type.startsWith('image/')) return true;
+    const name = file.name || '';
+    return /\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(name);
+}
+
+function getFileIconInfo(file) {
+    const name = file.name || '';
+    const type = file.type || '';
+
+    if (type.includes('pdf') || /\.pdf$/i.test(name)) {
+        return { icon: 'fa-solid fa-file-pdf', color: '#ff922b', label: 'PDF' };
+    }
+    if (type.includes('html') || /\.(html|htm)$/i.test(name)) {
+        return { icon: 'fa-solid fa-file-code', color: '#cc5de8', label: 'HTML' };
+    }
+    if (type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac)$/i.test(name)) {
+        return { icon: 'fa-solid fa-file-audio', color: '#51cf66', label: '음성' };
+    }
+    if (type.startsWith('video/') || /\.(mp4|webm|mkv|mov)$/i.test(name)) {
+        return { icon: 'fa-solid fa-file-video', color: '#ff6b6b', label: '동영상' };
+    }
+    return { icon: 'fa-solid fa-file-lines', color: '#4dadf7', label: '문서' };
+}
+
 function updateImagePreview() {
     if (!imagePreviewContainer) return;
     imagePreviewContainer.innerHTML = '';
@@ -331,17 +357,42 @@ function updateImagePreview() {
     }
 
     selectedImages.forEach((file, index) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const div = document.createElement('div');
-            div.className = 'image-preview-item';
+        const div = document.createElement('div');
+        div.className = 'image-preview-item';
+
+        if (isImageFile(file)) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                div.innerHTML = `
+                    <img src="${e.target.result}" alt="미리보기" style="cursor: pointer;" onclick="openLightbox('${e.target.result}')">
+                    <button class="image-preview-remove" onclick="removeImage(${index})"><i class="fa-solid fa-xmark"></i></button>
+                `;
+            };
+            reader.readAsDataURL(file);
+        } else {
+            const iconInfo = getFileIconInfo(file);
+            div.style.cssText = `
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 0.75rem 0.5rem;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid var(--glass-border);
+                border-radius: 12px;
+                text-align: center;
+                gap: 0.4rem;
+                position: relative;
+                min-height: 100px;
+            `;
             div.innerHTML = `
-                        <img src="${e.target.result}" alt="미리보기" style="cursor: pointer;" onclick="openLightbox('${e.target.result}')">
-                        <button class="image-preview-remove" onclick="removeImage(${index})"><i class="fa-solid fa-xmark"></i></button>
-                    `;
-            imagePreviewContainer.appendChild(div);
-        };
-        reader.readAsDataURL(file);
+                <i class="${iconInfo.icon}" style="font-size: 2.2rem; color: ${iconInfo.color}; margin-bottom: 0.2rem;"></i>
+                <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-primary); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${file.name}</span>
+                <span style="font-size: 0.65rem; color: var(--text-secondary); opacity: 0.8;">${(file.size / 1024).toFixed(1)} KB</span>
+                <button class="image-preview-remove" onclick="removeImage(${index})"><i class="fa-solid fa-xmark"></i></button>
+            `;
+        }
+        imagePreviewContainer.appendChild(div);
     });
 }
 
@@ -371,20 +422,69 @@ if (submitPostBtn) {
 
         try {
             const imageUrls = [];
+            const attachments = [];
+
             if (selectedImages.length > 0) {
-                submitPostBtn.innerText = '이미지 업로드 중...';
+                submitPostBtn.innerText = '파일 업로드 중...';
                 for (const file of selectedImages) {
-                    const formData = new FormData();
-                    formData.append('image', file);
-                    const response = await fetch('https://api.imgbb.com/1/upload?key=2109abd69ec35602a17f2ba6f108d511', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        imageUrls.push(data.data.url);
+                    if (isImageFile(file)) {
+                        // 이미지 파일: 기존 ImgBB API 전송
+                        const formData = new FormData();
+                        formData.append('image', file);
+                        const response = await fetch('https://api.imgbb.com/1/upload?key=2109abd69ec35602a17f2ba6f108d511', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            imageUrls.push(data.data.url);
+                        } else {
+                            throw new Error('이미지 업로드 실패: ' + (data.error ? data.error.message : '알 수 없는 오류'));
+                        }
                     } else {
-                        throw new Error('이미지 업로드 실패: ' + (data.error ? data.error.message : '알 수 없는 오류'));
+                        // 비이미지 파일 (HTML, PDF, 음성 등): Firebase Storage 또는 DataURL 전송
+                        if (typeof firebase !== 'undefined' && firebase.storage) {
+                            try {
+                                const storageRef = firebase.storage().ref();
+                                const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                                const fileRef = storageRef.child(`posts/attachments/${Date.now()}_${safeName}`);
+                                const snapshot = await fileRef.put(file);
+                                const downloadUrl = await snapshot.ref.getDownloadURL();
+                                attachments.push({
+                                    name: file.name,
+                                    url: downloadUrl,
+                                    type: file.type || file.name.split('.').pop(),
+                                    size: file.size
+                                });
+                            } catch (stErr) {
+                                console.warn("Storage upload failed, falling back to DataURL:", stErr);
+                                const dataUrl = await new Promise((res, rej) => {
+                                    const r = new FileReader();
+                                    r.onload = e => res(e.target.result);
+                                    r.onerror = e => rej(e);
+                                    r.readAsDataURL(file);
+                                });
+                                attachments.push({
+                                    name: file.name,
+                                    url: dataUrl,
+                                    type: file.type || file.name.split('.').pop(),
+                                    size: file.size
+                                });
+                            }
+                        } else {
+                            const dataUrl = await new Promise((res, rej) => {
+                                const r = new FileReader();
+                                r.onload = e => res(e.target.result);
+                                r.onerror = e => rej(e);
+                                r.readAsDataURL(file);
+                            });
+                            attachments.push({
+                                name: file.name,
+                                url: dataUrl,
+                                type: file.type || file.name.split('.').pop(),
+                                size: file.size
+                            });
+                        }
                     }
                 }
             }
@@ -396,6 +496,9 @@ if (submitPostBtn) {
                 const updateData = { title: title, body: body };
                 if (imageUrls.length > 0) {
                     updateData.images = [...(window._editingPostImages || []), ...imageUrls];
+                }
+                if (attachments.length > 0) {
+                    updateData.attachments = [...(window._editingPostAttachments || []), ...attachments];
                 }
                 await db.collection('posts').doc(window._editingPostId).update(updateData);
             } else {
