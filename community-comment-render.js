@@ -204,7 +204,14 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
             const url = parsed.url;
             const name = parsed.name;
             if (url) {
-                html += `<div style="display:flex; align-items:center; gap:0.5rem;"><i class="fa-solid fa-microphone" style="color:#51cf66;"></i><span style="font-size:0.85rem;">${escapeHtml(name)}</span><audio src="${escapeHtml(url)}" controls style="height:32px; max-width:240px;"></audio></div>`;
+                html += `
+                    <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; padding: 0.4rem 0.6rem; background: var(--card-bg, rgba(255,255,255,0.05)); border: 1px solid var(--glass-border); border-radius: 8px;">
+                        <i class="fa-solid fa-microphone" style="color:#51cf66;"></i>
+                        <span style="font-size:0.85rem; font-weight: 500; color: var(--text-primary); flex: 1; min-width: 100px;">${escapeHtml(name)}</span>
+                        <audio src="${escapeHtml(url)}" controls style="height:32px; max-width:220px;"></audio>
+                        <button type="button" onclick="event.stopPropagation(); downloadFileAttachment('${toJsString(url)}', '${toJsString(name)}')" style="padding: 0.25rem 0.5rem; border: none; border-radius: 6px; background: rgba(59,130,246,0.2); color: var(--accent-color); font-size: 0.75rem; font-weight: bold; cursor: pointer;" title="다운로드"><i class="fa-solid fa-download"></i></button>
+                    </div>
+                `;
             }
         });
         html += `</div>`;
@@ -217,7 +224,14 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
             const url = parsed.url;
             const name = parsed.name;
             if (url) {
-                html += `<a href="${escapeHtml(url)}" target="_blank" download="${escapeHtml(name)}" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.8rem; background:var(--card-bg, rgba(255,255,255,0.05)); border:1px solid var(--glass-border); border-radius:8px; color:var(--text-primary); text-decoration:none; font-size:0.85rem;"><i class="fa-solid fa-file-pdf" style="color:#ff922b;"></i> ${escapeHtml(name)}</a>`;
+                html += `
+                    <div style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.4rem 0.8rem; background:var(--card-bg, rgba(255,255,255,0.05)); border:1px solid var(--glass-border); border-radius:8px; color:var(--text-primary); font-size:0.85rem;">
+                        <i class="fa-solid fa-file-pdf" style="color:#ff922b;"></i>
+                        <span style="font-weight: 500;">${escapeHtml(name)}</span>
+                        <button type="button" onclick="event.stopPropagation(); openPdfPreviewModal('${toJsString(url)}', '${toJsString(name)}')" style="padding: 0.2rem 0.5rem; border: none; border-radius: 5px; background: rgba(255,146,43,0.2); color: #ff922b; font-size: 0.75rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.2rem;"><i class="fa-solid fa-eye"></i> 보기</button>
+                        <button type="button" onclick="event.stopPropagation(); downloadFileAttachment('${toJsString(url)}', '${toJsString(name)}')" style="padding: 0.2rem 0.5rem; border: none; border-radius: 5px; background: rgba(59,130,246,0.2); color: var(--accent-color); font-size: 0.75rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.2rem;"><i class="fa-solid fa-download"></i> 저장</button>
+                    </div>
+                `;
             }
         });
         html += `</div>`;
@@ -230,7 +244,14 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
             const url = parsed.url;
             const name = parsed.name;
             if (url) {
-                html += `<a href="${escapeHtml(url)}" target="_blank" download="${escapeHtml(name)}" style="display:inline-flex; align-items:center; gap:0.4rem; padding:0.4rem 0.8rem; background:var(--card-bg, rgba(255,255,255,0.05)); border:1px solid var(--glass-border); border-radius:8px; color:var(--text-primary); text-decoration:none; font-size:0.85rem;"><i class="fa-solid fa-file-code" style="color:#cc5de8;"></i> ${escapeHtml(name)}</a>`;
+                html += `
+                    <div style="display:inline-flex; align-items:center; gap:0.5rem; padding:0.4rem 0.8rem; background:var(--card-bg, rgba(255,255,255,0.05)); border:1px solid var(--glass-border); border-radius:8px; color:var(--text-primary); font-size:0.85rem;">
+                        <i class="fa-solid fa-file-code" style="color:#cc5de8;"></i>
+                        <span style="font-weight: 500;">${escapeHtml(name)}</span>
+                        <button type="button" onclick="event.stopPropagation(); openHtmlPreviewModal('${toJsString(url)}', '${toJsString(name)}')" style="padding: 0.2rem 0.5rem; border: none; border-radius: 5px; background: rgba(204,93,232,0.2); color: #cc5de8; font-size: 0.75rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.2rem;"><i class="fa-solid fa-eye"></i> 보기</button>
+                        <button type="button" onclick="event.stopPropagation(); downloadFileAttachment('${toJsString(url)}', '${toJsString(name)}')" style="padding: 0.2rem 0.5rem; border: none; border-radius: 5px; background: rgba(59,130,246,0.2); color: var(--accent-color); font-size: 0.75rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.2rem;"><i class="fa-solid fa-download"></i> 저장</button>
+                    </div>
+                `;
             }
         });
         html += `</div>`;
@@ -262,8 +283,8 @@ function renderFlatReply(comment, tree, postId, depth = 1) {
     const mentionHtml = (parentComment && !isDeleted) ? `<span class="flat-reply-mention">@${escapeHtml(parentComment.author || '사용자')}</span> ` : '';
     const bodyHtml = isDeleted
         ? '<span class="comment-deleted-text">삭제된 댓글입니다.</span>'
-        : mentionHtml + (typeof window.renderTextWithYoutubeLinks === 'function' 
-            ? window.renderTextWithYoutubeLinks(escapeHtml(comment.body || '').replace(/\n/g, '<br>')) 
+        : mentionHtml + (typeof window.renderTextWithYoutubeLinks === 'function'
+            ? window.renderTextWithYoutubeLinks(escapeHtml(comment.body || '').replace(/\n/g, '<br>'))
             : escapeHtml(comment.body || '').replace(/\n/g, '<br>'));
 
     const attachmentsHtml = renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDeleted);
@@ -407,8 +428,8 @@ function renderCommentBranch(comment, depth, tree, postId) {
     const itemStyle = '';
     const bodyHtml = isDeleted
         ? '<span class="comment-deleted-text">삭제된 댓글입니다.</span>'
-        : (typeof window.renderTextWithYoutubeLinks === 'function' 
-            ? window.renderTextWithYoutubeLinks(escapeHtml(comment.body || '').replace(/\n/g, '<br>')) 
+        : (typeof window.renderTextWithYoutubeLinks === 'function'
+            ? window.renderTextWithYoutubeLinks(escapeHtml(comment.body || '').replace(/\n/g, '<br>'))
             : escapeHtml(comment.body || '').replace(/\n/g, '<br>'));
 
     const attachmentsHtml = renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDeleted);

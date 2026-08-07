@@ -501,6 +501,7 @@ if (submitPostBtn) {
                     email: currentUser.email,
                     body: body,
                     images: imageUrls,
+                    attachments: attachments,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     views: 0,
                     likes: 0

@@ -195,6 +195,83 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
             const heartClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
             const heartColor = isLiked ? 'color: #ff6b6b;' : 'color: var(--text-primary);';
 
+            // 첨부파일 및 이미지 자동 분류 및 정제
+            const rawImages = currentPost.images || [];
+            const rawAttachments = currentPost.attachments || [];
+
+            const displayImages = [];
+            const displayAttachments = [];
+
+            rawImages.forEach((img, idx) => {
+                let url = '';
+                let name = '첨부 이미지';
+                let type = '';
+
+                if (typeof img === 'string') {
+                    url = img;
+                } else if (img && typeof img === 'object') {
+                    url = img.url || '';
+                    name = img.name || '첨부파일';
+                    type = img.type || '';
+                }
+
+                if (!url) return;
+
+                const lowerUrl = url.toLowerCase();
+                const lowerName = name.toLowerCase();
+                const lowerType = type.toLowerCase();
+
+                const isNonImage = (
+                    lowerType.includes('html') || lowerUrl.startsWith('data:text/html') || /\.(html|htm)$/i.test(lowerName) ||
+                    lowerType.includes('pdf') || lowerUrl.startsWith('data:application/pdf') || /\.pdf$/i.test(lowerName) ||
+                    lowerType.startsWith('audio/') || lowerUrl.startsWith('data:audio/') || /\.(mp3|wav|ogg|m4a)$/i.test(lowerName) ||
+                    lowerType.startsWith('video/') || lowerUrl.startsWith('data:video/') || /\.(mp4|webm|mov)$/i.test(lowerName)
+                );
+
+                if (isNonImage) {
+                    displayAttachments.push({ url, name: (name && name !== '첨부 이미지') ? name : '첨부파일', type, index: idx });
+                } else {
+                    displayImages.push({ url, index: idx });
+                }
+            });
+
+            rawAttachments.forEach((att, idx) => {
+                let url = '';
+                let name = '첨부파일';
+                let type = '';
+
+                if (typeof att === 'string') {
+                    url = att;
+                } else if (att && typeof att === 'object') {
+                    url = att.url || att.dataUrl || '';
+                    name = att.name || '첨부파일';
+                    type = att.type || '';
+                }
+
+                if (!url) return;
+
+                const lowerUrl = url.toLowerCase();
+                const lowerName = name.toLowerCase();
+                const lowerType = type.toLowerCase();
+
+                const isImage = (
+                    lowerType.startsWith('image/') ||
+                    lowerUrl.startsWith('data:image/') ||
+                    /\.(png|jpe?g|gif|webp|svg)($|\?)/i.test(lowerUrl) ||
+                    /\.(png|jpe?g|gif|webp|svg)$/i.test(lowerName)
+                );
+
+                if (isImage) {
+                    if (!displayImages.some(i => i.url === url)) {
+                        displayImages.push({ url, index: idx });
+                    }
+                } else {
+                    if (!displayAttachments.some(a => a.url === url)) {
+                        displayAttachments.push({ url, name, type, index: idx });
+                    }
+                }
+            });
+
             area.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                             <div style="color: var(--accent-color); font-size: 0.85rem; font-weight: 600;">커뮤니티 · 게시글</div>
@@ -226,41 +303,60 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                             ${typeof window.renderTextWithYoutubeLinks === 'function' ? window.renderTextWithYoutubeLinks(currentPost.body.replace(/\n/g, '<br>')) : currentPost.body.replace(/\n/g, '<br>')}
                         </div>
 
-                        ${currentPost.images && currentPost.images.length > 0 ? `
+                        ${displayImages.length > 0 ? `
                             <div class="post-image-gallery">
-                                ${currentPost.images.map((url, imgIdx) => `<img src="${url}" alt="게시글 첨부 사진" style="cursor: pointer;" onclick="openLightbox('${url}', {postId:'${currentPostId}', commentId:null, authorUid:'${currentPost.uid || ''}', imageIndex:${imgIdx}})">`).join('')}
+                                ${displayImages.map((imgObj, imgIdx) => `<img src="${escapeHtml(imgObj.url)}" alt="게시글 첨부 사진" style="cursor: pointer;" onclick="openLightbox('${toJsString(imgObj.url)}', {postId:'${currentPostId}', commentId:null, authorUid:'${currentPost.uid || ''}', imageIndex:${imgIdx}})">`).join('')}
                             </div>
                         ` : ''}
 
-                        ${currentPost.attachments && currentPost.attachments.length > 0 ? `
+                        ${displayAttachments.length > 0 ? `
                             <div class="post-attachments-section" style="margin-top: 1.2rem; padding: 1rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); border-radius: 14px;">
-                                <div style="font-size: 0.88rem; font-weight: 700; color: var(--accent-color); margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+                                <div style="font-size: 0.88rem; font-weight: 700; color: var(--accent-color); margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
                                     <i class="fa-solid fa-paperclip"></i>
-                                    <span>첨부파일 목록 (${currentPost.attachments.length})</span>
+                                    <span>첨부파일 목록 (${displayAttachments.length})</span>
                                 </div>
-                                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                                    ${currentPost.attachments.map(att => {
-                                        let iconClass = 'fa-solid fa-file-lines';
-                                        let iconColor = '#4dadf7';
-                                        const name = att.name || '';
-                                        const type = att.type || '';
-                                        if (type.includes('pdf') || /\.pdf$/i.test(name)) {
-                                            iconClass = 'fa-solid fa-file-pdf'; iconColor = '#ff922b';
-                                        } else if (type.includes('html') || /\.(html|htm)$/i.test(name)) {
-                                            iconClass = 'fa-solid fa-file-code'; iconColor = '#cc5de8';
-                                        } else if (type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a)$/i.test(name)) {
-                                            iconClass = 'fa-solid fa-file-audio'; iconColor = '#51cf66';
-                                        } else if (type.startsWith('video/') || /\.(mp4|webm)$/i.test(name)) {
-                                            iconClass = 'fa-solid fa-file-video'; iconColor = '#ff6b6b';
-                                        }
-                                        return `
-                                            <a href="${att.url}" target="_blank" download="${att.name}" style="display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: var(--text-primary); padding: 0.55rem 0.85rem; background: rgba(0, 0, 0, 0.2); border-radius: 10px; font-size: 0.88rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(59,130,246,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.2)'">
-                                                <i class="${iconClass}" style="font-size: 1.15rem; color: ${iconColor};"></i>
-                                                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500;">${att.name}</span>
-                                                <i class="fa-solid fa-download" style="font-size: 0.85rem; opacity: 0.7;"></i>
-                                            </a>
+                                <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+                                    ${displayAttachments.map(att => {
+                let iconClass = 'fa-solid fa-file-lines';
+                let iconColor = '#4dadf7';
+                let isHtml = false;
+                let isPdf = false;
+                let isAudio = false;
+                let isVideo = false;
+
+                const attName = att.name || '첨부파일';
+                const lowerAttName = attName.toLowerCase();
+                const lowerAttUrl = (att.url || '').toLowerCase();
+                const type = (att.type || '').toLowerCase();
+
+                if (type.includes('html') || lowerAttUrl.startsWith('data:text/html') || /\.(html|htm)$/i.test(lowerAttName)) {
+                    iconClass = 'fa-solid fa-file-code'; iconColor = '#cc5de8'; isHtml = true;
+                } else if (type.includes('pdf') || lowerAttUrl.startsWith('data:application/pdf') || /\.pdf$/i.test(lowerAttName)) {
+                    iconClass = 'fa-solid fa-file-pdf'; iconColor = '#ff922b'; isPdf = true;
+                } else if (type.startsWith('audio/') || lowerAttUrl.startsWith('data:audio/') || /\.(mp3|wav|ogg|m4a)$/i.test(lowerAttName)) {
+                    iconClass = 'fa-solid fa-file-audio'; iconColor = '#51cf66'; isAudio = true;
+                } else if (type.startsWith('video/') || lowerAttUrl.startsWith('data:video/') || /\.(mp4|webm|mov)$/i.test(lowerAttName)) {
+                    iconClass = 'fa-solid fa-file-video'; iconColor = '#ff6b6b'; isVideo = true;
+                }
+
+                return `
+                                            <div style="padding: 0.75rem 0.9rem; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--glass-border); border-radius: 12px; display: flex; flex-direction: column; gap: 0.5rem;">
+                                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;">
+                                                    <div style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden; flex: 1;">
+                                                        <i class="${iconClass}" style="font-size: 1.25rem; color: ${iconColor}; flex-shrink: 0;"></i>
+                                                        <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(attName)}</span>
+                                                    </div>
+                                                    <div style="display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;">
+                                                        ${isHtml ? `<button type="button" onclick="openHtmlPreviewModal('${toJsString(att.url)}', '${toJsString(attName)}')" style="padding: 0.35rem 0.75rem; border: none; border-radius: 6px; background: rgba(204, 93, 232, 0.2); color: #cc5de8; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem;"><i class="fa-solid fa-eye"></i> 미리보기</button>` : ''}
+                                                        ${isPdf ? `<button type="button" onclick="openPdfPreviewModal('${toJsString(att.url)}', '${toJsString(attName)}')" style="padding: 0.35rem 0.75rem; border: none; border-radius: 6px; background: rgba(255, 146, 43, 0.2); color: #ff922b; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem;"><i class="fa-solid fa-eye"></i> 미리보기</button>` : ''}
+                                                        <button type="button" onclick="downloadFileAttachment('${toJsString(att.url)}', '${toJsString(attName)}')" style="padding: 0.35rem 0.75rem; border: none; border-radius: 6px; background: rgba(59, 130, 246, 0.2); color: var(--accent-color); font-size: 0.8rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem;"><i class="fa-solid fa-download"></i> 다운로드</button>
+                                                    </div>
+                                                </div>
+                                                ${isAudio ? `<audio controls src="${escapeHtml(att.url)}" style="width: 100%; height: 36px; margin-top: 0.2rem; border-radius: 8px;"></audio>` : ''}
+                                                ${isVideo ? `<video controls playsinline src="${escapeHtml(att.url)}" style="max-width: 100%; max-height: 360px; border-radius: 8px; margin-top: 0.2rem;"></video>` : ''}
+                                            </div>
                                         `;
-                                    }).join('')}
+            }).join('')}
                                 </div>
                             </div>
                         ` : ''}
@@ -1174,4 +1270,137 @@ window.deleteComment = async function (postId, commentId, isReply = false) {
         }
     }
 };
+
+// --- 전역 첨부파일 미리보기 및 안전 다운로드 헬퍼 ---
+window.downloadFileAttachment = function (url, filename = 'download') {
+    if (!url) return;
+    try {
+        if (url.startsWith('data:') || url.startsWith('blob:')) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        } else if (url.startsWith('http')) {
+            fetch(url)
+                .then(res => res.blob())
+                .then(blob => {
+                    const blobUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+                })
+                .catch(() => {
+                    window.open(url, '_blank');
+                });
+        } else {
+            window.open(url, '_blank');
+        }
+    } catch (e) {
+        console.error('Download error:', e);
+        window.open(url, '_blank');
+    }
+};
+
+window.openHtmlPreviewModal = function (url, filename = 'HTML 문서') {
+    const overlay = document.getElementById('filePreviewModalOverlay');
+    const modal = document.getElementById('filePreviewModal');
+    const titleEl = document.getElementById('filePreviewTitle');
+    const iconEl = document.getElementById('filePreviewIcon');
+    const iframe = document.getElementById('filePreviewIframe');
+    const downloadBtn = document.getElementById('filePreviewDownloadBtn');
+
+    if (!overlay || !modal || !iframe) return;
+
+    if (titleEl) titleEl.textContent = filename || 'HTML 미리보기';
+    if (iconEl) iconEl.className = 'fa-solid fa-file-code';
+    if (iconEl) iconEl.style.color = '#cc5de8';
+
+    if (downloadBtn) {
+        downloadBtn.onclick = () => window.downloadFileAttachment(url, filename);
+    }
+
+    if (url.startsWith('data:text/html')) {
+        try {
+            if (url.includes(';base64,')) {
+                const base64Data = url.split(';base64,')[1];
+                const decodedText = decodeURIComponent(escape(atob(base64Data)));
+                iframe.srcdoc = decodedText;
+            } else {
+                const textData = decodeURIComponent(url.split('data:text/html,')[1] || url.split('data:text/html;charset=utf-8,')[1] || '');
+                iframe.srcdoc = textData || '<html><body>내용 없음</body></html>';
+            }
+        } catch (e) {
+            console.warn('HTML data url parse error:', e);
+            iframe.src = url;
+        }
+    } else {
+        iframe.src = url;
+    }
+
+    overlay.classList.add('active');
+    modal.classList.add('active');
+};
+
+window.openPdfPreviewModal = function (url, filename = 'PDF 문서') {
+    const overlay = document.getElementById('filePreviewModalOverlay');
+    const modal = document.getElementById('filePreviewModal');
+    const titleEl = document.getElementById('filePreviewTitle');
+    const iconEl = document.getElementById('filePreviewIcon');
+    const iframe = document.getElementById('filePreviewIframe');
+    const downloadBtn = document.getElementById('filePreviewDownloadBtn');
+
+    if (!overlay || !modal || !iframe) return;
+
+    if (titleEl) titleEl.textContent = filename || 'PDF 미리보기';
+    if (iconEl) iconEl.className = 'fa-solid fa-file-pdf';
+    if (iconEl) iconEl.style.color = '#ff922b';
+
+    if (downloadBtn) {
+        downloadBtn.onclick = () => window.downloadFileAttachment(url, filename);
+    }
+
+    if (url.startsWith('data:application/pdf')) {
+        try {
+            const arr = url.split(',');
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) u8arr[n] = bstr.charCodeAt(n);
+            const blob = new Blob([u8arr], { type: 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            iframe.src = blobUrl;
+        } catch (e) {
+            iframe.src = url;
+        }
+    } else {
+        iframe.src = url;
+    }
+
+    overlay.classList.add('active');
+    modal.classList.add('active');
+};
+
+window.closeFilePreviewModal = function () {
+    const overlay = document.getElementById('filePreviewModalOverlay');
+    const modal = document.getElementById('filePreviewModal');
+    const iframe = document.getElementById('filePreviewIframe');
+
+    if (overlay) overlay.classList.remove('active');
+    if (modal) modal.classList.remove('active');
+    if (iframe) iframe.src = 'about:blank';
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const closeBtn = document.getElementById('filePreviewCloseBtn');
+    const overlay = document.getElementById('filePreviewModalOverlay');
+    if (closeBtn) closeBtn.addEventListener('click', window.closeFilePreviewModal);
+    if (overlay) overlay.addEventListener('click', window.closeFilePreviewModal);
+});
+
 
