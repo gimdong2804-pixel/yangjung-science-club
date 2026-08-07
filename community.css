@@ -1391,7 +1391,7 @@ body.multi-select-active .reply-target-bar {
 }
 
 .image-lightbox-close:hover {
-    background: rgba(255, 255, 255, 0.35);
+    color: #3b82f6 !important;
     transform: scale(1.05);
 }
 

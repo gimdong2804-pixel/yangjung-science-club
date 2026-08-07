@@ -310,7 +310,7 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                         ` : ''}
 
                         ${displayAttachments.length > 0 ? `
-                            <div class="post-attachments-section" style="margin-top: 1.5rem; padding: 1.25rem; background: var(--card-bg, #ffffff); border: 1px solid var(--glass-border); border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.06);">
+                            <div class="post-attachments-section" style="margin-top: 1.5rem; padding: 1.25rem; background: var(--glass-bg, rgba(30, 41, 59, 0.7)); border: 1px solid var(--glass-border); border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.12);">
                                 <div style="font-size: 0.95rem; font-weight: 700; color: var(--accent-color); margin-bottom: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
                                     <i class="fa-solid fa-paperclip" style="font-size: 1.1rem;"></i>
                                     <span>첨부파일 목록 (${displayAttachments.length})</span>
@@ -340,13 +340,13 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                 }
 
                 return `
-                                            <div style="padding: 0.9rem 1.1rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; display: flex; flex-direction: column; gap: 0.6rem; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                                            <div style="padding: 0.9rem 1.1rem; background: var(--bg-color, rgba(15, 23, 42, 0.6)); border: 1px solid var(--glass-border); border-radius: 12px; display: flex; flex-direction: column; gap: 0.6rem; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
                                                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap;">
                                                     <div style="display: flex; align-items: center; gap: 0.7rem; flex: 1; min-width: 180px;">
-                                                        <div style="width: 38px; height: 38px; border-radius: 10px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                                        <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                                             <i class="${iconClass}" style="font-size: 1.35rem; color: ${iconColor};"></i>
                                                         </div>
-                                                        <span style="font-size: 0.95rem; font-weight: 700; color: #0f172a; word-break: break-all; white-space: normal; line-height: 1.35; flex: 1;">${escapeHtml(attName)}</span>
+                                                        <span style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); word-break: break-all; white-space: normal; line-height: 1.35; flex: 1;">${escapeHtml(attName)}</span>
                                                     </div>
                                                     <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
                                                         ${isHtml ? `<button type="button" onclick="openHtmlPreviewModal('${toJsString(att.url)}', '${toJsString(attName)}')" style="padding: 0.45rem 0.9rem; border: none; border-radius: 8px; background: #7c3aed; color: #ffffff; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25); transition: background 0.15s, transform 0.1s;"><i class="fa-solid fa-eye"></i> 미리보기</button>` : ''}
@@ -367,10 +367,10 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                             <div class="ai-analysis-container" style="margin-top: 2rem; padding: 1.25rem; border-radius: 16px; background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); display: flex; flex-direction: column; gap: 0.75rem;">
                                 <div style="display: flex; align-items: center; justify-content: space-between;">
                                     <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: bold; color: var(--accent-color); font-size: 1rem;">
-                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                        <img src="gemini-color.svg" style="width: 20px; height: 20px; vertical-align: middle; object-fit: contain;" alt="Gemini">
                                         <span>AI 건의 분석 및 피드백</span>
                                     </div>
-                                    <span style="font-size: 0.75rem; color: var(--text-secondary); background: rgba(59, 130, 246, 0.15); padding: 0.2rem 0.5rem; border-radius: 999px;">Gemini 2.5 Flash</span>
+                                    <span style="font-size: 0.75rem; color: var(--text-secondary); background: rgba(59, 130, 246, 0.15); padding: 0.2rem 0.5rem; border-radius: 999px;">Gemini 3.6 Flash</span>
                                 </div>
                                 <div id="aiAnalysisContent-${id}" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary);">
                                     ${currentPost.aiSummary ? currentPost.aiSummary.replace(/\n/g, '<br>') : `

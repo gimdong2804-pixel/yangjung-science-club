@@ -294,89 +294,117 @@ html[data-theme="light"] .youtube-card:hover {
     box-shadow: 0 8px 24px rgba(59, 130, 246, 0.45) !important;
 }
 
-/* 건의글 상세 상단 헤더: sticky 고정 */
+/* 건의글 상세 상단 헤더 */
 .side-detail-header {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    padding: 0.6rem 0.2rem !important;
-    margin-bottom: 0.8rem !important;
-    margin-top: 0 !important;
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 100 !important;
-    background: transparent;
-    transition: background 0.25s ease, backdrop-filter 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    padding-bottom: 0.8rem !important;
+    margin-bottom: 1rem !important;
+    border-bottom: 1px solid var(--glass-border) !important;
+    padding-right: 48px !important;
+    /* X 버튼 공간 확보 */
+    min-height: 38px !important;
 }
 
-/* 스크롤 시 헤더가 상단에 sticky로 매끄럽게 고정되고 블러 배경 적용 */
-.side-detail-scroll-area.has-scrolled .side-detail-header,
-.side-detail-container.has-scrolled-detail .side-detail-header {
-    background: rgba(15, 23, 42, 0.82) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 0 0 12px 12px;
-    padding-left: 0.6rem !important;
-    padding-right: 0.6rem !important;
-}
-
-html[data-theme="light"] .side-detail-scroll-area.has-scrolled .side-detail-header,
-html[data-theme="light"] .side-detail-container.has-scrolled-detail .side-detail-header {
-    background: rgba(255, 255, 255, 0.88) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
-    border-radius: 0 0 12px 12px;
-    padding-left: 0.6rem !important;
-    padding-right: 0.6rem !important;
-}
-
-/* 건의글 상세 X 버튼 & 파일 미리보기 X 버튼 공통 스타일 (동그란 원형 배경) */
-#closeSideDetailBtn,
-.file-preview-close-btn {
+/* 건의글 상세 우상단 고정 X 버튼 (#closeSideDetailBtn) & 파일 미리보기 X 버튼 (.file-preview-close-btn) */
+/* 기본값: 다크 모드 (html 태그에 data-theme 속성이 없는 기본 상태) */
+#closeSideDetailBtn {
+    position: absolute !important;
+    top: 1.1rem !important;
+    right: 1.25rem !important;
+    z-index: 1000 !important;
     width: 36px !important;
     height: 36px !important;
     border-radius: 50% !important;
-    border: 1px solid rgba(0, 0, 0, 0.12) !important;
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
-    color: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    background: rgba(30, 41, 59, 0.9) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    color: #f8fafc !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     font-size: 1.15rem !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+    cursor: pointer !important;
+    transition: right 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+        top 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+        color 0.2s ease,
+        background 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease !important;
+}
+
+.file-preview-close-btn {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    background: rgba(30, 41, 59, 0.9) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    color: #f8fafc !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.15rem !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
     cursor: pointer !important;
     transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
-    margin-left: auto;
-    flex-shrink: 0 !important;
-    position: relative !important;
-    top: auto !important;
-    right: auto !important;
 }
 
-/* 호버 시: 배경 변화 없이 오직 X 아이콘 글씨 색상만 파란색(#2563eb) 변경 */
+/* 스크롤 시 다크 모드 X 버튼 (One UI 8.5/9 스타일: 오른쪽으로 슬라이드 및 블러/그림자 강화) */
+.side-detail-container.has-scrolled-detail #closeSideDetailBtn,
+.side-detail-scroll-area.has-scrolled #closeSideDetailBtn,
+.side-detail-container .side-detail-scroll-area.has-scrolled~#closeSideDetailBtn {
+    right: 0.9rem !important;
+    top: 0.95rem !important;
+    background: rgba(15, 23, 42, 0.94) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+/* 다크 모드 호버 시 (X 아이콘 파란색) */
 #closeSideDetailBtn:hover,
-.file-preview-close-btn:hover {
-    color: #2563eb !important;
-    background: rgba(255, 255, 255, 0.95) !important;
-}
-
-/* 다크 모드에서의 X 버튼 원형 배경 스타일 */
-html[data-theme="dark"] #closeSideDetailBtn,
-html[data-theme="dark"] .file-preview-close-btn {
-    background: rgba(30, 41, 59, 0.92) !important;
-    color: #f8fafc !important;
-    border: 1px solid rgba(255, 255, 255, 0.18) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
-}
-
-html[data-theme="dark"] #closeSideDetailBtn:hover,
-html[data-theme="dark"] .file-preview-close-btn:hover {
+#closeSideDetailBtn:hover i,
+.file-preview-close-btn:hover,
+.file-preview-close-btn:hover i {
     color: #3b82f6 !important;
-    background: rgba(30, 41, 59, 0.92) !important;
+}
+
+/* --- 라이트 모드 (html[data-theme="light"]) 스타일 --- */
+html[data-theme="light"] #closeSideDetailBtn {
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: #1e293b !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+html[data-theme="light"] .file-preview-close-btn {
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: #1e293b !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+html[data-theme="light"] .side-detail-container.has-scrolled-detail #closeSideDetailBtn,
+html[data-theme="light"] .side-detail-scroll-area.has-scrolled #closeSideDetailBtn,
+html[data-theme="light"] .side-detail-container .side-detail-scroll-area.has-scrolled~#closeSideDetailBtn {
+    background: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+}
+
+html[data-theme="light"] #closeSideDetailBtn:hover,
+html[data-theme="light"] #closeSideDetailBtn:hover i,
+html[data-theme="light"] .file-preview-close-btn:hover,
+html[data-theme="light"] .file-preview-close-btn:hover i {
+    color: #2563eb !important;
 }
 
 /* 모달 헤더 및 닫기 버튼 정렬 */

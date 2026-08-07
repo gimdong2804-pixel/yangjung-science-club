@@ -177,33 +177,7 @@
                     Gemini API 키는 안전하게 동아리 데이터베이스에 보관되며, 부원들의 AI 기능(챗봇, 건의 요약 등) 활성화를 위해 사용됩니다.</p>
             </div>
 
-            <div>
-                <label
-                    style="display: block; font-weight: bold; margin-bottom: 0.5rem; color: var(--text-primary); font-size: 1.05rem;"><i
-                        class="fa-solid fa-microchip"></i> AI 모델 선택</label>
-                <div style="position: relative; display: flex; align-items: center; width: 100%;">
-                    <div class="custom-dropdown-container" id="aiModelDropdownContainer" style="width: 100%;">
-                        <div class="custom-dropdown-selected" id="aiModelSelected"
-                            style="padding: 1rem 1.5rem; border-radius: 9999px; justify-content: space-between; width: 100%; box-sizing: border-box;">
-                            <span id="aiModelSelectedText"><i class="fa-solid fa-bolt"></i> Gemini 3.5 Flash</span>
-                            <i class="fa-solid fa-chevron-down arrow-icon"></i>
-                        </div>
-                        <ul class="custom-dropdown-options" id="aiModelOptions"
-                            style="width: 100%; border-radius: 20px; top: calc(100% + 8px);">
-                            <li class="custom-dropdown-option active" data-value="gemini-3.5-flash"><i
-                                    class="fa-solid fa-bolt"></i> Gemini 3.5 Flash</li>
-                            <li class="custom-dropdown-option" data-value="gemini-3.1-pro-preview"><i
-                                    class="fa-solid fa-wand-magic-sparkles"></i> Gemini 3.1 Pro Preview</li>
-                            <li class="custom-dropdown-option" data-value="gemini-3.1-flash-lite"><i
-                                    class="fa-solid fa-feather"></i> Gemini 3.1 Flash Lite</li>
-                        </ul>
-                        <input type="hidden" id="aiModelSelect" value="gemini-3.5-flash" />
-                    </div>
-                </div>
-                <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.85rem; line-height: 1.4;">사용하고자
-                    하는 Gemini 모델을 선택해 주세요. (기본값: Gemini 3.5 Flash)</p>
-            </div>
-
+            <!-- AI 모델 선택은 이제 AI 챗봇 창에서 사용자가 직접 선택합니다 -->
             <div style="border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
                 <label
                     style="display: block; font-weight: bold; margin-bottom: 1rem; color: var(--text-primary); font-size: 1.05rem;"><i
@@ -677,7 +651,9 @@
                             <i class="fa-solid fa-user-tag"></i> 직책 관리
                         </a>
                         <a href="#" id="aiSettingsMenuBtn">
-                            <i class="fa-solid fa-robot"></i> AI 설정
+                            <img src="gemini-color.svg"
+                                style="width: 18px; height: 18px; vertical-align: middle; object-fit: contain; margin-right: 6px;"
+                                alt="Gemini"> AI 설정
                         </a>
                     </div>
                 </div>
@@ -822,14 +798,14 @@
 
             <!-- 우측 상세 보기 창 (데스크탑에선 옆에 붙고, 모바일에선 전체화면) -->
             <div class="side-detail-container detail-hidden" id="sideDetailContainer">
+                <button class="close-btn" id="closeSideDetailBtn" aria-label="상세 닫기">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
                 <div class="side-detail-scroll-area">
                     <div class="side-detail-header">
                         <span class="side-detail-title"
                             style="color: var(--accent-color); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i
                                 class="fa-solid fa-file-lines"></i> 건의글 상세</span>
-                        <button class="close-btn" id="closeSideDetailBtn" aria-label="상세 닫기">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
                     </div>
 
                     <div class="post-content-area" id="detailPostArea"
@@ -1184,17 +1160,64 @@
 
     <!-- AI 챗봇 비서 (기본적으로 숨김 처리되고, Firestore 설정을 로드하여 켜져있을 때만 JS로 표시) -->
     <button class="ai-chatbot-fab" id="aiChatbotFab" style="display: none;" aria-label="AI 도우미">
-        <i class="fa-solid fa-robot"></i>
+        <img src="gemini-color.svg" style="width: 28px; height: 28px; object-fit: contain;" alt="Gemini AI">
     </button>
 
-    <div class="ai-chatbot-window hidden" id="aiChatbotWindow">
+    <div id="aiChatbotModalOverlay" class="modal-overlay"></div>
+    <div class="ai-chatbot-window modal-container hidden" id="aiChatbotWindow">
         <div class="ai-chatbot-header">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fa-solid fa-robot" style="color: var(--accent-color);"></i>
-                <span style="font-weight: bold; color: var(--text-primary);">양중과학동아리 AI 비서</span>
+            <div class="ai-chatbot-header-title">
+                <img src="gemini-color.svg" style="width: 24px; height: 24px; object-fit: contain;" alt="Gemini AI">
+                <span>양중과학동아리 AI 비서</span>
             </div>
-            <button id="closeAiChatbot"
-                style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">
+
+            <!-- AI 모델 선택 드롭다운 (제미나이 공식 앱처럼 채팅창 헤더에 배치) -->
+            <div class="custom-dropdown-container" id="aiModelDropdownContainer">
+                <div class="custom-dropdown-selected" id="aiModelSelected">
+                    <span id="aiModelSelectedText"><img src="gemini-color.svg"
+                            style="width: 18px; height: 18px; vertical-align: middle; object-fit: contain; margin-right: 6px;"
+                            alt="Gemini"> Gemini 3.6 Flash</span>
+                    <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                </div>
+                <ul class="custom-dropdown-options ai-model-dropdown-options" id="aiModelOptions">
+                    <li class="custom-dropdown-option model-option-card active" data-value="gemini-3.6-flash"
+                        data-title="Gemini 3.6 Flash">
+                        <div class="model-option-left">
+                            <span class="model-check-icon"><i class="fa-solid fa-check"></i></span>
+                            <img src="gemini-color.svg" class="model-option-logo" alt="Gemini">
+                            <div class="model-option-text">
+                                <div class="model-title">Gemini 3.6 Flash</div>
+                                <div class="model-desc">무엇이든 도움을 받으세요</div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="custom-dropdown-option model-option-card" data-value="gemini-3.5-flash-lite"
+                        data-title="Gemini 3.5 Flash-Lite">
+                        <div class="model-option-left">
+                            <span class="model-check-icon"><i class="fa-solid fa-check"></i></span>
+                            <img src="gemini-color.svg" class="model-option-logo" alt="Gemini">
+                            <div class="model-option-text">
+                                <div class="model-title">Gemini 3.5 Flash-Lite</div>
+                                <div class="model-desc">가장 빠른 답변 제공</div>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="custom-dropdown-option model-option-card" data-value="gemini-3.1-pro-preview"
+                        data-title="Gemini 3.1 Pro Preview">
+                        <div class="model-option-left">
+                            <span class="model-check-icon"><i class="fa-solid fa-check"></i></span>
+                            <img src="gemini-color.svg" class="model-option-logo" alt="Gemini">
+                            <div class="model-option-text">
+                                <div class="model-title">Gemini 3.1 Pro Preview</div>
+                                <div class="model-desc">고급 수학 및 코딩</div>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+                <input type="hidden" id="aiModelSelect" value="gemini-3.6-flash" />
+            </div>
+
+            <button id="closeAiChatbot" class="close-btn" aria-label="닫기">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -1204,24 +1227,26 @@
             </div>
         </div>
         <div class="ai-chatbot-input-container">
-            <input type="text" class="ai-chatbot-input" id="aiChatbotInput" placeholder="메시지를 입력하세요..." />
-            <button class="ai-chatbot-send-btn" id="aiChatbotSendBtn">
-                <i class="fa-solid fa-paper-plane"></i>
-            </button>
+            <div class="ai-chatbot-input-wrapper">
+                <input type="text" class="ai-chatbot-input" id="aiChatbotInput" placeholder="Gemini에게 물어보기..." />
+                <button class="ai-chatbot-send-btn" id="aiChatbotSendBtn" aria-label="전송">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
         </div>
     </div>
 
     <!-- 첨부파일 미리보기 (HTML/PDF 등) 모달 -->
     <div id="filePreviewModalOverlay" class="modal-overlay"></div>
     <div id="filePreviewModal" class="modal-container"
-        style="max-width: 950px; width: 95vw; height: 88vh; display: flex; flex-direction: column; padding: 1.2rem; gap: 0.8rem; z-index: 10005; border-radius: 20px; background: var(--card-bg, #ffffff);">
+        style="max-width: 950px; width: 95vw; height: 88vh; display: flex; flex-direction: column; padding: 1.2rem; gap: 0.8rem; z-index: 10005; border-radius: 20px; background: var(--glass-bg, #1e293b); color: var(--text-primary, #f8fafc); border: 1px solid var(--glass-border);">
         <div
             style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.8rem;">
             <div style="display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0; margin-right: 0.5rem;">
                 <i id="filePreviewIcon" class="fa-solid fa-file-code"
                     style="font-size: 1.4rem; color: #7c3aed; flex-shrink: 0;"></i>
                 <h3 id="filePreviewTitle"
-                    style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin: 0; word-break: break-all; white-space: normal; line-height: 1.35;">
+                    style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary, #f8fafc); margin: 0; word-break: break-all; white-space: normal; line-height: 1.35;">
                     첨부파일 미리보기</h3>
             </div>
             <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
@@ -1235,7 +1260,7 @@
             </div>
         </div>
         <div id="filePreviewContainer"
-            style="flex: 1; width: 100%; position: relative; border-radius: 12px; overflow: hidden; background: #ffffff; border: 1px solid var(--glass-border);">
+            style="flex: 1; width: 100%; position: relative; border-radius: 12px; overflow: hidden; background: var(--bg-color, #0f172a); border: 1px solid var(--glass-border);">
             <iframe id="filePreviewIframe" style="width: 100%; height: 100%; border: none;"></iframe>
         </div>
     </div>

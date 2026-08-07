@@ -656,7 +656,7 @@ adminPwdInput.addEventListener('keypress', (e) => {
 // ==========================================
 window.aiConfig = {
     apiKey: '',
-    model: 'gemini-3.5-flash',
+    model: 'gemini-3.6-flash',
     enabled: false,
     chatbotEnabled: false,
     summaryEnabled: false
@@ -687,6 +687,26 @@ const aiModelSelected = document.getElementById('aiModelSelected');
 const aiModelOptions = document.getElementById('aiModelOptions');
 const aiModelOptionItems = document.querySelectorAll('#aiModelOptions .custom-dropdown-option');
 
+function updateAiModelSelectedDisplay(title, animate = true) {
+    const aiModelSelected = document.getElementById('aiModelSelected');
+    if (!aiModelSelected) return;
+    const selectedHTML = `<img src="gemini-color.svg" style="width: 18px; height: 18px; vertical-align: middle; object-fit: contain; margin-right: 6px;" alt="Gemini"> ${title}`;
+
+    let textSpan = aiModelSelected.querySelector('#aiModelSelectedText');
+    if (!textSpan) {
+        aiModelSelected.innerHTML = `<span id="aiModelSelectedText">${selectedHTML}</span> <i class="fa-solid fa-chevron-down arrow-icon"></i>`;
+        textSpan = aiModelSelected.querySelector('#aiModelSelectedText');
+    } else {
+        textSpan.innerHTML = selectedHTML;
+    }
+
+    if (animate && textSpan) {
+        textSpan.classList.remove('text-change-anim');
+        void textSpan.offsetWidth;
+        textSpan.classList.add('text-change-anim');
+    }
+}
+
 if (aiModelSelected && aiModelOptions) {
     aiModelSelected.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -697,15 +717,16 @@ if (aiModelSelected && aiModelOptions) {
         item.addEventListener('click', (e) => {
             e.stopPropagation();
             const value = item.getAttribute('data-value');
-            const textHTML = item.innerHTML;
+            const title = item.getAttribute('data-title') || item.querySelector('.model-title')?.textContent || 'Gemini 3.6 Flash';
 
             aiModelOptionItems.forEach(opt => opt.classList.remove('active'));
             item.classList.add('active');
 
-            aiModelSelected.innerHTML = `<span>${textHTML}</span> <i class="fa-solid fa-chevron-down arrow-icon"></i>`;
+            updateAiModelSelectedDisplay(title, true);
             aiModelDropdownContainer.classList.remove('open');
 
-            aiModelSelect.value = value;
+            if (aiModelSelect) aiModelSelect.value = value;
+            if (window.aiConfig) window.aiConfig.model = value;
         });
     });
 
@@ -722,10 +743,13 @@ async function loadAiConfig() {
         const doc = await db.collection('settings').doc('ai_config').get();
         if (doc.exists) {
             const data = doc.data();
-            let modelValue = data.model || 'gemini-3.5-flash';
-            const allowedModels = ['gemini-3.5-flash', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite'];
+            let modelValue = data.model || 'gemini-3.6-flash';
+            if (modelValue === 'gemini-3.1-flash-lite' || modelValue === 'gemini-3.5-flash') {
+                modelValue = 'gemini-3.5-flash-lite';
+            }
+            const allowedModels = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-pro-preview'];
             if (!allowedModels.includes(modelValue)) {
-                modelValue = 'gemini-3.5-flash';
+                modelValue = 'gemini-3.6-flash';
             }
             window.aiConfig = {
                 apiKey: data.apiKey || '',
@@ -792,20 +816,21 @@ if (aiSettingsMenuBtn) {
         // 설정값 채우기
         aiApiKeyInput.value = window.aiConfig.apiKey;
         if (aiModelSelect) {
-            let modelValue = window.aiConfig.model || 'gemini-3.5-flash';
-            const allowedModels = ['gemini-3.5-flash', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-lite'];
+            let modelValue = window.aiConfig.model || 'gemini-3.6-flash';
+            if (modelValue === 'gemini-3.1-flash-lite' || modelValue === 'gemini-3.5-flash') {
+                modelValue = 'gemini-3.5-flash-lite';
+            }
+            const allowedModels = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-pro-preview'];
             if (!allowedModels.includes(modelValue)) {
-                modelValue = 'gemini-3.5-flash';
+                modelValue = 'gemini-3.6-flash';
             }
             aiModelSelect.value = modelValue;
             const aiModelOptionItems = document.querySelectorAll('#aiModelOptions .custom-dropdown-option');
             aiModelOptionItems.forEach(opt => {
                 if (opt.getAttribute('data-value') === modelValue) {
                     opt.classList.add('active');
-                    const aiModelSelected = document.getElementById('aiModelSelected');
-                    if (aiModelSelected) {
-                        aiModelSelected.innerHTML = `<span>${opt.innerHTML}</span> <i class="fa-solid fa-chevron-down arrow-icon"></i>`;
-                    }
+                    const title = opt.getAttribute('data-title') || opt.querySelector('.model-title')?.textContent || 'Gemini 3.6 Flash';
+                    updateAiModelSelectedDisplay(title, false);
                 } else {
                     opt.classList.remove('active');
                 }
@@ -859,7 +884,7 @@ if (aiSaveBtn) {
         if (!currentUser || !isAdmin(currentUser.email)) return;
 
         const apiKey = aiApiKeyInput.value.trim();
-        const model = aiModelSelect ? aiModelSelect.value : 'gemini-3.5-flash';
+        const model = aiModelSelect ? aiModelSelect.value : 'gemini-3.6-flash';
         const enabled = aiEnabledCheckbox.checked;
         const chatbotEnabled = aiChatbotEnabledCheckbox.checked;
         const summaryEnabled = aiSummaryEnabledCheckbox.checked;
@@ -893,7 +918,7 @@ if (aiSaveBtn) {
 
 // Gemini API 호출 헬퍼
 async function callGeminiAPI(apiKey, prompt) {
-    const model = window.aiConfig.model || 'gemini-3.5-flash';
+    const model = window.aiConfig.model || 'gemini-3.6-flash';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const response = await fetch(url, {
         method: 'POST',
@@ -941,21 +966,43 @@ if (aiTestBtn) {
     });
 }
 
-// AI 챗봇 클라이언트 인터랙션
+// AI 챗봇 클라이언트 인터랙션 (설정 모달과 동일한 사이즈 및 오버레이 모달)
+const aiChatbotModalOverlay = document.getElementById('aiChatbotModalOverlay');
+
+function openAiChatbotModal() {
+    if (aiChatbotModalOverlay) aiChatbotModalOverlay.classList.add('active');
+    if (aiChatbotWindow) {
+        aiChatbotWindow.classList.remove('hidden');
+        aiChatbotWindow.classList.add('active');
+    }
+    if (aiChatbotInput) aiChatbotInput.focus();
+    if (aiChatbotMessages) aiChatbotMessages.scrollTop = aiChatbotMessages.scrollHeight;
+}
+
+function closeAiChatbotModal() {
+    if (aiChatbotModalOverlay) aiChatbotModalOverlay.classList.remove('active');
+    if (aiChatbotWindow) {
+        aiChatbotWindow.classList.add('hidden');
+        aiChatbotWindow.classList.remove('active');
+    }
+}
+
 if (aiChatbotFab) {
     aiChatbotFab.addEventListener('click', () => {
-        aiChatbotWindow.classList.toggle('hidden');
-        if (!aiChatbotWindow.classList.contains('hidden')) {
-            aiChatbotInput.focus();
-            aiChatbotMessages.scrollTop = aiChatbotMessages.scrollHeight;
+        if (aiChatbotWindow && aiChatbotWindow.classList.contains('active')) {
+            closeAiChatbotModal();
+        } else {
+            openAiChatbotModal();
         }
     });
 }
 
 if (closeAiChatbot) {
-    closeAiChatbot.addEventListener('click', () => {
-        aiChatbotWindow.classList.add('hidden');
-    });
+    closeAiChatbot.addEventListener('click', closeAiChatbotModal);
+}
+
+if (aiChatbotModalOverlay) {
+    aiChatbotModalOverlay.addEventListener('click', closeAiChatbotModal);
 }
 
 async function sendChatbotMessage() {
