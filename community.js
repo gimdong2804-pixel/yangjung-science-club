@@ -442,36 +442,27 @@ if (submitPostBtn) {
                             throw new Error('이미지 업로드 실패: ' + (data.error ? data.error.message : '알 수 없는 오류'));
                         }
                     } else {
-                        // 비이미지 파일 (HTML, PDF, 음성 등): Firebase Storage 또는 DataURL 전송
-                        if (typeof firebase !== 'undefined' && firebase.storage) {
-                            try {
-                                const storageRef = firebase.storage().ref();
-                                const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-                                const fileRef = storageRef.child(`posts/attachments/${Date.now()}_${safeName}`);
-                                const snapshot = await fileRef.put(file);
-                                const downloadUrl = await snapshot.ref.getDownloadURL();
-                                attachments.push({
-                                    name: file.name,
-                                    url: downloadUrl,
-                                    type: file.type || file.name.split('.').pop(),
-                                    size: file.size
-                                });
-                            } catch (stErr) {
-                                console.warn("Storage upload failed, falling back to DataURL:", stErr);
-                                const dataUrl = await new Promise((res, rej) => {
+                        // 비이미지 파일 (HTML, PDF, 음성 등): 댓글 업로드와 동일한 uploadCommunityMedia 방식 적용
+                        try {
+                            let fileUrl = '';
+                            if (typeof window.uploadCommunityMedia === 'function') {
+                                fileUrl = await window.uploadCommunityMedia(file);
+                            } else {
+                                fileUrl = await new Promise((res, rej) => {
                                     const r = new FileReader();
                                     r.onload = e => res(e.target.result);
                                     r.onerror = e => rej(e);
                                     r.readAsDataURL(file);
                                 });
-                                attachments.push({
-                                    name: file.name,
-                                    url: dataUrl,
-                                    type: file.type || file.name.split('.').pop(),
-                                    size: file.size
-                                });
                             }
-                        } else {
+                            attachments.push({
+                                name: file.name,
+                                url: fileUrl,
+                                type: file.type || file.name.split('.').pop(),
+                                size: file.size
+                            });
+                        } catch (mediaErr) {
+                            console.warn("Media upload failed:", mediaErr);
                             const dataUrl = await new Promise((res, rej) => {
                                 const r = new FileReader();
                                 r.onload = e => res(e.target.result);
