@@ -910,7 +910,14 @@ window.editPost = async function (id) {
         document.getElementById('submitPostBtn').innerText = '수정 완료';
 
         window._editingPostId = id;
-        window._editingPostImages = post.images || [];
+        window._editingPostImages = Array.isArray(post.images) ? [...post.images] : (post.imageUrl ? [post.imageUrl] : []);
+        window._editingPostAttachments = Array.isArray(post.attachments) ? [...post.attachments] : [];
+
+        if (typeof window.resetSelectedImages === 'function') {
+            window.resetSelectedImages();
+        } else if (typeof window.updateImagePreview === 'function') {
+            window.updateImagePreview();
+        }
 
         history.pushState({ modal: 'writePage' }, '', '#write');
         switchPage(currentPage, writePostPage, true);

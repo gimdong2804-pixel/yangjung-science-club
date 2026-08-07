@@ -204,6 +204,18 @@ if (writePostBtn) {
             openDrawer();
             return;
         }
+        window._editingPostId = null;
+        window._editingPostImages = [];
+        window._editingPostAttachments = [];
+        selectedImages = [];
+        document.getElementById('postTitle').value = '';
+        document.getElementById('postBody').value = '';
+        const pageTitle = document.querySelector('#writePostPage .greeting-title');
+        if (pageTitle) pageTitle.innerText = '새 건의사항 작성';
+        const submitBtnEl = document.getElementById('submitPostBtn');
+        if (submitBtnEl) submitBtnEl.innerText = '게시글 등록하기';
+        if (typeof window.updateImagePreview === 'function') window.updateImagePreview();
+
         history.pushState({ modal: 'writePage' }, '', '#write');
         switchPage(currentPage, writePostPage, true);
     });
@@ -216,7 +228,9 @@ function closeWritePage(e) {
 
     // 수정 모드 리셋
     window._editingPostId = null;
-    window._editingPostImages = null;
+    window._editingPostImages = [];
+    window._editingPostAttachments = [];
+    selectedImages = [];
     window._editFromDetail = false;
     const pageTitle = document.querySelector('#writePostPage .greeting-title');
     if (pageTitle) pageTitle.innerText = '새 건의사항 작성';
@@ -224,6 +238,7 @@ function closeWritePage(e) {
     if (submitBtnEl) submitBtnEl.innerText = '게시글 등록하기';
     document.getElementById('postTitle').value = '';
     document.getElementById('postBody').value = '';
+    if (typeof window.updateImagePreview === 'function') window.updateImagePreview();
 
     switchPage(currentPage, suggestionPage, true);
     if (fromPopState !== true && history.state && history.state.modal === 'writePage') {
@@ -278,7 +293,10 @@ if (attachGuideOverlay) attachGuideOverlay.addEventListener('click', closeAttach
 
 if (imagePreviewWrapper && imagePreviewInner) {
     new ResizeObserver(() => {
-        if (selectedImages.length > 0) {
+        const total = (selectedImages ? selectedImages.length : 0) +
+            ((window._editingPostImages && Array.isArray(window._editingPostImages)) ? window._editingPostImages.length : 0) +
+            ((window._editingPostAttachments && Array.isArray(window._editingPostAttachments)) ? window._editingPostAttachments.length : 0);
+        if (total > 0) {
             imagePreviewWrapper.style.height = imagePreviewInner.offsetHeight + 'px';
         } else {
             imagePreviewWrapper.style.height = '0px';
@@ -298,7 +316,9 @@ if (imageUploadArea && imageFileInput) {
 if (imageFileInput) {
     imageFileInput.addEventListener('change', (e) => {
         const files = Array.from(e.target.files);
-        if (selectedImages.length + files.length > MAX_IMAGES) {
+        const existingCount = ((window._editingPostImages && Array.isArray(window._editingPostImages)) ? window._editingPostImages.length : 0) +
+            ((window._editingPostAttachments && Array.isArray(window._editingPostAttachments)) ? window._editingPostAttachments.length : 0);
+        if (existingCount + selectedImages.length + files.length > MAX_IMAGES) {
             alert(`첨부파일은 최대 ${MAX_IMAGES}개까지만 추가할 수 있습니다.`);
             return;
         }
@@ -313,49 +333,125 @@ if (imageFileInput) {
 function isImageFile(file) {
     if (!file) return false;
     if (file.type && file.type.startsWith('image/')) return true;
-    const name = file.name || '';
+    const name = typeof file === 'object' ? (file.name || '') : String(file || '');
     return /\.(png|jpg|jpeg|gif|webp|svg|bmp)$/i.test(name);
 }
 
 function getFileIconInfo(file) {
-    const name = file.name || '';
-    const type = file.type || '';
+    const name = typeof file === 'object' && file ? (file.name || '') : String(file || '');
+    const type = typeof file === 'object' && file ? (file.type || '') : '';
 
     if (type.includes('pdf') || /\.pdf$/i.test(name)) {
-        return { icon: 'fa-solid fa-file-pdf', color: '#ff922b', label: 'PDF' };
+        return { icon: 'fa-solid fa-file-pdf', color: '#ea580c', label: 'PDF' };
     }
     if (type.includes('html') || /\.(html|htm)$/i.test(name)) {
-        return { icon: 'fa-solid fa-file-code', color: '#cc5de8', label: 'HTML' };
+        return { icon: 'fa-solid fa-file-code', color: '#7c3aed', label: 'HTML' };
     }
     if (type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac)$/i.test(name)) {
-        return { icon: 'fa-solid fa-file-audio', color: '#51cf66', label: '음성' };
+        return { icon: 'fa-solid fa-file-audio', color: '#16a34a', label: '음성' };
     }
     if (type.startsWith('video/') || /\.(mp4|webm|mkv|mov)$/i.test(name)) {
-        return { icon: 'fa-solid fa-file-video', color: '#ff6b6b', label: '동영상' };
+        return { icon: 'fa-solid fa-file-video', color: '#dc2626', label: '동영상' };
     }
-    return { icon: 'fa-solid fa-file-lines', color: '#4dadf7', label: '문서' };
+    return { icon: 'fa-solid fa-file-lines', color: '#2563eb', label: '문서' };
 }
 
-function updateImagePreview() {
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+window.resetSelectedImages = function () {
+    selectedImages = [];
+    updateImagePreview();
+};
+
+window.removeExistingImage = function (index) {
+    if (window._editingPostImages && Array.isArray(window._editingPostImages)) {
+        window._editingPostImages.splice(index, 1);
+        updateImagePreview();
+    }
+};
+
+window.removeExistingAttachment = function (index) {
+    if (window._editingPostAttachments && Array.isArray(window._editingPostAttachments)) {
+        window._editingPostAttachments.splice(index, 1);
+        updateImagePreview();
+    }
+};
+
+window.updateImagePreview = function updateImagePreview() {
     if (!imagePreviewContainer) return;
     imagePreviewContainer.innerHTML = '';
 
+    const existingImages = (window._editingPostImages && Array.isArray(window._editingPostImages)) ? window._editingPostImages : [];
+    const existingAttachments = (window._editingPostAttachments && Array.isArray(window._editingPostAttachments)) ? window._editingPostAttachments : [];
+    const totalCount = existingImages.length + existingAttachments.length + selectedImages.length;
+
     if (imagePreviewWrapper) {
-        if (selectedImages.length > 0) {
+        if (totalCount > 0) {
             imagePreviewWrapper.classList.add('has-images');
         } else {
             imagePreviewWrapper.classList.remove('has-images');
         }
     }
     if (imageCountInfo) {
-        imageCountInfo.textContent = `첨부 파일 ${selectedImages.length}개 / ${MAX_IMAGES}개`;
-        if (selectedImages.length >= MAX_IMAGES) {
+        imageCountInfo.textContent = `첨부 파일 ${totalCount}개 / ${MAX_IMAGES}개`;
+        if (totalCount >= MAX_IMAGES) {
             imageCountInfo.classList.add('warning');
         } else {
             imageCountInfo.classList.remove('warning');
         }
     }
 
+    // 1. 기존 이미지 목록 렌더링
+    existingImages.forEach((url, index) => {
+        const div = document.createElement('div');
+        div.className = 'image-preview-item';
+        div.innerHTML = `
+            <img src="${url}" alt="기존 이미지" style="cursor: pointer;" onclick="openLightbox('${url}')">
+            <button type="button" class="image-preview-remove" onclick="removeExistingImage(${index})" title="삭제"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        imagePreviewContainer.appendChild(div);
+    });
+
+    // 2. 기존 첨부파일 목록 렌더링
+    existingAttachments.forEach((att, index) => {
+        const div = document.createElement('div');
+        div.className = 'image-preview-item';
+        const attName = att.name || '첨부파일';
+        const iconInfo = getFileIconInfo(att);
+
+        div.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 0.5rem;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            text-align: center;
+            gap: 0.4rem;
+            position: relative;
+            min-height: 100px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        `;
+        div.innerHTML = `
+            <i class="${iconInfo.icon}" style="font-size: 2.2rem; color: ${iconInfo.color}; margin-bottom: 0.2rem;"></i>
+            <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-primary); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(attName)}">${escapeHtml(attName)}</span>
+            <span style="font-size: 0.65rem; color: #64748b; font-weight: 500;">기존 첨부</span>
+            <button type="button" class="image-preview-remove" onclick="removeExistingAttachment(${index})" title="삭제"><i class="fa-solid fa-xmark"></i></button>
+        `;
+        imagePreviewContainer.appendChild(div);
+    });
+
+    // 3. 신규 선택 파일 렌더링
     selectedImages.forEach((file, index) => {
         const div = document.createElement('div');
         div.className = 'image-preview-item';
@@ -365,7 +461,7 @@ function updateImagePreview() {
             reader.onload = (e) => {
                 div.innerHTML = `
                     <img src="${e.target.result}" alt="미리보기" style="cursor: pointer;" onclick="openLightbox('${e.target.result}')">
-                    <button class="image-preview-remove" onclick="removeImage(${index})"><i class="fa-solid fa-xmark"></i></button>
+                    <button type="button" class="image-preview-remove" onclick="removeImage(${index})" title="삭제"><i class="fa-solid fa-xmark"></i></button>
                 `;
             };
             reader.readAsDataURL(file);
@@ -388,14 +484,14 @@ function updateImagePreview() {
             `;
             div.innerHTML = `
                 <i class="${iconInfo.icon}" style="font-size: 2.2rem; color: ${iconInfo.color}; margin-bottom: 0.2rem;"></i>
-                <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-primary); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${file.name}</span>
-                <span style="font-size: 0.65rem; color: var(--text-secondary); opacity: 0.8;">${(file.size / 1024).toFixed(1)} KB</span>
-                <button class="image-preview-remove" onclick="removeImage(${index})"><i class="fa-solid fa-xmark"></i></button>
+                <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-primary); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</span>
+                <span style="font-size: 0.65rem; color: #64748b; font-weight: 500;">${(file.size / 1024).toFixed(1)} KB</span>
+                <button type="button" class="image-preview-remove" onclick="removeImage(${index})" title="삭제"><i class="fa-solid fa-xmark"></i></button>
             `;
         }
         imagePreviewContainer.appendChild(div);
     });
-}
+};
 
 window.removeImage = function (index) {
     selectedImages.splice(index, 1);
@@ -485,13 +581,14 @@ if (submitPostBtn) {
 
             // 수정 모드인 경우 기존 게시글 업데이트
             if (window._editingPostId) {
-                const updateData = { title: title, body: body };
-                if (imageUrls.length > 0) {
-                    updateData.images = [...(window._editingPostImages || []), ...imageUrls];
-                }
-                if (attachments.length > 0) {
-                    updateData.attachments = [...(window._editingPostAttachments || []), ...attachments];
-                }
+                const finalImages = [...(window._editingPostImages || []), ...imageUrls];
+                const finalAttachments = [...(window._editingPostAttachments || []), ...attachments];
+                const updateData = {
+                    title: title,
+                    body: body,
+                    images: finalImages,
+                    attachments: finalAttachments
+                };
                 await db.collection('posts').doc(window._editingPostId).update(updateData);
             } else {
                 await db.collection('posts').add({
@@ -509,6 +606,8 @@ if (submitPostBtn) {
                 });
             }
             selectedImages = [];
+            window._editingPostImages = [];
+            window._editingPostAttachments = [];
             updateImagePreview();
             closeWritePage();
         } catch (error) {
