@@ -1058,39 +1058,19 @@
             right: 6.5rem;
         }
 
-        /* 모바일: 게시물 상세 진입 시 제미나이 버튼 축소(44px로 보내기 버튼과 동일) 및 댓글 보내기 버튼 좌측으로 부드럽게 이동 */
+        /* 모바일: 게시물 상세 진입 시 댓글 캡슐 바 내부에 보내기 버튼과 동일한 크기(44px)의 제미나이 버튼이 일체형으로 노출 */
         @media (max-width: 1023px) {
+            body.detail-open #commentGeminiBtn,
+            body:has(#sideDetailContainer:not(.detail-hidden)) #commentGeminiBtn {
+                display: inline-flex !important;
+            }
+
             body.detail-open .ai-chatbot-fab,
             body:has(#sideDetailContainer:not(.detail-hidden)) .ai-chatbot-fab {
-                width: 44px !important;
-                height: 44px !important;
-                right: calc(1.5rem + 0.6rem + 44px + 8px) !important;
-                bottom: calc(1rem + 0.4rem) !important;
-                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
-                z-index: 1001 !important;
-            }
-
-            body.detail-open:has(.cancel-reply-btn.active) .ai-chatbot-fab,
-            body:has(#sideDetailContainer:not(.detail-hidden)):has(.cancel-reply-btn.active) .ai-chatbot-fab {
-                right: calc(1.5rem + 0.6rem + 88px + 12px) !important;
-            }
-
-            body.detail-open .ai-chatbot-fab img,
-            body:has(#sideDetailContainer:not(.detail-hidden)) .ai-chatbot-fab img {
-                width: 25px !important;
-                height: 25px !important;
-            }
-
-            body.detail-open .side-detail-container .comment-input,
-            body:has(#sideDetailContainer:not(.detail-hidden)) .side-detail-container .comment-input {
-                margin-right: 0 !important;
-                padding-right: 52px !important;
-            }
-
-            body.detail-open:has(.cancel-reply-btn.active) .side-detail-container .comment-input,
-            body:has(#sideDetailContainer:not(.detail-hidden)):has(.cancel-reply-btn.active) .side-detail-container .comment-input {
-                margin-right: 0 !important;
-                padding-right: 96px !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+                visibility: hidden !important;
+                transform: scale(0.5) !important;
             }
         }
 

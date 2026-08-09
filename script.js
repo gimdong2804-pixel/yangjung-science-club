@@ -1284,6 +1284,17 @@ if (aiChatbotFab) {
     });
 }
 
+const commentGeminiBtn = document.getElementById('commentGeminiBtn');
+if (commentGeminiBtn) {
+    commentGeminiBtn.addEventListener('click', () => {
+        if (aiChatbotWindow && aiChatbotWindow.classList.contains('active')) {
+            window.closeAiChatbotModal();
+        } else {
+            window.openAiChatbotModal();
+        }
+    });
+}
+
 if (closeAiChatbot) {
     closeAiChatbot.addEventListener('click', () => window.closeAiChatbotModal());
 }

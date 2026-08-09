@@ -1044,6 +1044,37 @@ body.multi-select-active .reply-target-bar {
     transform: scale(0.95);
 }
 
+.comment-gemini-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    flex-shrink: 0;
+    margin-right: 0.25rem;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.comment-gemini-btn img {
+    width: 25px;
+    height: 25px;
+    object-fit: contain;
+}
+
+.comment-gemini-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.comment-gemini-btn:active {
+    transform: scale(0.95);
+}
+
 /* ========================================== */
 /*   Comments, Attachments & Gallery Styles   */
 /* ========================================== */
