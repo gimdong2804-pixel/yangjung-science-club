@@ -1060,8 +1060,8 @@
 
         /* 모바일: 게시물 상세 진입 시 제미나이 버튼 축소(44px로 보내기 버튼과 동일) 및 댓글 보내기 버튼 좌측으로 부드럽게 이동 */
         @media (max-width: 1023px) {
-            body:has(#sideDetailContainer:not(.detail-hidden)) .ai-chatbot-fab,
-            body.detail-open:has(#sideDetailContainer:not(.detail-hidden)) .ai-chatbot-fab {
+            body.detail-open .ai-chatbot-fab,
+            body:has(#sideDetailContainer:not(.detail-hidden)) .ai-chatbot-fab {
                 width: 44px !important;
                 height: 44px !important;
                 right: calc(1.5rem + 0.6rem + 44px + 8px) !important;
@@ -1070,24 +1070,24 @@
                 z-index: 1001 !important;
             }
 
-            body:has(#sideDetailContainer:not(.detail-hidden)):has(.cancel-reply-btn.active) .ai-chatbot-fab,
-            body.detail-open:has(#sideDetailContainer:not(.detail-hidden)):has(.cancel-reply-btn.active) .ai-chatbot-fab {
+            body.detail-open:has(.cancel-reply-btn.active) .ai-chatbot-fab,
+            body:has(#sideDetailContainer:not(.detail-hidden)):has(.cancel-reply-btn.active) .ai-chatbot-fab {
                 right: calc(1.5rem + 0.6rem + 88px + 12px) !important;
             }
 
-            body:has(#sideDetailContainer:not(.detail-hidden)) .ai-chatbot-fab img,
-            body.detail-open:has(#sideDetailContainer:not(.detail-hidden)) .ai-chatbot-fab img {
+            body.detail-open .ai-chatbot-fab img,
+            body:has(#sideDetailContainer:not(.detail-hidden)) .ai-chatbot-fab img {
                 width: 25px !important;
                 height: 25px !important;
             }
 
-            body:has(#sideDetailContainer:not(.detail-hidden)) .side-detail-container .comment-input,
-            body.detail-open:has(#sideDetailContainer:not(.detail-hidden)) .side-detail-container .comment-input {
+            body.detail-open .side-detail-container .comment-input,
+            body:has(#sideDetailContainer:not(.detail-hidden)) .side-detail-container .comment-input {
                 margin-right: 48px;
             }
 
-            body:has(#sideDetailContainer:not(.detail-hidden)):has(.cancel-reply-btn.active) .side-detail-container .comment-input,
-            body.detail-open:has(#sideDetailContainer:not(.detail-hidden)):has(.cancel-reply-btn.active) .side-detail-container .comment-input {
+            body.detail-open:has(.cancel-reply-btn.active) .side-detail-container .comment-input,
+            body:has(#sideDetailContainer:not(.detail-hidden)):has(.cancel-reply-btn.active) .side-detail-container .comment-input {
                 margin-right: 92px;
             }
         }
