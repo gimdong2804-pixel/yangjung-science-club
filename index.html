@@ -843,48 +843,50 @@
                     <div class="comment-input-container" id="commentInputContainer">
                         <div class="comment-image-preview-container" id="commentImagePreviewContainer"></div>
                         <div class="comment-input-row">
-                            <div class="comment-attach-wrapper">
-                                <button type="button" id="commentAttachBtn" class="comment-attach-btn"
-                                    aria-label="첨부파일">
-                                    <i class="fa-solid fa-plus"></i>
-                                </button>
-                                <div class="comment-attach-menu" id="commentAttachMenu">
-                                    <button type="button" class="comment-attach-option" id="commentAttachImageBtn">
-                                        <i class="fa-solid fa-image" style="color: #4dadf7;"></i>
-                                        <span>이미지 (최대 10개, 파일당 100MB)</span>
+                            <div class="comment-input-wrapper-pill">
+                                <div class="comment-attach-wrapper">
+                                    <button type="button" id="commentAttachBtn" class="comment-attach-btn"
+                                        aria-label="첨부파일">
+                                        <i class="fa-solid fa-plus"></i>
                                     </button>
-                                    <button type="button" class="comment-attach-option" id="commentAttachVideoBtn">
-                                        <i class="fa-brands fa-youtube" style="color: #ff0000;"></i>
-                                        <span id="commentVideoLimitLabel">동영상 (유튜브로)</span>
-                                    </button>
-                                    <button type="button" class="comment-attach-option" id="commentAttachAudioBtn">
-                                        <i class="fa-solid fa-microphone" style="color: #51cf66;"></i>
-                                        <span>음성/오디오 (최대 10개, 파일당 100MB)</span>
-                                    </button>
-                                    <button type="button" class="comment-attach-option" id="commentAttachPdfBtn">
-                                        <i class="fa-solid fa-file-pdf" style="color: #ff922b;"></i>
-                                        <span>PDF 파일 (최대 10개, 파일당 100MB)</span>
-                                    </button>
-                                    <button type="button" class="comment-attach-option" id="commentAttachHtmlBtn">
-                                        <i class="fa-solid fa-file-code" style="color: #cc5de8;"></i>
-                                        <span>HTML 파일 (최대 10개, 파일당 100MB)</span>
-                                    </button>
+                                    <div class="comment-attach-menu" id="commentAttachMenu">
+                                        <button type="button" class="comment-attach-option" id="commentAttachImageBtn">
+                                            <i class="fa-solid fa-image" style="color: #4dadf7;"></i>
+                                            <span>이미지 (최대 10개, 파일당 100MB)</span>
+                                        </button>
+                                        <button type="button" class="comment-attach-option" id="commentAttachVideoBtn">
+                                            <i class="fa-brands fa-youtube" style="color: #ff0000;"></i>
+                                            <span id="commentVideoLimitLabel">동영상 (유튜브로)</span>
+                                        </button>
+                                        <button type="button" class="comment-attach-option" id="commentAttachAudioBtn">
+                                            <i class="fa-solid fa-microphone" style="color: #51cf66;"></i>
+                                            <span>음성/오디오 (최대 10개, 파일당 100MB)</span>
+                                        </button>
+                                        <button type="button" class="comment-attach-option" id="commentAttachPdfBtn">
+                                            <i class="fa-solid fa-file-pdf" style="color: #ff922b;"></i>
+                                            <span>PDF 파일 (최대 10개, 파일당 100MB)</span>
+                                        </button>
+                                        <button type="button" class="comment-attach-option" id="commentAttachHtmlBtn">
+                                            <i class="fa-solid fa-file-code" style="color: #cc5de8;"></i>
+                                            <span>HTML 파일 (최대 10개, 파일당 100MB)</span>
+                                        </button>
+                                    </div>
                                 </div>
+                                <input type="file" id="commentImageInput" accept="image/*" multiple style="display: none;">
+                                <input type="file" id="commentVideoInput" accept="video/mp4,video/webm,.mp4,.webm" multiple
+                                    style="display: none;">
+                                <input type="file" id="commentAudioInput" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.webm"
+                                    multiple style="display: none;">
+                                <input type="file" id="commentPdfInput" accept="application/pdf,.pdf" multiple
+                                    style="display: none;">
+                                <input type="file" id="commentHtmlInput" accept="text/html,.html,.htm" multiple
+                                    style="display: none;">
+                                <input type="text" class="comment-input" placeholder="댓글을 입력하세요...">
+                                <button type="button" id="cancelReplyBtn" class="cancel-reply-btn"
+                                    onclick="cancelReplyTarget()" title="답글 취소">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
                             </div>
-                            <input type="file" id="commentImageInput" accept="image/*" multiple style="display: none;">
-                            <input type="file" id="commentVideoInput" accept="video/mp4,video/webm,.mp4,.webm" multiple
-                                style="display: none;">
-                            <input type="file" id="commentAudioInput" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.webm"
-                                multiple style="display: none;">
-                            <input type="file" id="commentPdfInput" accept="application/pdf,.pdf" multiple
-                                style="display: none;">
-                            <input type="file" id="commentHtmlInput" accept="text/html,.html,.htm" multiple
-                                style="display: none;">
-                            <input type="text" class="comment-input" placeholder="댓글을 입력하세요...">
-                            <button type="button" id="cancelReplyBtn" class="cancel-reply-btn"
-                                onclick="cancelReplyTarget()" title="답글 취소">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
                             <button type="button" id="commentGeminiBtn" class="comment-gemini-btn" aria-label="Gemini AI" title="Gemini AI">
                                 <img src="gemini-color.svg" alt="Gemini">
                             </button>
