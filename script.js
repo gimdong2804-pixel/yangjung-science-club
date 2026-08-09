@@ -2296,25 +2296,27 @@ function _showTopButtons() {
     // 모바일 게시물 상세 페이지 내부에서는 상단 로고/헤더 액션 버튼을 절대로 표시하지 않음
     if (isDetailOpen && window.innerWidth <= 1023) return;
 
-    if (_isTopButtonsHidden) {
-        if (_logoHomeBtn) {
-            _logoHomeBtn.style.opacity = '';
-            _logoHomeBtn.style.pointerEvents = '';
-        }
-        if (_headerActions) {
-            _headerActions.style.opacity = '';
-            _headerActions.style.pointerEvents = '';
-        }
-        if (_writePostBtnGlob) {
-            _writePostBtnGlob.style.opacity = '';
-            _writePostBtnGlob.style.pointerEvents = '';
-        }
-        if (_aiChatbotFabGlob) {
-            _aiChatbotFabGlob.style.opacity = '';
-            _aiChatbotFabGlob.style.pointerEvents = '';
-        }
-        _isTopButtonsHidden = false;
+    if (_logoHomeBtn) {
+        _logoHomeBtn.style.opacity = '';
+        _logoHomeBtn.style.pointerEvents = '';
+        _logoHomeBtn.style.visibility = '';
     }
+    if (_headerActions) {
+        _headerActions.style.opacity = '';
+        _headerActions.style.pointerEvents = '';
+        _headerActions.style.visibility = '';
+    }
+    if (_writePostBtnGlob) {
+        _writePostBtnGlob.style.opacity = '';
+        _writePostBtnGlob.style.pointerEvents = '';
+        _writePostBtnGlob.style.visibility = '';
+    }
+    if (_aiChatbotFabGlob) {
+        _aiChatbotFabGlob.style.opacity = '';
+        _aiChatbotFabGlob.style.pointerEvents = '';
+        _aiChatbotFabGlob.style.visibility = '';
+    }
+    _isTopButtonsHidden = false;
 }
 
 // --- 댓글 스크롤 시 입력창 자동 숨김 로직 (기본값: false / off) ---

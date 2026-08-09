@@ -17,6 +17,11 @@ function closeSideDetail(e) {
         // 작성 버튼 다시 표시 여부 판단 (통합 함수 호출)
         updateWriteButtonVisibility();
 
+        // 상단 동아리 로고 및 헤더 액션(테마/메뉴) 버튼 복원
+        if (typeof _showTopButtons === 'function') {
+            _showTopButtons();
+        }
+
         if (fromPopState !== true && history.state && history.state.modal === 'postDetail') {
             window._isProgrammaticBack = true;
             history.back();
