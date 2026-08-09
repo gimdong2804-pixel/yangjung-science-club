@@ -1072,7 +1072,7 @@
                 opacity: 0 !important;
                 pointer-events: none !important;
                 visibility: hidden !important;
-                transform: scale(0.5) !important;
+                transform: scale(0.6) !important;
             }
         }
 
@@ -1088,7 +1088,7 @@
             opacity: 0 !important;
             pointer-events: none !important;
             visibility: hidden !important;
-            transform: scale(0.8) !important;
+            transform: scale(0.6) !important;
         }
 
         .ai-chatbot-fab:hover {

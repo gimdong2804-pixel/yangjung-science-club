@@ -1035,7 +1035,7 @@
 .fab-hidden {
     opacity: 0 !important;
     pointer-events: none !important;
-    transform: scale(0.8) rotate(45deg) !important;
+    transform: scale(0.6) !important;
     visibility: hidden !important;
 }
 

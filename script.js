@@ -480,14 +480,14 @@ function updateWriteButtonVisibility(page) {
         btn.style.opacity = '1';
         btn.style.pointerEvents = 'auto';
         btn.style.visibility = 'visible';
-        btn.style.transform = 'scale(1) rotate(0)';
+        btn.style.transform = 'scale(1)';
         if (aiFab) aiFab.classList.add('shift-left');
     } else {
         btn.classList.add('fab-hidden');
         btn.style.opacity = '0';
         btn.style.pointerEvents = 'none';
         btn.style.visibility = 'hidden';
-        btn.style.transform = 'scale(0.8) rotate(45deg)';
+        btn.style.transform = 'scale(0.6)';
         if (aiFab) aiFab.classList.remove('shift-left');
     }
 }
