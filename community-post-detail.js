@@ -12,6 +12,7 @@ function closeSideDetail(e) {
     if (sideDetailContainer) {
         // 1. 먼저 애니메이션 클래스를 추가하여 페이드 아웃/이동 시작
         sideDetailContainer.classList.add('detail-hidden');
+        document.body.classList.remove('detail-open');
 
         // 작성 버튼 다시 표시 여부 판단 (통합 함수 호출)
         updateWriteButtonVisibility();
