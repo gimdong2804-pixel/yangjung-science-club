@@ -1058,15 +1058,15 @@
             right: 6.5rem;
         }
 
-        /* 모바일: 게시물 상세 진입 시 제미나이 버튼 축소 및 댓글 보내기 버튼 좌측으로 부드럽게 이동 */
+        /* 모바일: 게시물 상세 진입 시 제미나이 버튼 축소(44px로 보내기 버튼과 동일) 및 댓글 보내기 버튼 좌측으로 부드럽게 이동 */
         @media (max-width: 1023px) {
             body:has(#sideDetailContainer:not(.detail-hidden)) .ai-chatbot-fab,
             body.detail-open:has(#sideDetailContainer:not(.detail-hidden)) .ai-chatbot-fab {
-                width: 38px !important;
-                height: 38px !important;
+                width: 44px !important;
+                height: 44px !important;
                 right: calc(1.5rem + 0.6rem + 44px + 8px) !important;
-                bottom: calc(1rem + 0.4rem + 3px) !important;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15) !important;
+                bottom: calc(1rem + 0.4rem) !important;
+                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15) !important;
                 z-index: 1001 !important;
             }
 
@@ -1077,18 +1077,18 @@
 
             body:has(#sideDetailContainer:not(.detail-hidden)) .ai-chatbot-fab img,
             body.detail-open:has(#sideDetailContainer:not(.detail-hidden)) .ai-chatbot-fab img {
-                width: 22px !important;
-                height: 22px !important;
+                width: 25px !important;
+                height: 25px !important;
             }
 
             body:has(#sideDetailContainer:not(.detail-hidden)) .side-detail-container .comment-input,
             body.detail-open:has(#sideDetailContainer:not(.detail-hidden)) .side-detail-container .comment-input {
-                padding-right: 42px;
+                margin-right: 48px;
             }
 
             body:has(#sideDetailContainer:not(.detail-hidden)):has(.cancel-reply-btn.active) .side-detail-container .comment-input,
             body.detail-open:has(#sideDetailContainer:not(.detail-hidden)):has(.cancel-reply-btn.active) .side-detail-container .comment-input {
-                padding-right: 86px;
+                margin-right: 92px;
             }
         }
 
