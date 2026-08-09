@@ -1083,12 +1083,14 @@
 
             body.detail-open .side-detail-container .comment-input,
             body:has(#sideDetailContainer:not(.detail-hidden)) .side-detail-container .comment-input {
-                margin-right: 48px;
+                margin-right: 0 !important;
+                padding-right: 52px !important;
             }
 
             body.detail-open:has(.cancel-reply-btn.active) .side-detail-container .comment-input,
             body:has(#sideDetailContainer:not(.detail-hidden)):has(.cancel-reply-btn.active) .side-detail-container .comment-input {
-                margin-right: 92px;
+                margin-right: 0 !important;
+                padding-right: 96px !important;
             }
         }
 
