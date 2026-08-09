@@ -102,6 +102,14 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
     sideDetailContainer.classList.toggle('fullscreen-detail', isFullscreen);
     document.body.classList.toggle('detail-open', isFullscreen || isMobile);
 
+    // 모바일 진입 시 잔여 스크롤 타이머 해제 및 상단 헤더 버튼 강제 숨김
+    if (typeof _scrollStopTimer !== 'undefined' && _scrollStopTimer) {
+        clearTimeout(_scrollStopTimer);
+    }
+    if (typeof _hideTopButtons === 'function') {
+        _hideTopButtons();
+    }
+
     const detailTitle = sideDetailContainer.querySelector('.side-detail-title');
     if (detailTitle) {
         detailTitle.innerHTML = isFullscreen

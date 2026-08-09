@@ -1074,6 +1074,16 @@
                 visibility: hidden !important;
                 transform: scale(0.6) !important;
             }
+
+            /* 게시물 상세 페이지가 열려 있을 때는 상단 로고 버튼 및 헤더 액션(테마/메뉴) 버튼을 100% 철통 숨김 */
+            body.detail-open #logoHomeBtn,
+            body.detail-open .header-actions,
+            body:has(#sideDetailContainer:not(.detail-hidden)) #logoHomeBtn,
+            body:has(#sideDetailContainer:not(.detail-hidden)) .header-actions {
+                opacity: 0 !important;
+                pointer-events: none !important;
+                visibility: hidden !important;
+            }
         }
 
         /* 설정창, 메뉴창(드로어) 및 모달이 열려 있을 때 floating 버튼(제미나이 버튼, 글쓰기 버튼) 숨김 */
