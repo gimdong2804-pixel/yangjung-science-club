@@ -2297,24 +2297,26 @@ function _showTopButtons() {
     if (isDetailOpen && window.innerWidth <= 1023) return;
 
     if (_logoHomeBtn) {
-        _logoHomeBtn.style.opacity = '';
-        _logoHomeBtn.style.pointerEvents = '';
-        _logoHomeBtn.style.visibility = '';
+        _logoHomeBtn.style.opacity = '1';
+        _logoHomeBtn.style.pointerEvents = 'auto';
+        _logoHomeBtn.style.visibility = 'visible';
     }
     if (_headerActions) {
-        _headerActions.style.opacity = '';
-        _headerActions.style.pointerEvents = '';
-        _headerActions.style.visibility = '';
+        _headerActions.style.opacity = '1';
+        _headerActions.style.pointerEvents = 'auto';
+        _headerActions.style.visibility = 'visible';
     }
     if (_writePostBtnGlob) {
-        _writePostBtnGlob.style.opacity = '';
-        _writePostBtnGlob.style.pointerEvents = '';
-        _writePostBtnGlob.style.visibility = '';
+        _writePostBtnGlob.style.opacity = '1';
+        _writePostBtnGlob.style.pointerEvents = 'auto';
+        _writePostBtnGlob.style.visibility = 'visible';
+        _writePostBtnGlob.classList.remove('fab-hidden');
     }
     if (_aiChatbotFabGlob) {
-        _aiChatbotFabGlob.style.opacity = '';
-        _aiChatbotFabGlob.style.pointerEvents = '';
-        _aiChatbotFabGlob.style.visibility = '';
+        _aiChatbotFabGlob.style.opacity = '1';
+        _aiChatbotFabGlob.style.pointerEvents = 'auto';
+        _aiChatbotFabGlob.style.visibility = 'visible';
+        _aiChatbotFabGlob.classList.add('shift-left');
     }
     _isTopButtonsHidden = false;
 }
