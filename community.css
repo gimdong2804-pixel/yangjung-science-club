@@ -1980,13 +1980,13 @@ body.multi-select-active .comment-header .board-time {
     position: absolute;
     bottom: calc(100% + 14px);
     left: 0;
-    background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.15);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 20px;
     padding: 0.6rem;
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.16);
+    box-shadow: 0 16px 45px rgba(0, 0, 0, 0.4);
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
@@ -1998,10 +1998,10 @@ body.multi-select-active .comment-header .board-time {
     min-width: 280px;
 }
 
-[data-theme="dark"] .comment-attach-menu {
+[data-theme="light"] .comment-attach-menu {
     background: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 16px 45px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.16);
 }
 
 .comment-attach-menu.active {
@@ -2018,7 +2018,7 @@ body.multi-select-active .comment-header .board-time {
     background: transparent;
     border: none;
     border-radius: 12px;
-    color: #0f172a;
+    color: var(--text-primary, #f8fafc);
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
@@ -2029,8 +2029,12 @@ body.multi-select-active .comment-header .board-time {
 }
 
 .comment-attach-option:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(255, 255, 255, 0.05);
     transform: translateX(2px);
+}
+
+[data-theme="light"] .comment-attach-option:hover {
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .comment-attach-option i {
