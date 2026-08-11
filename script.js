@@ -2559,22 +2559,42 @@ window.toggleRolePin = async function (email, currentPinned) {
 // --- 설정 창 로직 ---
 window.openSettingsModal = function (tabName = 'general') {
     if (typeof window.closeDrawer === 'function') window.closeDrawer();
+    resetUsefulSettingsSubPage();
+    if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
+
     if (settingsModalOverlay && settingsModal) {
-        history.pushState({ modal: 'settingsModal' }, '', '');
         settingsModalOverlay.classList.add('active');
         settingsModal.classList.add('active');
 
+        const sideDrawer = document.getElementById('sideDrawer');
+        if (sideDrawer) {
+            sideDrawer.classList.add('drawer-hidden-by-settings');
+        }
+
         const navTab = document.querySelector(`.settings-nav-item[data-tab="${tabName}"]`);
         if (navTab) navTab.click();
+
+        history.pushState({ modal: 'settings' }, '');
     }
 };
 
-window.closeSettingsModal = function (popHistory = true) {
+window.closeSettingsModal = function (fromPopState = false) {
+    if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
     if (settingsModalOverlay && settingsModal) {
         settingsModalOverlay.classList.remove('active');
         settingsModal.classList.remove('active');
-        if (popHistory && history.state && history.state.modal === 'settingsModal') {
+        settingsModal.classList.remove('update-tab-active');
+    }
+    const sideDrawer = document.getElementById('sideDrawer');
+    if (sideDrawer) {
+        sideDrawer.classList.remove('drawer-hidden-by-settings');
+    }
+    if (!fromPopState) {
+        window._isProgrammaticBack = true;
+        if (history.state && history.state.modal === 'settings') {
             history.back();
+        } else {
+            setTimeout(() => { window._isProgrammaticBack = false; }, 300);
         }
     }
 };
@@ -2980,36 +3000,6 @@ if (logoDisplaySelected && logoDisplayOptions) {
         }
     });
 }
-
-window.openSettingsModal = function () {
-    resetUsefulSettingsSubPage();
-    if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
-    settingsModalOverlay.classList.add('active');
-    settingsModal.classList.add('active');
-    const sideDrawer = document.getElementById('sideDrawer');
-    if (sideDrawer) {
-        sideDrawer.classList.add('drawer-hidden-by-settings');
-    }
-    history.pushState({ modal: 'settings' }, '');
-};
-
-window.closeSettingsModal = function (fromPopState = false) {
-    if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
-    settingsModalOverlay.classList.remove('active');
-    settingsModal.classList.remove('active');
-    const sideDrawer = document.getElementById('sideDrawer');
-    if (sideDrawer) {
-        sideDrawer.classList.remove('drawer-hidden-by-settings');
-    }
-    if (!fromPopState) {
-        window._isProgrammaticBack = true;
-        if (history.state && history.state.modal === 'settings') {
-            history.back();
-        } else {
-            setTimeout(() => { window._isProgrammaticBack = false; }, 300);
-        }
-    }
-};
 
 if (drawerSettingsBtn) {
     drawerSettingsBtn.addEventListener('click', () => {
