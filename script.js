@@ -2565,6 +2565,7 @@ window.openSettingsModal = function (tabName = 'general') {
     if (settingsModalOverlay && settingsModal) {
         settingsModalOverlay.classList.add('active');
         settingsModal.classList.add('active');
+        document.body.classList.add('settings-open');
 
         const sideDrawer = document.getElementById('sideDrawer');
         if (sideDrawer) {
@@ -2584,6 +2585,7 @@ window.closeSettingsModal = function (fromPopState = false) {
         settingsModalOverlay.classList.remove('active');
         settingsModal.classList.remove('active');
         settingsModal.classList.remove('update-tab-active');
+        document.body.classList.remove('settings-open');
     }
     const sideDrawer = document.getElementById('sideDrawer');
     if (sideDrawer) {

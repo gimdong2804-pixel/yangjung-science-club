@@ -134,12 +134,21 @@
     visibility: hidden !important;
 }
 
+/* 설정창 및 모달이 열려 있을 때 배경 body 스크롤 금지 */
+body.settings-open,
+body:has(#settingsModal.active),
+body:has(#settingsModalOverlay.active),
+body:has(.modal-overlay.active) {
+    overflow: hidden !important;
+}
+
 /* Settings Modal Split Layout CSS */
 .settings-modal-container {
     padding: 0 !important;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    overscroll-behavior: contain;
 }
 
 .settings-layout {
@@ -148,6 +157,8 @@
     width: 100%;
     height: 100%;
     gap: 0;
+    min-height: 0;
+    overflow: hidden;
 }
 
 @keyframes fadeInTab {
@@ -714,6 +725,8 @@
     padding: 1.5rem;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    min-height: 0;
+    overscroll-behavior: contain;
 }
 
 .settings-content::-webkit-scrollbar {
