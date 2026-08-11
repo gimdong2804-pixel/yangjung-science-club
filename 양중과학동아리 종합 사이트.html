@@ -14,10 +14,10 @@
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="ui-components.css">
-    <link rel="stylesheet" href="community.css">
-    <link rel="stylesheet" href="youtube-style.css">
+    <link rel="stylesheet" href="style.css?v=33">
+    <link rel="stylesheet" href="ui-components.css?v=33">
+    <link rel="stylesheet" href="community.css?v=33">
+    <link rel="stylesheet" href="youtube-style.css?v=33">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2c52ed">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg">
@@ -885,7 +885,8 @@
                                 onclick="cancelReplyTarget()" title="답글 취소">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
-                            <button type="button" id="commentGeminiBtn" class="comment-gemini-btn" aria-label="Gemini AI" title="Gemini AI">
+                            <button type="button" id="commentGeminiBtn" class="comment-gemini-btn"
+                                aria-label="Gemini AI" title="Gemini AI">
                                 <img src="gemini-color.svg" alt="Gemini">
                             </button>
                             <button class="comment-submit-btn"><i class="fa-solid fa-paper-plane"></i></button>
@@ -1168,102 +1169,163 @@
 
     <div id="aiChatbotModalOverlay" class="modal-overlay"></div>
     <div class="ai-chatbot-window modal-container" id="aiChatbotWindow">
-        <div class="ai-chatbot-header">
-            <div class="ai-chatbot-header-title">
-                <img src="gemini-color.svg" style="width: 24px; height: 24px; object-fit: contain;" alt="Gemini AI">
-                <span>양중과학동아리 AI 비서</span>
-            </div>
-
-            <!-- AI 모델 선택 드롭다운 (제미나이 공식 앱처럼 채팅창 헤더에 배치) -->
-            <div class="custom-dropdown-container" id="aiModelDropdownContainer">
-                <div class="custom-dropdown-selected" id="aiModelSelected">
-                    <span id="aiModelSelectedText"><img src="gemini-color.svg"
-                            style="width: 18px; height: 18px; vertical-align: middle; object-fit: contain; margin-right: 6px;"
-                            alt="Gemini"> Gemini 3.6 Flash</span>
-                    <i class="fa-solid fa-chevron-down arrow-icon"></i>
+        <!-- 제미나이 좌측 사이드바 메뉴 Drawer -->
+        <aside class="ai-chatbot-sidebar" id="aiChatbotSidebar">
+            <div class="ai-sidebar-header">
+                <div class="ai-sidebar-brand" id="aiSidebarBrandToggle" title="Gemini">
+                    <img src="gemini-color.svg" class="ai-sidebar-logo" alt="Gemini">
+                    <span class="ai-sidebar-title">Gemini</span>
                 </div>
-                <ul class="custom-dropdown-options ai-model-dropdown-options" id="aiModelOptions">
-                    <li class="custom-dropdown-option model-option-card active" data-value="gemini-3.6-flash"
-                        data-title="Gemini 3.6 Flash">
-                        <div class="model-option-left">
-                            <span class="model-check-icon"><i class="fa-solid fa-check"></i></span>
-                            <img src="gemini-color.svg" class="model-option-logo" alt="Gemini">
-                            <div class="model-option-text">
-                                <div class="model-title">Gemini 3.6 Flash</div>
-                                <div class="model-desc">무엇이든 도움을 받으세요</div>
-                            </div>
-                        </div>
-                    </li>
-                    <li class="custom-dropdown-option model-option-card" data-value="gemini-3.5-flash-lite"
-                        data-title="Gemini 3.5 Flash-Lite">
-                        <div class="model-option-left">
-                            <span class="model-check-icon"><i class="fa-solid fa-check"></i></span>
-                            <img src="gemini-color.svg" class="model-option-logo" alt="Gemini">
-                            <div class="model-option-text">
-                                <div class="model-title">Gemini 3.5 Flash-Lite</div>
-                                <div class="model-desc">가장 빠른 답변 제공</div>
-                            </div>
-                        </div>
-                    </li>
-                </ul>
-                <input type="hidden" id="aiModelSelect" value="gemini-3.6-flash" />
+                <button type="button" class="ai-sidebar-close-btn" id="aiSidebarCloseBtn" aria-label="메뉴 닫기"
+                    title="메뉴 닫기">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" class="ai-sidebar-collapse-icon">
+                        <rect x="3.5" y="3.5" width="17" height="17" rx="4" ry="4"></rect>
+                        <line x1="8.5" y1="3.5" x2="8.5" y2="20.5"></line>
+                        <path d="M16 16l-3.5-4 3.5-4"></path>
+                    </svg>
+                </button>
             </div>
 
-            <button id="closeAiChatbot" class="close-btn" aria-label="닫기">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-        <div class="ai-chatbot-messages" id="aiChatbotMessages">
-            <div class="ai-message assistant">
-                안녕하세요! 양중과학동아리 AI 비서입니다. 🧪✨<br>과학 현상에 대한 질문이나 동아리 활동에 대해 궁금한 점이 있다면 무엇이든 물어보세요!
-            </div>
-        </div>
-        <div class="ai-chatbot-scrollbar" id="aiChatbotScrollbar">
-            <div class="ai-chatbot-scrollbar-thumb" id="aiChatbotScrollbarThumb"></div>
-        </div>
-        <div class="ai-chatbot-input-container">
-            <!-- 숨겨진 파일 Input 목록 -->
-            <input type="file" id="aiImageInput" accept="image/*" multiple style="display: none;" />
-            <input type="file" id="aiPdfInput" accept="application/pdf" multiple style="display: none;" />
-            <input type="file" id="aiAudioInput" accept="audio/*" multiple style="display: none;" />
-            <input type="file" id="aiHtmlInput" accept=".html,.htm,text/html" multiple style="display: none;" />
-            <input type="file" id="aiVideoInput" accept="video/*" multiple style="display: none;" />
-
-            <!-- 첨부파일 미리보기 카드 컨테이너 -->
-            <div class="ai-chatbot-preview-container" id="aiChatbotPreviewContainer" style="display: none;"></div>
-
-            <div class="ai-chatbot-input-wrapper">
-                <!-- AI 챗봇 첨부파일 팝업 메뉴 (+ 버튼 바로 위 위치 지정) -->
-                <div class="comment-attach-menu" id="aiChatbotAttachMenu">
-                    <button type="button" class="comment-attach-option" id="aiAttachImageBtn">
-                        <i class="fa-solid fa-image" style="color: #4dadf7;"></i>
-                        <span>이미지 (최대 10개, 파일당 100MB)</span>
+            <div class="ai-sidebar-content">
+                <div class="ai-sidebar-menu-group">
+                    <button type="button" class="ai-sidebar-item" id="aiNewChatBtn">
+                        <i class="fa-regular fa-pen-to-square"></i>
+                        <span class="ai-sidebar-label">새 채팅</span>
                     </button>
-                    <button type="button" class="comment-attach-option" id="aiAttachVideoBtn">
-                        <i class="fa-brands fa-youtube" style="color: #ff0000;"></i>
-                        <span>동영상 (유튜브로)</span>
-                    </button>
-                    <button type="button" class="comment-attach-option" id="aiAttachAudioBtn">
-                        <i class="fa-solid fa-microphone" style="color: #51cf66;"></i>
-                        <span>음성/오디오 (최대 10개, 파일당 100MB)</span>
-                    </button>
-                    <button type="button" class="comment-attach-option" id="aiAttachPdfBtn">
-                        <i class="fa-solid fa-file-pdf" style="color: #ff922b;"></i>
-                        <span>PDF 파일 (최대 10개, 파일당 100MB)</span>
-                    </button>
-                    <button type="button" class="comment-attach-option" id="aiAttachHtmlBtn">
-                        <i class="fa-solid fa-file-code" style="color: #cc5de8;"></i>
-                        <span>HTML 파일 (최대 10개, 파일당 100MB)</span>
+                    <button type="button" class="ai-sidebar-item" id="aiSearchChatBtn">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <span class="ai-sidebar-label">채팅 검색</span>
                     </button>
                 </div>
 
-                <button type="button" class="ai-chatbot-attach-btn" id="aiChatbotAttachBtn" aria-label="파일 첨부">
-                    <i class="fa-solid fa-plus"></i>
+                <div class="ai-sidebar-section">
+                    <div class="ai-sidebar-section-title">최근</div>
+                    <div id="aiRecentChatList" class="ai-recent-chat-list">
+                        <!-- JS에서 동적으로 대화 목록 및 '최근 대화가 없습니다.' 문구 렌더링 -->
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 사이드바 열릴 때 클릭으로 닫을 수 있는 오버레이 -->
+        <div class="ai-sidebar-overlay" id="aiSidebarOverlay"></div>
+
+        <!-- AI 챗봇 메인 화면 영역 -->
+        <div class="ai-chatbot-main">
+            <div class="ai-chatbot-header">
+                <!-- 왼쪽 상단: 햄버거 메뉴 토글 버튼 (기본: 제미나이 로고, 호버: 메뉴 아이콘) -->
+                <button type="button" class="ai-chatbot-menu-toggle" id="aiChatbotMenuToggle" aria-label="메뉴 열기"
+                    title="메뉴 열기">
+                    <img src="gemini-color.svg" class="ai-menu-logo-img" alt="Gemini">
+                    <i class="fa-solid fa-bars ai-menu-bars-icon"></i>
                 </button>
-                <input type="text" class="ai-chatbot-input" id="aiChatbotInput" placeholder="Gemini에게 물어보기..." />
-                <button class="ai-chatbot-send-btn" id="aiChatbotSendBtn" aria-label="전송">
-                    <i class="fa-solid fa-paper-plane"></i>
+
+                <!-- AI 모델 선택 드롭다운 (제미나이 공식 앱처럼 채팅창 헤더에 배치) -->
+                <div class="custom-dropdown-container" id="aiModelDropdownContainer">
+                    <div class="custom-dropdown-selected" id="aiModelSelected">
+                        <span id="aiModelSelectedText"><img src="gemini-color.svg"
+                                style="width: 18px; height: 18px; vertical-align: middle; object-fit: contain; margin-right: 6px;"
+                                alt="Gemini"> Gemini 3.6 Flash</span>
+                        <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                    </div>
+                    <ul class="custom-dropdown-options ai-model-dropdown-options" id="aiModelOptions">
+                        <li class="custom-dropdown-option model-option-card active" data-value="gemini-3.6-flash"
+                            data-title="Gemini 3.6 Flash">
+                            <div class="model-option-left">
+                                <span class="model-check-icon"><i class="fa-solid fa-check"></i></span>
+                                <img src="gemini-color.svg" class="model-option-logo" alt="Gemini">
+                                <div class="model-option-text">
+                                    <div class="model-title">Gemini 3.6 Flash</div>
+                                    <div class="model-desc">무엇이든 도움을 받으세요</div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="custom-dropdown-option model-option-card" data-value="gemini-3.5-flash-lite"
+                            data-title="Gemini 3.5 Flash-Lite">
+                            <div class="model-option-left">
+                                <span class="model-check-icon"><i class="fa-solid fa-check"></i></span>
+                                <img src="gemini-color.svg" class="model-option-logo" alt="Gemini">
+                                <div class="model-option-text">
+                                    <div class="model-title">Gemini 3.5 Flash-Lite</div>
+                                    <div class="model-desc">가장 빠른 답변 제공</div>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                    <input type="hidden" id="aiModelSelect" value="gemini-3.6-flash" />
+                </div>
+
+                <button id="closeAiChatbot" class="close-btn" aria-label="닫기">
+                    <i class="fa-solid fa-xmark"></i>
                 </button>
+            </div>
+            <div class="ai-messages-top-blur"></div>
+            <div class="ai-chatbot-messages" id="aiChatbotMessages">
+                <div class="ai-message assistant">
+                    안녕하세요! 양중과학동아리 AI 비서입니다. 🧪✨<br>과학 현상에 대한 질문이나 동아리 활동에 대해 궁금한 점이 있다면 무엇이든 물어보세요!
+                </div>
+            </div>
+            <div class="ai-chatbot-scrollbar" id="aiChatbotScrollbar">
+                <div class="ai-chatbot-scrollbar-thumb" id="aiChatbotScrollbarThumb"></div>
+            </div>
+            <div class="ai-chatbot-bottom-shadow"></div>
+            <div class="ai-chatbot-input-container">
+                <!-- 숨겨진 파일 Input 목록 -->
+                <input type="file" id="aiImageInput" accept="image/*" multiple style="display: none;" />
+                <input type="file" id="aiPdfInput" accept="application/pdf" multiple style="display: none;" />
+                <input type="file" id="aiAudioInput" accept="audio/*" multiple style="display: none;" />
+                <input type="file" id="aiHtmlInput" accept=".html,.htm,text/html" multiple style="display: none;" />
+                <input type="file" id="aiVideoInput" accept="video/*" multiple style="display: none;" />
+
+                <!-- 첨부파일 미리보기 카드 컨테이너 -->
+                <div class="ai-chatbot-preview-container" id="aiChatbotPreviewContainer" style="display: none;"></div>
+
+                <div class="ai-chatbot-input-wrapper">
+                    <!-- AI 챗봇 첨부파일 팝업 메뉴 (+ 버튼 바로 위 위치 지정) -->
+                    <div class="comment-attach-menu" id="aiChatbotAttachMenu">
+                        <button type="button" class="comment-attach-option" id="aiAttachImageBtn">
+                            <i class="fa-solid fa-image" style="color: #4dadf7;"></i>
+                            <span>이미지 (최대 10개, 파일당 100MB)</span>
+                        </button>
+                        <button type="button" class="comment-attach-option" id="aiAttachVideoBtn">
+                            <i class="fa-brands fa-youtube" style="color: #ff0000;"></i>
+                            <span>동영상 (유튜브로)</span>
+                        </button>
+                        <button type="button" class="comment-attach-option" id="aiAttachAudioBtn">
+                            <i class="fa-solid fa-microphone" style="color: #51cf66;"></i>
+                            <span>음성/오디오 (최대 10개, 파일당 100MB)</span>
+                        </button>
+                        <button type="button" class="comment-attach-option" id="aiAttachPdfBtn">
+                            <i class="fa-solid fa-file-pdf" style="color: #ff922b;"></i>
+                            <span>PDF 파일 (최대 10개, 파일당 100MB)</span>
+                        </button>
+                        <button type="button" class="comment-attach-option" id="aiAttachHtmlBtn">
+                            <i class="fa-solid fa-file-code" style="color: #cc5de8;"></i>
+                            <span>HTML 파일 (최대 10개, 파일당 100MB)</span>
+                        </button>
+                    </div>
+
+                    <button type="button" class="ai-chatbot-attach-btn" id="aiChatbotAttachBtn" aria-label="파일 첨부">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                    <input type="text" class="ai-chatbot-input" id="aiChatbotInput" placeholder="Gemini에게 물어보기..." />
+                    <button type="button" class="ai-chatbot-mic-btn" id="aiChatbotMicBtn" aria-label="음성 입력" title="음성으로 입력하기">
+                        <svg class="ai-mic-svg" viewBox="0 0 24 24" width="22" height="22">
+                            <defs>
+                                <linearGradient id="aiMicGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#3b82f6" />
+                                    <stop offset="100%" stop-color="#8b5cf6" />
+                                </linearGradient>
+                            </defs>
+                            <path class="ai-mic-body" d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" fill="url(#aiMicGrad)" />
+                            <path class="ai-mic-stand" d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8" stroke="url(#aiMicGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                        </svg>
+                    </button>
+                    <button class="ai-chatbot-send-btn" id="aiChatbotSendBtn" aria-label="전송">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1297,13 +1359,33 @@
         </div>
     </div>
 
+    <!-- AI 챗봇 채팅 검색 모달 -->
+    <div id="aiSearchChatModalOverlay" class="modal-overlay"></div>
+    <div id="aiSearchChatModal" class="modal-container ai-search-modal">
+        <div class="ai-search-header">
+            <div class="ai-search-input-wrapper">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="aiSearchChatInput" placeholder="채팅 제목 또는 대화 내용 검색..." autocomplete="off" spellcheck="false" />
+                <button type="button" id="aiSearchChatClearBtn" class="search-clear-btn" style="display: none;" title="검색어 지우기">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <button type="button" id="aiSearchChatCloseBtn" class="close-btn" aria-label="닫기" title="닫기">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="ai-search-body" id="aiSearchResultsContainer">
+            <!-- 검색 결과 리스트가 동적으로 렌더링됩니다 -->
+        </div>
+    </div>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
-    <script src="script.js?v=1.0.6"></script>
+    <script src="script.js?v=1.0.7"></script>
     <script src="youtube-utils.js?v=1.0.3"></script>
     <!-- 커뮤니티는 역할별 파일로 나누어, 수정할 때 해당 기능만 찾을 수 있게 했습니다. -->
     <script src="community.js?v=2.0.3"></script>

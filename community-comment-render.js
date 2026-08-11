@@ -285,11 +285,12 @@ function renderFlatReply(comment, tree, postId, depth = 1) {
     }
     const parentComment = comment.parentId ? tree.byId.get(comment.parentId) : null;
     const mentionHtml = (parentComment && !isDeleted) ? `<span class="flat-reply-mention">@${escapeHtml(parentComment.author || '사용자')}</span> ` : '';
+    const commentText = comment.body || comment.content || '';
     const bodyHtml = isDeleted
         ? '<span class="comment-deleted-text">삭제된 댓글입니다.</span>'
         : mentionHtml + (typeof window.renderTextWithYoutubeLinks === 'function'
-            ? window.renderTextWithYoutubeLinks(escapeHtml(comment.body || '').replace(/\n/g, '<br>'))
-            : escapeHtml(comment.body || '').replace(/\n/g, '<br>'));
+            ? window.renderTextWithYoutubeLinks(escapeHtml(commentText).replace(/\n/g, '<br>'))
+            : escapeHtml(commentText).replace(/\n/g, '<br>'));
 
     const attachmentsHtml = renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDeleted);
 

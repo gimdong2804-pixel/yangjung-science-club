@@ -69,16 +69,64 @@ const commentHtmlInput = document.getElementById('commentHtmlInput');
 
 const commentImagePreviewContainer = document.getElementById('commentImagePreviewContainer');
 
+function updateCommentAttachMenuPosition() {
+    if (!commentAttachBtn || !commentAttachMenu) return;
+    if (commentAttachMenu.parentElement !== document.body) {
+        document.body.appendChild(commentAttachMenu);
+    }
+    const rect = commentAttachBtn.getBoundingClientRect();
+    const menuHeight = commentAttachMenu.offsetHeight || 220;
+
+    let top = rect.top - menuHeight - 16;
+    let left = rect.left;
+
+    if (top < 10) top = rect.bottom + 16;
+    if (left + 280 > window.innerWidth) left = window.innerWidth - 290;
+    if (left < 10) left = 10;
+
+    commentAttachMenu.style.position = 'fixed';
+    commentAttachMenu.style.top = `${top}px`;
+    commentAttachMenu.style.left = `${left}px`;
+    commentAttachMenu.style.bottom = 'auto';
+    commentAttachMenu.style.right = 'auto';
+    commentAttachMenu.style.zIndex = '99999';
+}
+
 if (commentAttachBtn) {
-    commentAttachBtn.addEventListener('click', () => {
-        commentAttachBtn.classList.toggle('open');
-        if (commentAttachMenu) commentAttachMenu.classList.toggle('active');
+    commentAttachBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isCurrentlyActive = commentAttachMenu && commentAttachMenu.classList.contains('active');
+
+        if (isCurrentlyActive) {
+            commentAttachBtn.classList.remove('open');
+            if (commentAttachMenu) commentAttachMenu.classList.remove('active');
+        } else {
+            commentAttachBtn.classList.add('open');
+            if (commentAttachMenu) {
+                updateCommentAttachMenuPosition();
+                requestAnimationFrame(() => {
+                    commentAttachMenu.classList.add('active');
+                });
+            }
+        }
     });
 
     document.addEventListener('click', (e) => {
         if (commentAttachBtn && commentAttachMenu && !commentAttachBtn.contains(e.target) && !commentAttachMenu.contains(e.target)) {
             commentAttachBtn.classList.remove('open');
             commentAttachMenu.classList.remove('active');
+        }
+    });
+
+    window.addEventListener('scroll', () => {
+        if (commentAttachMenu && commentAttachMenu.classList.contains('active')) {
+            updateCommentAttachMenuPosition();
+        }
+    }, true);
+
+    window.addEventListener('resize', () => {
+        if (commentAttachMenu && commentAttachMenu.classList.contains('active')) {
+            updateCommentAttachMenuPosition();
         }
     });
 }

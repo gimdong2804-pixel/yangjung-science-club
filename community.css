@@ -770,29 +770,37 @@ body.multi-select-active .reply-target-bar {
     font-size: 1.2rem;
 }
 
+.comment-attach-wrapper {
+    position: relative;
+    z-index: 10;
+}
+
 .comment-attach-menu {
-    position: absolute;
-    bottom: calc(100% + 25px);
-    left: 0;
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
-    padding: 0.5rem;
+    position: fixed !important;
+    background: rgba(30, 41, 59, 0.75) !important;
+    backdrop-filter: blur(20px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    border-radius: 18px;
+    padding: 0.55rem;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    gap: 0.35rem;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35) !important;
     opacity: 0;
     transform: translateY(10px) scale(0.95);
     pointer-events: none;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
     transform-origin: bottom left;
-    z-index: 1001;
+    z-index: 99999 !important;
 }
 
 [data-theme="light"] .comment-attach-menu {
-    background: var(--glass-bg);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.75) !important;
+    backdrop-filter: blur(20px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12) !important;
 }
 
 .comment-attach-menu.active {
@@ -900,20 +908,24 @@ body.multi-select-active .reply-target-bar {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    background: rgba(30, 41, 59, 0.45);
-    backdrop-filter: blur(20px) saturate(1.4);
-    -webkit-backdrop-filter: blur(20px) saturate(1.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(30, 41, 59, 0.75) !important;
+    backdrop-filter: blur(20px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
     box-sizing: border-box;
     border-radius: 9999px;
     padding: 0.4rem 0.6rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25),
-        inset 0 -1px 1px rgba(0, 0, 0, 0.1);
-    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
-        box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
-        border-color 0.3s linear,
-        background 0.3s ease;
     position: relative;
+    z-index: 10;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
+        box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
+        border-color 0.3s ease,
+        background 0.3s ease;
+}
+
+.comment-input-container.has-images {
+    border-radius: 20px;
 }
 
 .comment-input-row {
@@ -926,25 +938,24 @@ body.multi-select-active .reply-target-bar {
 }
 
 [data-theme="light"] .comment-input-container {
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06),
-        inset 0 -1px 1px rgba(0, 0, 0, 0.02);
+    background: rgba(255, 255, 255, 0.75) !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
 }
 
 .comment-input-container:has(.comment-input:focus) {
-    transform: scale(1.01) translateY(-3px);
-    border-color: rgba(59, 130, 246, 0.45);
-    background: rgba(30, 41, 59, 0.55);
-    /* 애니메이션 버그 수정: 평소 상태와 그림자 갯수를 맞춰야 부드럽게 전환됨 */
+    transform: scale(1.005) translateY(-2px);
+    border-color: rgba(59, 130, 246, 0.45) !important;
+    background: rgba(30, 41, 59, 0.65) !important;
     box-shadow: 0 8px 32px rgba(59, 130, 246, 0.15),
-        inset 0 -1px 1px rgba(0, 0, 0, 0.1);
+        inset 0 -1px 1px rgba(0, 0, 0, 0.1) !important;
 }
 
 [data-theme="light"] .comment-input-container:has(.comment-input:focus) {
-    background: rgba(255, 255, 255, 0.6);
+    border-color: rgba(59, 130, 246, 0.4) !important;
+    background: rgba(255, 255, 255, 0.75) !important;
     box-shadow: 0 8px 32px rgba(59, 130, 246, 0.08),
-        inset 0 -1px 1px rgba(0, 0, 0, 0.02);
+        inset 0 -1px 1px rgba(0, 0, 0, 0.02) !important;
 }
 
 .comment-input {
