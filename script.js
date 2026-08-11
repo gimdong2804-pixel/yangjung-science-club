@@ -1707,7 +1707,7 @@ async function sendChatbotMessage() {
                     };
                     if (args.parent_comment_id) commentData.parentId = args.parent_comment_id;
                     await db.collection('posts').doc(args.post_id).collection('comments').add(commentData);
-                    
+
                     // Increment comment count
                     await db.collection('posts').doc(args.post_id).update({
                         commentCount: firebase.firestore.FieldValue.increment(1)
@@ -1748,9 +1748,9 @@ async function sendChatbotMessage() {
                         ? `<img class="board-author-avatar" src="${post.userPhoto}" alt="${post.author}" style="object-fit: cover; border: 1px solid var(--glass-border);">`
                         : `<div class="board-author-avatar" style="background: hsl(${(id.charCodeAt(0) * 137) % 360}, 60%, 50%)">${avatar}</div>`;
                     const timeStr = typeof formatDate === 'function' ? formatDate(post.createdAt) : '';
-                    window.closeAiChatbotModal(); 
-                    setTimeout(() => { if(typeof switchPage === 'function') switchPage(currentPage, suggestionPage); }, 100);
-                    setTimeout(() => { if(typeof openPostDetail === 'function') openPostDetail(id, post, avatarHtml, timeStr, 'fullscreen'); }, 400);
+                    window.closeAiChatbotModal();
+                    setTimeout(() => { if (typeof switchPage === 'function') switchPage(currentPage, suggestionPage); }, 100);
+                    setTimeout(() => { if (typeof openPostDetail === 'function') openPostDetail(id, post, avatarHtml, timeStr, 'fullscreen'); }, 400);
                     return { success: true, message: "게시물을 화면에 열었습니다." };
                 } catch (e) { return { error: e.message }; }
             },
@@ -1826,13 +1826,13 @@ async function sendChatbotMessage() {
             const fc = currentResult.functionCall;
             const executor = fcExecutors[fc.name];
             let functionResult = { result: '성공적으로 실행됨' };
-            
+
             if (executor) {
-                try { 
-                    const res = await executor(fc.args || {}); 
+                try {
+                    const res = await executor(fc.args || {});
                     if (res) functionResult = res;
-                } catch (err) { 
-                    console.error('기능 실행 오류:', fc.name, err); 
+                } catch (err) {
+                    console.error('기능 실행 오류:', fc.name, err);
                     functionResult = { error: err.message };
                 }
             }
@@ -1843,9 +1843,9 @@ async function sendChatbotMessage() {
 
             // 다음 스텝 지시 받기
             try {
-                currentResult = await callGeminiAPI(window.aiConfig.apiKey, contents, { 
-                    systemPrompt: systemPromptText, 
-                    tools: siteTools 
+                currentResult = await callGeminiAPI(window.aiConfig.apiKey, contents, {
+                    systemPrompt: systemPromptText,
+                    tools: siteTools
                 });
             } catch (e) {
                 console.error("Follow-up API call failed", e);
@@ -2721,6 +2721,7 @@ if (settingsNavItems.length > 0) {
 
             // 탭을 전환할 때 서브페이지를 메인 카드 목록으로 초기화
             resetUsefulSettingsSubPage();
+            if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
         });
     });
 }
@@ -2732,10 +2733,13 @@ const SITE_UPDATE_INFO = Object.freeze({
     message: '우리 동아리 사이트의 첫 버전인 One UI 1.0입니다!'
 });
 
+const checkUpdateBtn = document.getElementById('checkUpdateBtn');
 const openUpdateDetailsBtn = document.getElementById('openUpdateDetailsBtn');
-const updateDetailsModalOverlay = document.getElementById('updateDetailsModalOverlay');
-const updateDetailsModal = document.getElementById('updateDetailsModal');
-const updateDetailsConfirmBtn = document.getElementById('updateDetailsConfirmBtn');
+const updateMainBackBtn = document.getElementById('updateMainBackBtn');
+const updateMainView = document.getElementById('updateMainView');
+const updateDetailsView = document.getElementById('updateDetailsView');
+const closeUpdateDetailsInPageBtn = document.getElementById('closeUpdateDetailsInPageBtn');
+const closeUpdateDetailsTopBtn = document.getElementById('closeUpdateDetailsTopBtn');
 
 document.querySelectorAll('[data-current-one-ui-version]').forEach((element) => {
     if (element.tagName === 'svg' || element.tagName === 'SVG') {
@@ -2756,41 +2760,151 @@ document.querySelectorAll('[data-current-update-message]').forEach((element) => 
     element.textContent = SITE_UPDATE_INFO.message;
 });
 
+// 업데이트 서브 상태 Tracing ('pill' | 'details' | null)
+window.updateSubState = null;
 
-window.openUpdateDetailsModal = function () {
-    if (!updateDetailsModalOverlay || !updateDetailsModal) return;
-    history.pushState({ modal: 'updateDetails' }, '', '');
-    updateDetailsModalOverlay.classList.add('active');
-    updateDetailsModal.classList.add('active');
-};
+// "업데이트 내용 확인" 버튼 클릭 시 -> 알약 버튼과 메인 상단 "← 돌아가기" 버튼 표시
+if (checkUpdateBtn && openUpdateDetailsBtn) {
+    checkUpdateBtn.addEventListener('click', function () {
+        if (checkUpdateBtn.classList.contains('hiding')) return;
+        checkUpdateBtn.classList.add('hiding');
 
-window.closeUpdateDetailsModal = function (fromPopState = false) {
-    if (!updateDetailsModalOverlay || !updateDetailsModal) return;
-    updateDetailsModalOverlay.classList.remove('active');
-    updateDetailsModal.classList.remove('active');
-    if (!fromPopState && history.state && history.state.modal === 'updateDetails') {
+        window.updateSubState = 'pill';
+        history.pushState({ modal: 'settings', updateSubState: 'pill' }, '');
+
+        setTimeout(() => {
+            checkUpdateBtn.style.display = 'none';
+            checkUpdateBtn.classList.remove('hiding');
+
+            openUpdateDetailsBtn.style.display = 'flex';
+            openUpdateDetailsBtn.classList.add('showing');
+
+            if (updateMainBackBtn) {
+                updateMainBackBtn.style.display = 'inline-flex';
+                updateMainBackBtn.classList.remove('hiding', 'showing');
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        updateMainBackBtn.classList.add('showing');
+                    });
+                });
+            }
+        }, 200);
+    });
+}
+
+// 알약 상태에서 "← 돌아가기" 버튼 클릭 또는 뒤로가기 조작시 -> 다시 "업데이트 내용 확인" 버튼 상태로 복귀
+window.resetUpdateCheckState = function (fromPopState = false) {
+    window.updateSubState = null;
+
+    if (openUpdateDetailsBtn) {
+        openUpdateDetailsBtn.classList.remove('showing');
+        openUpdateDetailsBtn.classList.add('hiding');
+    }
+    if (updateMainBackBtn) {
+        updateMainBackBtn.classList.remove('showing');
+        updateMainBackBtn.classList.add('hiding');
+    }
+    setTimeout(() => {
+        if (openUpdateDetailsBtn) {
+            openUpdateDetailsBtn.style.display = 'none';
+            openUpdateDetailsBtn.classList.remove('hiding');
+        }
+        if (updateMainBackBtn) {
+            updateMainBackBtn.style.display = 'none';
+            updateMainBackBtn.classList.remove('hiding');
+        }
+        if (checkUpdateBtn) {
+            checkUpdateBtn.style.display = '';
+            checkUpdateBtn.classList.remove('hiding', 'showing');
+            requestAnimationFrame(() => {
+                checkUpdateBtn.classList.add('showing');
+                setTimeout(() => {
+                    checkUpdateBtn.classList.remove('showing');
+                }, 300);
+            });
+        }
+    }, 200);
+
+    if (!fromPopState && history.state && history.state.updateSubState === 'pill') {
         window._isProgrammaticBack = true;
         history.back();
+        setTimeout(() => { window._isProgrammaticBack = false; }, 50);
+    }
+};
+
+if (updateMainBackBtn) {
+    updateMainBackBtn.addEventListener('click', function () {
+        window.resetUpdateCheckState(false);
+    });
+}
+
+// "[현재 버전] One UI 1.0 >" 알약 버튼 클릭시 상세 업데이트 내역 화면으로 진입
+window.showInPageUpdateDetails = function () {
+    window.updateSubState = 'details';
+    history.pushState({ modal: 'settings', updateSubState: 'details' }, '');
+
+    if (updateMainView) updateMainView.classList.remove('active');
+    if (updateDetailsView) updateDetailsView.classList.add('active');
+};
+
+// 상세 화면에서 "← 돌아가기" 버튼 클릭 시 -> 알약 상태가 보이는 메인 화면으로 복귀
+window.hideInPageUpdateDetails = function (fromPopState = false) {
+    window.updateSubState = 'pill';
+
+    if (updateDetailsView) updateDetailsView.classList.remove('active');
+    if (updateMainView) updateMainView.classList.add('active');
+    if (openUpdateDetailsBtn) {
+        openUpdateDetailsBtn.style.display = 'flex';
+    }
+    if (updateMainBackBtn) {
+        updateMainBackBtn.style.display = 'inline-flex';
+        updateMainBackBtn.classList.remove('hiding', 'showing');
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                updateMainBackBtn.classList.add('showing');
+            });
+        });
+    }
+    if (checkUpdateBtn) {
+        checkUpdateBtn.style.display = 'none';
+    }
+
+    if (!fromPopState && history.state && history.state.updateSubState === 'details') {
+        window._isProgrammaticBack = true;
+        history.back();
+        setTimeout(() => { window._isProgrammaticBack = false; }, 50);
+    }
+};
+
+window.resetUpdateTabViews = function () {
+    window.updateSubState = null;
+    if (updateDetailsView) updateDetailsView.classList.remove('active');
+    if (updateMainView) updateMainView.classList.add('active');
+    if (checkUpdateBtn) {
+        checkUpdateBtn.style.display = '';
+        checkUpdateBtn.classList.remove('hiding', 'showing');
+    }
+    if (openUpdateDetailsBtn) {
+        openUpdateDetailsBtn.style.display = 'none';
+        openUpdateDetailsBtn.classList.remove('showing', 'hiding');
+    }
+    if (updateMainBackBtn) {
+        updateMainBackBtn.style.display = 'none';
+        updateMainBackBtn.classList.remove('showing', 'hiding');
     }
 };
 
 if (openUpdateDetailsBtn) {
-    openUpdateDetailsBtn.addEventListener('click', window.openUpdateDetailsModal);
+    openUpdateDetailsBtn.addEventListener('click', window.showInPageUpdateDetails);
 }
 
-if (updateDetailsConfirmBtn) {
-    updateDetailsConfirmBtn.addEventListener('click', () => window.closeUpdateDetailsModal(false));
+if (closeUpdateDetailsInPageBtn) {
+    closeUpdateDetailsInPageBtn.addEventListener('click', window.hideInPageUpdateDetails);
 }
 
-if (updateDetailsModalOverlay) {
-    updateDetailsModalOverlay.addEventListener('click', () => window.closeUpdateDetailsModal(false));
+if (closeUpdateDetailsTopBtn) {
+    closeUpdateDetailsTopBtn.addEventListener('click', window.hideInPageUpdateDetails);
 }
-
-window.addEventListener('popstate', () => {
-    if (updateDetailsModal?.classList.contains('active')) {
-        window.closeUpdateDetailsModal(true);
-    }
-});
 
 const logoDisplayDropdown = document.getElementById('logoDisplayDropdown');
 const logoDisplaySelected = document.getElementById('logoDisplaySelected');
@@ -2869,6 +2983,7 @@ if (logoDisplaySelected && logoDisplayOptions) {
 
 window.openSettingsModal = function () {
     resetUsefulSettingsSubPage();
+    if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
     settingsModalOverlay.classList.add('active');
     settingsModal.classList.add('active');
     const sideDrawer = document.getElementById('sideDrawer');
@@ -2879,6 +2994,7 @@ window.openSettingsModal = function () {
 };
 
 window.closeSettingsModal = function (fromPopState = false) {
+    if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
     settingsModalOverlay.classList.remove('active');
     settingsModal.classList.remove('active');
     const sideDrawer = document.getElementById('sideDrawer');

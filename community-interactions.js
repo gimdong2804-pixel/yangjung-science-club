@@ -156,7 +156,11 @@ window.addEventListener('popstate', (e) => {
     }
     const settingsModal = document.getElementById('settingsModal');
     if (settingsModal && settingsModal.classList.contains('active')) {
-        if (window.isUsefulSubPageOpen && typeof window.closeUsefulSubPage === 'function') {
+        if (window.updateSubState === 'details' && typeof window.hideInPageUpdateDetails === 'function') {
+            window.hideInPageUpdateDetails(true);
+        } else if (window.updateSubState === 'pill' && typeof window.resetUpdateCheckState === 'function') {
+            window.resetUpdateCheckState(true);
+        } else if (window.isUsefulSubPageOpen && typeof window.closeUsefulSubPage === 'function') {
             window.closeUsefulSubPage(true);
         } else if (typeof window.closeSettingsModal === 'function') {
             window.closeSettingsModal(true);

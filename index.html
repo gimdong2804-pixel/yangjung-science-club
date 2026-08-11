@@ -282,17 +282,20 @@
                     <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
                         <span
                             style="flex: 0 0 auto; min-width: 3.8rem; padding: 0.25rem 0.5rem; border-radius: 999px; background: rgba(78, 105, 220, 0.13); color: var(--accent-color); font-size: 0.82rem; font-weight: 700; text-align: center;">X.0</span>
-                        <span style="color: var(--text-secondary); font-size: 0.92rem; line-height: 1.5;">첫 공개, 핵심 기능 또는 화면 구성의 큰 변화에 올립니다.</span>
+                        <span style="color: var(--text-secondary); font-size: 0.92rem; line-height: 1.5;">첫 공개, 핵심 기능 또는
+                            화면 구성의 큰 변화에 올립니다.</span>
                     </div>
                     <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
                         <span
                             style="flex: 0 0 auto; min-width: 3.8rem; padding: 0.25rem 0.5rem; border-radius: 999px; background: rgba(78, 105, 220, 0.13); color: var(--accent-color); font-size: 0.82rem; font-weight: 700; text-align: center;">X.5</span>
-                        <span style="color: var(--text-secondary); font-size: 0.92rem; line-height: 1.5;">눈에 띄는 기능 추가나 사용 경험 개선이 쌓였을 때 올립니다.</span>
+                        <span style="color: var(--text-secondary); font-size: 0.92rem; line-height: 1.5;">눈에 띄는 기능 추가나
+                            사용 경험 개선이 쌓였을 때 올립니다.</span>
                     </div>
                     <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
                         <span
                             style="flex: 0 0 auto; min-width: 3.8rem; padding: 0.25rem 0.5rem; border-radius: 999px; background: rgba(78, 105, 220, 0.13); color: var(--accent-color); font-size: 0.82rem; font-weight: 700; text-align: center;">유지</span>
-                        <span style="color: var(--text-secondary); font-size: 0.92rem; line-height: 1.5;">오류 수정, 문구 수정, 작은 보완은 One UI 버전을 유지하고 Build만 변경합니다.</span>
+                        <span style="color: var(--text-secondary); font-size: 0.92rem; line-height: 1.5;">오류 수정, 문구 수정,
+                            작은 보완은 One UI 버전을 유지하고 Build만 변경합니다.</span>
                     </div>
                 </div>
             </section>
@@ -314,8 +317,11 @@
             <section style="border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
                 <h2 style="margin: 0 0 0.85rem; font-size: 1.1rem; color: var(--text-primary);"><i
                         class="fa-solid fa-pen-nib" style="color: var(--accent-color);"></i> 업데이트 안내 작성 방식</h2>
-                <ul style="margin: 0; padding-left: 1.25rem; color: var(--text-secondary); font-size: 0.92rem; line-height: 1.8;">
-                    <li><strong style="color: var(--text-primary);">새로운 기능</strong>, <strong style="color: var(--text-primary);">개선된 기능</strong>, <strong style="color: var(--text-primary);">오류 수정 및 안정화</strong>로 구분합니다.</li>
+                <ul
+                    style="margin: 0; padding-left: 1.25rem; color: var(--text-secondary); font-size: 0.92rem; line-height: 1.8;">
+                    <li><strong style="color: var(--text-primary);">새로운 기능</strong>, <strong
+                            style="color: var(--text-primary);">개선된 기능</strong>, <strong
+                            style="color: var(--text-primary);">오류 수정 및 안정화</strong>로 구분합니다.</li>
                     <li>차분하고 간결한 존댓말로, 실제 변경 내용을 한 항목에 한 문장으로 작성합니다.</li>
                     <li>“기능을 추가했습니다.”, “사용성을 개선했습니다.”, “서비스 안정성을 향상했습니다.”처럼 작성합니다.</li>
                 </ul>
@@ -434,15 +440,86 @@
                 <div id="settingsTab-update" class="settings-tab-content"
                     style="display: none; flex-direction: column;">
                     <section class="update-status-screen" aria-label="현재 사이트 버전">
-                        <div class="update-status-copy">
-                            <svg data-current-one-ui-version class="one-ui-version-svg" viewBox="0 0 256 56" xmlns="http://www.w3.org/2000/svg" aria-label="One UI 1.0">
-                                <circle cx="18" cy="28" r="14.5" fill="none" stroke="currentColor" stroke-width="5.0"/>
-                                <text x="40" y="44" fill="currentColor" font-family="'Outfit', sans-serif" font-size="44" font-weight="500" letter-spacing="3">ne UI <tspan class="one-ui-version-number" font-family="'Source Sans 3', sans-serif" font-weight="600" font-size="48">1.0</tspan></text>
-                            </svg>
+                        <div class="update-status-view-container">
+                            <!-- 메인 화면 (One UI 1.0 로고 + [업데이트 내용 확인] 버튼 -> [현재 버전 One UI 1.0 >] 알약 버튼) -->
+                            <div id="updateMainView" class="update-view-panel active">
+                                <div class="update-main-header">
+                                    <button id="updateMainBackBtn" class="greeting-back-btn update-main-back-btn"
+                                        type="button" style="display: none;">
+                                        <i class="fa-solid fa-arrow-left"></i> 돌아가기
+                                    </button>
+                                </div>
+                                <div class="update-status-copy">
+                                    <svg data-current-one-ui-version class="one-ui-version-svg" viewBox="0 0 256 56"
+                                        xmlns="http://www.w3.org/2000/svg" aria-label="One UI 1.0">
+                                        <circle cx="18" cy="28" r="14.5" fill="none" stroke="currentColor"
+                                            stroke-width="5.0" />
+                                        <text x="40" y="44" fill="currentColor" font-family="'Outfit', sans-serif"
+                                            font-size="44" font-weight="500" letter-spacing="3">ne UI <tspan
+                                                class="one-ui-version-number" font-family="'Source Sans 3', sans-serif"
+                                                font-weight="600" font-size="48">1.0</tspan></text>
+                                    </svg>
+                                </div>
+                                <button id="checkUpdateBtn" class="update-check-button" type="button">
+                                    업데이트 내용 확인
+                                </button>
+                                <button id="openUpdateDetailsBtn" class="update-details-pill-card" type="button"
+                                    style="display: none;">
+                                    <div class="update-pill-left">
+                                        <span class="version-tag current">현재 버전</span>
+                                        <span class="version-title" data-current-one-ui-version>One UI 1.0</span>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-right update-pill-arrow"></i>
+                                </button>
+                            </div>
+
+                            <!-- 3단계: 화면 전체를 활용하는 페이드 인 업데이트 내용 상세 화면 -->
+                            <div id="updateDetailsView" class="update-view-panel update-details-full-panel">
+                                <div class="update-details-header">
+                                    <button id="closeUpdateDetailsTopBtn" class="greeting-back-btn"
+                                        style="margin-bottom: 0;" type="button">
+                                        <i class="fa-solid fa-arrow-left"></i> 돌아가기
+                                    </button>
+                                    <h3 class="update-details-page-title"><i class="fa-solid fa-sparkles"
+                                            style="color: var(--accent-color);"></i> 소프트웨어 업데이트 정보</h3>
+                                </div>
+
+                                <div class="update-history-scroll-area">
+                                    <!-- 최신 버전 카드 (One UI 1.0) -->
+                                    <div class="update-history-card current-version-card">
+                                        <div class="update-card-header">
+                                            <div class="update-version-badge-group">
+                                                <span class="version-tag current">현재 버전</span>
+                                                <h4 class="version-title" data-current-one-ui-version>One UI 1.0</h4>
+                                            </div>
+                                            <span class="build-number" data-current-build-number>Build 20260811.1</span>
+                                        </div>
+                                        <p class="update-description" data-current-update-message>우리 동아리 사이트의 첫 버전인 One
+                                            UI 1.0입니다!</p>
+                                        <div class="update-features-list">
+                                            <div class="feature-item">
+                                                <i class="fa-solid fa-check"></i>
+                                                <span>종합 소통 및 활동 관리 시스템을 도입했습니다.</span>
+                                            </div>
+                                            <div class="feature-item">
+                                                <i class="fa-solid fa-check"></i>
+                                                <span>커뮤니티 게시판, 첨부파일 및 실시간 반응을 지원합니다.</span>
+                                            </div>
+                                            <div class="feature-item">
+                                                <i class="fa-solid fa-check"></i>
+                                                <span>AI 챗봇 및 스마트 부원 편의 기능을 제공합니다.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 과거 버전 안내 가이드 영역 -->
+                                    <div class="update-history-timeline-footer">
+                                        <i class="fa-solid fa-clock-rotate-left"></i>
+                                        <span>향후 새로운 버전 업데이트 시 이전 업데이트 내역이 이곳에 차곡차곡 기록됩니다.</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <button id="openUpdateDetailsBtn" class="update-details-button" type="button">
-                            업데이트 내용 확인
-                        </button>
                     </section>
                 </div>
 
@@ -1418,7 +1495,8 @@
                         <i class="fa-solid fa-plus"></i>
                     </button>
                     <input type="text" class="ai-chatbot-input" id="aiChatbotInput" placeholder="Gemini에게 물어보기..." />
-                    <button type="button" class="ai-chatbot-mic-btn" id="aiChatbotMicBtn" aria-label="음성 입력" title="음성으로 입력하기">
+                    <button type="button" class="ai-chatbot-mic-btn" id="aiChatbotMicBtn" aria-label="음성 입력"
+                        title="음성으로 입력하기">
                         <svg class="ai-mic-svg" viewBox="0 0 24 24" width="22" height="22">
                             <defs>
                                 <linearGradient id="aiMicGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1426,8 +1504,11 @@
                                     <stop offset="100%" stop-color="#8b5cf6" />
                                 </linearGradient>
                             </defs>
-                            <path class="ai-mic-body" d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" fill="url(#aiMicGrad)" />
-                            <path class="ai-mic-stand" d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8" stroke="url(#aiMicGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                            <path class="ai-mic-body" d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"
+                                fill="url(#aiMicGrad)" />
+                            <path class="ai-mic-stand" d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"
+                                stroke="url(#aiMicGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                fill="none" />
                         </svg>
                     </button>
                     <button class="ai-chatbot-send-btn" id="aiChatbotSendBtn" aria-label="전송">
@@ -1473,8 +1554,10 @@
         <div class="ai-search-header">
             <div class="ai-search-input-wrapper">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" id="aiSearchChatInput" placeholder="채팅 제목 또는 대화 내용 검색..." autocomplete="off" spellcheck="false" />
-                <button type="button" id="aiSearchChatClearBtn" class="search-clear-btn" style="display: none;" title="검색어 지우기">
+                <input type="text" id="aiSearchChatInput" placeholder="채팅 제목 또는 대화 내용 검색..." autocomplete="off"
+                    spellcheck="false" />
+                <button type="button" id="aiSearchChatClearBtn" class="search-clear-btn" style="display: none;"
+                    title="검색어 지우기">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
