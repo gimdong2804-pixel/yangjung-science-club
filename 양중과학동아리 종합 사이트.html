@@ -627,27 +627,23 @@
                                                 <li class="custom-dropdown-option" data-value="icon-only"><i
                                                         class="fa-solid fa-flask"></i> 아이콘만 표시</li>
                                                 <li class="custom-dropdown-option" data-value="hidden"><i
-                                                        class="fa-solid fa-eye-slash"></i> 완전히 숨기기</li>
+                                                        class="fa-solid fa-eye-slash"></i> 상단 버튼 숨김</li>
                                             </ul>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
                             <div class="settings-item"
-                                style="border-top: 1px solid var(--glass-border); padding-top: 1.25rem;">
-                                <div class="settings-label" style="align-items: flex-start; max-width: 80%;">
-                                    <i class="fa-solid fa-eye-slash"
-                                        style="width: 20px; text-align: center; margin-top: 0.2rem;"></i>
-                                    <div>
-                                        <div style="font-weight: 600; font-size: 1.05rem;">스크롤 시 메뉴 숨김</div>
-                                        <div
-                                            style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4;">
-                                            스크롤할 때 상단 로고, 메뉴 버튼 및 커뮤니티 창 하단 버튼들을 자동으로 숨겨 화면을 넓게 사용합니다.
-                                        </div>
-                                    </div>
+                                style="border-top: 1px solid var(--glass-border); padding-top: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                                <div>
+                                    <div style="font-weight: bold; color: var(--text-primary); margin-bottom: 0.2rem;">
+                                        스크롤 시 상단 버튼 자동 숨기기</div>
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">아래로 스크롤 시 상단 로고 버튼을
+                                        숨겨 화면을 넓게 확보합니다.</div>
                                 </div>
                                 <label class="settings-toggle">
-                                    <input type="checkbox" id="scrollHideToggle" checked>
+                                    <input type="checkbox" id="logoHideOnScrollToggle" checked>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -656,31 +652,25 @@
 
                     <!-- 댓글 입력창 세부 설정 페이지 -->
                     <div id="commentInputSettingsSubPage" class="settings-sub-page" style="display: none;">
-                        <!-- 뒤로가기 서브 헤더 -->
                         <div class="settings-sub-header">
-                            <button class="settings-back-btn" id="backFromCommentInputBtn" aria-label="뒤로가기"
+                            <button class="settings-back-btn" id="backToUsefulCategoriesBtn2" aria-label="뒤로가기"
                                 title="카테고리로 돌아가기">
                                 <i class="fa-solid fa-arrow-left"></i>
                             </button>
                             <span class="settings-sub-title">댓글 입력창</span>
                         </div>
 
-                        <!-- 세부 설정 내용들 -->
                         <div class="settings-sub-content" style="display: flex; flex-direction: column; gap: 1.5rem;">
-                            <div class="settings-item" style="border: none; padding: 0;">
-                                <div class="settings-label" style="align-items: flex-start; max-width: 80%;">
-                                    <i class="fa-solid fa-comment-slash"
-                                        style="width: 20px; text-align: center; margin-top: 0.2rem;"></i>
-                                    <div>
-                                        <div style="font-weight: 600; font-size: 1.05rem;">댓글 스크롤 시 입력창 자동 숨김</div>
-                                        <div
-                                            style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4;">
-                                            댓글 목록을 스크롤할 때 하단 댓글 입력창을 자동으로 숨겨 화면을 넓게 사용합니다.<br>(스크롤을 멈추면 다시 나타납니다)
-                                        </div>
-                                    </div>
+                            <div class="settings-item"
+                                style="display: flex; align-items: center; justify-content: space-between; border: none; padding: 0;">
+                                <div>
+                                    <div style="font-weight: bold; color: var(--text-primary); margin-bottom: 0.2rem;">
+                                        스크롤 시 댓글 입력창 자동 숨기기</div>
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">댓글 목록을 아래로 스크롤할 때
+                                        하단 댓글 입력 영역을 숨깁니다.</div>
                                 </div>
                                 <label class="settings-toggle">
-                                    <input type="checkbox" id="commentInputScrollHideToggle">
+                                    <input type="checkbox" id="commentHideOnScrollToggle" checked>
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -689,28 +679,22 @@
 
                     <!-- 텍스트 선택 방지 세부 설정 페이지 -->
                     <div id="textSelectSettingsSubPage" class="settings-sub-page" style="display: none;">
-                        <!-- 뒤로가기 서브 헤더 -->
                         <div class="settings-sub-header">
-                            <button class="settings-back-btn" id="backFromTextSelectBtn" aria-label="뒤로가기"
+                            <button class="settings-back-btn" id="backToUsefulCategoriesBtn3" aria-label="뒤로가기"
                                 title="카테고리로 돌아가기">
                                 <i class="fa-solid fa-arrow-left"></i>
                             </button>
                             <span class="settings-sub-title">텍스트 선택 방지</span>
                         </div>
 
-                        <!-- 세부 설정 내용들 -->
                         <div class="settings-sub-content" style="display: flex; flex-direction: column; gap: 1.5rem;">
-                            <div class="settings-item" style="border: none; padding: 0;">
-                                <div class="settings-label" style="align-items: flex-start; max-width: 80%;">
-                                    <i class="fa-solid fa-i-cursor"
-                                        style="width: 20px; text-align: center; margin-top: 0.2rem;"></i>
-                                    <div>
-                                        <div style="font-weight: 600; font-size: 1.05rem;">더블 클릭 텍스트 선택 방지</div>
-                                        <div
-                                            style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4;">
-                                            사이트 내 글자나 메뉴를 더블 클릭했을 때 파랗게 영역이 선택되는 현상을 방지합니다.<br>(글 작성 및 입력창은 정상 작동합니다)
-                                        </div>
-                                    </div>
+                            <div class="settings-item"
+                                style="display: flex; align-items: center; justify-content: space-between; border: none; padding: 0;">
+                                <div>
+                                    <div style="font-weight: bold; color: var(--text-primary); margin-bottom: 0.2rem;">
+                                        더블 클릭/드래그 텍스트 선택 방지</div>
+                                    <div style="font-size: 0.85rem; color: var(--text-secondary);">버튼이나 화면을 연속 클릭할 때
+                                        글자가 드래그되는 현상을 막습니다.</div>
                                 </div>
                                 <label class="settings-toggle">
                                     <input type="checkbox" id="textSelectPreventToggle" checked>
@@ -718,851 +702,356 @@
                                 </label>
                             </div>
 
-                            <!-- 텍스트 선택 예시 안내 및 사진 영역 -->
-                            <div style="border-top: 1px solid var(--glass-border); padding-top: 1.25rem;">
+                            <!-- 선택 예시 안내 이미지 & 카드 -->
+                            <div
+                                style="background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem;">
+                                <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary);"><i
+                                        class="fa-solid fa-circle-info" style="color: var(--accent-color);"></i> 방지 기능
+                                    예시</div>
+                                <p
+                                    style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
+                                    기능이 꺼져 있으면 아래 예시처럼 글자를 연달아 클릭할 때 파란색 하이라이트 박스가 발생할 수 있습니다.</p>
                                 <div
-                                    style="display: flex; gap: 0.75rem; align-items: center; font-size: 0.95rem; color: var(--text-primary); font-weight: bold; margin-bottom: 0.4rem;">
-                                    <span style="width: 20px; text-align: center; display: inline-block;">💡</span>
-                                    <span>더블 클릭 텍스트 선택이란?</span>
-                                </div>
-                                <div style="padding-left: calc(20px + 0.75rem);">
-                                    <div
-                                        style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.8rem;">
-                                        아래 사진처럼 글자를 연속 클릭했을 때 영역이 파랗게 블록 선택되는 상태를 의미합니다.
-                                    </div>
-                                    <div
-                                        style="width: 100%; max-width: 380px; border-radius: 16px; overflow: hidden; border: 1px solid var(--glass-border); background: rgba(0, 0, 0, 0.2); box-shadow: 0 4px 15px rgba(0,0,0,0.15);">
-                                        <img src="설정창 텍스트 선택 예시 사진.png" alt="더블 클릭 텍스트 선택 예시 사진"
-                                            onclick="if (typeof openLightbox === 'function') openLightbox(this.src);"
-                                            style="width: 100%; height: auto; display: block; border-radius: 16px; cursor: pointer;">
-                                    </div>
+                                    style="text-align: center; border-radius: 8px; overflow: hidden; border: 1px solid var(--glass-border); max-width: 100%; display: flex; justify-content: center; background: rgba(0,0,0,0.3);">
+                                    <img src="설정창 텍스트 선택 예시 사진.png" alt="텍스트 선택 예시"
+                                        style="max-width: 100%; height: auto; max-height: 220px; object-fit: contain; display: block;" />
                                 </div>
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
     </div>
-    <div id="sideDrawer" class="side-drawer">
+
+    <!-- 사이드 드로어 컨텐츠 -->
+    <div id="drawer" class="drawer">
         <div class="drawer-header">
-            <span class="drawer-title"><i class="fa-solid fa-flask" id="adminTriggerIcon" style="cursor: pointer;"></i>
-                전체 메뉴</span>
-            <div style="display: flex; gap: 0.25rem;">
-                <button class="close-btn" id="drawerSettingsBtn" aria-label="설정" title="설정">
-                    <i class="fa-solid fa-gear" style="font-size: 1.05rem;"></i>
-                </button>
-                <button class="close-btn" id="drawerCloseBtn" aria-label="메뉴 닫기">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+            <h3>메뉴</h3>
+            <button class="close-btn" id="drawerCloseBtn" aria-label="닫기">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <ul class="drawer-menu">
+            <li><a href="#/" class="menu-item active" data-page="mainPage"><i class="fa-solid fa-house"></i> 메인 홈</a>
+            </li>
+            <li><a href="#/greetingPage" class="menu-item" data-page="greetingPage"><i
+                        class="fa-solid fa-handshake"></i>
+                    인삿말</a></li>
+            <li><a href="#/goalPage" class="menu-item" data-page="goalPage"><i class="fa-solid fa-bullseye"></i> 동아리
+                    목표</a></li>
+            <li><a href="#/suggestionPage" class="menu-item" data-page="suggestionPage"><i
+                        class="fa-solid fa-comments"></i> 커뮤니티</a></li>
+        </ul>
+        <div class="drawer-footer">
+            <button class="settings-btn" id="openSettingsBtn">
+                <i class="fa-solid fa-gear"></i> 설정
+            </button>
+            <button class="admin-btn" id="adminToggleBtn">
+                <i class="fa-solid fa-shield-halved"></i> 관리자 인증
+            </button>
+            <p>© 2026 양중과학동아리</p>
+        </div>
+    </div>
+
+    <!-- 메인 컨테이너 -->
+    <main>
+        <!-- 메인 홈 페이지 -->
+        <div id="mainPage" class="page active fade-in">
+            <!-- 히어로 섹션 -->
+            <section class="hero-section" style="position: relative; text-align: center;">
+                <div class="hero-content">
+                    <span class="hero-badge"><i class="fa-solid fa-flask-vial"></i> 2026 양중과학동아리</span>
+                    <h1 class="hero-title">탐구하고, 실험하며,<br><span class="gradient-text">세상을 바꾸는 힘</span></h1>
+                    <p class="hero-desc">양중과학동아리에서 새로운 호기심을 발굴하고 함께 성장하는 멋진 경험을 시작해보세요.</p>
+                </div>
+            </section>
+
+            <!-- 빠른 메뉴 카드 세션 (One UI 둥근 사각형 그리드) -->
+            <section class="quick-cards-section">
+                <div class="quick-cards-grid">
+                    <div class="quick-card" onclick="switchPage(currentPage, greetingPage)">
+                        <div class="card-icon" style="background: rgba(78, 105, 220, 0.15); color: #4e69dc;">
+                            <i class="fa-solid fa-handshake"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>인삿말</h3>
+                            <p>동아리 회장의 환영 메시지</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right card-arrow"></i>
+                    </div>
+
+                    <div class="quick-card" onclick="switchPage(currentPage, goalPage)">
+                        <div class="card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                            <i class="fa-solid fa-bullseye"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>동아리 목표</h3>
+                            <p>우리가 나아갈 방향과 비전</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right card-arrow"></i>
+                    </div>
+
+                    <div class="quick-card" onclick="switchPage(currentPage, suggestionPage)">
+                        <div class="card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                            <i class="fa-solid fa-comments"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3>커뮤니티</h3>
+                            <p>부원 간의 자율 소통 공간</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right card-arrow"></i>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 인삿말 페이지 -->
+        <div id="greetingPage" class="page hidden fade-out">
+            <button class="greeting-back-btn" id="greetingBackBtn">
+                <i class="fa-solid fa-arrow-left"></i> 돌아가기
+            </button>
+            <h1 class="greeting-title">회장 인삿말</h1>
+            <div class="greeting-card">
+                <p>안녕하세요! 양중과학동아리 회장입니다.</p>
+                <p>우리 동아리는 과학에 대한 열정과 호기심을 가진 부원들이 모여 함께 실험하고, 탐구하며, 지식을 나누는 소중한 공간입니다.</p>
+                <p>실패를 두려워하지 않는 도전 정신으로 더욱 재미있고 유익한 활동을 만들어 나가겠습니다. 부원 여러분의 적극적인 참여와 지속적인 관심을 부탁드립니다.</p>
+                <p>감사합니다!</p>
             </div>
         </div>
 
-        <hr class="drawer-divider">
-
-        <!-- 로그인 정보 영역 -->
-        <div class="drawer-auth-section">
-            <!-- 로그인 전 -->
-            <button class="google-login-btn" id="googleLoginBtn">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
-                    alt="Google Logo">
-                <span>Google 계정으로 로그인</span>
+        <!-- 동아리 목표 페이지 -->
+        <div id="goalPage" class="page hidden fade-out">
+            <button class="greeting-back-btn" id="goalBackBtn">
+                <i class="fa-solid fa-arrow-left"></i> 돌아가기
             </button>
-            <!-- 로그인 후 (기본 hidden) -->
-            <div class="user-profile-info hidden" id="userProfileInfo">
-                <div class="user-profile-summary" id="userProfileSummary" onclick="toggleProfileDetails()">
-                    <img class="user-avatar" id="userAvatar" src="" alt="User Avatar">
-                    <span class="user-name" id="userName">사용자</span>
-                    <i class="fa-solid fa-chevron-down profile-dropdown-icon"></i>
+            <h1 class="greeting-title">동아리 목표</h1>
+            <div class="greeting-card" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                    <div
+                        style="background: rgba(78, 105, 220, 0.15); color: var(--accent-color); padding: 0.8rem; border-radius: 12px; font-size: 1.2rem;">
+                        <i class="fa-solid fa-microscope"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin-bottom: 0.3rem; color: var(--text-primary);">1. 실전 중심 탐구</h3>
+                        <p style="color: var(--text-secondary); margin: 0; line-height: 1.5;">교과서 위주의 이론에서 벗어나 직접
+                            실험을 기획하고 수행하는 탐구력을 키웁니다.</p>
+                    </div>
                 </div>
-                <div class="user-profile-details" id="userProfileDetails">
-                    <span class="user-email" id="userEmail">user@example.com</span>
-                    <button class="logout-btn" id="logoutBtn" aria-label="로그아웃" title="로그아웃">
-                        <i class="fa-solid fa-right-from-bracket"></i> 로그아웃
+
+                <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                    <div
+                        style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 0.8rem; border-radius: 12px; font-size: 1.2rem;">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin-bottom: 0.3rem; color: var(--text-primary);">2. 협동과 지식 공유</h3>
+                        <p style="color: var(--text-secondary); margin: 0; line-height: 1.5;">부원 간의 팀워크를 통해 문제 해결
+                            능력을 증진하고 서로의 지식을 활발히 나눕니다.</p>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                    <div
+                        style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 0.8rem; border-radius: 12px; font-size: 1.2rem;">
+                        <i class="fa-solid fa-lightbulb"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin-bottom: 0.3rem; color: var(--text-primary);">3. 창의적 사고 함양</h3>
+                        <p style="color: var(--text-secondary); margin: 0; line-height: 1.5;">일상 속 과학적 의문을 발견하고 융합적
+                            시각으로 새로운 아이디어를 제안합니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 커뮤니티 페이지 -->
+        <div id="suggestionPage" class="page hidden fade-out">
+            <button class="greeting-back-btn" id="suggestionBackBtn">
+                <i class="fa-solid fa-arrow-left"></i> 돌아가기
+            </button>
+            <div class="board-header">
+                <h1 class="greeting-title" style="margin-bottom: 0;">커뮤니티</h1>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 1rem;">
+                    <span style="color: var(--text-secondary); font-size: 0.9rem;">전체 게시글 0개</span>
+                    <div class="board-header-actions" style="display: flex; gap: 0.5rem; align-items: center;">
+                        <button id="postMultiSelectBtn" class="post-multi-select-btn" title="게시글 다중 선택"
+                            style="display: none; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); color: var(--text-primary); padding: 0.5rem 0.8rem; border-radius: 9999px; cursor: pointer; font-size: 0.85rem; align-items: center; gap: 0.4rem; transition: background 0.2s;">
+                            <i class="fa-regular fa-square-check"></i> 선택
+                        </button>
+
+                        <!-- 커스텀 드롭다운 정렬 셀렉터 -->
+                        <div class="custom-dropdown-container" id="sortDropdownContainer">
+                            <div class="custom-dropdown-selected" id="sortDropdownSelected">
+                                <span><i class="fa-solid fa-arrow-down-wide-short"></i> 최신순</span>
+                                <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                            </div>
+                            <ul class="custom-dropdown-options" id="sortDropdownOptions">
+                                <li class="custom-dropdown-option active" data-value="latest"><i
+                                        class="fa-solid fa-clock"></i> 최신순</li>
+                                <li class="custom-dropdown-option" data-value="popular"><i class="fa-solid fa-fire"></i>
+                                    인기순</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 프로필 및 로그인 영역 -->
+            <div id="authContainer" class="greeting-card" style="margin-bottom: 1.5rem; padding: 1.2rem;">
+                <button id="googleLoginBtn" class="google-login-btn">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google"
+                        style="width: 18px; height: 18px;">
+                    Google 계정으로 로그인
+                </button>
+                <div id="userProfileInfo" class="user-profile-info hidden">
+                    <img id="userAvatar" class="user-avatar" src="" alt="프로필">
+                    <div class="user-details">
+                        <span id="userName" class="user-name"></span>
+                        <span id="userEmail" class="user-email"></span>
+                    </div>
+                    <button id="logoutBtn" class="logout-btn" title="로그아웃">
+                        <i class="fa-solid fa-right-from-bracket"></i>
                     </button>
                 </div>
             </div>
+
+            <!-- 커뮤니티 게시글 목록 컨테이너 -->
+            <div class="board-container">
+                <!-- 게시글이 여기에 동적으로 추가됩니다 -->
+            </div>
         </div>
 
-        <hr class="drawer-divider">
+        <!-- 커뮤니티 글쓰기 페이지 -->
+        <div id="writePostPage" class="page hidden fade-out">
+            <button class="greeting-back-btn" id="writePostBackBtn">
+                <i class="fa-solid fa-arrow-left"></i> 돌아가기
+            </button>
+            <h1 class="greeting-title">글쓰기</h1>
+            <div class="greeting-card"
+                style="max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 1rem;">
+                <input type="text" id="postAuthor" placeholder="작성자 이름" readonly
+                    style="padding: 1rem 1.5rem; border-radius: 9999px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.05); color: var(--text-primary); font-size: 0.95rem; width: 100%; box-sizing: border-box; cursor: not-allowed;" />
+                <input type="text" id="postTitle" placeholder="제목을 입력하세요"
+                    style="padding: 1rem 1.5rem; border-radius: 9999px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.03); color: var(--text-primary); font-size: 1rem; width: 100%; box-sizing: border-box;" />
+                <textarea id="postBody" placeholder="내용을 작성해주세요..." rows="6"
+                    style="padding: 1.2rem 1.5rem; border-radius: 20px; border: 1px solid var(--glass-border); background: rgba(255, 255, 255, 0.03); color: var(--text-primary); font-size: 1rem; width: 100%; box-sizing: border-box; resize: vertical; font-family: inherit;"></textarea>
 
-        <nav class="drawer-menu">
-            <!-- 카테고리 1: 안내 및 인사 -->
-            <div class="menu-category">
-                <div class="category-header">
-                    <span class="category-label"><i class="fa-solid fa-compass"></i> 안내 및 소통</span>
-                    <i class="fa-solid fa-chevron-down arrow-icon"></i>
-                </div>
-                <div class="menu-items-wrapper">
-                    <div class="menu-items">
-                        <a href="#" id="greetingLink"><i class="fa-solid fa-user"></i> 인사말</a>
-                        <a href="#" id="goalLink"><i class="fa-solid fa-bullseye"></i> 목표</a>
-                        <a href="#" id="suggestionLink"><i class="fa-solid fa-chalkboard-user"></i> 커뮤니티</a>
+                <!-- 첨부 파일 업로드 영역 -->
+                <div class="attachment-upload-section" style="margin-top: 0.5rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span style="font-size: 0.9rem; font-weight: bold; color: var(--text-primary);"><i
+                                class="fa-solid fa-paperclip"></i> 파일 첨부</span>
+                        <span id="attachmentCountBadge" style="font-size: 0.8rem; color: var(--text-secondary);">최대 5개
+                            (개당 10MB)</span>
                     </div>
+
+                    <!-- 드래그 앤 드롭 업로드 박스 -->
+                    <div id="dropZone" class="attachment-dropzone"
+                        style="border: 2px dashed var(--glass-border); border-radius: 16px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s ease; background: rgba(255,255,255,0.02);">
+                        <i class="fa-solid fa-cloud-arrow-up"
+                            style="font-size: 2rem; color: var(--accent-color); margin-bottom: 0.5rem; display: block;"></i>
+                        <p style="margin: 0; font-size: 0.9rem; color: var(--text-primary); font-weight: 500;">클릭하여 파일을
+                            선택하거나 이곳으로 드래그하세요</p>
+                        <p style="margin: 0.3rem 0 0 0; font-size: 0.8rem; color: var(--text-secondary);">이미지, 문서, 압축파일
+                            지원</p>
+                        <input type="file" id="attachmentFileInput" multiple style="display: none;">
+                    </div>
+
+                    <!-- 선택된 파일 프리뷰 목록 -->
+                    <div id="attachmentPreviewList" class="attachment-preview-list"
+                        style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.8rem;"></div>
+                </div>
+
+                <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+                    <button id="submitPostBtn"
+                        style="padding: 0.8rem 2rem; border: none; border-radius: 12px; background: var(--accent-color); color: white; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.2s;">등록하기</button>
                 </div>
             </div>
+        </div>
 
-            <!-- 카테고리 2: 동아리 규정 -->
-            <div class="menu-category">
-                <div class="category-header">
-                    <span class="category-label"><i class="fa-solid fa-scale-balanced"></i> 동아리 운영 규정</span>
-                    <i class="fa-solid fa-chevron-down arrow-icon"></i>
-                </div>
-                <div class="menu-items-wrapper">
-                    <div class="menu-items">
-                        <a href="#meeting" id="ruleMeetingLink"><i class="fa-regular fa-comments"></i> 회의 및 소통 규칙</a>
-                        <a href="#safety" id="ruleSafetyLink"><i class="fa-solid fa-vial"></i> 실험 및 활동 안전 규칙</a>
-                        <a href="#conflict" id="ruleConflictLink"><i class="fa-solid fa-handshake-angle"></i> 갈등 및 분쟁 해결
-                            조항</a>
-                        <a href="#penalty" id="rulePenaltyLink"><i class="fa-solid fa-scale-balanced"></i> 경고 및 징계
-                            규정</a>
-                    </div>
-                </div>
+        <!-- 커뮤니티 게시글 상세 페이지 -->
+        <div id="postDetailPage" class="page hidden fade-out">
+            <button class="greeting-back-btn" id="postDetailBackBtn">
+                <i class="fa-solid fa-arrow-left"></i> 돌아가기
+            </button>
+            <div id="postDetailContent">
+                <!-- 게시글 상세 내용이 여기에 동적으로 추가됩니다 -->
             </div>
-
-            <!-- 카테고리 3: 관리자 모드 -->
-            <div class="menu-category" id="adminCategory" style="display: none;">
-                <div class="category-header">
-                    <span class="category-label" style="color: #ef4444;"><i class="fa-solid fa-user-shield"></i> 관리자
-                        모드</span>
-                    <i class="fa-solid fa-chevron-down arrow-icon"></i>
-                </div>
-                <div class="menu-items-wrapper">
-                    <div class="menu-items" id="adminMenuItems">
-                        <a href="#" id="roleManageMenuBtn">
-                            <i class="fa-solid fa-user-tag"></i> 직책 관리
-                        </a>
-                        <a href="#" id="aiSettingsMenuBtn">
-                            <img src="gemini-color.svg"
-                                style="width: 18px; height: 18px; vertical-align: middle; object-fit: contain; margin-right: 6px;"
-                                alt="Gemini"> AI 설정
-                        </a>
-                        <a href="#" id="updateRulesMenuBtn">
-                            <i class="fa-solid fa-arrows-rotate"></i> 업데이트 규칙
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </nav>
-    </div>
-
-    <main id="mainPage" class="page fade-in">
-        <section class="hero">
-            <h1>종합 사이트</h1>
-            <p>우리 동아리의 즐겁고 원활한 활동을 위해<br><span class="hero-highlight">양중과학동아리 사이트를 개설하였습니다.</span></p>
-        </section>
+        </div>
     </main>
 
-    <!-- 인사말 페이지 -->
-    <div id="greetingPage" class="page hidden fade-out">
-        <button class="greeting-back-btn" id="backBtn">
-            <i class="fa-solid fa-arrow-left"></i> 돌아가기
-        </button>
-        <h1 class="greeting-title">회장 인사말</h1>
-        <div class="greeting-card">
-            <div class="greeting-content">
-                <div class="greeting-photo">
-                    <img src="data:image/jpeg;base64,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"
-                        alt="회장 사진" style="cursor: pointer;" onclick="openLightbox(this.src)">
-                </div>
-                <div class="greeting-text">
-                    <p style="margin-bottom: 1rem; font-size: 0.95rem; opacity: 0.8; font-style: italic;">* 인사말을 시작하기 전,
-                        이 증명사진은 AI로 일부 수정되었음을 알립니다.</p>
-                    <p style="margin-bottom: 1rem; font-weight: 600; font-size: 1.1rem; color: var(--text-primary);">
-                        사랑하는 동아리 부원 여러분,</p>
-                    <p style="margin-bottom: 1rem;">이제 양중과학동아리는 <span class="hero-highlight">진짜 '추억'을 쌓습니다.</span></p>
-                    <p style="margin-bottom: 1rem;">우리가 이 동아리를 개설할 때 있었던 동아리 기획안 종이가 사라져서, 정확한 목표는 저도 잘 기억나지 <br
-                            class="mobile-br">않지만 목표가 친구들과 추억을 쌓는 것이었던 <br class="mobile-br">것 같습니다.</p>
-                    <p style="margin-bottom: 1rem;">하지만, 추억은 커녕 일정이 밀렸고 싸우거나 <br class="mobile-br">회의가 잘 진행되지 않는 등 크고 작은
-                        문제가 여러 개 <br class="mobile-br">발생했습니다.</p>
-                    <p style="margin-bottom: 1rem;">아쉬웠던 시간들을 딛고 새로운 희망을 꽃피우며, <br class="mobile-br"><span
-                            class="hero-highlight">완전히 새로운 양중과학동아리</span>를 만들고자 제가 제2대 회장이 되었습니다.</p>
-                    <p style="margin-bottom: 1rem;">제가 제2대 회장이 된 후 곰곰이 생각해 보니, 기초적인 규정도 없다는 것을 깨달았습니다. <br
-                            class="mobile-br">그래서 규정을 제가 마음대로 다 만드는 것이 아니라, 여러분의 의견을 반영하여 수정하고 보완하며 필요하면 삭제하여 <span
-                            class="hero-highlight">구성원들의 의견이 존중되는 동아리</span>를 만드는 동시에, 이 규정을 잘 운영하여 불필요한 갈등은 줄이고, <br
-                            class="mobile-br">더 많은 추억을 쌓을 수 있는 동아리를 운영하겠습니다.</p>
-                    <p style="margin-bottom: 1rem;">물론, 규정 말고 계획서 등 다른 부분들도 신경을 써서, <br class="mobile-br"><span
-                            class="hero-highlight">진짜 '추억'을 쌓는 동아리</span>를 만들도록 노력하겠습니다.</p>
-                    <p style="margin-bottom: 1rem; font-weight: 600;"><span class="hero-highlight">동아리 멤버들이 주인인 동아리, <br
-                                class="mobile-br">진짜 '추억'을 쌓는 동아리</span>를 여러분들과 함께 만듭시다!</p>
-                    <p>고맙습니다.</p>
-                </div>
-            </div>
-            <div class="greeting-signature">
-                <span>양중과학동아리 제2대 회장</span>
-                <span class="signature-name">김 동 현</span>
-                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZAAAADICAIAAABJdyC1AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAFU2lUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSfvu78nIGlkPSdXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQnPz4KPHg6eG1wbWV0YSB4bWxuczp4PSdhZG9iZTpuczptZXRhLyc+CjxyZGY6UkRGIHhtbG5zOnJkZj0naHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyc+CgogPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9JycKICB4bWxuczpBdHRyaWI9J2h0dHA6Ly9ucy5hdHRyaWJ1dGlvbi5jb20vYWRzLzEuMC8nPgogIDxBdHRyaWI6QWRzPgogICA8cmRmOlNlcT4KICAgIDxyZGY6bGkgcmRmOnBhcnNlVHlwZT0nUmVzb3VyY2UnPgogICAgIDxBdHRyaWI6Q3JlYXRlZD4yMDI2LTA2LTA2PC9BdHRyaWI6Q3JlYXRlZD4KICAgICA8QXR0cmliOkRhdGE+eyZxdW90O2RvYyZxdW90OzomcXVvdDtEQUhMeTdtT2dVVSZxdW90OywmcXVvdDt1c2VyJnF1b3Q7OiZxdW90O1VBRzdmcHdTY1ZRJnF1b3Q7LCZxdW90O2JyYW5kJnF1b3Q7OiZxdW90O0JBRzdmcWNnSkJJJnF1b3Q7fTwvQXR0cmliOkRhdGE+CiAgICAgPEF0dHJpYjpFeHRJZD45YmFmYmE3NS1jOWNhLTQ0ZjctYTMwNy03MzVjZGE1MGE1NmY8L0F0dHJpYjpFeHRJZD4KICAgICA8QXR0cmliOkZiSWQ+NTI1MjY1OTE0MTc5NTgwPC9BdHRyaWI6RmJJZD4KICAgICA8QXR0cmliOlRvdWNoVHlwZT4yPC9BdHRyaWI6VG91Y2hUeXBlPgogICAgPC9yZGY6bGk+CiAgIDwvcmRmOlNlcT4KICA8L0F0dHJpYjpBZHM+CiA8L3JkZjpEZXNjcmlwdGlvbj4KCiA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0nJwogIHhtbG5zOmRjPSdodHRwOi8vcHVybC5vcmcvZGMvZWxlbWVudHMvMS4x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"
-                    alt="회장 서명" class="signature-image">
-            </div>
-        </div>
-    </div>
-
-    <!-- 목표 페이지 -->
-    <div id="goalPage" class="page hidden fade-out">
-        <button class="greeting-back-btn" id="goalBackBtn">
-            <i class="fa-solid fa-arrow-left"></i> 돌아가기
-        </button>
-        <h1 class="greeting-title">동아리 활동 목표</h1>
-        <div class="greeting-card">
-            <div class="greeting-content" style="flex-direction: column; gap: 1.5rem; width: 100%;">
-                <div class="greeting-text" style="width: 100%;">
-                    <p
-                        style="margin-bottom: 2rem; font-weight: 600; font-size: 1.25rem; color: var(--text-primary); text-align: center;">
-                        <span class="hero-highlight">"양중과학동아리는 진짜 '추억'을 쌓습니다."</span>
-                    </p>
-
-                    <div
-                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
-                        <div class="goal-item-card"
-                            style="background: var(--glass-bg); border: 1px solid var(--glass-border); padding: 1.5rem; border-radius: 12px;">
-                            <h3
-                                style="color: var(--text-primary); font-size: 1.15rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fa-solid fa-heart" style="color: #ff6b6b;"></i> 진짜 '추억' 쌓기
-                            </h3>
-                            <p
-                                style="font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); word-break: keep-all;">
-                                규정과 딱딱한 일정에만 얽매이지 않고, 동아리 부원 모두가 즐겁게 소통하고 활동하며 학창 시절의 소중한 추억을 만들어갑니다.
-                            </p>
-                        </div>
-
-                        <div class="goal-item-card"
-                            style="background: var(--glass-bg); border: 1px solid var(--glass-border); padding: 1.5rem; border-radius: 12px;">
-                            <h3
-                                style="color: var(--text-primary); font-size: 1.15rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fa-solid fa-comments" style="color: #4dadf7;"></i> 존중과 소통
-                            </h3>
-                            <p
-                                style="font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); word-break: keep-all;">
-                                회장이나 특정 임원진이 독단적으로 결정하는 것이 아니라, 부원 전체의 의견을 경청하고 조율하며 모두가 주인이 되는 민주적인 동아리를 지향합니다.
-                            </p>
-                        </div>
-
-                        <div class="goal-item-card"
-                            style="background: var(--glass-bg); border: 1px solid var(--glass-border); padding: 1.5rem; border-radius: 12px;">
-                            <h3
-                                style="color: var(--text-primary); font-size: 1.15rem; margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fa-solid fa-shield-halved" style="color: #51cf66;"></i> 안전하고 체계적인 활동
-                            </h3>
-                            <p
-                                style="font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary); word-break: keep-all;">
-                                기초적인 규칙과 안전 수칙을 철저히 준수하여 사고와 갈등을 사전에 방지하고, 원활하고 유익한 과학 탐구 환경을 만듭니다.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 건의방 (커뮤니티) 페이지 -->
-    <div id="suggestionPage" class="page hidden fade-out">
-        <button class="greeting-back-btn" id="suggestionBackBtn">
-            <i class="fa-solid fa-arrow-left"></i> 돌아가기
-        </button>
-        <h1 class="greeting-title">커뮤니티</h1>
-
-        <div class="community-layout">
-            <div class="board-container">
-                <div class="board-header">
-                    <span style="color: var(--text-secondary); font-size: 0.9rem;">전체 게시글 <span
-                            style="color: var(--accent-color); font-weight: bold;">0</span>개</span>
-                    <div class="custom-dropdown-container" id="customSortDropdown">
-                        <div class="custom-dropdown-selected" id="customSortSelected">
-                            <span><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</span>
-                            <i class="fa-solid fa-chevron-down arrow-icon"></i>
-                        </div>
-                        <ul class="custom-dropdown-options" id="customSortOptions">
-                            <li class="custom-dropdown-option active" data-value="latest"><i
-                                    class="fa-solid fa-arrow-down-short-wide"></i> 최신순</li>
-                            <li class="custom-dropdown-option" data-value="popular"><i class="fa-solid fa-fire"></i> 인기순
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 우측 상세 보기 창 (데스크탑에선 옆에 붙고, 모바일에선 전체화면) -->
-            <div class="side-detail-container detail-hidden" id="sideDetailContainer">
-                <button class="close-btn" id="closeSideDetailBtn" aria-label="상세 닫기">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-                <div class="side-detail-scroll-area">
-                    <div class="side-detail-header">
-                        <span class="side-detail-title"
-                            style="color: var(--accent-color); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i
-                                class="fa-solid fa-file-lines"></i> 건의글 상세</span>
-                    </div>
-
-                    <div class="post-content-area" id="detailPostArea"
-                        style="border: none; background: none; padding: 0; margin-bottom: 1.5rem;">
-                        <!-- 자바스크립트로 렌더링됩니다 -->
-                    </div>
-
-                    <div class="comment-section" id="detailCommentArea">
-                        <div
-                            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
-                            <h3 style="margin: 0; color: var(--text-primary); font-size: 1.1rem;">댓글 <span
-                                    style="color: var(--accent-color);" id="detailCommentCount">0</span></h3>
-
-                            <div class="custom-dropdown-container" id="commentSortDropdown" style="margin-bottom: 0;">
-                                <div class="custom-dropdown-selected" id="commentSortSelected"
-                                    style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
-                                    <span><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</span>
-                                    <i class="fa-solid fa-chevron-down arrow-icon"></i>
-                                </div>
-                                <ul class="custom-dropdown-options" id="commentSortOptions"
-                                    style="top: calc(100% + 4px);">
-                                    <li class="custom-dropdown-option active" data-value="latest"><i
-                                            class="fa-solid fa-arrow-down-short-wide"></i> 최신순</li>
-                                    <li class="custom-dropdown-option" data-value="popular"><i
-                                            class="fa-solid fa-fire"></i> 인기순
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div id="detailCommentList" style="display: block;"></div>
-                    </div>
-                </div>
-
-                <div class="comment-input-area">
-                    <div class="comment-input-container" id="commentInputContainer">
-                        <div class="comment-image-preview-container" id="commentImagePreviewContainer"></div>
-                        <div class="comment-input-row">
-                            <div class="comment-attach-wrapper">
-                                <button type="button" id="commentAttachBtn" class="comment-attach-btn"
-                                    aria-label="첨부파일">
-                                    <i class="fa-solid fa-plus"></i>
-                                </button>
-                                <div class="comment-attach-menu" id="commentAttachMenu">
-                                    <button type="button" class="comment-attach-option" id="commentAttachImageBtn">
-                                        <i class="fa-solid fa-image" style="color: #4dadf7;"></i>
-                                        <span>이미지 (최대 10개, 파일당 100MB)</span>
-                                    </button>
-                                    <button type="button" class="comment-attach-option" id="commentAttachVideoBtn">
-                                        <i class="fa-brands fa-youtube" style="color: #ff0000;"></i>
-                                        <span id="commentVideoLimitLabel">동영상 (유튜브로)</span>
-                                    </button>
-                                    <button type="button" class="comment-attach-option" id="commentAttachAudioBtn">
-                                        <i class="fa-solid fa-microphone" style="color: #51cf66;"></i>
-                                        <span>음성/오디오 (최대 10개, 파일당 100MB)</span>
-                                    </button>
-                                    <button type="button" class="comment-attach-option" id="commentAttachPdfBtn">
-                                        <i class="fa-solid fa-file-pdf" style="color: #ff922b;"></i>
-                                        <span>PDF 파일 (최대 10개, 파일당 100MB)</span>
-                                    </button>
-                                    <button type="button" class="comment-attach-option" id="commentAttachHtmlBtn">
-                                        <i class="fa-solid fa-file-code" style="color: #cc5de8;"></i>
-                                        <span>HTML 파일 (최대 10개, 파일당 100MB)</span>
-                                    </button>
-                                </div>
-                            </div>
-                            <input type="file" id="commentImageInput" accept="image/*" multiple style="display: none;">
-                            <input type="file" id="commentVideoInput" accept="video/mp4,video/webm,.mp4,.webm" multiple
-                                style="display: none;">
-                            <input type="file" id="commentAudioInput" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.webm"
-                                multiple style="display: none;">
-                            <input type="file" id="commentPdfInput" accept="application/pdf,.pdf" multiple
-                                style="display: none;">
-                            <input type="file" id="commentHtmlInput" accept="text/html,.html,.htm" multiple
-                                style="display: none;">
-                            <input type="text" class="comment-input" placeholder="댓글을 입력하세요...">
-                            <button type="button" id="cancelReplyBtn" class="cancel-reply-btn"
-                                onclick="cancelReplyTarget()" title="답글 취소">
-                                <i class="fa-solid fa-xmark"></i>
-                            </button>
-                            <button type="button" id="commentGeminiBtn" class="comment-gemini-btn"
-                                aria-label="Gemini AI" title="Gemini AI">
-                                <img src="gemini-color.svg" alt="Gemini">
-                            </button>
-                            <button class="comment-submit-btn"><i class="fa-solid fa-paper-plane"></i></button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 게시글 상세 페이지 (2분할 레이아웃 적용으로 제거) -->
-
-    <!-- 글쓰기 페이지 -->
-    <div id="writePostPage" class="page hidden fade-out">
-        <button class="greeting-back-btn" id="writePostBackBtn">
-            <i class="fa-solid fa-arrow-left"></i> 목록으로
-        </button>
-        <h1 class="greeting-title">새 건의사항 작성</h1>
-
-        <div class="post-detail-container"
-            style="background: var(--bg-color); border: 1px solid var(--glass-border); border-radius: 16px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-            <div style="display: flex; flex-direction: column; gap: 1.2rem;">
-                <input type="text" id="postTitle" class="modal-input upgraded-input" placeholder="제목을 입력하세요"
-                    style="font-size: 1.15rem; font-weight: 600;">
-
-                <div style="display: flex; gap: 1rem;">
-                    <input type="text" id="postAuthor" class="modal-input upgraded-input" placeholder="로그인이 필요합니다"
-                        readonly
-                        style="background: rgba(255, 255, 255, 0.03); color: var(--text-secondary); cursor: not-allowed;">
-                </div>
-
-                <textarea id="postBody" class="modal-textarea upgraded-input"
-                    placeholder="자유롭게 의견이나 건의사항을 적어주세요! (유튜브 링크 입력 시 동영상 카드가 자동으로 감지됩니다)"></textarea>
-
-                <!-- 유튜브 동영상 링크 실시간 미리보기 카드 컨테이너 -->
-                <div id="youtubePostPreviewContainer"
-                    style="display: none; flex-direction: column; gap: 0.5rem; margin-top: -0.5rem; margin-bottom: 0.5rem;">
-                </div>
-
-                <!-- 통합 파일 첨부 영역 (최대 40개, 파일당 100MB) -->
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.2rem;">
-                    <span style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">
-                        <i class="fa-solid fa-paperclip" style="color: var(--accent-color); margin-right: 0.3rem;"></i>
-                        파일 첨부 (파일당 최대 100MB)
-                    </span>
-                    <button type="button" id="attachGuideBtn"
-                        style="background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); color: var(--accent-color); padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.2s;">
-                        <i class="fa-solid fa-circle-info"></i>
-                        <span>첨부 기준 안내</span>
-                    </button>
-                </div>
-
-                <div class="image-upload-area" id="imageUploadArea"
-                    onclick="document.getElementById('imageFileInput').click()"
-                    style="border-radius: 14px; border: 2px dashed var(--glass-border); transition: all 0.25s; cursor: pointer;">
-                    <label class="image-upload-label" for="imageFileInput"
-                        style="cursor: pointer; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
-                        <i class="fa-solid fa-cloud-arrow-up"
-                            style="font-size: 2.2rem; color: var(--accent-color);"></i>
-                        <span style="font-weight: 600; font-size: 0.98rem; color: var(--text-primary);">클릭하여 파일을 추가하세요
-                            (파일당 최대 100MB)</span>
-                        <span
-                            style="font-size: 0.82rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; justify-content: center; margin-top: 0.2rem;">
-                            <span><i class="fa-solid fa-image" style="color:#4dadf7;"></i> 이미지 10개</span> •
-                            <span><i class="fa-solid fa-file-pdf" style="color:#ff922b;"></i> PDF 10개</span> •
-                            <span><i class="fa-solid fa-file-code" style="color:#cc5de8;"></i> HTML 10개</span> •
-                            <span><i class="fa-solid fa-microphone" style="color:#51cf66;"></i> 음성 10개</span>
-                        </span>
-                    </label>
-                    <input type="file" id="imageFileInput"
-                        accept="image/*,video/*,audio/*,.pdf,.html,.htm,.mp4,.webm,.mp3,.wav,.ogg,.m4a,.aac" multiple
-                        style="display:none;">
-                </div>
-
-                <div class="image-count-info" id="imageCountInfo"
-                    style="font-size: 0.85rem; color: var(--text-secondary);">첨부 파일 0 / 40개 (파일당 100MB)</div>
-
-                <div class="image-preview-wrapper" id="imagePreviewWrapper">
-                    <div class="image-preview-inner" id="imagePreviewInner">
-                        <div class="image-preview-container" id="imagePreviewContainer"></div>
-                    </div>
-                </div>
-
-                <!-- 우측 하단 알약(Pill) 형태 게시글 등록 버튼 -->
-                <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-                    <button id="submitPostBtn" class="modal-btn submit write-submit-pill">
-                        <i class="fa-solid fa-paper-plane" style="margin-right: 0.4rem;"></i>
-                        <span>게시글 등록하기</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <footer>
-        <div class="footer-content">
-            <p>&copy; 양중과학동아리. All rights reserved.</p>
-            <p>본 규정은 동아리 부원 모두의 동의 하에 제정, 개정, 폐지됩니다.</p>
-        </div>
-    </footer>
-
-    <!-- 이미지 확대 모달 -->
-    <div class="image-lightbox" id="imageLightbox">
-        <button class="image-lightbox-close" id="imageLightboxClose"><i class="fa-solid fa-xmark"></i></button>
-        <img src="" alt="확대 이미지" id="imageLightboxImg">
-        <button class="lightbox-desc-btn" id="lightboxDescBtn" style="display:none;">
-            <i class="fa-solid fa-align-left"></i> 설명 보기
-        </button>
-        <!-- 설명 모달 -->
-        <div class="lightbox-desc-overlay" id="lightboxDescOverlay"></div>
-        <div class="lightbox-desc-modal" id="lightboxDescModal">
-            <div class="lightbox-desc-modal-header">
-                <span class="lightbox-desc-modal-title"><i class="fa-solid fa-align-left"></i> 사진 설명</span>
-                <button class="close-btn" id="lightboxDescCloseBtn"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="lightbox-desc-modal-body">
-                <p class="lightbox-desc-text" id="lightboxDescText"></p>
-                <div class="lightbox-desc-edit-area" id="lightboxDescEditArea" style="display:none;">
-                    <textarea id="lightboxDescInput" placeholder="사진 설명을 입력하세요..." maxlength="300"></textarea>
-                    <div class="lightbox-desc-actions">
-                        <button class="lightbox-desc-cancel" id="lightboxDescCancel">취소</button>
-                        <button class="lightbox-desc-save" id="lightboxDescSave">저장</button>
-                    </div>
-                </div>
-            </div>
-            <button class="lightbox-desc-edit-btn" id="lightboxDescEditBtn" style="display:none;" title="설명 수정">
-                <i class="fa-solid fa-pen"></i> 수정
-            </button>
-        </div>
-        <!-- HTML 파일 미리보기/실행 모달 -->
-        <div class="html-viewer-overlay" id="htmlViewerOverlay"></div>
-        <div class="html-viewer-modal" id="htmlViewerModal">
-            <div class="html-viewer-header">
-                <div class="html-viewer-title">
-                    <i class="fa-solid fa-file-code" style="color: #cc5de8;"></i>
-                    <span id="htmlViewerTitle">HTML 문서 미리보기</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <a id="htmlViewerNewTabBtn" href="#" target="_blank" class="file-card-btn"
-                        style="padding: 0.35rem 0.8rem; font-size: 0.8rem;" title="새 탭에서 열기">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> 새 탭
-                    </a>
-                    <button class="close-btn" id="htmlViewerCloseBtn" onclick="closeHtmlViewerModal()"><i
-                            class="fa-solid fa-xmark"></i></button>
-                </div>
-            </div>
-            <div class="html-viewer-body">
-                <iframe id="htmlViewerFrame" sandbox="allow-scripts allow-modals"
-                    style="width: 100%; height: 100%; border: none; background: #fff; border-radius: 8px;"></iframe>
-            </div>
-        </div>
-    </div>
-
-    <!-- 유튜브 선택 모달 -->
-    <div class="youtube-select-overlay" id="youtubeSelectOverlay"></div>
-    <div class="youtube-select-modal" id="youtubeSelectModal">
-        <div class="youtube-select-header">
-            <div class="youtube-select-title">
-                <i class="fa-brands fa-youtube" style="color: #ff0000; font-size: 1.3rem;"></i>
-                <span>양중과학동아리 유튜브</span>
-            </div>
-            <button type="button" class="youtube-select-close" id="youtubeSelectCloseBtn">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-        <div class="youtube-select-body">
-            <p class="youtube-select-desc">이동할 유튜브 페이지를 선택해 주세요.</p>
-            <div class="youtube-option-grid">
-                <button type="button" class="youtube-option-card" id="youtubeChannelBtn">
-                    <div class="youtube-option-icon" style="background: rgba(255, 0, 0, 0.15); color: #ff4e4e;">
-                        <i class="fa-brands fa-youtube"></i>
-                    </div>
-                    <div class="youtube-option-info">
-                        <div class="youtube-option-title">유튜브 채널</div>
-                        <div class="youtube-option-sub">동아리 영상 및 소식 시청</div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right youtube-option-arrow"></i>
-                </button>
-
-                <button type="button" class="youtube-option-card" id="youtubeStudioBtn">
-                    <div class="youtube-option-icon" style="background: rgba(255, 146, 43, 0.15); color: #ff922b;">
-                        <i class="fa-solid fa-sliders"></i>
-                    </div>
-                    <div class="youtube-option-info">
-                        <div class="youtube-option-title">유튜브 스튜디오</div>
-                        <div class="youtube-option-sub">동영상 업로드 및 채널 관리</div>
-                    </div>
-                    <i class="fa-solid fa-chevron-right youtube-option-arrow"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 파일 첨부 기준 안내 모달 -->
-    <div class="youtube-select-overlay" id="attachGuideOverlay"></div>
-    <div class="youtube-select-modal" id="attachGuideModal">
-        <div class="youtube-modal-header"
-            style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--glass-border);">
-            <div class="youtube-modal-title"
-                style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1.05rem;">
-                <i class="fa-solid fa-circle-info" style="color: var(--accent-color);"></i>
-                <span>게시글 파일 첨부 기준 안내</span>
-            </div>
-            <button type="button" class="youtube-modal-close" id="attachGuideCloseBtn"
-                style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%;">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-        </div>
-        <div class="youtube-modal-body" style="padding: 1.2rem 1.5rem 1.6rem 1.5rem;">
-            <div
-                style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.75rem;">
-                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.8rem; color: var(--accent-color);"></i>
-                <div>
-                    <div style="font-weight: 700; font-size: 1rem; color: var(--text-primary);">개별 파일 최대 용량: 100MB</div>
-                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">모든 첨부파일은 파일당 최대
-                        100MB까지 자유롭게 등록할 수 있습니다.</div>
-                </div>
-            </div>
-
-            <div
-                style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.8rem; display: flex; align-items: center; justify-content: space-between;">
-                <span><i class="fa-solid fa-layer-group" style="color: var(--accent-color); margin-right: 0.3rem;"></i>
-                    카테고리별 최대 수량 (총 40개)</span>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 1.2rem;">
-                <div
-                    style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 0.9rem; display: flex; align-items: center; gap: 0.7rem;">
-                    <i class="fa-solid fa-image" style="font-size: 1.4rem; color: #4dadf7;"></i>
-                    <div>
-                        <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">이미지/사진</div>
-                        <div style="font-size: 0.78rem; color: var(--accent-color); font-weight: 700;">최대 10장</div>
-                    </div>
-                </div>
-
-                <div
-                    style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 0.9rem; display: flex; align-items: center; gap: 0.7rem;">
-                    <i class="fa-solid fa-file-pdf" style="font-size: 1.4rem; color: #ff922b;"></i>
-                    <div>
-                        <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">PDF 문서</div>
-                        <div style="font-size: 0.78rem; color: var(--accent-color); font-weight: 700;">최대 10개</div>
-                    </div>
-                </div>
-
-                <div
-                    style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 0.9rem; display: flex; align-items: center; gap: 0.7rem;">
-                    <i class="fa-solid fa-file-code" style="font-size: 1.4rem; color: #cc5de8;"></i>
-                    <div>
-                        <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">HTML 파일</div>
-                        <div style="font-size: 0.78rem; color: var(--accent-color); font-weight: 700;">최대 10개</div>
-                    </div>
-                </div>
-
-                <div
-                    style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 0.9rem; display: flex; align-items: center; gap: 0.7rem;">
-                    <i class="fa-solid fa-microphone" style="font-size: 1.4rem; color: #51cf66;"></i>
-                    <div>
-                        <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">음성/오디오</div>
-                        <div style="font-size: 0.78rem; color: var(--accent-color); font-weight: 700;">최대 10개</div>
-                    </div>
-                </div>
-            </div>
-
-            <div
-                style="background: rgba(255, 0, 0, 0.06); border: 1px solid rgba(255, 0, 0, 0.15); border-radius: 10px; padding: 0.85rem; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
-                <i class="fa-brands fa-youtube" style="color: #ff0000; margin-right: 0.3rem;"></i> <strong>동영상
-                    안내</strong>: 동영상은 유튜브 업로드 후 공유 링크 첨부를 권장합니다.
-            </div>
-        </div>
-    </div>
-
-    <button class="fab fab-hidden" id="writePostBtn" aria-label="글쓰기">
+    <!-- 플로팅 글쓰기 버튼 (커뮤니티 페이지에서만 표시) -->
+    <button id="writePostBtn" class="floating-write-btn hidden" aria-label="글쓰기">
         <i class="fa-solid fa-pen"></i>
     </button>
 
-    <!-- AI 챗봇 비서 (기본적으로 숨김 처리되고, Firestore 설정을 로드하여 켜져있을 때만 JS로 표시) -->
-    <button class="ai-chatbot-fab" id="aiChatbotFab" style="display: none;" aria-label="AI 도우미">
-        <img src="gemini-color.svg" style="width: 32px; height: 32px; object-fit: contain;" alt="Gemini AI">
+    <!-- 플로팅 AI 검색 챗봇 버튼 (메인에서만 표시) -->
+    <button id="openAiSearchChatBtn" class="floating-ai-search-btn" aria-label="AI 소통 및 검색">
+        <svg class="gemini-sparkle-icon" viewBox="0 0 24 24" width="24" height="24">
+            <path
+                d="M12 0C12 6.627 6.627 12 0 12C6.627 12 12 17.373 12 24C12 17.373 17.373 12 24 12C17.373 12 12 6.627 12 0Z"
+                fill="url(#sparkleGradient)" />
+            <defs>
+                <linearGradient id="sparkleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#4e69dc" />
+                    <stop offset="50%" stop-color="#a855f7" />
+                    <stop offset="100%" stop-color="#ec4899" />
+                </linearGradient>
+            </defs>
+        </svg>
     </button>
 
-    <div id="aiChatbotModalOverlay" class="modal-overlay"></div>
-    <div class="ai-chatbot-window modal-container" id="aiChatbotWindow">
-        <!-- 제미나이 좌측 사이드바 메뉴 Drawer -->
-        <aside class="ai-chatbot-sidebar" id="aiChatbotSidebar">
-            <div class="ai-sidebar-header">
-                <div class="ai-sidebar-brand" id="aiSidebarBrandToggle" title="Gemini">
-                    <img src="gemini-color.svg" class="ai-sidebar-logo" alt="Gemini">
-                    <span class="ai-sidebar-title">Gemini</span>
-                </div>
-                <button type="button" class="ai-sidebar-close-btn" id="aiSidebarCloseBtn" aria-label="메뉴 닫기"
-                    title="메뉴 닫기">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" class="ai-sidebar-collapse-icon">
-                        <rect x="3.5" y="3.5" width="17" height="17" rx="4" ry="4"></rect>
-                        <line x1="8.5" y1="3.5" x2="8.5" y2="20.5"></line>
-                        <path d="M16 16l-3.5-4 3.5-4"></path>
-                    </svg>
-                </button>
-            </div>
-
-            <div class="ai-sidebar-content">
-                <div class="ai-sidebar-menu-group">
-                    <button type="button" class="ai-sidebar-item" id="aiNewChatBtn">
-                        <i class="fa-regular fa-pen-to-square"></i>
-                        <span class="ai-sidebar-label">새 채팅</span>
-                    </button>
-                    <button type="button" class="ai-sidebar-item" id="aiSearchChatBtn">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <span class="ai-sidebar-label">채팅 검색</span>
-                    </button>
-                </div>
-
-                <div class="ai-sidebar-section">
-                    <div class="ai-sidebar-section-title">최근</div>
-                    <div id="aiRecentChatList" class="ai-recent-chat-list">
-                        <!-- JS에서 동적으로 대화 목록 및 '최근 대화가 없습니다.' 문구 렌더링 -->
-                    </div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- 사이드바 열릴 때 클릭으로 닫을 수 있는 오버레이 -->
-        <div class="ai-sidebar-overlay" id="aiSidebarOverlay"></div>
-
-        <!-- AI 챗봇 메인 화면 영역 -->
-        <div class="ai-chatbot-main">
-            <div class="ai-chatbot-header">
-                <!-- 왼쪽 상단: 햄버거 메뉴 토글 버튼 (기본: 제미나이 로고, 호버: 메뉴 아이콘) -->
-                <button type="button" class="ai-chatbot-menu-toggle" id="aiChatbotMenuToggle" aria-label="메뉴 열기"
-                    title="메뉴 열기">
-                    <img src="gemini-color.svg" class="ai-menu-logo-img" alt="Gemini">
-                    <i class="fa-solid fa-bars ai-menu-bars-icon"></i>
-                </button>
-
-                <!-- AI 모델 선택 드롭다운 (제미나이 공식 앱처럼 채팅창 헤더에 배치) -->
-                <div class="custom-dropdown-container" id="aiModelDropdownContainer">
-                    <div class="custom-dropdown-selected" id="aiModelSelected">
-                        <span id="aiModelSelectedText"><img src="gemini-color.svg"
-                                style="width: 18px; height: 18px; vertical-align: middle; object-fit: contain; margin-right: 6px;"
-                                alt="Gemini"> Gemini 3.6 Flash</span>
-                        <i class="fa-solid fa-chevron-down arrow-icon"></i>
-                    </div>
-                    <ul class="custom-dropdown-options ai-model-dropdown-options" id="aiModelOptions">
-                        <li class="custom-dropdown-option model-option-card active" data-value="gemini-3.6-flash"
-                            data-title="Gemini 3.6 Flash">
-                            <div class="model-option-left">
-                                <span class="model-check-icon"><i class="fa-solid fa-check"></i></span>
-                                <img src="gemini-color.svg" class="model-option-logo" alt="Gemini">
-                                <div class="model-option-text">
-                                    <div class="model-title">Gemini 3.6 Flash</div>
-                                    <div class="model-desc">무엇이든 도움을 받으세요</div>
-                                </div>
-                            </div>
-                        </li>
-                        <li class="custom-dropdown-option model-option-card" data-value="gemini-3.5-flash-lite"
-                            data-title="Gemini 3.5 Flash-Lite">
-                            <div class="model-option-left">
-                                <span class="model-check-icon"><i class="fa-solid fa-check"></i></span>
-                                <img src="gemini-color.svg" class="model-option-logo" alt="Gemini">
-                                <div class="model-option-text">
-                                    <div class="model-title">Gemini 3.5 Flash-Lite</div>
-                                    <div class="model-desc">가장 빠른 답변 제공</div>
-                                </div>
-                            </div>
-                        </li>
-                    </ul>
-                    <input type="hidden" id="aiModelSelect" value="gemini-3.6-flash" />
-                </div>
-
-                <button id="closeAiChatbot" class="close-btn" aria-label="닫기">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            <div class="ai-messages-top-blur"></div>
-            <div class="ai-chatbot-messages" id="aiChatbotMessages">
-                <div class="ai-message assistant">
-                    안녕하세요! 양중과학동아리 AI 비서입니다. 🧪✨<br>과학 현상에 대한 질문이나 동아리 활동에 대해 궁금한 점이 있다면 무엇이든 물어보세요!
-                </div>
-            </div>
-            <div class="ai-chatbot-scrollbar" id="aiChatbotScrollbar">
-                <div class="ai-chatbot-scrollbar-thumb" id="aiChatbotScrollbarThumb"></div>
-            </div>
-            <div class="ai-chatbot-bottom-shadow"></div>
-            <div class="ai-chatbot-input-container">
-                <!-- 숨겨진 파일 Input 목록 -->
-                <input type="file" id="aiImageInput" accept="image/*" multiple style="display: none;" />
-                <input type="file" id="aiPdfInput" accept="application/pdf" multiple style="display: none;" />
-                <input type="file" id="aiAudioInput" accept="audio/*" multiple style="display: none;" />
-                <input type="file" id="aiHtmlInput" accept=".html,.htm,text/html" multiple style="display: none;" />
-                <input type="file" id="aiVideoInput" accept="video/*" multiple style="display: none;" />
-
-                <!-- 첨부파일 미리보기 카드 컨테이너 -->
-                <div class="ai-chatbot-preview-container" id="aiChatbotPreviewContainer" style="display: none;"></div>
-
-                <div class="ai-chatbot-input-wrapper">
-                    <!-- AI 챗봇 첨부파일 팝업 메뉴 (+ 버튼 바로 위 위치 지정) -->
-                    <div class="comment-attach-menu" id="aiChatbotAttachMenu">
-                        <button type="button" class="comment-attach-option" id="aiAttachImageBtn">
-                            <i class="fa-solid fa-image" style="color: #4dadf7;"></i>
-                            <span>이미지 (최대 10개, 파일당 100MB)</span>
-                        </button>
-                        <button type="button" class="comment-attach-option" id="aiAttachVideoBtn">
-                            <i class="fa-brands fa-youtube" style="color: #ff0000;"></i>
-                            <span>동영상 (유튜브로)</span>
-                        </button>
-                        <button type="button" class="comment-attach-option" id="aiAttachAudioBtn">
-                            <i class="fa-solid fa-microphone" style="color: #51cf66;"></i>
-                            <span>음성/오디오 (최대 10개, 파일당 100MB)</span>
-                        </button>
-                        <button type="button" class="comment-attach-option" id="aiAttachPdfBtn">
-                            <i class="fa-solid fa-file-pdf" style="color: #ff922b;"></i>
-                            <span>PDF 파일 (최대 10개, 파일당 100MB)</span>
-                        </button>
-                        <button type="button" class="comment-attach-option" id="aiAttachHtmlBtn">
-                            <i class="fa-solid fa-file-code" style="color: #cc5de8;"></i>
-                            <span>HTML 파일 (최대 10개, 파일당 100MB)</span>
-                        </button>
-                    </div>
-
-                    <button type="button" class="ai-chatbot-attach-btn" id="aiChatbotAttachBtn" aria-label="파일 첨부">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
-                    <input type="text" class="ai-chatbot-input" id="aiChatbotInput" placeholder="Gemini에게 물어보기..." />
-                    <button type="button" class="ai-chatbot-mic-btn" id="aiChatbotMicBtn" aria-label="음성 입력"
-                        title="음성으로 입력하기">
-                        <svg class="ai-mic-svg" viewBox="0 0 24 24" width="22" height="22">
-                            <defs>
-                                <linearGradient id="aiMicGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stop-color="#3b82f6" />
-                                    <stop offset="100%" stop-color="#8b5cf6" />
-                                </linearGradient>
-                            </defs>
-                            <path class="ai-mic-body" d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"
-                                fill="url(#aiMicGrad)" />
-                            <path class="ai-mic-stand" d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"
-                                stroke="url(#aiMicGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                fill="none" />
-                        </svg>
-                    </button>
-                    <button class="ai-chatbot-send-btn" id="aiChatbotSendBtn" aria-label="전송">
-                        <i class="fa-solid fa-paper-plane"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 첨부파일 미리보기 (HTML/PDF 등) 모달 -->
-    <div id="filePreviewModalOverlay" class="modal-overlay"></div>
-    <div id="filePreviewModal" class="modal-container"
-        style="max-width: 950px; width: 95vw; height: 88vh; display: flex; flex-direction: column; padding: 1.2rem; gap: 0.8rem; z-index: 10005; border-radius: 20px; background: var(--glass-bg, #1e293b); color: var(--text-primary, #f8fafc); border: 1px solid var(--glass-border);">
-        <div
-            style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.8rem;">
-            <div style="display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0; margin-right: 0.5rem;">
-                <i id="filePreviewIcon" class="fa-solid fa-file-code"
-                    style="font-size: 1.4rem; color: #7c3aed; flex-shrink: 0;"></i>
-                <h3 id="filePreviewTitle"
-                    style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary, #f8fafc); margin: 0; word-break: break-all; white-space: normal; line-height: 1.35;">
-                    첨부파일 미리보기</h3>
-            </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0;">
-                <button id="filePreviewDownloadBtn" type="button"
-                    style="padding: 0.5rem 1rem; border: none; border-radius: 10px; background: #2563eb; color: white; cursor: pointer; font-size: 0.88rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);">
-                    <i class="fa-solid fa-download"></i> 다운로드
-                </button>
-                <button id="filePreviewCloseBtn" type="button" class="file-preview-close-btn" aria-label="닫기">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-        </div>
-        <div id="filePreviewContainer"
-            style="flex: 1; width: 100%; position: relative; border-radius: 12px; overflow: hidden; background: var(--bg-color, #0f172a); border: 1px solid var(--glass-border);">
-            <iframe id="filePreviewIframe" style="width: 100%; height: 100%; border: none;"></iframe>
-        </div>
-    </div>
-
-    <!-- AI 챗봇 채팅 검색 모달 -->
+    <!-- AI 검색 & 소통 챗봇 창 모달 -->
     <div id="aiSearchChatModalOverlay" class="modal-overlay"></div>
     <div id="aiSearchChatModal" class="modal-container ai-search-modal">
         <div class="ai-search-header">
-            <div class="ai-search-input-wrapper">
-                <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" id="aiSearchChatInput" placeholder="채팅 제목 또는 대화 내용 검색..." autocomplete="off"
-                    spellcheck="false" />
-                <button type="button" id="aiSearchChatClearBtn" class="search-clear-btn" style="display: none;"
-                    title="검색어 지우기">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <svg class="gemini-sparkle-icon" viewBox="0 0 24 24" width="22" height="22">
+                    <path
+                        d="M12 0C12 6.627 6.627 12 0 12C6.627 12 12 17.373 12 24C12 17.373 17.373 12 24 12C17.373 12 12 6.627 12 0Z"
+                        fill="url(#modalSparkleGrad)" />
+                    <defs>
+                        <linearGradient id="modalSparkleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#4e69dc" />
+                            <stop offset="50%" stop-color="#a855f7" />
+                            <stop offset="100%" stop-color="#ec4899" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <span style="font-weight: bold; font-size: 1.1rem; color: var(--text-primary);">양중과학동아리 AI 도우미</span>
             </div>
-            <button type="button" id="aiSearchChatCloseBtn" class="close-btn" aria-label="닫기" title="닫기">
+            <button class="close-btn" id="aiSearchChatCloseBtn" aria-label="닫기">
                 <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- AI 모델 선택 바 -->
+        <div class="ai-model-selector-bar">
+            <span class="ai-model-label"><i class="fa-solid fa-microchip"></i> AI 모델:</span>
+            <div class="custom-dropdown-container" id="aiModelDropdownContainer">
+                <div class="custom-dropdown-selected" id="aiModelDropdownSelected">
+                    <span><i class="fa-solid fa-bolt" style="color: #f59e0b;"></i> Gemini 2.5 Flash</span>
+                    <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                </div>
+                <ul class="custom-dropdown-options" id="aiModelDropdownOptions">
+                    <li class="custom-dropdown-option active" data-value="gemini-2.5-flash">
+                        <i class="fa-solid fa-bolt" style="color: #f59e0b;"></i> Gemini 2.5 Flash (빠른 응답)
+                    </li>
+                    <li class="custom-dropdown-option" data-value="gemini-2.5-pro">
+                        <i class="fa-solid fa-brain" style="color: #8b5cf6;"></i> Gemini 2.5 Pro (깊은 심층 추론)
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="ai-search-input-wrapper">
+            <input type="text" id="aiSearchInput" placeholder="과학 질문, 사이트 안내, AI 소통..." autocomplete="off">
+            <button id="aiSearchSubmitBtn" aria-label="검색 및 질문">
+                <i class="fa-solid fa-paper-plane"></i>
             </button>
         </div>
         <div class="ai-search-body" id="aiSearchResultsContainer">
