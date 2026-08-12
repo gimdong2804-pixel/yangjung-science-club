@@ -2856,6 +2856,10 @@ window.resetUsefulSettingsSubPage = function () {
         textSelectSettingsSubPage.style.display = 'none';
         textSelectSettingsSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
     }
+    if (settingsSyncSubPage) {
+        settingsSyncSubPage.style.display = 'none';
+        settingsSyncSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
+    }
 };
 
 window.openDisplaySubPage = function (subPage) {
@@ -2891,10 +2895,6 @@ window.resetDisplaySettingsSubPage = function () {
     if (darkModeSettingsSubPage) {
         darkModeSettingsSubPage.style.display = 'none';
         darkModeSettingsSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
-    }
-    if (settingsSyncSubPage) {
-        settingsSyncSubPage.style.display = 'none';
-        settingsSyncSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
     }
 };
 
@@ -2935,10 +2935,10 @@ if (keepGeminiLogoBrightToggle) {
     });
 }
 if (openSettingsSync) {
-    openSettingsSync.addEventListener('click', () => window.openDisplaySubPage(settingsSyncSubPage));
+    openSettingsSync.addEventListener('click', () => window.openUsefulSubPage('settingsSyncSubPage'));
 }
 if (backFromSettingsSyncBtn) {
-    backFromSettingsSyncBtn.addEventListener('click', () => window.closeDisplaySubPage(settingsSyncSubPage));
+    backFromSettingsSyncBtn.addEventListener('click', () => window.closeUsefulSubPage(false));
 }
 if (settingsSyncToggle) {
     settingsSyncToggle.checked = ACCOUNT_SETTINGS_DEFAULTS.settingsSyncEnabled;

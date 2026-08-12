@@ -7,12 +7,14 @@
     <title>양중과학동아리 종합 사이트</title>
     <link rel="icon" href="logo.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="logo.svg">
-    <!-- Google Fonts: Pretendard (Korean) and Inter -->
+    <!-- Google Fonts: Pretendard (Korean), Inter, Outfit and Source Sans 3 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" as="style" crossorigin
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=block" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600&display=block" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -447,16 +449,6 @@
                                 </div>
                                 <i class="fa-solid fa-chevron-right settings-card-arrow"></i>
                             </div>
-                            <div class="settings-card-item" id="openSettingsSync">
-                                <div class="settings-card-icon">
-                                    <i class="fa-solid fa-arrows-rotate"></i>
-                                </div>
-                                <div class="settings-card-info">
-                                    <div class="settings-card-title">설정 동기화</div>
-                                    <div class="settings-card-desc">기기 간 일반 설정의 자동 동기화 설정</div>
-                                </div>
-                                <i class="fa-solid fa-chevron-right settings-card-arrow"></i>
-                            </div>
                         </div>
                     </div>
 
@@ -500,35 +492,6 @@
                                 </div>
                                 <label class="settings-toggle">
                                     <input type="checkbox" id="keepGeminiLogoBrightToggle" aria-label="제미나이 로고 밝게 유지">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="settingsSyncSubPage" class="settings-sub-page" style="display: none;">
-                        <div class="settings-sub-header">
-                            <button class="settings-back-btn" id="backFromSettingsSyncBtn" aria-label="뒤로가기"
-                                title="디스플레이로 돌아가기">
-                                <i class="fa-solid fa-arrow-left"></i>
-                            </button>
-                            <span class="settings-sub-title">설정 동기화</span>
-                        </div>
-
-                        <div class="settings-sub-content" style="display: flex; flex-direction: column; gap: 1.5rem;">
-                            <div class="settings-item" style="border: none; padding: 0;">
-                                <div class="settings-label" style="align-items: flex-start; max-width: 80%;">
-                                    <i class="fa-solid fa-arrows-rotate" style="margin-top: 0.2rem;"></i>
-                                    <div>
-                                        <div style="font-weight: 600; font-size: 1.05rem;">기기 간 설정 자동 동기화</div>
-                                        <div
-                                            style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4;">
-                                            휴대폰과 노트북에서 일반 설정을 즉시 동일하게 맞춥니다. AI 채팅은 이 설정과 관계없이 항상 동기화됩니다.
-                                        </div>
-                                    </div>
-                                </div>
-                                <label class="settings-toggle">
-                                    <input type="checkbox" id="settingsSyncToggle" aria-label="기기 간 설정 자동 동기화">
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
@@ -695,6 +658,50 @@
                                 <label class="settings-toggle" style="margin-left: auto;"
                                     onclick="event.stopPropagation();">
                                     <input type="checkbox" id="textSelectPreventQuickToggle" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 그룹 3: 설정 동기화 -->
+                        <div class="settings-card-group">
+                            <div class="settings-card-item" id="openSettingsSync">
+                                <div class="settings-card-icon">
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                </div>
+                                <div class="settings-card-info">
+                                    <div class="settings-card-title">설정 동기화</div>
+                                    <div class="settings-card-desc">기기 간 일반 설정의 자동 동기화 설정</div>
+                                </div>
+                                <i class="fa-solid fa-chevron-right settings-card-arrow"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 설정 동기화 세부 설정 페이지 -->
+                    <div id="settingsSyncSubPage" class="settings-sub-page" style="display: none;">
+                        <div class="settings-sub-header">
+                            <button class="settings-back-btn" id="backFromSettingsSyncBtn" aria-label="뒤로가기"
+                                title="유용한 기능으로 돌아가기">
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <span class="settings-sub-title">설정 동기화</span>
+                        </div>
+
+                        <div class="settings-sub-content" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            <div class="settings-item" style="border: none; padding: 0;">
+                                <div class="settings-label" style="align-items: flex-start; max-width: 80%;">
+                                    <i class="fa-solid fa-arrows-rotate" style="margin-top: 0.2rem;"></i>
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 1.05rem;">기기 간 설정 자동 동기화</div>
+                                        <div
+                                            style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4;">
+                                            휴대폰과 노트북에서 일반 설정을 즉시 동일하게 맞춥니다. AI 채팅은 이 설정과 관계없이 항상 동기화됩니다.
+                                        </div>
+                                    </div>
+                                </div>
+                                <label class="settings-toggle">
+                                    <input type="checkbox" id="settingsSyncToggle" aria-label="기기 간 설정 자동 동기화">
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>

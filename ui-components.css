@@ -471,6 +471,8 @@ body:has(.modal-overlay.active) {
     width: clamp(240px, 38vw, 380px);
     height: auto;
     color: var(--text-primary);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
 }
 
 .update-check-button {
