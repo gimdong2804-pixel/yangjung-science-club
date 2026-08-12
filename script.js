@@ -143,19 +143,58 @@ const ACCOUNT_SETTINGS_DEFAULTS = Object.freeze({
     logoDisplayStyle: 'default',
     scrollHide: true,
     commentInputScrollHide: true,
-    textSelectPrevent: true
+    textSelectPrevent: true,
+    settingsSyncEnabled: true
 });
 
 let activeAccountUserId = null;
 let accountSettings = { ...ACCOUNT_SETTINGS_DEFAULTS };
 let isLoadingAccountSettings = false;
+let unsubscribeAccountSettings = null;
+let unsubscribeAiChatSessions = null;
+let aiChatMessageUnsubscribers = new Map();
+
+function getDeviceSettingsStorageKey(userId) {
+    return `account_settings_${userId}`;
+}
+
+function getDeviceAccountSettings(userId) {
+    try {
+        const rawSettings = localStorage.getItem(getDeviceSettingsStorageKey(userId));
+        return rawSettings ? JSON.parse(rawSettings) : null;
+    } catch (error) {
+        console.error('기기 설정 불러오기 오류:', error);
+        return null;
+    }
+}
+
+function saveDeviceAccountSettings(userId, settings) {
+    if (!userId) return;
+    try {
+        localStorage.setItem(getDeviceSettingsStorageKey(userId), JSON.stringify(settings));
+    } catch (error) {
+        console.error('기기 설정 저장 오류:', error);
+    }
+}
 
 function saveAccountSettings(changes) {
     accountSettings = { ...accountSettings, ...changes };
-    if (!activeAccountUserId || isLoadingAccountSettings) return;
+    const userId = activeAccountUserId;
+    if (!userId || isLoadingAccountSettings) return;
 
-    db.collection('users').doc(activeAccountUserId).collection('private').doc('settings').set({
-        ...changes,
+    saveDeviceAccountSettings(userId, accountSettings);
+
+    const syncStateChanged = Object.prototype.hasOwnProperty.call(changes, 'settingsSyncEnabled');
+    if (!accountSettings.settingsSyncEnabled && !syncStateChanged) return;
+
+    const settingsToSave = syncStateChanged && accountSettings.settingsSyncEnabled
+        ? { ...accountSettings, settingsSyncEnabled: true }
+        : syncStateChanged
+            ? { settingsSyncEnabled: false }
+            : { ...changes, settingsSyncEnabled: true };
+
+    db.collection('users').doc(userId).collection('private').doc('settings').set({
+        ...settingsToSave,
         updatedAt: Date.now()
     }, { merge: true }).catch((error) => {
         console.error('계정 설정 저장 오류:', error);
@@ -194,10 +233,21 @@ function setGeminiLogoBrightness(enabled, save = true) {
     if (save) saveAccountSettings({ keepGeminiLogoBright: normalizedEnabled });
 }
 
+function setSettingsSyncEnabled(enabled, save = true) {
+    const normalizedEnabled = Boolean(enabled);
+    accountSettings = { ...accountSettings, settingsSyncEnabled: normalizedEnabled };
+
+    const settingsSyncToggle = document.getElementById('settingsSyncToggle');
+    if (settingsSyncToggle) settingsSyncToggle.checked = normalizedEnabled;
+
+    if (save) saveAccountSettings({ settingsSyncEnabled: normalizedEnabled });
+}
+
 setSiteTheme(ACCOUNT_SETTINGS_DEFAULTS.theme, false);
 setGeminiLogoBrightness(ACCOUNT_SETTINGS_DEFAULTS.keepGeminiLogoBright, false);
 window.setSiteTheme = setSiteTheme;
 window.setGeminiLogoBrightness = setGeminiLogoBrightness;
+window.setSettingsSyncEnabled = setSettingsSyncEnabled;
 
 if (themeToggleBtn) {
     themeToggleBtn.addEventListener('click', () => {
@@ -2720,6 +2770,10 @@ const openDarkModeSettings = document.getElementById('openDarkModeSettings');
 const backToDisplayCategoriesBtn = document.getElementById('backToDisplayCategoriesBtn');
 const darkModeSettingToggle = document.getElementById('darkModeSettingToggle');
 const keepGeminiLogoBrightToggle = document.getElementById('keepGeminiLogoBrightToggle');
+const openSettingsSync = document.getElementById('openSettingsSync');
+const backFromSettingsSyncBtn = document.getElementById('backFromSettingsSyncBtn');
+const settingsSyncToggle = document.getElementById('settingsSyncToggle');
+const resetAllSettingsBtn = document.getElementById('resetAllSettingsBtn');
 
 const usefulCategoryList = document.getElementById('usefulCategoryList');
 const topButtonSettingsSubPage = document.getElementById('topButtonSettingsSubPage');
@@ -2727,6 +2781,7 @@ const commentInputSettingsSubPage = document.getElementById('commentInputSetting
 const textSelectSettingsSubPage = document.getElementById('textSelectSettingsSubPage');
 const displayCategoryList = document.getElementById('displayCategoryList');
 const darkModeSettingsSubPage = document.getElementById('darkModeSettingsSubPage');
+const settingsSyncSubPage = document.getElementById('settingsSyncSubPage');
 
 window.isUsefulSubPageOpen = false;
 window.currentSubPageId = null;
@@ -2803,24 +2858,24 @@ window.resetUsefulSettingsSubPage = function () {
     }
 };
 
-window.openDisplaySubPage = function () {
-    if (!displayCategoryList || !darkModeSettingsSubPage) return;
+window.openDisplaySubPage = function (subPage) {
+    if (!displayCategoryList || !subPage) return;
 
     displayCategoryList.style.display = 'none';
-    darkModeSettingsSubPage.style.display = 'block';
-    darkModeSettingsSubPage.classList.remove('sub-page-exit');
-    darkModeSettingsSubPage.classList.add('sub-page-enter');
+    subPage.style.display = 'block';
+    subPage.classList.remove('sub-page-exit');
+    subPage.classList.add('sub-page-enter');
 };
 
-window.closeDisplaySubPage = function () {
-    if (!displayCategoryList || !darkModeSettingsSubPage) return;
+window.closeDisplaySubPage = function (subPage) {
+    if (!displayCategoryList || !subPage) return;
 
-    darkModeSettingsSubPage.classList.remove('sub-page-enter');
-    darkModeSettingsSubPage.classList.add('sub-page-exit');
+    subPage.classList.remove('sub-page-enter');
+    subPage.classList.add('sub-page-exit');
 
     setTimeout(() => {
-        darkModeSettingsSubPage.style.display = 'none';
-        darkModeSettingsSubPage.classList.remove('sub-page-exit');
+        subPage.style.display = 'none';
+        subPage.classList.remove('sub-page-exit');
         displayCategoryList.style.display = 'flex';
         displayCategoryList.classList.remove('category-list-enter');
         void displayCategoryList.offsetWidth;
@@ -2836,6 +2891,10 @@ window.resetDisplaySettingsSubPage = function () {
     if (darkModeSettingsSubPage) {
         darkModeSettingsSubPage.style.display = 'none';
         darkModeSettingsSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
+    }
+    if (settingsSyncSubPage) {
+        settingsSyncSubPage.style.display = 'none';
+        settingsSyncSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
     }
 };
 
@@ -2858,10 +2917,10 @@ if (backFromTextSelectBtn) {
     backFromTextSelectBtn.addEventListener('click', () => window.closeUsefulSubPage(false));
 }
 if (openDarkModeSettings) {
-    openDarkModeSettings.addEventListener('click', () => window.openDisplaySubPage());
+    openDarkModeSettings.addEventListener('click', () => window.openDisplaySubPage(darkModeSettingsSubPage));
 }
 if (backToDisplayCategoriesBtn) {
-    backToDisplayCategoriesBtn.addEventListener('click', () => window.closeDisplaySubPage());
+    backToDisplayCategoriesBtn.addEventListener('click', () => window.closeDisplaySubPage(darkModeSettingsSubPage));
 }
 if (darkModeSettingToggle) {
     darkModeSettingToggle.checked = getSiteTheme() === 'dark';
@@ -2873,6 +2932,18 @@ if (keepGeminiLogoBrightToggle) {
     keepGeminiLogoBrightToggle.checked = ACCOUNT_SETTINGS_DEFAULTS.keepGeminiLogoBright;
     keepGeminiLogoBrightToggle.addEventListener('change', (event) => {
         setGeminiLogoBrightness(event.target.checked);
+    });
+}
+if (openSettingsSync) {
+    openSettingsSync.addEventListener('click', () => window.openDisplaySubPage(settingsSyncSubPage));
+}
+if (backFromSettingsSyncBtn) {
+    backFromSettingsSyncBtn.addEventListener('click', () => window.closeDisplaySubPage(settingsSyncSubPage));
+}
+if (settingsSyncToggle) {
+    settingsSyncToggle.checked = ACCOUNT_SETTINGS_DEFAULTS.settingsSyncEnabled;
+    settingsSyncToggle.addEventListener('change', (event) => {
+        setSettingsSyncEnabled(event.target.checked);
     });
 }
 
@@ -3397,6 +3468,61 @@ function setTextSelectPreventEnabled(enabled, save = true) {
     if (save) saveAccountSettings({ textSelectPrevent: _isTextSelectPreventEnabled });
 }
 
+async function resetAllAccountSettings() {
+    const confirmed = typeof window.customConfirm === 'function'
+        ? await window.customConfirm('모든 설정을 기본값으로 되돌릴까요?\nAI 채팅은 삭제되지 않습니다.', '설정 초기화')
+        : window.confirm('모든 설정을 기본값으로 되돌릴까요?\nAI 채팅은 삭제되지 않습니다.');
+    if (!confirmed) return;
+
+    const userId = activeAccountUserId;
+    isLoadingAccountSettings = true;
+    accountSettings = { ...ACCOUNT_SETTINGS_DEFAULTS };
+    applyAccountSettings();
+    if (userId) saveDeviceAccountSettings(userId, accountSettings);
+
+    try {
+        if (userId) {
+            await db.collection('users').doc(userId).collection('private').doc('settings').set({
+                ...ACCOUNT_SETTINGS_DEFAULTS,
+                updatedAt: Date.now()
+            }, { merge: true });
+        }
+    } catch (error) {
+        console.error('설정 초기화 오류:', error);
+        if (typeof window.customAlert === 'function') {
+            await window.customAlert('설정을 초기화하지 못했습니다. 잠시 후 다시 시도해 주세요.', '설정 초기화');
+        } else {
+            alert('설정을 초기화하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        }
+    } finally {
+        isLoadingAccountSettings = false;
+    }
+}
+
+if (resetAllSettingsBtn) {
+    resetAllSettingsBtn.addEventListener('click', () => {
+        void resetAllAccountSettings();
+    });
+}
+
+// '기본 설정 보기' details 부드러운 Fade In / Fade Out 애니메이션
+document.addEventListener('click', (e) => {
+    const summary = e.target.closest('.settings-defaults-details summary');
+    if (!summary) return;
+    const details = summary.closest('details');
+    if (!details) return;
+
+    if (details.open) {
+        e.preventDefault();
+        if (details.classList.contains('closing')) return;
+        details.classList.add('closing');
+        setTimeout(() => {
+            details.removeAttribute('open');
+            details.classList.remove('closing');
+        }, 190);
+    }
+});
+
 
 // ==========================================
 // AI 챗봇 최근 대화 세션 관리 로직 (고정/수정/삭제/빈 상태)
@@ -3479,7 +3605,8 @@ function normalizeAccountSettings(savedSettings = {}) {
             : ACCOUNT_SETTINGS_DEFAULTS.logoDisplayStyle,
         scrollHide: savedSettings.scrollHide !== false,
         commentInputScrollHide: savedSettings.commentInputScrollHide !== false,
-        textSelectPrevent: savedSettings.textSelectPrevent !== false
+        textSelectPrevent: savedSettings.textSelectPrevent !== false,
+        settingsSyncEnabled: savedSettings.settingsSyncEnabled !== false
     };
 }
 
@@ -3490,82 +3617,150 @@ function applyAccountSettings() {
     setScrollHideEnabled(accountSettings.scrollHide, false);
     setCommentInputScrollHideEnabled(accountSettings.commentInputScrollHide, false);
     setTextSelectPreventEnabled(accountSettings.textSelectPrevent, false);
+    setSettingsSyncEnabled(accountSettings.settingsSyncEnabled, false);
 }
 
-async function loadAiChatSessionsForAccount(userId) {
-    const sessionSnapshot = await db.collection('users').doc(userId)
-        .collection('aiChatSessions').orderBy('updatedAt', 'desc').get();
+function stopAiChatSessionSubscriptions() {
+    if (unsubscribeAiChatSessions) {
+        unsubscribeAiChatSessions();
+        unsubscribeAiChatSessions = null;
+    }
+    aiChatMessageUnsubscribers.forEach((unsubscribe) => unsubscribe());
+    aiChatMessageUnsubscribers.clear();
+}
 
-    const sessions = await Promise.all(sessionSnapshot.docs.map(async (sessionDoc) => {
-        const sessionData = sessionDoc.data();
-        const messageSnapshot = await sessionDoc.ref.collection('messages').orderBy('createdAt', 'asc').get();
-        const messages = messageSnapshot.docs.map((messageDoc) => {
-            const messageData = messageDoc.data();
+function subscribeAiChatSessionsForAccount(userId) {
+    stopAiChatSessionSubscriptions();
+    const sessionsRef = db.collection('users').doc(userId).collection('aiChatSessions');
+
+    unsubscribeAiChatSessions = sessionsRef.orderBy('updatedAt', 'desc').onSnapshot((snapshot) => {
+        if (activeAccountUserId !== userId) return;
+
+        const previousSessions = new Map(aiChatSessions.map((session) => [session.id, session]));
+        const activeSessionIds = new Set(snapshot.docs.map((sessionDoc) => sessionDoc.id));
+
+        aiChatMessageUnsubscribers.forEach((unsubscribe, sessionId) => {
+            if (!activeSessionIds.has(sessionId)) {
+                unsubscribe();
+                aiChatMessageUnsubscribers.delete(sessionId);
+            }
+        });
+
+        aiChatSessions = snapshot.docs.map((sessionDoc) => {
+            const sessionData = sessionDoc.data();
+            const previousSession = previousSessions.get(sessionDoc.id);
             return {
-                id: messageDoc.id,
-                role: messageData.role || 'assistant',
-                text: messageData.text || '',
-                attachmentPaths: Array.isArray(messageData.attachmentPaths) ? messageData.attachmentPaths : [],
-                createdAt: messageData.createdAt || 0
+                id: sessionDoc.id,
+                title: sessionData.title || '새 대화',
+                pinned: Boolean(sessionData.pinned),
+                createdAt: sessionData.createdAt || 0,
+                updatedAt: sessionData.updatedAt || 0,
+                messages: previousSession?.messages || []
             };
         });
 
-        return {
-            id: sessionDoc.id,
-            title: sessionData.title || '새 대화',
-            pinned: Boolean(sessionData.pinned),
-            createdAt: sessionData.createdAt || 0,
-            updatedAt: sessionData.updatedAt || 0,
-            messages
-        };
-    }));
+        snapshot.docs.forEach((sessionDoc) => {
+            if (aiChatMessageUnsubscribers.has(sessionDoc.id)) return;
 
-    if (activeAccountUserId === userId) {
-        aiChatSessions = sessions;
-        currentAiSessionId = null;
+            const unsubscribeMessages = sessionDoc.ref.collection('messages').orderBy('createdAt', 'asc').onSnapshot((messageSnapshot) => {
+                if (activeAccountUserId !== userId) return;
+                const session = aiChatSessions.find((item) => item.id === sessionDoc.id);
+                if (!session) return;
+
+                session.messages = messageSnapshot.docs.map((messageDoc) => {
+                    const messageData = messageDoc.data();
+                    return {
+                        id: messageDoc.id,
+                        role: messageData.role || 'assistant',
+                        text: messageData.text || '',
+                        attachmentPaths: Array.isArray(messageData.attachmentPaths) ? messageData.attachmentPaths : [],
+                        createdAt: messageData.createdAt || 0
+                    };
+                });
+
+                if (currentAiSessionId === session.id) {
+                    window.switchAiChatSession(session.id);
+                } else {
+                    renderAiRecentChatList();
+                }
+            }, (error) => {
+                console.error('AI 대화 메시지 동기화 오류:', error);
+            });
+
+            aiChatMessageUnsubscribers.set(sessionDoc.id, unsubscribeMessages);
+        });
+
+        if (currentAiSessionId && !activeSessionIds.has(currentAiSessionId)) {
+            currentAiSessionId = null;
+        }
         renderAiRecentChatList();
-    }
+    }, (error) => {
+        console.error('AI 대화 목록 동기화 오류:', error);
+    });
 }
 
-window.loadUserAccountData = async function (user) {
+window.loadUserAccountData = function (user) {
     const userId = user?.uid;
     if (!userId) return;
 
+    if (unsubscribeAccountSettings) {
+        unsubscribeAccountSettings();
+        unsubscribeAccountSettings = null;
+    }
+    stopAiChatSessionSubscriptions();
+
     activeAccountUserId = userId;
     isLoadingAccountSettings = true;
-    accountSettings = { ...ACCOUNT_SETTINGS_DEFAULTS };
+    accountSettings = normalizeAccountSettings(getDeviceAccountSettings(userId) || ACCOUNT_SETTINGS_DEFAULTS);
     applyAccountSettings();
     aiChatSessions = [];
     currentAiSessionId = null;
     renderAiRecentChatList();
 
-    try {
-        const settingsRef = db.collection('users').doc(userId).collection('private').doc('settings');
-        const settingsSnapshot = await settingsRef.get();
+    const settingsRef = db.collection('users').doc(userId).collection('private').doc('settings');
+    unsubscribeAccountSettings = settingsRef.onSnapshot((settingsSnapshot) => {
         if (activeAccountUserId !== userId) return;
 
-        if (settingsSnapshot.exists) {
-            accountSettings = normalizeAccountSettings(settingsSnapshot.data());
-        } else {
-            accountSettings = { ...ACCOUNT_SETTINGS_DEFAULTS };
-            await settingsRef.set({
-                ...accountSettings,
+        const remoteSettings = normalizeAccountSettings(settingsSnapshot.exists
+            ? settingsSnapshot.data()
+            : ACCOUNT_SETTINGS_DEFAULTS);
+
+        if (!settingsSnapshot.exists) {
+            settingsRef.set({
+                ...ACCOUNT_SETTINGS_DEFAULTS,
                 createdAt: Date.now(),
                 updatedAt: Date.now()
+            }).catch((error) => console.error('기본 계정 설정 생성 오류:', error));
+        }
+
+        if (remoteSettings.settingsSyncEnabled) {
+            accountSettings = remoteSettings;
+        } else {
+            const deviceSettings = getDeviceAccountSettings(userId);
+            accountSettings = normalizeAccountSettings({
+                ...remoteSettings,
+                ...(deviceSettings || {}),
+                settingsSyncEnabled: false
             });
         }
+
+        saveDeviceAccountSettings(userId, accountSettings);
         applyAccountSettings();
-        await loadAiChatSessionsForAccount(userId);
-    } catch (error) {
-        console.error('계정 데이터 불러오기 오류:', error);
-    } finally {
-        if (activeAccountUserId === userId) {
-            isLoadingAccountSettings = false;
-        }
-    }
+        isLoadingAccountSettings = false;
+    }, (error) => {
+        isLoadingAccountSettings = false;
+        console.error('계정 설정 동기화 오류:', error);
+    });
+
+    subscribeAiChatSessionsForAccount(userId);
 };
 
 window.clearUserAccountData = function () {
+    if (unsubscribeAccountSettings) {
+        unsubscribeAccountSettings();
+        unsubscribeAccountSettings = null;
+    }
+    stopAiChatSessionSubscriptions();
     activeAccountUserId = null;
     isLoadingAccountSettings = false;
     accountSettings = { ...ACCOUNT_SETTINGS_DEFAULTS };

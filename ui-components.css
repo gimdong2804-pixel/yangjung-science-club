@@ -841,6 +841,126 @@ body:has(.modal-overlay.active) {
     color: var(--accent-color);
 }
 
+.settings-reset-button {
+    flex-shrink: 0;
+    border: 1px solid rgba(239, 68, 68, 0.45);
+    border-radius: 9999px;
+    padding: 0.6rem 1.25rem;
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.settings-reset-button:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.7);
+    color: #fca5a5;
+}
+
+.settings-reset-button:active {
+    transform: scale(0.97);
+}
+
+.settings-defaults-details {
+    margin-top: 0.85rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.settings-defaults-details summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    transition: color 0.2s ease;
+}
+
+.settings-defaults-details summary:hover {
+    color: var(--text-primary);
+}
+
+.settings-defaults-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.settings-defaults-details summary::before {
+    content: '\f05a';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    color: var(--text-secondary);
+    transition: color 0.2s ease;
+}
+
+.settings-defaults-details summary:hover::before {
+    color: var(--text-primary);
+}
+
+.settings-defaults-list {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0.75rem 0 0;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    background: rgba(59, 130, 246, 0.05);
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.settings-defaults-details[open] .settings-defaults-list {
+    animation: detailsFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.settings-defaults-details.closing .settings-defaults-list {
+    animation: detailsFadeOut 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes detailsFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes detailsFadeOut {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+}
+
+.settings-defaults-list div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.settings-defaults-list dt,
+.settings-defaults-list dd {
+    margin: 0;
+}
+
+.settings-defaults-list dd {
+    color: var(--text-primary);
+    text-align: right;
+}
+
 /* 서브 페이지 상단 헤더 & 뒤로가기 버튼 */
 .settings-sub-header {
     display: flex;
@@ -991,6 +1111,17 @@ body:has(.modal-overlay.active) {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
+}
+
+/* 설정창 및 모든 모달 위에서도 확인·알림 모달이 가려지지 않도록 최상단 레이어에 배치 */
+#customConfirmModalOverlay,
+#customAlertModalOverlay {
+    z-index: 100000 !important;
+}
+
+#customConfirmModal,
+#customAlertModal {
+    z-index: 100001 !important;
 }
 
 .modal-overlay:not(.active),
