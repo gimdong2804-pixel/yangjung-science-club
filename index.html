@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <link rel="stylesheet" href="style.css?v=42">
-    <link rel="stylesheet" href="ui-components.css?v=35">
+    <link rel="stylesheet" href="ui-components.css?v=36">
     <link rel="stylesheet" href="community.css?v=33">
     <link rel="stylesheet" href="youtube-style.css?v=33">
     <link rel="manifest" href="manifest.json">
@@ -415,7 +415,7 @@
                     style="padding: 0 1rem 1.5rem 1rem; font-size: 1.2rem; font-weight: bold; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fa-solid fa-gear"></i> 설정
                 </div>
-                <div class="settings-nav-item active" data-tab="general">일반</div>
+                <div class="settings-nav-item active" data-tab="display">디스플레이</div>
                 <div class="settings-nav-item" data-tab="useful">유용한 기능</div>
                 <div class="settings-nav-item" data-tab="update">업데이트</div>
             </div>
@@ -430,10 +430,70 @@
                     </button>
                 </div>
 
-                <!-- 일반 탭 내용 -->
-                <div id="settingsTab-general" class="settings-tab-content"
+                <!-- 디스플레이 탭 내용 -->
+                <div id="settingsTab-display" class="settings-tab-content"
                     style="display: flex; flex-direction: column;">
-                    <p style="color: var(--text-secondary); text-align: center; padding: 2rem 0;">등록된 항목이 없습니다.</p>
+                    <div id="displayCategoryList" class="settings-sub-category-list"
+                        style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div class="settings-card-group">
+                            <div class="settings-card-item" id="openDarkModeSettings">
+                                <div class="settings-card-icon">
+                                    <i class="fa-solid fa-moon"></i>
+                                </div>
+                                <div class="settings-card-info">
+                                    <div class="settings-card-title">다크 모드 설정</div>
+                                    <div class="settings-card-desc">다크 모드와 제미나이 로고 표시 설정</div>
+                                </div>
+                                <i class="fa-solid fa-chevron-right settings-card-arrow"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="darkModeSettingsSubPage" class="settings-sub-page" style="display: none;">
+                        <div class="settings-sub-header">
+                            <button class="settings-back-btn" id="backToDisplayCategoriesBtn" aria-label="뒤로가기"
+                                title="디스플레이로 돌아가기">
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <span class="settings-sub-title">다크 모드 설정</span>
+                        </div>
+
+                        <div class="settings-sub-content" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            <div class="settings-item" style="border: none; padding: 0;">
+                                <div class="settings-label" style="align-items: flex-start; max-width: 80%;">
+                                    <i class="fa-solid fa-moon" style="margin-top: 0.2rem;"></i>
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 1.05rem;">다크 모드</div>
+                                        <div
+                                            style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4;">
+                                            어두운 화면 테마를 사용합니다.
+                                        </div>
+                                    </div>
+                                </div>
+                                <label class="settings-toggle">
+                                    <input type="checkbox" id="darkModeSettingToggle" aria-label="다크 모드 켜기">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="settings-item" style="border-top: 1px solid var(--glass-border); padding-top: 1.25rem;">
+                                <div class="settings-label" style="align-items: flex-start; max-width: 80%;">
+                                    <img src="gemini-color.svg" class="settings-gemini-logo" alt="Gemini">
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 1.05rem;">제미나이 로고 밝게 유지</div>
+                                        <div
+                                            style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4;">
+                                            다크 모드에서도 제미나이 로고를 밝고 선명하게 표시합니다.
+                                        </div>
+                                    </div>
+                                </div>
+                                <label class="settings-toggle">
+                                    <input type="checkbox" id="keepGeminiLogoBrightToggle" aria-label="제미나이 로고 밝게 유지">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 업데이트 탭 내용 -->
@@ -1570,10 +1630,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
-    <script src="script.js?v=1.0.12"></script>
+    <script src="script.js?v=1.0.13"></script>
     <script src="youtube-utils.js?v=1.0.3"></script>
     <!-- 커뮤니티는 역할별 파일로 나누어, 수정할 때 해당 기능만 찾을 수 있게 했습니다. -->
-    <script src="community.js?v=2.0.3"></script>
+    <script src="community.js?v=2.0.4"></script>
     <script src="community-comment-render.js?v=2.0.3"></script>
     <script src="community-post-detail.js?v=2.0.3"></script>
     <script src="media-upload.js?v=1.0.3"></script>

@@ -137,21 +137,73 @@ window.customAlert = function (message, title = '경고') {
 const themeToggleBtn = document.getElementById('themeToggleBtn');
 const rootElement = document.documentElement;
 
-// 저장된 테마 불러오기 (기본값 dark)
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme === 'light') {
-    rootElement.setAttribute('data-theme', 'light');
+const ACCOUNT_SETTINGS_DEFAULTS = Object.freeze({
+    theme: 'light',
+    keepGeminiLogoBright: false,
+    logoDisplayStyle: 'default',
+    scrollHide: true,
+    commentInputScrollHide: true,
+    textSelectPrevent: true
+});
+
+let activeAccountUserId = null;
+let accountSettings = { ...ACCOUNT_SETTINGS_DEFAULTS };
+let isLoadingAccountSettings = false;
+
+function saveAccountSettings(changes) {
+    accountSettings = { ...accountSettings, ...changes };
+    if (!activeAccountUserId || isLoadingAccountSettings) return;
+
+    db.collection('users').doc(activeAccountUserId).collection('private').doc('settings').set({
+        ...changes,
+        updatedAt: Date.now()
+    }, { merge: true }).catch((error) => {
+        console.error('계정 설정 저장 오류:', error);
+    });
 }
 
-themeToggleBtn.addEventListener('click', () => {
-    if (rootElement.getAttribute('data-theme') === 'light') {
+function getSiteTheme() {
+    return rootElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+}
+
+function setSiteTheme(theme, save = true) {
+    const normalizedTheme = theme === 'dark' ? 'dark' : 'light';
+    if (normalizedTheme === 'dark') {
         rootElement.removeAttribute('data-theme');
-        localStorage.setItem('theme', 'dark');
     } else {
         rootElement.setAttribute('data-theme', 'light');
-        localStorage.setItem('theme', 'light');
     }
-});
+
+    const darkModeSettingToggle = document.getElementById('darkModeSettingToggle');
+    if (darkModeSettingToggle) {
+        darkModeSettingToggle.checked = normalizedTheme === 'dark';
+    }
+
+    if (save) saveAccountSettings({ theme: normalizedTheme });
+}
+
+function setGeminiLogoBrightness(enabled, save = true) {
+    const normalizedEnabled = Boolean(enabled);
+    rootElement.classList.toggle('gemini-logo-bright', normalizedEnabled);
+
+    const keepGeminiLogoBrightToggle = document.getElementById('keepGeminiLogoBrightToggle');
+    if (keepGeminiLogoBrightToggle) {
+        keepGeminiLogoBrightToggle.checked = normalizedEnabled;
+    }
+
+    if (save) saveAccountSettings({ keepGeminiLogoBright: normalizedEnabled });
+}
+
+setSiteTheme(ACCOUNT_SETTINGS_DEFAULTS.theme, false);
+setGeminiLogoBrightness(ACCOUNT_SETTINGS_DEFAULTS.keepGeminiLogoBright, false);
+window.setSiteTheme = setSiteTheme;
+window.setGeminiLogoBrightness = setGeminiLogoBrightness;
+
+if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+        setSiteTheme(getSiteTheme() === 'light' ? 'dark' : 'light');
+    });
+}
 
 function toggleProfileDetails() {
     const profileInfo = document.getElementById('userProfileInfo');
@@ -1188,6 +1240,56 @@ function formatAiFileSize(bytes) {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
+function getAiAttachmentIcon(fileType) {
+    if (fileType === 'pdf') return 'fa-file-pdf';
+    if (fileType === 'audio') return 'fa-microphone';
+    if (fileType === 'html') return 'fa-file-code';
+    if (fileType === 'video') return 'fa-file-video';
+    return 'fa-file';
+}
+
+async function uploadAiChatAttachment(file) {
+    if (!activeAccountUserId || !file?.dataUrl) return null;
+
+    try {
+        const response = await fetch(file.dataUrl);
+        const blob = await response.blob();
+        const extension = (file.name || '').split('.').pop().replace(/[^a-zA-Z0-9]/g, '') || 'bin';
+        const path = `users/${activeAccountUserId}/ai-chat-attachments/${Date.now()}-${file.id}.${extension}`;
+        const snapshot = await storage.ref().child(path).put(blob, {
+            contentType: file.mimeType || blob.type || 'application/octet-stream'
+        });
+
+        return {
+            path,
+            url: await snapshot.ref.getDownloadURL(),
+            name: file.name,
+            type: file.type
+        };
+    } catch (error) {
+        console.error('AI 대화 첨부파일 저장 오류:', error);
+        return null;
+    }
+}
+
+function createAiAttachmentCard(file, savedAttachment, usePersistedContent = false) {
+    const safeName = escapeAiHtml(file.name);
+    if (file.type === 'image') {
+        const source = savedAttachment?.url || (usePersistedContent ? '' : file.dataUrl);
+        if (source) {
+            return `<div style="margin-top: 6px;"><img src="${source}" alt="${safeName}" style="max-width: 100%; max-height: 220px; border-radius: 8px; object-fit: contain; border: 1px solid rgba(255,255,255,0.15);" /></div>`;
+        }
+    }
+
+    const attachmentLink = savedAttachment?.url
+        ? `<a href="${savedAttachment.url}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: underline;">${safeName}</a>`
+        : safeName;
+    const saveFailureText = usePersistedContent && !savedAttachment ? ' (저장하지 못함)' : '';
+    return `<div style="margin-top: 6px; display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 8px; font-size: 0.82rem;">
+        <i class="fa-solid ${getAiAttachmentIcon(file.type)}"></i> ${attachmentLink} (${file.size})${saveFailureText}
+    </div>`;
+}
+
 function extractPublicYoutubeUrls(text) {
     const urls = text.match(/https?:\/\/[^\s<>"']+/g) || [];
     const seenUrls = new Set();
@@ -1542,40 +1644,38 @@ async function sendChatbotMessage() {
     const message = aiChatbotInput.value.trim();
     if (!message && aiAttachedFiles.length === 0) return;
 
-    // 사용자 화면 메시지 HTML 생성
-    let userMsgHtml = '';
-    if (message) {
-        userMsgHtml += escapeAiHtml(message).replace(/\n/g, '<br>');
-    }
-
-    if (aiAttachedFiles.length > 0) {
-        const attachCardsHtml = aiAttachedFiles.map(file => {
-            if (file.type === 'image') {
-                return `<div style="margin-top: 6px;"><img src="${file.dataUrl}" style="max-width: 100%; max-height: 220px; border-radius: 8px; object-fit: contain; border: 1px solid rgba(255,255,255,0.15);" /></div>`;
-            } else {
-                let fileIcon = 'fa-file';
-                if (file.type === 'pdf') fileIcon = 'fa-file-pdf';
-                if (file.type === 'audio') fileIcon = 'fa-microphone';
-                if (file.type === 'html') fileIcon = 'fa-file-code';
-                if (file.type === 'video') fileIcon = 'fa-file-video';
-
-                return `<div style="margin-top: 6px; display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 8px; font-size: 0.82rem;">
-                    <i class="fa-solid ${fileIcon}"></i> ${escapeAiHtml(file.name)} (${file.size})
-                </div>`;
-            }
-        }).join('');
-
-        userMsgHtml += `<div style="margin-top: 4px;">${attachCardsHtml}</div>`;
-    }
-
     const currentFiles = [...aiAttachedFiles];
     aiAttachedFiles = [];
     renderAiAttachedFiles();
 
+    const savedAttachments = await Promise.all(currentFiles.map(uploadAiChatAttachment));
+
+    // 사용자 화면 메시지 HTML 생성 및 계정 저장용 HTML 생성
+    let userMsgHtml = '';
+    let persistedUserMsgHtml = '';
+    if (message) {
+        const escapedMessage = escapeAiHtml(message).replace(/\n/g, '<br>');
+        userMsgHtml += escapedMessage;
+        persistedUserMsgHtml += escapedMessage;
+    }
+
+    if (currentFiles.length > 0) {
+        const attachCardsHtml = currentFiles.map((file, index) => createAiAttachmentCard(file, savedAttachments[index])).join('');
+        const persistedAttachCardsHtml = currentFiles.map((file, index) => createAiAttachmentCard(file, savedAttachments[index], true)).join('');
+        userMsgHtml += `<div style="margin-top: 4px;">${attachCardsHtml}</div>`;
+        persistedUserMsgHtml += `<div style="margin-top: 4px;">${persistedAttachCardsHtml}</div>`;
+    }
+
     aiChatbotInput.value = '';
     aiChatbotInput.focus();
 
-    appendChatbotMessage('user', userMsgHtml);
+    appendChatbotMessage(
+        'user',
+        userMsgHtml,
+        false,
+        activeAccountUserId ? persistedUserMsgHtml : userMsgHtml,
+        savedAttachments.filter(Boolean).map((attachment) => attachment.path)
+    );
 
     const loadingId = appendChatbotMessage('assistant', '<i class="fa-solid fa-circle-notch fa-spin"></i> AI 비서가 분석 후 고민하고 있습니다...', true);
 
@@ -1643,22 +1743,14 @@ async function sendChatbotMessage() {
             open_drawer: () => { window.closeAiChatbotModal(); setTimeout(() => openDrawer(), 300); },
             close_drawer: () => { closeDrawer(true); },
             toggle_theme: (args) => {
-                if (args.theme === 'dark') {
-                    document.documentElement.removeAttribute('data-theme');
-                    localStorage.setItem('theme', 'dark');
-                } else {
-                    document.documentElement.setAttribute('data-theme', 'light');
-                    localStorage.setItem('theme', 'light');
-                }
-                const btn = document.getElementById('themeToggleBtn');
-                if (btn) btn.click();
+                setSiteTheme(args.theme);
             },
             start_new_chat: () => { window.startNewAiChat(); },
             search_chat_history: () => { if (typeof window.openAiSearchChatModal === 'function') window.openAiSearchChatModal(); },
             scroll_to_top: () => { window.scrollTo({ top: 0, behavior: 'smooth' }); const mc = document.getElementById('mainContent'); if (mc) mc.scrollTo({ top: 0, behavior: 'smooth' }); },
             open_youtube: () => { const o = document.getElementById('youtubeSelectOverlay'); const m = document.getElementById('youtubeSelectModal'); if (o) o.classList.add('active'); if (m) m.classList.add('active'); },
-            toggle_text_select: (args) => { localStorage.setItem('setting_text_select_prevent', String(args.enabled)); if (typeof updateTextSelectToggleUI === 'function') updateTextSelectToggleUI(); },
-            toggle_scroll_hide: (args) => { localStorage.setItem('setting_scroll_hide', String(args.enabled)); },
+            toggle_text_select: (args) => { setTextSelectPreventEnabled(args.enabled); },
+            toggle_scroll_hide: (args) => { setScrollHideEnabled(args.enabled); },
             google_login: () => { const btn = document.getElementById('googleLoginBtn'); if (btn) { window.closeAiChatbotModal(); setTimeout(() => btn.click(), 300); } },
             logout: () => { const btn = document.getElementById('logoutBtn'); if (btn) { window.closeAiChatbotModal(); setTimeout(() => btn.click(), 300); } },
             get_community_posts: async (args) => {
@@ -1868,7 +1960,7 @@ async function sendChatbotMessage() {
     }
 }
 
-function appendChatbotMessage(sender, text, isTemp = false) {
+function appendChatbotMessage(sender, text, isTemp = false, persistedText = text, attachmentPaths = []) {
     const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
     const msgDiv = document.createElement('div');
     msgDiv.className = `ai-message ${sender}`;
@@ -1879,7 +1971,7 @@ function appendChatbotMessage(sender, text, isTemp = false) {
     setTimeout(updateAiChatbotScrollbar, 50);
 
     if (!isTemp && typeof window.saveCurrentAiMessageToSession === 'function') {
-        window.saveCurrentAiMessageToSession(sender, text);
+        window.saveCurrentAiMessageToSession(sender, persistedText, attachmentPaths);
     }
 
     return msgId;
@@ -2557,9 +2649,10 @@ window.toggleRolePin = async function (email, currentPinned) {
 };
 
 // --- 설정 창 로직 ---
-window.openSettingsModal = function (tabName = 'general') {
+window.openSettingsModal = function (tabName = 'display') {
     if (typeof window.closeDrawer === 'function') window.closeDrawer();
     resetUsefulSettingsSubPage();
+    resetDisplaySettingsSubPage();
     if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
 
     if (settingsModalOverlay && settingsModal) {
@@ -2581,6 +2674,7 @@ window.openSettingsModal = function (tabName = 'general') {
 
 window.closeSettingsModal = function (fromPopState = false) {
     if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
+    resetDisplaySettingsSubPage();
     if (settingsModalOverlay && settingsModal) {
         settingsModalOverlay.classList.remove('active');
         settingsModal.classList.remove('active');
@@ -2622,11 +2716,17 @@ const openCommentInputSettings = document.getElementById('openCommentInputSettin
 const backFromCommentInputBtn = document.getElementById('backFromCommentInputBtn');
 const openTextSelectSettings = document.getElementById('openTextSelectSettings');
 const backFromTextSelectBtn = document.getElementById('backFromTextSelectBtn');
+const openDarkModeSettings = document.getElementById('openDarkModeSettings');
+const backToDisplayCategoriesBtn = document.getElementById('backToDisplayCategoriesBtn');
+const darkModeSettingToggle = document.getElementById('darkModeSettingToggle');
+const keepGeminiLogoBrightToggle = document.getElementById('keepGeminiLogoBrightToggle');
 
 const usefulCategoryList = document.getElementById('usefulCategoryList');
 const topButtonSettingsSubPage = document.getElementById('topButtonSettingsSubPage');
 const commentInputSettingsSubPage = document.getElementById('commentInputSettingsSubPage');
 const textSelectSettingsSubPage = document.getElementById('textSelectSettingsSubPage');
+const displayCategoryList = document.getElementById('displayCategoryList');
+const darkModeSettingsSubPage = document.getElementById('darkModeSettingsSubPage');
 
 window.isUsefulSubPageOpen = false;
 window.currentSubPageId = null;
@@ -2703,6 +2803,42 @@ window.resetUsefulSettingsSubPage = function () {
     }
 };
 
+window.openDisplaySubPage = function () {
+    if (!displayCategoryList || !darkModeSettingsSubPage) return;
+
+    displayCategoryList.style.display = 'none';
+    darkModeSettingsSubPage.style.display = 'block';
+    darkModeSettingsSubPage.classList.remove('sub-page-exit');
+    darkModeSettingsSubPage.classList.add('sub-page-enter');
+};
+
+window.closeDisplaySubPage = function () {
+    if (!displayCategoryList || !darkModeSettingsSubPage) return;
+
+    darkModeSettingsSubPage.classList.remove('sub-page-enter');
+    darkModeSettingsSubPage.classList.add('sub-page-exit');
+
+    setTimeout(() => {
+        darkModeSettingsSubPage.style.display = 'none';
+        darkModeSettingsSubPage.classList.remove('sub-page-exit');
+        displayCategoryList.style.display = 'flex';
+        displayCategoryList.classList.remove('category-list-enter');
+        void displayCategoryList.offsetWidth;
+        displayCategoryList.classList.add('category-list-enter');
+    }, 200);
+};
+
+window.resetDisplaySettingsSubPage = function () {
+    if (displayCategoryList) {
+        displayCategoryList.style.display = 'flex';
+        displayCategoryList.classList.remove('category-list-enter');
+    }
+    if (darkModeSettingsSubPage) {
+        darkModeSettingsSubPage.style.display = 'none';
+        darkModeSettingsSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
+    }
+};
+
 if (openTopButtonSettings) {
     openTopButtonSettings.addEventListener('click', () => window.openUsefulSubPage('topButtonSettingsSubPage'));
 }
@@ -2720,6 +2856,24 @@ if (openTextSelectSettings) {
 }
 if (backFromTextSelectBtn) {
     backFromTextSelectBtn.addEventListener('click', () => window.closeUsefulSubPage(false));
+}
+if (openDarkModeSettings) {
+    openDarkModeSettings.addEventListener('click', () => window.openDisplaySubPage());
+}
+if (backToDisplayCategoriesBtn) {
+    backToDisplayCategoriesBtn.addEventListener('click', () => window.closeDisplaySubPage());
+}
+if (darkModeSettingToggle) {
+    darkModeSettingToggle.checked = getSiteTheme() === 'dark';
+    darkModeSettingToggle.addEventListener('change', (event) => {
+        setSiteTheme(event.target.checked ? 'dark' : 'light');
+    });
+}
+if (keepGeminiLogoBrightToggle) {
+    keepGeminiLogoBrightToggle.checked = ACCOUNT_SETTINGS_DEFAULTS.keepGeminiLogoBright;
+    keepGeminiLogoBrightToggle.addEventListener('change', (event) => {
+        setGeminiLogoBrightness(event.target.checked);
+    });
 }
 
 if (settingsNavItems.length > 0) {
@@ -2743,6 +2897,7 @@ if (settingsNavItems.length > 0) {
 
             // 탭을 전환할 때 서브페이지를 메인 카드 목록으로 초기화
             resetUsefulSettingsSubPage();
+            resetDisplaySettingsSubPage();
             if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
         });
     });
@@ -2977,8 +3132,7 @@ function applyLogoDisplaySettings(settingValue) {
     }
 }
 
-const savedLogoSetting = localStorage.getItem('logoDisplayStyle') || 'default';
-applyLogoDisplaySettings(savedLogoSetting);
+applyLogoDisplaySettings(ACCOUNT_SETTINGS_DEFAULTS.logoDisplayStyle);
 
 if (logoDisplaySelected && logoDisplayOptions) {
     logoDisplaySelected.addEventListener('click', (e) => {
@@ -2990,8 +3144,8 @@ if (logoDisplaySelected && logoDisplayOptions) {
         item.addEventListener('click', (e) => {
             e.stopPropagation();
             const value = item.getAttribute('data-value');
-            localStorage.setItem('logoDisplayStyle', value);
             applyLogoDisplaySettings(value);
+            saveAccountSettings({ logoDisplayStyle: value });
             logoDisplayDropdown.classList.remove('open');
         });
     });
@@ -3024,7 +3178,7 @@ let _lastScrollY = window.scrollY;
 let _isScrollingDown = false;
 let _isTopButtonsHidden = false;
 let _scrollStopTimer = null;
-let _isScrollHideEnabled = localStorage.getItem('setting_scroll_hide') !== 'false';
+let _isScrollHideEnabled = ACCOUNT_SETTINGS_DEFAULTS.scrollHide;
 
 const _logoHomeBtn = document.getElementById('logoHomeBtn');
 const _headerActions = document.querySelector('.header-actions');
@@ -3035,12 +3189,15 @@ const scrollHideToggle = document.getElementById('scrollHideToggle');
 if (scrollHideToggle) {
     scrollHideToggle.checked = _isScrollHideEnabled;
     scrollHideToggle.addEventListener('change', (e) => {
-        _isScrollHideEnabled = e.target.checked;
-        localStorage.setItem('setting_scroll_hide', _isScrollHideEnabled);
-        if (!_isScrollHideEnabled) {
-            _showTopButtons();
-        }
+        setScrollHideEnabled(e.target.checked);
     });
+}
+
+function setScrollHideEnabled(enabled, save = true) {
+    _isScrollHideEnabled = Boolean(enabled);
+    if (scrollHideToggle) scrollHideToggle.checked = _isScrollHideEnabled;
+    if (!_isScrollHideEnabled) _showTopButtons();
+    if (save) saveAccountSettings({ scrollHide: _isScrollHideEnabled });
 }
 
 function _hideTopButtons() {
@@ -3101,8 +3258,8 @@ function _showTopButtons() {
     _isTopButtonsHidden = false;
 }
 
-// --- 댓글 스크롤 시 입력창 자동 숨김 로직 (기본값: false / off) ---
-let _isCommentInputScrollHideEnabled = localStorage.getItem('setting_comment_input_scroll_hide') === 'true';
+// --- 댓글 스크롤 시 입력창 자동 숨김 로직 (기본값: true / on) ---
+let _isCommentInputScrollHideEnabled = ACCOUNT_SETTINGS_DEFAULTS.commentInputScrollHide;
 let _isCommentInputHidden = false;
 let _commentScrollStopTimer = null;
 let _lastCommentScrollY = 0;
@@ -3117,13 +3274,16 @@ function updateCommentInputToggleUI() {
 // 이벤트 위임을 통해 토글 상태 변경 즉시 반영
 document.addEventListener('change', (e) => {
     if (e.target && e.target.id === 'commentInputScrollHideToggle') {
-        _isCommentInputScrollHideEnabled = e.target.checked;
-        localStorage.setItem('setting_comment_input_scroll_hide', _isCommentInputScrollHideEnabled);
-        if (!_isCommentInputScrollHideEnabled) {
-            _showCommentInput();
-        }
+        setCommentInputScrollHideEnabled(e.target.checked);
     }
 });
+
+function setCommentInputScrollHideEnabled(enabled, save = true) {
+    _isCommentInputScrollHideEnabled = Boolean(enabled);
+    updateCommentInputToggleUI();
+    if (!_isCommentInputScrollHideEnabled) _showCommentInput();
+    if (save) saveAccountSettings({ commentInputScrollHide: _isCommentInputScrollHideEnabled });
+}
 
 function _hideCommentInput() {
     const container = document.getElementById('commentInputContainer');
@@ -3207,7 +3367,7 @@ window.addEventListener('scroll', (e) => {
 
 
 // --- 텍스트 선택 방지 로직 (기본값: true / 켜짐) ---
-let _isTextSelectPreventEnabled = localStorage.getItem('setting_text_select_prevent') !== 'false';
+let _isTextSelectPreventEnabled = ACCOUNT_SETTINGS_DEFAULTS.textSelectPrevent;
 
 function updateTextSelectToggleUI() {
     const quickToggle = document.getElementById('textSelectPreventQuickToggle');
@@ -3227,35 +3387,193 @@ updateTextSelectToggleUI();
 
 document.addEventListener('change', (e) => {
     if (e.target && (e.target.id === 'textSelectPreventQuickToggle' || e.target.id === 'textSelectPreventToggle')) {
-        _isTextSelectPreventEnabled = e.target.checked;
-        localStorage.setItem('setting_text_select_prevent', _isTextSelectPreventEnabled);
-        updateTextSelectToggleUI();
+        setTextSelectPreventEnabled(e.target.checked);
     }
 });
+
+function setTextSelectPreventEnabled(enabled, save = true) {
+    _isTextSelectPreventEnabled = Boolean(enabled);
+    updateTextSelectToggleUI();
+    if (save) saveAccountSettings({ textSelectPrevent: _isTextSelectPreventEnabled });
+}
 
 
 // ==========================================
 // AI 챗봇 최근 대화 세션 관리 로직 (고정/수정/삭제/빈 상태)
 // ==========================================
 let currentAiSessionId = null;
+let aiChatSessions = [];
 
 function getAiChatSessions() {
-    try {
-        const raw = localStorage.getItem('ai_chat_sessions');
-        return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-        console.error(e);
-        return [];
+    return aiChatSessions;
+}
+
+function createAiChatMessage(role, text, attachmentPaths = []) {
+    return {
+        id: `message_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        role,
+        text,
+        attachmentPaths,
+        createdAt: Date.now()
+    };
+}
+
+function saveAiChatSessions(sessions, changedSession = null, newMessages = []) {
+    aiChatSessions = sessions;
+    if (changedSession && activeAccountUserId) {
+        void saveAiChatSessionToAccount(changedSession, newMessages);
     }
 }
 
-function saveAiChatSessions(sessions) {
+async function saveAiChatSessionToAccount(session, newMessages = []) {
+    const userId = activeAccountUserId;
+    if (!userId || !session) return;
+
     try {
-        localStorage.setItem('ai_chat_sessions', JSON.stringify(sessions));
-    } catch (e) {
-        console.error(e);
+        const sessionRef = db.collection('users').doc(userId).collection('aiChatSessions').doc(session.id);
+        await sessionRef.set({
+            title: session.title || '새 대화',
+            pinned: Boolean(session.pinned),
+            createdAt: session.createdAt || Date.now(),
+            updatedAt: session.updatedAt || Date.now()
+        }, { merge: true });
+
+        await Promise.all(newMessages.map((message) => sessionRef.collection('messages').doc(message.id).set({
+            role: message.role,
+            text: message.text,
+            attachmentPaths: Array.isArray(message.attachmentPaths) ? message.attachmentPaths : [],
+            createdAt: message.createdAt || Date.now()
+        })));
+    } catch (error) {
+        console.error('AI 대화 내역 저장 오류:', error);
     }
 }
+
+async function deleteAiChatSessionFromAccount(sessionId) {
+    const userId = activeAccountUserId;
+    if (!userId) return;
+
+    try {
+        const sessionRef = db.collection('users').doc(userId).collection('aiChatSessions').doc(sessionId);
+        const messageSnapshot = await sessionRef.collection('messages').get();
+        const attachmentPaths = messageSnapshot.docs.flatMap((messageDoc) => {
+            const paths = messageDoc.data().attachmentPaths;
+            return Array.isArray(paths) ? paths : [];
+        });
+
+        await Promise.all(attachmentPaths.map((path) => storage.ref(path).delete().catch(() => null)));
+        await Promise.all(messageSnapshot.docs.map((messageDoc) => messageDoc.ref.delete()));
+        await sessionRef.delete();
+    } catch (error) {
+        console.error('AI 대화 내역 삭제 오류:', error);
+    }
+}
+
+function normalizeAccountSettings(savedSettings = {}) {
+    const validLogoDisplayStyles = ['default', 'icon-only', 'hidden'];
+    return {
+        theme: savedSettings.theme === 'dark' ? 'dark' : 'light',
+        keepGeminiLogoBright: savedSettings.keepGeminiLogoBright === true,
+        logoDisplayStyle: validLogoDisplayStyles.includes(savedSettings.logoDisplayStyle)
+            ? savedSettings.logoDisplayStyle
+            : ACCOUNT_SETTINGS_DEFAULTS.logoDisplayStyle,
+        scrollHide: savedSettings.scrollHide !== false,
+        commentInputScrollHide: savedSettings.commentInputScrollHide !== false,
+        textSelectPrevent: savedSettings.textSelectPrevent !== false
+    };
+}
+
+function applyAccountSettings() {
+    setSiteTheme(accountSettings.theme, false);
+    setGeminiLogoBrightness(accountSettings.keepGeminiLogoBright, false);
+    applyLogoDisplaySettings(accountSettings.logoDisplayStyle);
+    setScrollHideEnabled(accountSettings.scrollHide, false);
+    setCommentInputScrollHideEnabled(accountSettings.commentInputScrollHide, false);
+    setTextSelectPreventEnabled(accountSettings.textSelectPrevent, false);
+}
+
+async function loadAiChatSessionsForAccount(userId) {
+    const sessionSnapshot = await db.collection('users').doc(userId)
+        .collection('aiChatSessions').orderBy('updatedAt', 'desc').get();
+
+    const sessions = await Promise.all(sessionSnapshot.docs.map(async (sessionDoc) => {
+        const sessionData = sessionDoc.data();
+        const messageSnapshot = await sessionDoc.ref.collection('messages').orderBy('createdAt', 'asc').get();
+        const messages = messageSnapshot.docs.map((messageDoc) => {
+            const messageData = messageDoc.data();
+            return {
+                id: messageDoc.id,
+                role: messageData.role || 'assistant',
+                text: messageData.text || '',
+                attachmentPaths: Array.isArray(messageData.attachmentPaths) ? messageData.attachmentPaths : [],
+                createdAt: messageData.createdAt || 0
+            };
+        });
+
+        return {
+            id: sessionDoc.id,
+            title: sessionData.title || '새 대화',
+            pinned: Boolean(sessionData.pinned),
+            createdAt: sessionData.createdAt || 0,
+            updatedAt: sessionData.updatedAt || 0,
+            messages
+        };
+    }));
+
+    if (activeAccountUserId === userId) {
+        aiChatSessions = sessions;
+        currentAiSessionId = null;
+        renderAiRecentChatList();
+    }
+}
+
+window.loadUserAccountData = async function (user) {
+    const userId = user?.uid;
+    if (!userId) return;
+
+    activeAccountUserId = userId;
+    isLoadingAccountSettings = true;
+    accountSettings = { ...ACCOUNT_SETTINGS_DEFAULTS };
+    applyAccountSettings();
+    aiChatSessions = [];
+    currentAiSessionId = null;
+    renderAiRecentChatList();
+
+    try {
+        const settingsRef = db.collection('users').doc(userId).collection('private').doc('settings');
+        const settingsSnapshot = await settingsRef.get();
+        if (activeAccountUserId !== userId) return;
+
+        if (settingsSnapshot.exists) {
+            accountSettings = normalizeAccountSettings(settingsSnapshot.data());
+        } else {
+            accountSettings = { ...ACCOUNT_SETTINGS_DEFAULTS };
+            await settingsRef.set({
+                ...accountSettings,
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+            });
+        }
+        applyAccountSettings();
+        await loadAiChatSessionsForAccount(userId);
+    } catch (error) {
+        console.error('계정 데이터 불러오기 오류:', error);
+    } finally {
+        if (activeAccountUserId === userId) {
+            isLoadingAccountSettings = false;
+        }
+    }
+};
+
+window.clearUserAccountData = function () {
+    activeAccountUserId = null;
+    isLoadingAccountSettings = false;
+    accountSettings = { ...ACCOUNT_SETTINGS_DEFAULTS };
+    applyAccountSettings();
+    aiChatSessions = [];
+    currentAiSessionId = null;
+    renderAiRecentChatList();
+};
 
 window.renderAiRecentChatList = function () {
     const container = document.getElementById('aiRecentChatList');
@@ -3405,36 +3723,44 @@ window.switchAiChatSession = function (sessionId) {
     renderAiRecentChatList();
 };
 
-window.saveCurrentAiMessageToSession = function (role, text) {
+window.saveCurrentAiMessageToSession = function (role, text, attachmentPaths = []) {
     let sessions = getAiChatSessions();
     let currentSession = null;
+    let newMessages = [];
 
     if (!currentAiSessionId) {
         // 첫 메시지 전송 시 세션 자동 생성 (첫 질문을 제목으로 설정)
         const newId = 'session_' + Date.now();
         currentAiSessionId = newId;
-        const titleText = role === 'user' ? text.substring(0, 18) + (text.length > 18 ? '...' : '') : '양중과학동아리 질문하기';
+        const titleSource = text.replace(/<[^>]*>/g, '').trim();
+        const titleText = role === 'user' ? titleSource.substring(0, 18) + (titleSource.length > 18 ? '...' : '') : '양중과학동아리 질문하기';
+        const welcomeMessage = createAiChatMessage('assistant', '안녕하세요! 양중과학동아리 AI 비서입니다. 🧪✨<br>과학 현상에 대한 질문이나 동아리 활동에 대해 궁금한 점이 있다면 무엇이든 물어보세요!');
+        const userMessage = createAiChatMessage(role, text, attachmentPaths);
         currentSession = {
             id: newId,
             title: titleText,
             messages: [
-                { role: 'assistant', text: '안녕하세요! 양중과학동아리 AI 비서입니다. 🧪✨<br>과학 현상에 대한 질문이나 동아리 활동에 대해 궁금한 점이 있다면 무엇이든 물어보세요!' },
-                { role: role, text: text }
+                welcomeMessage,
+                userMessage
             ],
             pinned: false,
+            createdAt: Date.now(),
             updatedAt: Date.now()
         };
         sessions.unshift(currentSession);
+        newMessages = [welcomeMessage, userMessage];
     } else {
         currentSession = sessions.find(s => s.id === currentAiSessionId);
         if (currentSession) {
             if (!currentSession.messages) currentSession.messages = [];
-            currentSession.messages.push({ role: role, text: text });
+            const message = createAiChatMessage(role, text, attachmentPaths);
+            currentSession.messages.push(message);
             currentSession.updatedAt = Date.now();
+            newMessages = [message];
         }
     }
 
-    saveAiChatSessions(sessions);
+    saveAiChatSessions(sessions, currentSession, newMessages);
     renderAiRecentChatList();
 };
 
@@ -3443,7 +3769,8 @@ window.togglePinAiChatSession = function (sessionId) {
     const target = sessions.find(s => s.id === sessionId);
     if (target) {
         target.pinned = !target.pinned;
-        saveAiChatSessions(sessions);
+        target.updatedAt = Date.now();
+        saveAiChatSessions(sessions, target);
         renderAiRecentChatList();
     }
 };
@@ -3457,7 +3784,7 @@ window.renameAiChatSession = function (sessionId) {
     if (newTitle !== null && newTitle.trim() !== '') {
         target.title = newTitle.trim();
         target.updatedAt = Date.now();
-        saveAiChatSessions(sessions);
+        saveAiChatSessions(sessions, target);
         renderAiRecentChatList();
     }
 };
@@ -3468,6 +3795,7 @@ window.deleteAiChatSession = function (sessionId) {
     let sessions = getAiChatSessions();
     sessions = sessions.filter(s => s.id !== sessionId);
     saveAiChatSessions(sessions);
+    void deleteAiChatSessionFromAccount(sessionId);
 
     if (currentAiSessionId === sessionId) {
         startNewAiChat();

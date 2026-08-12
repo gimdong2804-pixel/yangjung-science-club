@@ -115,6 +115,9 @@ auth.onAuthStateChanged(async (user) => {
             postAuthorInput.value = '회장 김동현';
             postAuthorInput.placeholder = '작성자 이름';
         }
+        if (typeof window.loadUserAccountData === 'function') {
+            await window.loadUserAccountData(currentUser);
+        }
         const currentSort = document.querySelector('.custom-dropdown-option.active')?.getAttribute('data-value') || 'latest';
         loadPosts(currentSort);
         return;
@@ -123,6 +126,9 @@ auth.onAuthStateChanged(async (user) => {
     const postAuthorInput = document.getElementById('postAuthor');
     if (user) {
         currentUser = user;
+        if (typeof window.loadUserAccountData === 'function') {
+            await window.loadUserAccountData(user);
+        }
 
         // 직책 정보 조회
         try {
@@ -166,6 +172,9 @@ auth.onAuthStateChanged(async (user) => {
         loadPosts(currentSort);
     } else {
         currentUser = null;
+        if (typeof window.clearUserAccountData === 'function') {
+            window.clearUserAccountData();
+        }
         // UI 업데이트 (애니메이션 적용)
         userProfileInfo.classList.add('fade-out');
         authUITimeout = setTimeout(() => {

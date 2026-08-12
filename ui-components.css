@@ -75,6 +75,27 @@
     color: var(--text-secondary);
 }
 
+.settings-gemini-logo {
+    width: 20px;
+    height: 20px;
+    margin-top: 0.2rem;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+/* 다크 모드에서도 Gemini 버튼을 라이트 모드와 동일하게 유지 */
+html:not([data-theme="light"]).gemini-logo-bright .ai-chatbot-fab {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+html:not([data-theme="light"]).gemini-logo-bright .comment-gemini-btn {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
 #settingsModal {
     top: 0;
     left: 0;
@@ -87,10 +108,11 @@
     transform: translateX(100%);
     padding: 3rem 1.5rem;
     background: var(--bg-color);
+    color: var(--text-primary);
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s ease, visibility 0.35s ease;
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s ease, visibility 0.35s ease, background-color 0.24s ease, color 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
 }
 
 #settingsModal.active {
@@ -116,7 +138,7 @@
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
-        transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease, visibility 0.3s ease;
+        transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease, visibility 0.3s ease, background-color 0.24s ease, color 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
     }
 
     #settingsModal.active {
@@ -697,6 +719,21 @@ body:has(.modal-overlay.active) {
     padding: 1rem 1.5rem;
     background: rgba(255, 255, 255, 0.02);
     flex-shrink: 0;
+    transition: background-color 0.24s ease, border-color 0.24s ease;
+}
+
+.settings-sidebar-title,
+.settings-content,
+.settings-header-mobile,
+.settings-sub-header,
+.settings-item,
+.settings-label,
+.settings-card-group,
+.settings-card-icon,
+.settings-card-title,
+.settings-card-desc,
+.settings-sub-title {
+    transition: background-color 0.24s ease, border-color 0.24s ease, color 0.24s ease;
 }
 
 .settings-nav-item {
