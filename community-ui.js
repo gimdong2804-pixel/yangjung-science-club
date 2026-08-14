@@ -5,7 +5,7 @@ document.querySelectorAll('.drawer-menu a:not(#greetingLink):not(#goalLink):not(
         e.preventDefault();
         const title = item.innerText.trim();
         alert(title + ' 페이지로 이동 기능은 아직 준비 중입니다.');
-        closeDrawer();
+        if (typeof closeDrawer === 'function') closeDrawer();
     });
 });
 
@@ -131,7 +131,8 @@ document.getElementById('lightboxDescBtn').addEventListener('click', async (e) =
     descText.style.display = '';
 
     if (lightboxMeta.preUpload) {
-        const desc = commentAttachedImages[lightboxMeta.imageIndex]?.description || '';
+        const attachedImages = window.commentAttachedImages || [];
+        const desc = attachedImages[lightboxMeta.imageIndex]?.description || '';
         descText.textContent = desc || '설명이 없습니다.';
         descText.className = 'lightbox-desc-text' + (desc ? '' : ' empty');
         editBtn.style.display = '';
@@ -216,8 +217,9 @@ document.getElementById('lightboxDescSave').addEventListener('click', async (e) 
     const saveBtn = document.getElementById('lightboxDescSave');
 
     if (lightboxMeta.preUpload) {
-        if (commentAttachedImages[lightboxMeta.imageIndex]) {
-            commentAttachedImages[lightboxMeta.imageIndex].description = desc;
+        const attachedImages = window.commentAttachedImages || [];
+        if (attachedImages[lightboxMeta.imageIndex]) {
+            attachedImages[lightboxMeta.imageIndex].description = desc;
         }
         const descText = document.getElementById('lightboxDescText');
         descText.textContent = desc || '설명이 없습니다.';

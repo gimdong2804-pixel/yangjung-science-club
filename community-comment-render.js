@@ -7,7 +7,11 @@ window.currentCommentDocs = [];
 window.replyTarget = null;
 
 function isPresidentUser(user = currentUser) {
-    return !!(user && isAdmin(user.email));
+    if (!user) return false;
+    if (typeof isAdmin === 'function' && isAdmin(user.email)) return true;
+    if (user.email === PRESIDENT_EMAIL) return true;
+    if (typeof isPresidentOrOwner === 'function' && isPresidentOrOwner(user.email)) return true;
+    return false;
 }
 
 function escapeHtml(value) {
@@ -266,16 +270,22 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
 
 function renderFlatReply(comment, tree, postId, depth = 1) {
     const isDeleted = !!comment.deleted;
-    const isPresidentComment = !isDeleted && ((comment.author || '').includes('회장') || isAdmin(comment.email));
-    const isPresident = isPresidentUser();
-    const canDelete = !!(currentUser && !isDeleted && (isPresident || comment.uid === currentUser.uid));
-    const canPin = !!(isPresident && !isDeleted);
+    const isPresidentComment = !isDeleted && ((comment.author || '').includes('회장') || (typeof isAdmin === 'function' && isAdmin(comment.email)));
+    const isPresident = typeof isPresidentUser === 'function' ? isPresidentUser() : (currentUser && typeof isAdmin === 'function' && isAdmin(currentUser.email));
+    const isCommentAuthor = !isDeleted && !!(currentUser && (comment.uid === currentUser.uid || comment.authorUid === currentUser.uid || comment.email === currentUser.email));
+    const currentPost = window.currentPostData;
+    const isPostAuthor = !isDeleted && !!(currentUser && currentPost && (currentPost.uid === currentUser.uid || currentPost.email === currentUser.email));
+
+    // 회장은 모든 권한(수정, 삭제, 고정), 일반인은 본인 댓글 수정/삭제 + 본인 게시물인 경우 댓글 고정 가능
+    const canDelete = isPresident || isCommentAuthor;
+    const canEdit = isPresident || isCommentAuthor;
+    const canPin = !isDeleted && (isPresident || isPostAuthor);
     const isLiked = !!(comment.likedUsers && currentUser && comment.likedUsers.includes(currentUser.uid));
     const safePostId = toJsString(postId);
     const safeCommentId = toJsString(comment.id);
     const pinned = !!(comment.pinned && !isDeleted);
     const authorName = isDeleted ? '삭제된 댓글' : (comment.author || '사용자');
-    const cTime = formatDate(comment.createdAt) + (comment.edited && !isDeleted ? ' <span style="font-size: 0.8em; color: var(--text-secondary);">(수정됨)</span>' : '');
+    const cTime = (typeof formatDate === 'function' ? formatDate(comment.createdAt) : '') + (comment.edited && !isDeleted ? ' <span style="font-size: 0.8em; color: var(--text-secondary);">(수정됨)</span>' : '');
     const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.08rem 0.35rem; border-radius: 4px; font-weight: bold; margin-left: 0.4rem; white-space: nowrap; flex-shrink: 0;">공식 답변</span>' : '';
     let depthIcon = '';
     if (depth >= 4) {
@@ -295,7 +305,7 @@ function renderFlatReply(comment, tree, postId, depth = 1) {
     const attachmentsHtml = renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDeleted);
 
     const deleteBtn = canDelete ? `<button type="button" class="board-action-btn delete-btn" onclick="event.stopPropagation(); deleteComment('${safePostId}', '${safeCommentId}', true)" title="답글 삭제"><i class="fa-solid fa-trash-can"></i></button>` : '';
-    const editBtn = canDelete ? `<button type="button" class="board-action-btn edit-btn role-edit-btn" onclick="event.stopPropagation(); editComment('${safePostId}', '${safeCommentId}')" title="답글 수정" style="color: #007bff !important;"><i class="fa-solid fa-pen-to-square" style="color: #007bff !important;"></i></button>` : '';
+    const editBtn = canEdit ? `<button type="button" class="board-action-btn edit-btn role-edit-btn" onclick="event.stopPropagation(); editComment('${safePostId}', '${safeCommentId}')" title="답글 수정" style="color: #007bff !important;"><i class="fa-solid fa-pen-to-square" style="color: #007bff !important;"></i></button>` : '';
     const pinBtn = canPin ? `<button type="button" class="board-action-btn pin-toggle-btn ${pinned ? 'active' : ''}" onclick="togglePinComment('${safePostId}', '${safeCommentId}', ${pinned})" title="${pinned ? '댓글 고정 해제' : '댓글 고정'}"><i class="fa-solid fa-thumbtack"></i></button>` : '';
     const replyBtn = !isDeleted ? `<button type="button" class="reply-action-btn" onclick="startReplyTarget('${safePostId}', '${safeCommentId}')" title="답글"><i class="fa-regular fa-comment-dots"></i> 답글</button>` : '';
     const heartClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
@@ -372,10 +382,16 @@ function renderFlatReply(comment, tree, postId, depth = 1) {
 
 function renderCommentBranch(comment, depth, tree, postId) {
     const isDeleted = !!comment.deleted;
-    const isPresidentComment = !isDeleted && ((comment.author || '').includes('회장') || isAdmin(comment.email));
-    const isPresident = isPresidentUser();
-    const canDelete = !!(currentUser && !isDeleted && (isPresident || comment.uid === currentUser.uid));
-    const canPin = !!(isPresident && !isDeleted);
+    const isPresidentComment = !isDeleted && ((comment.author || '').includes('회장') || (typeof isAdmin === 'function' && isAdmin(comment.email)));
+    const isPresident = typeof isPresidentUser === 'function' ? isPresidentUser() : (currentUser && typeof isAdmin === 'function' && isAdmin(currentUser.email));
+    const isCommentAuthor = !isDeleted && !!(currentUser && (comment.uid === currentUser.uid || comment.authorUid === currentUser.uid || comment.email === currentUser.email));
+    const currentPost = window.currentPostData;
+    const isPostAuthor = !isDeleted && !!(currentUser && currentPost && (currentPost.uid === currentUser.uid || currentPost.email === currentUser.email));
+
+    // 회장은 모든 권한(수정, 삭제, 고정), 일반인은 본인 댓글 수정/삭제 + 본인 게시물인 경우 댓글 고정 가능
+    const canDelete = isPresident || isCommentAuthor;
+    const canEdit = isPresident || isCommentAuthor;
+    const canPin = !isDeleted && (isPresident || isPostAuthor);
     const isLiked = !!(comment.likedUsers && currentUser && comment.likedUsers.includes(currentUser.uid));
     const replyCount = tree.countDescendants(comment.id);
     const isExpanded = window.expandedCommentIds.has(comment.id);
@@ -385,7 +401,7 @@ function renderCommentBranch(comment, depth, tree, postId) {
     const safeCommentId = toJsString(comment.id);
     const pinned = !!(comment.pinned && !isDeleted);
     const authorName = isDeleted ? '삭제된 댓글' : (comment.author || '사용자');
-    const cTime = formatDate(comment.createdAt) + (comment.edited && !isDeleted ? ' <span style="font-size: 0.8em; color: var(--text-secondary);">(수정됨)</span>' : '');
+    const cTime = (typeof formatDate === 'function' ? formatDate(comment.createdAt) : '') + (comment.edited && !isDeleted ? ' <span style="font-size: 0.8em; color: var(--text-secondary);">(수정됨)</span>' : '');
     const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem; white-space: nowrap; flex-shrink: 0;">공식 답변</span>' : '';
     const pinBadge = `<div class="pin-badge-wrapper ${pinned ? 'active' : ''}">
                                 <span class="pin-badge-ui" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; display: inline-block;">
@@ -402,8 +418,8 @@ function renderCommentBranch(comment, depth, tree, postId) {
                     <i class="fa-solid fa-trash-can"></i>
                 </button>
             ` : '';
-    const editBtn = canDelete ? `
-                <button type="button" class="board-action-btn edit-btn role-edit-btn" onclick="event.stopPropagation(); editComment('${safePostId}', '${safeCommentId}')" title="답글 수정" style="color: #007bff !important;">
+    const editBtn = canEdit ? `
+                <button type="button" class="board-action-btn edit-btn role-edit-btn" onclick="event.stopPropagation(); editComment('${safePostId}', '${safeCommentId}')" title="댓글 수정" style="color: #007bff !important;">
                     <i class="fa-solid fa-pen-to-square" style="color: #007bff !important;"></i>
                 </button>
             ` : '';
@@ -879,10 +895,16 @@ window.cancelReplyTarget = function () {
     if (window.editTarget) {
         window.editTarget = null;
         newValue = '';
-        if (typeof commentAttachedImages !== 'undefined') {
-            commentAttachedImages = [];
-            if (typeof renderCommentImagePreview === 'function') {
-                renderCommentImagePreview();
+        if (typeof window.clearCommentAttachments === 'function') {
+            window.clearCommentAttachments();
+        } else if (typeof window.commentAttachedImages !== 'undefined') {
+            window.commentAttachedImages = [];
+            window.commentAttachedVideos = [];
+            window.commentAttachedAudios = [];
+            window.commentAttachedPdfs = [];
+            window.commentAttachedHtmls = [];
+            if (typeof renderCommentAttachmentPreview === 'function') {
+                renderCommentAttachmentPreview();
             }
         }
     }

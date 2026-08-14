@@ -46,12 +46,55 @@ async function compressImage(file, maxWidth = 1920, maxHeight = 1920, quality = 
     });
 }
 
-// 댓글/답글 첨부파일 데이터 상태
-let commentAttachedImages = [];
-let commentAttachedVideos = [];
-let commentAttachedAudios = [];
-let commentAttachedPdfs = [];
-let commentAttachedHtmls = [];
+// 댓글/답글 첨부파일 데이터 상태 (전역 공유 지원)
+window.commentAttachedImages = window.commentAttachedImages || [];
+window.commentAttachedVideos = window.commentAttachedVideos || [];
+window.commentAttachedAudios = window.commentAttachedAudios || [];
+window.commentAttachedPdfs = window.commentAttachedPdfs || [];
+window.commentAttachedHtmls = window.commentAttachedHtmls || [];
+
+var commentAttachedImages = window.commentAttachedImages;
+var commentAttachedVideos = window.commentAttachedVideos;
+var commentAttachedAudios = window.commentAttachedAudios;
+var commentAttachedPdfs = window.commentAttachedPdfs;
+var commentAttachedHtmls = window.commentAttachedHtmls;
+
+// 외부 파일에서 첨부파일 상태를 안전하게 설정하는 헬퍼
+window.setCommentAttachments = function (attachments = {}) {
+    window.commentAttachedImages = (attachments.images || []).map(img => typeof img === 'string' ? { file: null, dataUrl: img } : img);
+    window.commentAttachedVideos = (attachments.videos || []).map(v => typeof v === 'string' ? { file: null, dataUrl: v, name: '동영상' } : (v.dataUrl ? v : { file: null, dataUrl: v.url, name: v.name || '동영상' }));
+    window.commentAttachedAudios = (attachments.audios || []).map(a => typeof a === 'string' ? { file: null, dataUrl: a, name: '음성 파일' } : (a.dataUrl ? a : { file: null, dataUrl: a.url, name: a.name || '음성 파일' }));
+    window.commentAttachedPdfs = (attachments.pdfs || []).map(p => typeof p === 'string' ? { file: null, dataUrl: p, name: 'PDF 문서' } : (p.dataUrl ? p : { file: null, dataUrl: p.url, name: p.name || 'PDF 문서' }));
+    window.commentAttachedHtmls = (attachments.htmls || []).map(h => typeof h === 'string' ? { file: null, dataUrl: h, name: 'HTML 문서' } : (h.dataUrl ? h : { file: null, dataUrl: h.url, name: h.name || 'HTML 문서' }));
+
+    commentAttachedImages = window.commentAttachedImages;
+    commentAttachedVideos = window.commentAttachedVideos;
+    commentAttachedAudios = window.commentAttachedAudios;
+    commentAttachedPdfs = window.commentAttachedPdfs;
+    commentAttachedHtmls = window.commentAttachedHtmls;
+
+    if (typeof renderCommentAttachmentPreview === 'function') {
+        renderCommentAttachmentPreview();
+    }
+};
+
+window.clearCommentAttachments = function () {
+    window.commentAttachedImages = [];
+    window.commentAttachedVideos = [];
+    window.commentAttachedAudios = [];
+    window.commentAttachedPdfs = [];
+    window.commentAttachedHtmls = [];
+
+    commentAttachedImages = window.commentAttachedImages;
+    commentAttachedVideos = window.commentAttachedVideos;
+    commentAttachedAudios = window.commentAttachedAudios;
+    commentAttachedPdfs = window.commentAttachedPdfs;
+    commentAttachedHtmls = window.commentAttachedHtmls;
+
+    if (typeof renderCommentAttachmentPreview === 'function') {
+        renderCommentAttachmentPreview();
+    }
+};
 
 const commentAttachBtn = document.getElementById('commentAttachBtn');
 const commentAttachMenu = document.getElementById('commentAttachMenu');
@@ -1110,12 +1153,16 @@ if (commentSubmitBtn && commentInput) {
             }
 
             commentInput.value = '';
-            commentAttachedImages = [];
-            commentAttachedVideos = [];
-            commentAttachedAudios = [];
-            commentAttachedPdfs = [];
-            commentAttachedHtmls = [];
-            renderCommentAttachmentPreview();
+            if (typeof window.clearCommentAttachments === 'function') {
+                window.clearCommentAttachments();
+            } else {
+                commentAttachedImages = [];
+                commentAttachedVideos = [];
+                commentAttachedAudios = [];
+                commentAttachedPdfs = [];
+                commentAttachedHtmls = [];
+                renderCommentAttachmentPreview();
+            }
             window.replyTarget = null;
             updateReplyTargetUI('');
         } catch (e) {

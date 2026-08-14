@@ -84,6 +84,7 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
         updateReplyTargetUI();
     }
     currentPostId = id;
+    window.currentPostData = post || null;
     currentDetailMode = mode;
 
     const isFullscreen = currentDetailMode === 'fullscreen';
@@ -172,6 +173,7 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
     postUnsubscribe = db.collection('posts').doc(id).onSnapshot(docSnap => {
         if (!docSnap.exists) return;
         const currentPost = docSnap.data();
+        window.currentPostData = currentPost;
 
         const existingBtn = document.getElementById('detailLikeBtn');
         const existingHeart = existingBtn ? existingBtn.querySelector('i') : null;
@@ -852,7 +854,9 @@ window.togglePin = async function (id, currentPinned) {
 };
 
 window.togglePinComment = async function (postId, commentId, currentPinned) {
-    if (!currentUser || !isAdmin(currentUser.email)) return;
+    const isPresident = typeof isPresidentUser === 'function' ? isPresidentUser() : (currentUser && isAdmin(currentUser.email));
+    const isPostAuthor = currentUser && window.currentPostData && (window.currentPostData.uid === currentUser.uid || window.currentPostData.email === currentUser.email);
+    if (!currentUser || (!isPresident && !isPostAuthor)) return;
     const btn = window.event ? (window.event.currentTarget || window.event.target.closest('.pin-toggle-btn')) : null;
     let isPinned = currentPinned;
     if (btn) {
@@ -969,12 +973,20 @@ window.editComment = async function (postId, commentId) {
 
         window.replyTarget = null; // 수정 모드로 진입하므로 답글 모드 해제
 
-        if (typeof commentAttachedImages !== 'undefined') {
-            commentAttachedImages = (comment.images || []).map(imgUrl => ({ file: null, dataUrl: imgUrl }));
-            commentAttachedVideos = (comment.videos || []).map(v => typeof v === 'string' ? { file: null, dataUrl: v, name: '동영상' } : { file: null, dataUrl: v.url, name: v.name || '동영상' });
-            commentAttachedAudios = (comment.audios || []).map(a => typeof a === 'string' ? { file: null, dataUrl: a, name: '음성 파일' } : { file: null, dataUrl: a.url, name: a.name || '음성 파일' });
-            commentAttachedPdfs = (comment.pdfs || []).map(p => typeof p === 'string' ? { file: null, dataUrl: p, name: 'PDF 문서' } : { file: null, dataUrl: p.url, name: p.name || 'PDF 문서' });
-            commentAttachedHtmls = (comment.htmls || []).map(h => typeof h === 'string' ? { file: null, dataUrl: h, name: 'HTML 문서' } : { file: null, dataUrl: h.url, name: h.name || 'HTML 문서' });
+        if (typeof window.setCommentAttachments === 'function') {
+            window.setCommentAttachments({
+                images: comment.images || [],
+                videos: comment.videos || [],
+                audios: comment.audios || [],
+                pdfs: comment.pdfs || [],
+                htmls: comment.htmls || []
+            });
+        } else {
+            window.commentAttachedImages = (comment.images || []).map(imgUrl => ({ file: null, dataUrl: imgUrl }));
+            window.commentAttachedVideos = (comment.videos || []).map(v => typeof v === 'string' ? { file: null, dataUrl: v, name: '동영상' } : { file: null, dataUrl: v.url, name: v.name || '동영상' });
+            window.commentAttachedAudios = (comment.audios || []).map(a => typeof a === 'string' ? { file: null, dataUrl: a, name: '음성 파일' } : { file: null, dataUrl: a.url, name: a.name || '음성 파일' });
+            window.commentAttachedPdfs = (comment.pdfs || []).map(p => typeof p === 'string' ? { file: null, dataUrl: p, name: 'PDF 문서' } : { file: null, dataUrl: p.url, name: p.name || 'PDF 문서' });
+            window.commentAttachedHtmls = (comment.htmls || []).map(h => typeof h === 'string' ? { file: null, dataUrl: h, name: 'HTML 문서' } : { file: null, dataUrl: h.url, name: h.name || 'HTML 문서' });
 
             if (typeof renderCommentAttachmentPreview === 'function') {
                 renderCommentAttachmentPreview();
@@ -1118,7 +1130,9 @@ window.updateMultiDeleteUI = function () {
 };
 
 window.executeMultiPin = async function () {
-    if (!currentUser || !isAdmin(currentUser.email)) return;
+    const isPresident = typeof isPresidentUser === 'function' ? isPresidentUser() : (currentUser && isAdmin(currentUser.email));
+    const isPostAuthor = currentUser && window.currentPostData && (window.currentPostData.uid === currentUser.uid || window.currentPostData.email === currentUser.email);
+    if (!currentUser || (!isPresident && !isPostAuthor)) return;
     const checkboxes = document.querySelectorAll('.comment-select-cb:checked');
     if (checkboxes.length === 0) return;
     if (!await window.customConfirm(`선택한 ${checkboxes.length}개의 댓글 고정 상태를 전환하시겠습니까?`, '댓글 고정 설정')) return;
