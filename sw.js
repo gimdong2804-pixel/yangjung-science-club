@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yangjung-science-club-v33';
+const CACHE_NAME = 'yangjung-science-club-v34';
 const urlsToCache = [
   './',
   './index.html',
@@ -30,6 +30,9 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') {
+    return;
+  }
   event.respondWith(
     fetch(event.request).then(response => {
       // Add fetched files to the cache
