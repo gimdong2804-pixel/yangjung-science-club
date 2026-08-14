@@ -304,7 +304,7 @@ function renderFlatReply(comment, tree, postId, depth = 1) {
 
     const attachmentsHtml = renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDeleted);
 
-    const deleteBtn = canDelete ? `<button type="button" class="board-action-btn delete-btn" onclick="event.stopPropagation(); deleteComment('${safePostId}', '${safeCommentId}', true)" title="답글 삭제"><i class="fa-solid fa-trash-can"></i></button>` : '';
+    const deleteBtn = canDelete ? `<button type="button" class="board-action-btn delete-btn" onclick="event.stopPropagation(); deleteComment('${safePostId}', '${safeCommentId}', true)" title="답글 삭제" style="color: #ff6b6b !important;"><i class="fa-solid fa-trash-can" style="color: #ff6b6b !important;"></i></button>` : '';
     const editBtn = canEdit ? `<button type="button" class="board-action-btn edit-btn role-edit-btn" onclick="event.stopPropagation(); editComment('${safePostId}', '${safeCommentId}')" title="답글 수정" style="color: #007bff !important;"><i class="fa-solid fa-pen-to-square" style="color: #007bff !important;"></i></button>` : '';
     const pinBtn = canPin ? `<button type="button" class="board-action-btn pin-toggle-btn ${pinned ? 'active' : ''}" onclick="togglePinComment('${safePostId}', '${safeCommentId}', ${pinned})" title="${pinned ? '댓글 고정 해제' : '댓글 고정'}"><i class="fa-solid fa-thumbtack"></i></button>` : '';
     const replyBtn = !isDeleted ? `<button type="button" class="reply-action-btn" onclick="startReplyTarget('${safePostId}', '${safeCommentId}')" title="답글"><i class="fa-regular fa-comment-dots"></i> 답글</button>` : '';
@@ -414,8 +414,8 @@ function renderCommentBranch(comment, depth, tree, postId) {
                 </label>
             ` : '';
     const deleteBtn = canDelete ? `
-                <button type="button" class="board-action-btn delete-btn" onclick="event.stopPropagation(); deleteComment('${safePostId}', '${safeCommentId}')" title="댓글 삭제">
-                    <i class="fa-solid fa-trash-can"></i>
+                <button type="button" class="board-action-btn delete-btn" onclick="event.stopPropagation(); deleteComment('${safePostId}', '${safeCommentId}')" title="댓글 삭제" style="color: #ff6b6b !important;">
+                    <i class="fa-solid fa-trash-can" style="color: #ff6b6b !important;"></i>
                 </button>
             ` : '';
     const editBtn = canEdit ? `

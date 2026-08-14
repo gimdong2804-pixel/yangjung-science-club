@@ -537,8 +537,11 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
             }
 
             const isCommentAuthor = currentUser && (c.uid === currentUser.uid || isAdmin(currentUser.email));
-            const isPresident = currentUser && isAdmin(currentUser.email);
+            const isPresident = typeof isPresidentUser === 'function' ? isPresidentUser() : (currentUser && isAdmin(currentUser.email));
+            const isPostAuthor = currentUser && window.currentPostData && (window.currentPostData.uid === currentUser.uid || window.currentPostData.email === currentUser.email);
             const canDelete = isPresident || isCommentAuthor;
+            const canEdit = isPresident || isCommentAuthor;
+            const canPin = !c.deleted && (isPresident || isPostAuthor);
 
             const cCheckbox = canDelete ? `
                         <label class="comment-checkbox-wrapper" style="align-items: center; margin-top: 0.2rem; padding-right: 0;">
@@ -546,18 +549,18 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                         </label>
                     ` : '';
 
-            const cDeleteBtn = isCommentAuthor ? `
-                        <button type="button" class="board-action-btn delete-btn" onclick="deleteComment('${id}', '${cid}')" title="댓글 삭제">
-                            <i class="fa-solid fa-trash-can"></i>
+            const cDeleteBtn = canDelete ? `
+                        <button type="button" class="board-action-btn delete-btn" onclick="deleteComment('${id}', '${cid}')" title="댓글 삭제" style="color: #ff6b6b !important;">
+                            <i class="fa-solid fa-trash-can" style="color: #ff6b6b !important;"></i>
                         </button>
                     ` : '';
-            const cEditBtn = isCommentAuthor ? `
-                        <button type="button" class="board-action-btn edit-btn role-edit-btn" onclick="event.stopPropagation(); editComment('${id}', '${cid}')" title="답글 수정" style="color: #007bff !important;">
+            const cEditBtn = canEdit ? `
+                        <button type="button" class="board-action-btn edit-btn role-edit-btn" onclick="event.stopPropagation(); editComment('${id}', '${cid}')" title="댓글 수정" style="color: #007bff !important;">
                             <i class="fa-solid fa-pen-to-square" style="color: #007bff !important;"></i>
                         </button>
                     ` : '';
 
-            const cPinBtn = isPresident ? `
+            const cPinBtn = canPin ? `
                         <button type="button" class="board-action-btn pin-toggle-btn ${c.pinned ? 'active' : ''}" onclick="togglePinComment('${id}', '${cid}', ${c.pinned || false})" title="${c.pinned ? '댓글 고정 해제' : '댓글 고정'}">
                             <i class="fa-solid fa-thumbtack"></i>
                         </button>

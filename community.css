@@ -1984,33 +1984,50 @@ body.multi-select-active .comment-header .board-time {
     .mobile-show {
         display: flex !important;
         align-items: center;
-        gap: 0.5rem !important;
+        gap: 0.35rem !important;
     }
 
-    /* 고정, 삭제, 수정 버튼 스타일링 (원형 터치 타겟) */
+    /* 게시물 카드(바깥)와 동일하게 투명 배경 및 고유 색상 적용 */
     .mobile-show .board-action-btn {
-        width: 32px !important;
-        height: 32px !important;
+        width: auto !important;
+        min-width: 28px !important;
+        height: 28px !important;
         display: inline-flex !important;
         align-items: center;
         justify-content: center;
-        padding: 0 !important;
-        font-size: 0.9rem !important;
-        border-radius: 50% !important;
-        background: var(--card-bg, rgba(255, 255, 255, 0.05)) !important;
-        border: 1px solid var(--glass-border) !important;
-        color: var(--text-secondary) !important;
+        padding: 0 0.25rem !important;
+        font-size: 0.88rem !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 6px !important;
+        color: var(--text-primary) !important;
+        box-shadow: none !important;
         cursor: pointer;
     }
 
-    .mobile-show .board-action-btn:hover {
-        background: var(--glass-border) !important;
+    .mobile-show .board-action-btn.delete-btn,
+    .mobile-show .board-action-btn.delete-btn i {
+        color: #ff6b6b !important;
+    }
+
+    .mobile-show .board-action-btn.edit-btn,
+    .mobile-show .board-action-btn.role-edit-btn,
+    .mobile-show .board-action-btn.edit-btn i,
+    .mobile-show .board-action-btn.role-edit-btn i {
+        color: #007bff !important;
+    }
+
+    .mobile-show .board-action-btn.pin-toggle-btn {
         color: var(--text-primary) !important;
     }
 
-    .mobile-show .board-action-btn.pin-toggle-btn.active {
+    .mobile-show .board-action-btn.pin-toggle-btn.active,
+    .mobile-show .board-action-btn.pin-toggle-btn.active i {
         color: var(--accent-color) !important;
-        border-color: var(--accent-color) !important;
+    }
+
+    .mobile-show .board-action-btn:hover {
+        background: rgba(59, 130, 246, 0.08) !important;
     }
 }
 
