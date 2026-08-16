@@ -75,26 +75,7 @@
     color: var(--text-secondary);
 }
 
-.settings-gemini-logo {
-    width: 20px;
-    height: 20px;
-    margin-top: 0.2rem;
-    object-fit: contain;
-    flex-shrink: 0;
-}
 
-/* 다크 모드에서도 Gemini 버튼을 라이트 모드와 동일하게 유지 */
-html:not([data-theme="light"]).gemini-logo-bright .ai-chatbot-fab {
-    background: #ffffff !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06);
-}
-
-html:not([data-theme="light"]).gemini-logo-bright .comment-gemini-btn {
-    background: #ffffff !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-}
 
 #settingsModal {
     top: 0;
@@ -1323,22 +1304,6 @@ body:has(.modal-overlay.active) {
     transform: translateX(-50%) translateY(0);
 }
 
-.ai-chatbot-header #aiModelDropdownContainer {
-    position: relative !important;
-}
-
-.ai-chatbot-header #aiModelDropdownContainer .custom-dropdown-options {
-    left: 50% !important;
-    right: auto !important;
-    transform: translateX(-50%) translateY(-10px) !important;
-}
-
-.ai-chatbot-header #aiModelDropdownContainer.open .custom-dropdown-options {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0) !important;
-}
-
 .custom-dropdown-option {
     padding: 0.6rem 1rem;
     border-radius: 8px;
@@ -1360,114 +1325,6 @@ body:has(.modal-overlay.active) {
     color: var(--accent-color);
     font-weight: 600;
     background: rgba(59, 130, 246, 0.1);
-}
-
-/* AI 모델 전용 공식 앱 스타일 드롭다운 카드 및 텍스트 애니메이션 */
-#aiModelSelectedText {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.1rem;
-}
-
-.ai-model-dropdown-options {
-    background: rgba(30, 41, 59, 0.5) !important;
-    backdrop-filter: blur(20px) saturate(1.4) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(1.4) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35) !important;
-    padding: 0.6rem !important;
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    overflow: hidden;
-}
-
-[data-theme="light"] .ai-model-dropdown-options {
-    background: rgba(255, 255, 255, 0.6) !important;
-    backdrop-filter: blur(20px) saturate(1.4) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(1.4) !important;
-    border-color: rgba(0, 0, 0, 0.1) !important;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12) !important;
-}
-
-.model-option-card {
-    padding: 0.85rem 1rem !important;
-    border-radius: 14px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    cursor: pointer;
-    transition: all 0.2s ease !important;
-    position: relative;
-    box-sizing: border-box;
-}
-
-.model-option-left {
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-    width: 100%;
-}
-
-.model-check-icon {
-    width: 18px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.85rem;
-    color: var(--accent-color, #3b82f6);
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-}
-
-.model-option-card.active .model-check-icon {
-    opacity: 1;
-    visibility: visible;
-}
-
-.model-option-logo {
-    width: 22px;
-    height: 22px;
-    object-fit: contain;
-    flex-shrink: 0;
-}
-
-.model-option-text {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-}
-
-.model-option-text .model-title {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    line-height: 1.3;
-}
-
-.model-option-text .model-desc {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    line-height: 1.3;
-}
-
-.model-option-card:hover {
-    background: rgba(59, 130, 246, 0.08) !important;
-}
-
-.model-option-card.active {
-    background: rgba(59, 130, 246, 0.12) !important;
-}
-
-[data-theme="light"] .model-option-card:hover {
-    background: rgba(0, 0, 0, 0.04) !important;
-}
-
-[data-theme="light"] .model-option-card.active {
-    background: rgba(59, 130, 246, 0.08) !important;
 }
 
 /* 로그인/프로필 섹션 스타일 */

@@ -299,19 +299,19 @@ html[data-theme="light"] .youtube-card:hover {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    padding-bottom: 0.8rem !important;
-    margin-bottom: 1rem !important;
+    padding-bottom: 1rem !important;
+    margin-bottom: 1.25rem !important;
     border-bottom: 1px solid var(--glass-border) !important;
     padding-right: 48px !important;
     /* X 버튼 공간 확보 */
-    min-height: 38px !important;
+    min-height: 42px !important;
 }
 
 /* 건의글 상세 우상단 고정 X 버튼 (#closeSideDetailBtn) & 파일 미리보기 X 버튼 (.file-preview-close-btn) */
 /* 기본값: 다크 모드 (html 태그에 data-theme 속성이 없는 기본 상태) */
 #closeSideDetailBtn {
     position: absolute !important;
-    top: 1.1rem !important;
+    top: 0.95rem !important;
     right: 1.25rem !important;
     z-index: 1000 !important;
     width: 36px !important;
@@ -365,6 +365,27 @@ html[data-theme="light"] .youtube-card:hover {
     -webkit-backdrop-filter: blur(16px) !important;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45) !important;
     border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+/* 모바일 반응형: 헤더 구분선과 X 버튼 겹침 완벽 방지 */
+@media (max-width: 1023px) {
+    .side-detail-header {
+        padding-bottom: 1.1rem !important;
+        margin-bottom: 1.25rem !important;
+        min-height: 44px !important;
+    }
+
+    #closeSideDetailBtn {
+        top: 0.85rem !important;
+        right: 1rem !important;
+    }
+
+    .side-detail-container.has-scrolled-detail #closeSideDetailBtn,
+    .side-detail-scroll-area.has-scrolled #closeSideDetailBtn,
+    .side-detail-container .side-detail-scroll-area.has-scrolled~#closeSideDetailBtn {
+        top: 0.85rem !important;
+        right: 0.75rem !important;
+    }
 }
 
 /* 다크 모드 호버 시 (X 아이콘 파란색) */

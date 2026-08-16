@@ -384,27 +384,7 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                             </div>
                         ` : ''}
 
-                        ${window.aiConfig && window.aiConfig.enabled && window.aiConfig.summaryEnabled && window.aiConfig.apiKey ? `
-                            <div class="ai-analysis-container" style="margin-top: 2rem; padding: 1.25rem; border-radius: 16px; background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); display: flex; flex-direction: column; gap: 0.75rem;">
-                                <div style="display: flex; align-items: center; justify-content: space-between;">
-                                    <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: bold; color: var(--accent-color); font-size: 1rem;">
-                                        <img src="gemini-color.svg" style="width: 20px; height: 20px; vertical-align: middle; object-fit: contain;" alt="Gemini">
-                                        <span>AI 건의 분석 및 피드백</span>
-                                    </div>
-                                    <span style="font-size: 0.75rem; color: var(--text-secondary); background: rgba(59, 130, 246, 0.15); padding: 0.2rem 0.5rem; border-radius: 999px;">Gemini 3.6 Flash</span>
-                                </div>
-                                <div id="aiAnalysisContent-${id}" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-primary);">
-                                    ${currentPost.aiSummary ? currentPost.aiSummary.replace(/\n/g, '<br>') : `
-                                        <div style="display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 1rem 0;" id="aiGenBox-${id}">
-                                            <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">아직 생성된 AI 분석 조언이 없습니다.</p>
-                                            <button type="button" class="ai-analysis-generate-btn" onclick="generateAiSummary('${id}')" style="background: var(--accent-color); color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; transition: background 0.2s;">
-                                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI 분석 요약 받기
-                                            </button>
-                                        </div>
-                                    `}
-                                </div>
-                            </div>
-                        ` : ''}
+
                     `;
         };
 
