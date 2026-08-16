@@ -199,6 +199,431 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
+// ==========================================================================
+// 🏷️ 카테고리 (게시판 주제) 데이터 및 모달 핸들러 (삼성 멤버스 스타일)
+// ==========================================================================
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+const COMMUNITY_CATEGORIES = [
+    {
+        id: 'bug_report',
+        name: '사이트 버그 문의',
+        icon: 'fa-solid fa-bug',
+        color: '#3b82f6',
+        subCategories: [
+            { name: '커뮤니티 창 관련 버그', icon: 'fa-solid fa-comments', color: '#60a5fa' },
+            { name: '설정창 관련 버그', icon: 'fa-solid fa-gear', color: '#a78bfa' },
+            { name: '인사말 창 관련 버그', icon: 'fa-solid fa-handshake', color: '#34d399' },
+            { name: '기타 버그', icon: 'fa-solid fa-triangle-exclamation', color: '#f59e0b' }
+        ]
+    },
+    {
+        id: 'activity_inquiry',
+        name: '과학 동아리 활동 관련 문의',
+        icon: 'fa-solid fa-flask',
+        color: 'var(--accent-color)',
+        subCategories: [
+            { name: '하고 싶은 새로운 활동 제안', icon: 'fa-solid fa-lightbulb', color: '#fbbf24' },
+            { name: '예정되어 있는 활동 관련 문의', icon: 'fa-solid fa-calendar-check', color: '#38bdf8' }
+        ]
+    }
+];
+
+function getCategoryIcon(subName) {
+    if (!subName) return 'fa-solid fa-tag';
+    if (subName.includes('커뮤니티')) return 'fa-solid fa-comments';
+    if (subName.includes('설정')) return 'fa-solid fa-gear';
+    if (subName.includes('인사말')) return 'fa-solid fa-handshake';
+    if (subName.includes('기타')) return 'fa-solid fa-triangle-exclamation';
+    if (subName.includes('제안') || subName.includes('새로운')) return 'fa-solid fa-lightbulb';
+    if (subName.includes('예정') || subName.includes('활동')) return 'fa-solid fa-calendar-check';
+    return 'fa-solid fa-tag';
+}
+
+const RECENT_CATEGORIES_KEY = 'yangjung_recent_categories';
+
+function getRecentCategories() {
+    try {
+        const stored = localStorage.getItem(RECENT_CATEGORIES_KEY);
+        return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveRecentCategory(main, sub) {
+    try {
+        let list = getRecentCategories();
+        list = list.filter(item => !(item.main === main && item.sub === sub));
+        list.unshift({ main, sub });
+        if (list.length > 5) list = list.slice(0, 5);
+        localStorage.setItem(RECENT_CATEGORIES_KEY, JSON.stringify(list));
+    } catch (e) { }
+}
+
+const openCategorySelectBtn = document.getElementById('openCategorySelectBtn');
+const categorySelectModal = document.getElementById('categorySelectModal');
+const categorySelectModalOverlay = document.getElementById('categorySelectModalOverlay');
+const categorySelectModalCloseBtn = document.getElementById('categorySelectModalCloseBtn');
+const categoryGroupList = document.getElementById('categoryGroupList');
+const categoryRecentSection = document.getElementById('categoryRecentSection');
+const categoryRecentList = document.getElementById('categoryRecentList');
+
+function openCategorySelectModal() {
+    renderCategoryModal();
+    if (categorySelectModal && categorySelectModalOverlay) {
+        categorySelectModal.classList.add('active');
+        categorySelectModalOverlay.classList.add('active');
+        setTimeout(updateCategoryModalScrollbar, 50);
+        setTimeout(updateCategoryModalScrollbar, 250);
+    }
+}
+
+function closeCategorySelectModal() {
+    if (categorySelectModal && categorySelectModalOverlay) {
+        categorySelectModal.classList.remove('active');
+        categorySelectModalOverlay.classList.remove('active');
+    }
+}
+
+function renderCategoryModal() {
+    if (!categoryGroupList) return;
+    const currentMain = document.getElementById('postCategoryMain')?.value || '';
+    const currentSub = document.getElementById('postCategorySub')?.value || '';
+
+    // 1. 최근 사용 렌더링
+    const recents = getRecentCategories();
+    if (recents.length > 0 && categoryRecentSection && categoryRecentList) {
+        categoryRecentSection.style.display = 'block';
+        categoryRecentList.innerHTML = recents.map(r => `
+            <div class="recent-category-chip" onclick="window.selectCategory('${escapeHtml(r.main)}', '${escapeHtml(r.sub)}')">
+                <i class="${getCategoryIcon(r.sub)}"></i>
+                <span>${escapeHtml(r.main)} &gt; ${escapeHtml(r.sub)}</span>
+            </div>
+        `).join('');
+    } else if (categoryRecentSection) {
+        categoryRecentSection.style.display = 'none';
+    }
+
+    // 2. 대주제 / 소주제 목록 렌더링
+    categoryGroupList.innerHTML = COMMUNITY_CATEGORIES.map((cat) => {
+        const isOpen = true; // 기본 펼침 상태
+        const subListHtml = cat.subCategories.map(subItem => {
+            const subName = typeof subItem === 'string' ? subItem : subItem.name;
+            const subIcon = (typeof subItem === 'object' && subItem.icon) ? subItem.icon : getCategoryIcon(subName);
+            const subColor = (typeof subItem === 'object' && subItem.color) ? subItem.color : 'var(--accent-color)';
+            const isSelected = (currentMain === cat.name && currentSub === subName);
+            return `
+                <div class="category-sub-item ${isSelected ? 'active' : ''}" onclick="window.selectCategory('${escapeHtml(cat.name)}', '${escapeHtml(subName)}')">
+                    <div style="display: flex; align-items: center; gap: 0.65rem;">
+                        <i class="${subIcon}" style="color: ${subColor}; font-size: 0.95rem; width: 18px; text-align: center;"></i>
+                        <span>${escapeHtml(subName)}</span>
+                    </div>
+                    ${isSelected ? '<i class="fa-solid fa-check" style="color: var(--accent-color);"></i>' : '<i class="fa-solid fa-chevron-right" style="font-size: 0.8rem; opacity: 0.4;"></i>'}
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="category-group-card ${isOpen ? 'open' : ''}" data-cat-id="${cat.id}">
+                <div class="category-group-header" onclick="window.toggleCategoryGroup(this)">
+                    <div class="category-group-title">
+                        <i class="${cat.icon}" style="color: var(--accent-color);"></i>
+                        <span>${escapeHtml(cat.name)}</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down category-group-arrow"></i>
+                </div>
+                <div class="category-sub-list">
+                    ${subListHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+window.toggleCategoryGroup = function (headerEl) {
+    const card = headerEl.closest('.category-group-card');
+    if (card) {
+        card.classList.toggle('open');
+        setTimeout(updateCategoryModalScrollbar, 150);
+        setTimeout(updateCategoryModalScrollbar, 360);
+    }
+};
+
+window.selectCategory = function (main, sub) {
+    const mainInput = document.getElementById('postCategoryMain');
+    const subInput = document.getElementById('postCategorySub');
+    const labelEl = document.getElementById('selectedCategoryText');
+
+    if (mainInput) mainInput.value = main;
+    if (subInput) subInput.value = sub;
+    if (labelEl) {
+        labelEl.className = 'category-select-placeholder selected';
+        labelEl.innerHTML = `
+            <span class="cat-main">${escapeHtml(main)}</span>
+            <span class="cat-sep"><i class="fa-solid fa-chevron-right"></i></span>
+            <span class="cat-sub">${escapeHtml(sub)}</span>
+        `;
+    }
+    saveRecentCategory(main, sub);
+    closeCategorySelectModal();
+};
+
+window.resetCategorySelect = function () {
+    const mainInput = document.getElementById('postCategoryMain');
+    const subInput = document.getElementById('postCategorySub');
+    const labelEl = document.getElementById('selectedCategoryText');
+
+    if (mainInput) mainInput.value = '';
+    if (subInput) subInput.value = '';
+    if (labelEl) {
+        labelEl.className = 'category-select-placeholder';
+        labelEl.textContent = '게시판 선택';
+    }
+};
+
+if (openCategorySelectBtn) openCategorySelectBtn.addEventListener('click', openCategorySelectModal);
+if (categorySelectModalCloseBtn) categorySelectModalCloseBtn.addEventListener('click', closeCategorySelectModal);
+if (categorySelectModalOverlay) categorySelectModalOverlay.addEventListener('click', closeCategorySelectModal);
+
+// 모달 커스텀 스크롤바 제어 로직 (인사말과 100% 동일한 메커니즘)
+const categoryModalBody = document.getElementById('categoryModalBody');
+const categoryModalScrollbar = document.getElementById('categoryModalScrollbar');
+const categoryModalScrollbarThumb = document.getElementById('categoryModalScrollbarThumb');
+let modalScrollTimeout;
+let isHoveringModalScrollbar = false;
+let isModalScrollDragging = false;
+let modalStartY = 0;
+let modalStartScrollTop = 0;
+
+function updateCategoryModalScrollbar() {
+    if (!categoryModalBody || !categoryModalScrollbar || !categoryModalScrollbarThumb) return;
+    const scrollHeight = categoryModalBody.scrollHeight;
+    const clientHeight = categoryModalBody.clientHeight;
+    const scrollTop = categoryModalBody.scrollTop;
+
+    if (scrollHeight <= clientHeight + 2) {
+        categoryModalScrollbar.classList.remove('visible');
+        return;
+    }
+
+    const trackHeight = clientHeight - 16;
+    const thumbHeight = Math.max(30, (clientHeight / scrollHeight) * trackHeight);
+    const maxScrollTop = scrollHeight - clientHeight;
+    const maxThumbTop = trackHeight - thumbHeight;
+
+    const thumbTop = maxScrollTop > 0 ? (scrollTop / maxScrollTop) * maxThumbTop : 0;
+
+    categoryModalScrollbarThumb.style.height = `${thumbHeight}px`;
+    categoryModalScrollbarThumb.style.transform = `translateY(${thumbTop}px)`;
+
+    categoryModalScrollbar.classList.add('visible');
+
+    clearTimeout(modalScrollTimeout);
+    if (!isModalScrollDragging && !isHoveringModalScrollbar) {
+        modalScrollTimeout = setTimeout(() => {
+            categoryModalScrollbar.classList.remove('visible');
+        }, 1500);
+    }
+}
+
+if (categoryModalBody) {
+    categoryModalBody.addEventListener('scroll', updateCategoryModalScrollbar, { passive: true });
+}
+
+if (categoryModalScrollbar) {
+    categoryModalScrollbar.addEventListener('mouseenter', () => {
+        isHoveringModalScrollbar = true;
+        categoryModalScrollbar.classList.add('visible');
+    });
+    categoryModalScrollbar.addEventListener('mouseleave', () => {
+        isHoveringModalScrollbar = false;
+        if (!isModalScrollDragging) {
+            modalScrollTimeout = setTimeout(() => {
+                categoryModalScrollbar.classList.remove('visible');
+            }, 1500);
+        }
+    });
+}
+
+if (categoryModalScrollbarThumb) {
+    categoryModalScrollbarThumb.addEventListener('mousedown', (e) => {
+        isModalScrollDragging = true;
+        categoryModalScrollbarThumb.classList.add('dragging');
+        modalStartY = e.clientY;
+        modalStartScrollTop = categoryModalBody.scrollTop;
+        document.body.style.userSelect = 'none';
+
+        const onMouseMove = (moveEvent) => {
+            if (!isModalScrollDragging) return;
+            const deltaY = moveEvent.clientY - modalStartY;
+            const scrollHeight = categoryModalBody.scrollHeight;
+            const clientHeight = categoryModalBody.clientHeight;
+            const trackHeight = clientHeight - 16;
+            const thumbHeight = parseFloat(categoryModalScrollbarThumb.style.height) || 30;
+            const maxThumbTop = trackHeight - thumbHeight;
+            const maxScrollTop = scrollHeight - clientHeight;
+
+            if (maxThumbTop > 0) {
+                const scrollRatio = deltaY / maxThumbTop;
+                categoryModalBody.scrollTop = modalStartScrollTop + (scrollRatio * maxScrollTop);
+            }
+        };
+
+        const onMouseUp = () => {
+            isModalScrollDragging = false;
+            categoryModalScrollbarThumb.classList.remove('dragging');
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            if (!isHoveringModalScrollbar) {
+                modalScrollTimeout = setTimeout(() => {
+                    categoryModalScrollbar.classList.remove('visible');
+                }, 1500);
+            }
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+}
+
+// 카테고리 / 소주제 필터 드롭다운 상태 및 로직
+let currentCategoryFilterType = 'all'; // 'all' | 'main' | 'sub'
+let currentCategoryFilterValue = 'all';
+
+function smoothlyUpdateDropdownSelected(selectedEl, textHTML) {
+    if (!selectedEl) return;
+    const oldWidth = selectedEl.getBoundingClientRect().width;
+
+    // 현재 너비 고정
+    selectedEl.style.transition = 'none';
+    selectedEl.style.width = oldWidth + 'px';
+
+    // 내용 교체
+    selectedEl.innerHTML = `<span>${textHTML}</span> <i class="fa-solid fa-chevron-down arrow-icon"></i>`;
+
+    // 새 너비 측정
+    selectedEl.style.width = 'auto';
+    const newWidth = selectedEl.getBoundingClientRect().width;
+
+    if (Math.abs(oldWidth - newWidth) > 1) {
+        selectedEl.style.width = oldWidth + 'px';
+        void selectedEl.offsetWidth; // 강제 리플로우
+
+        selectedEl.style.transition = 'width 0.35s cubic-bezier(0.25, 1, 0.5, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease';
+        selectedEl.style.width = newWidth + 'px';
+
+        setTimeout(() => {
+            selectedEl.style.width = '';
+            selectedEl.style.transition = '';
+        }, 360);
+    } else {
+        selectedEl.style.width = '';
+        selectedEl.style.transition = '';
+    }
+}
+
+function initCategoryFilterDropdown() {
+    const dropdownContainer = document.getElementById('categoryFilterDropdown');
+    const selectedEl = document.getElementById('categoryFilterSelected');
+    const optionsEl = document.getElementById('categoryFilterOptions');
+    if (!dropdownContainer || !selectedEl || !optionsEl) return;
+
+    const optionItems = optionsEl.querySelectorAll('.custom-dropdown-option');
+
+    selectedEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // 다른 드롭다운이 열려있으면 닫기
+        document.getElementById('customSortDropdown')?.classList.remove('open');
+        dropdownContainer.classList.toggle('open');
+    });
+
+    // 1. 대주제 접기/펼치기 화살표 버튼 이벤트 (화살표 클릭 시 토글만 실행)
+    optionsEl.querySelectorAll('.group-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // 대주제 선택 및 드롭다운 닫힘 방지
+            const headerLi = btn.closest('.dropdown-category-group-header');
+            if (!headerLi) return;
+            const groupId = headerLi.getAttribute('data-group-id');
+            const isOpening = !headerLi.classList.contains('open');
+
+            headerLi.classList.toggle('open', isOpening);
+            optionsEl.querySelectorAll(`.dropdown-sub-option[data-group-id="${groupId}"]`).forEach(subEl => {
+                subEl.classList.toggle('open', isOpening);
+            });
+        });
+    });
+
+    // 2. 옵션 클릭 이벤트 (화살표가 아닌 본체 클릭 시 필터링 적용)
+    optionItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            // 화살표 토글 버튼을 누른 경우는 대주제 선택 방지
+            if (e.target.closest('.group-toggle-btn')) return;
+
+            e.stopPropagation();
+            const filterType = item.getAttribute('data-type') || 'all';
+            const filterVal = item.getAttribute('data-value') || 'all';
+
+            // 선택 버튼 텍스트 구성 (대주제일 경우 토글 버튼 제외하고 라벨만 추출)
+            let textHTML = '';
+            if (filterType === 'main') {
+                const labelEl = item.querySelector('.group-main-label');
+                textHTML = labelEl ? labelEl.innerHTML : item.innerHTML;
+            } else if (filterType === 'sub') {
+                const subIcon = item.querySelector('.sub-icon')?.outerHTML || '';
+                textHTML = `${subIcon} ${escapeHtml(filterVal)}`;
+            } else {
+                textHTML = `<i class="fa-solid fa-layer-group"></i> 모든 주제`;
+            }
+
+            optionItems.forEach(opt => opt.classList.remove('active'));
+            item.classList.add('active');
+
+            // 부드럽게 왼쪽으로 늘어나는 너비 전환 애니메이션 적용
+            smoothlyUpdateDropdownSelected(selectedEl, textHTML);
+            dropdownContainer.classList.remove('open');
+
+            currentCategoryFilterType = filterType;
+            currentCategoryFilterValue = filterVal;
+
+            const currentSort = document.querySelector('#customSortOptions .custom-dropdown-option.active')?.getAttribute('data-value') || 'latest';
+            loadPosts(currentSort);
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!dropdownContainer.contains(e.target)) {
+            dropdownContainer.classList.remove('open');
+        }
+    });
+}
+initCategoryFilterDropdown();
+
+// 게시글 개수 변경 시 부드러운 페이드 애니메이션 함수
+function updatePostCountUI(newCount) {
+    const countEl = document.getElementById('totalPostCount');
+    if (!countEl) return;
+    const currentText = countEl.textContent.trim();
+    const currentCount = parseInt(currentText, 10);
+
+    if (isNaN(currentCount) || currentCount !== newCount) {
+        countEl.classList.add('count-fade-out');
+        setTimeout(() => {
+            countEl.textContent = newCount;
+            countEl.classList.remove('count-fade-out');
+        }, 150);
+    }
+}
+
 // 페이지 및 글쓰기 관련 DOM
 const writePostPage = document.getElementById('writePostPage');
 const writePostBackBtn = document.getElementById('writePostBackBtn');
@@ -217,10 +642,11 @@ if (writePostBtn) {
         window._editingPostImages = [];
         window._editingPostAttachments = [];
         selectedImages = [];
+        window.resetCategorySelect();
         document.getElementById('postTitle').value = '';
         document.getElementById('postBody').value = '';
         const pageTitle = document.querySelector('#writePostPage .greeting-title');
-        if (pageTitle) pageTitle.innerText = '새 건의사항 작성';
+        if (pageTitle) pageTitle.innerText = '게시글 올리기';
         const submitBtnEl = document.getElementById('submitPostBtn');
         if (submitBtnEl) submitBtnEl.innerText = '게시글 등록하기';
         if (typeof window.updateImagePreview === 'function') window.updateImagePreview();
@@ -235,19 +661,12 @@ function closeWritePage(e) {
     const wasEditFromDetail = window._editFromDetail;
     const editingId = window._editingPostId;
 
-    // 수정 모드 리셋
+    // 수정 모드 상태 즉시 정리
     window._editingPostId = null;
     window._editingPostImages = [];
     window._editingPostAttachments = [];
     selectedImages = [];
     window._editFromDetail = false;
-    const pageTitle = document.querySelector('#writePostPage .greeting-title');
-    if (pageTitle) pageTitle.innerText = '새 건의사항 작성';
-    const submitBtnEl = document.getElementById('submitPostBtn');
-    if (submitBtnEl) submitBtnEl.innerText = '게시글 등록하기';
-    document.getElementById('postTitle').value = '';
-    document.getElementById('postBody').value = '';
-    if (typeof window.updateImagePreview === 'function') window.updateImagePreview();
 
     if (wasEditFromDetail && editingId) {
         // 상세 보기에서 수정한 경우: 목록 화면으로의 400ms 지연 및 딜레이 애니메이션 없이 즉시 상세 페이지 열기
@@ -267,6 +686,23 @@ function closeWritePage(e) {
             history.back();
         }
     }
+
+    // 폼과 제목 리셋은 화면이 완전히 페이드 아웃된 후에 수행하여 깜빡임 방지
+    setTimeout(() => {
+        const writePage = document.getElementById('writePostPage');
+        if (writePage && !writePage.classList.contains('active')) {
+            window.resetCategorySelect();
+            const pageTitle = document.querySelector('#writePostPage .greeting-title');
+            if (pageTitle) pageTitle.innerText = '게시글 올리기';
+            const submitBtnEl = document.getElementById('submitPostBtn');
+            if (submitBtnEl) submitBtnEl.innerText = '게시글 등록하기';
+            const postTitleInput = document.getElementById('postTitle');
+            if (postTitleInput) postTitleInput.value = '';
+            const postBodyInput = document.getElementById('postBody');
+            if (postBodyInput) postBodyInput.value = '';
+            if (typeof window.updateImagePreview === 'function') window.updateImagePreview();
+        }
+    }, 350);
 }
 if (writePostBackBtn) {
     writePostBackBtn.addEventListener('click', closeWritePage);
@@ -370,15 +806,6 @@ function getFileIconInfo(file) {
     return { icon: 'fa-solid fa-file-lines', color: '#2563eb', label: '문서' };
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
 
 window.resetSelectedImages = function () {
     selectedImages = [];
@@ -522,6 +949,14 @@ if (submitPostBtn) {
         const title = document.getElementById('postTitle').value.trim();
         const author = isAdmin(currentUser.email) ? getAdminName(currentUser.email) : (currentUserRole || currentUser.displayName);
         const body = document.getElementById('postBody').value.trim();
+        const catMain = document.getElementById('postCategoryMain')?.value?.trim() || '';
+        const catSub = document.getElementById('postCategorySub')?.value?.trim() || '';
+
+        if (!catMain || !catSub) {
+            alert('게시판 주제를 선택해주세요!');
+            openCategorySelectModal();
+            return;
+        }
 
         if (!title || !body) {
             alert('제목과 내용을 모두 입력해주세요!');
@@ -600,6 +1035,8 @@ if (submitPostBtn) {
                 const updateData = {
                     title: title,
                     body: body,
+                    categoryMain: catMain,
+                    categorySub: catSub,
                     images: finalImages,
                     attachments: finalAttachments
                 };
@@ -611,6 +1048,8 @@ if (submitPostBtn) {
                     uid: currentUser.uid,
                     userPhoto: currentUser.photoURL || '',
                     email: currentUser.email,
+                    categoryMain: catMain,
+                    categorySub: catSub,
                     body: body,
                     images: imageUrls,
                     attachments: attachments,
@@ -628,7 +1067,6 @@ if (submitPostBtn) {
             console.error("Error adding post: ", error);
             alert('업로드 중 오류가 발생했습니다: ' + error.message);
         } finally {
-            submitPostBtn.innerText = '게시글 등록하기';
             submitPostBtn.disabled = false;
         }
     });
@@ -704,24 +1142,44 @@ function loadPosts(sortBy = 'latest') {
             });
         });
 
-        // 2. 현재 스냅샷의 ID 목록
-        const currentIds = new Set(snapshot.docs.map(doc => doc.id));
+        // 2. 카테고리 / 소주제 필터 적용
+        let docs = [...snapshot.docs];
+        if (currentCategoryFilterType === 'sub') {
+            docs = docs.filter(d => {
+                const data = d.data();
+                return data.categorySub === currentCategoryFilterValue;
+            });
+        } else if (currentCategoryFilterType === 'main') {
+            docs = docs.filter(d => {
+                const data = d.data();
+                return data.categoryMain === currentCategoryFilterValue;
+            });
+        }
 
-        // 3. 삭제된 카드 제거 (애니메이션 없이 즉시 제거하거나 필요시 페이드아웃 추가 가능)
-        boardContainer.querySelectorAll('.board-card').forEach(card => {
-            if (!currentIds.has(card.getAttribute('data-id'))) {
-                card.remove();
+        // 3. 필터링된 ID 목록에 없는 카드 DOM에서 부드러운 애니메이션 후 제거 (FLIP 공간 즉시 양보)
+        const filteredIds = new Set(docs.map(doc => doc.id));
+        const containerRect = boardContainer.getBoundingClientRect();
+        boardContainer.querySelectorAll('.board-card:not(.deleting)').forEach(card => {
+            const id = card.getAttribute('data-id');
+            if (!filteredIds.has(id)) {
+                const oldPos = oldPositions.get(id) || card.getBoundingClientRect();
+                card.style.position = 'absolute';
+                card.style.top = (oldPos.top - containerRect.top) + 'px';
+                card.style.left = (oldPos.left - containerRect.left) + 'px';
+                card.style.width = oldPos.width + 'px';
+                card.style.zIndex = '0';
+                card.classList.add('deleting');
+                setTimeout(() => {
+                    card.remove();
+                }, 300);
             }
         });
 
-        // 총 글 개수 업데이트
-        const headerSpan = document.querySelector('.board-header span');
-        if (headerSpan) {
-            headerSpan.innerHTML = `전체 게시글 <span style="color: var(--accent-color); font-weight: bold;">${snapshot.size}</span>개`;
-        }
+        // 총 글 개수 업데이트 (One UI 페이드 애니메이션)
+        updatePostCountUI(docs.length);
 
         // 4. 정렬 로직 (기존과 동일)
-        const docs = [...snapshot.docs].sort((a, b) => {
+        docs.sort((a, b) => {
             const dataA = a.data();
             const dataB = b.data();
             const pinA = dataA.pinned ? 1 : 0;
@@ -765,6 +1223,10 @@ function loadPosts(sortBy = 'latest') {
                         </div>
                     `;
 
+            const categoryBadgeHtml = (post.categoryMain && post.categorySub)
+                ? `<span class="post-category-badge" title="${escapeHtml(post.categoryMain)} &gt; ${escapeHtml(post.categorySub)}"><i class="${getCategoryIcon(post.categorySub)}"></i> ${escapeHtml(post.categorySub)}</span>`
+                : '';
+
             const postCheckbox = (isAuthor || isPresident) ? `
                         <label class="post-checkbox-wrapper" style="align-items: center; margin-right: 0;" onclick="event.stopPropagation();">
                             <input type="checkbox" class="post-select-cb" value="${id}" onchange="updatePostMultiDeleteUI()" style="width: 1.1rem; height: 1.1rem; accent-color: var(--accent-color); cursor: pointer;">
@@ -776,9 +1238,10 @@ function loadPosts(sortBy = 'latest') {
                         <div class="board-card-header">
                             <div style="display: flex; align-items: center;">
                                 ${postCheckbox}
-                                <div class="board-author" style="display: flex; align-items: center; gap: 0.5rem;">
+                                <div class="board-author" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                                     ${avatarHtml}
                                     <span class="board-author-name">${post.author}</span>
+                                    ${categoryBadgeHtml}
                                 </div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -940,7 +1403,7 @@ function loadPosts(sortBy = 'latest') {
         });
 
         // 6. FLIP 애니메이션 실행 (부드러운 이동)
-        const finalCards = boardContainer.querySelectorAll('.board-card');
+        const finalCards = boardContainer.querySelectorAll('.board-card:not(.deleting)');
         finalCards.forEach(card => {
             const id = card.getAttribute('data-id');
             const oldPos = oldPositions.get(id);
@@ -996,11 +1459,11 @@ function loadPosts(sortBy = 'latest') {
                     });
                 }
             } else {
-                // 새 카드 등장
+                // 새 카드 등장 (기존 오리지널 0.5s 및 15px 애니메이션)
                 card.style.opacity = '0';
                 card.style.transform = 'translateY(15px)';
                 card.offsetHeight;
-                card.style.transition = 'transform 0.5s cubic-bezier(0.2, 0, 0, 1), opacity 0.5s ease';
+                card.style.transition = 'transform 0.5s cubic-bezier(0.2, 0, 0, 1), opacity 0.5s ease, border-color 0.3s ease, box-shadow 0.3s ease';
                 card.style.opacity = '1';
                 card.style.transform = 'translateY(0)';
                 setTimeout(() => {
@@ -1027,6 +1490,7 @@ const customSortOptionItems = document.querySelectorAll('#customSortOptions .cus
 if (customSortSelected && customSortOptions) {
     customSortSelected.addEventListener('click', (e) => {
         e.stopPropagation();
+        document.getElementById('categoryFilterDropdown')?.classList.remove('open');
         customDropdownContainer.classList.toggle('open');
     });
 
@@ -1040,8 +1504,8 @@ if (customSortSelected && customSortOptions) {
             customSortOptionItems.forEach(opt => opt.classList.remove('active'));
             item.classList.add('active');
 
-            // 선택된 텍스트 및 아이콘 업데이트
-            customSortSelected.innerHTML = `<span>${textHTML}</span> <i class="fa-solid fa-chevron-down arrow-icon"></i>`;
+            // 선택된 텍스트 및 아이콘 업데이트 (부드러운 너비 전환)
+            smoothlyUpdateDropdownSelected(customSortSelected, textHTML);
             customDropdownContainer.classList.remove('open');
 
             // 데이터 새로고침

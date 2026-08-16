@@ -126,6 +126,38 @@
         </div>
     </div>
 
+    <!-- 게시판 주제 선택 모달 (삼성 멤버스 스타일) -->
+    <div id="categorySelectModalOverlay" class="modal-overlay category-modal-overlay"></div>
+    <div id="categorySelectModal" class="modal-container category-modal-container">
+        <div class="category-modal-header">
+            <div class="category-modal-title-wrap">
+                <i class="fa-solid fa-layer-group" style="color: var(--accent-color);"></i>
+                <h3 class="category-modal-title">게시판 선택</h3>
+            </div>
+            <button type="button" class="close-btn" id="categorySelectModalCloseBtn" aria-label="닫기">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="category-modal-body" id="categoryModalBody">
+            <!-- 최근 사용 섹션 -->
+            <div class="category-recent-section" id="categoryRecentSection" style="display: none;">
+                <div class="category-section-label">
+                    <i class="fa-regular fa-clock"></i> 최근 사용
+                </div>
+                <div class="category-recent-list" id="categoryRecentList"></div>
+            </div>
+
+            <!-- 대주제 및 소주제 아코디언 트리 -->
+            <div class="category-group-list" id="categoryGroupList">
+                <!-- 자바스크립트로 카테고리 렌더링 -->
+            </div>
+        </div>
+        <!-- 인사말과 100% 동일한 커스텀 스크롤바 -->
+        <div id="categoryModalScrollbar" class="modal-custom-scrollbar">
+            <div id="categoryModalScrollbarThumb" class="modal-custom-scrollbar-thumb"></div>
+        </div>
+    </div>
+
     <!-- 직책 부여 페이지 (기존 모달에서 변경) -->
     <div id="roleManagePage" class="page hidden fade-out">
         <button class="greeting-back-btn" id="roleManageBackBtn">
@@ -1005,18 +1037,73 @@
             <div class="board-container">
                 <div class="board-header">
                     <span style="color: var(--text-secondary); font-size: 0.9rem;">전체 게시글 <span
-                            style="color: var(--accent-color); font-weight: bold;">0</span>개</span>
-                    <div class="custom-dropdown-container" id="customSortDropdown">
-                        <div class="custom-dropdown-selected" id="customSortSelected">
-                            <span><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</span>
-                            <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                            id="totalPostCount" class="post-count-number">0</span>개</span>
+                    
+                    <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; justify-content: flex-end;">
+                        <!-- 카테고리 / 소주제 필터 드롭다운 -->
+                        <div class="custom-dropdown-container" id="categoryFilterDropdown">
+                            <div class="custom-dropdown-selected" id="categoryFilterSelected" title="주제 선택">
+                                <span><i class="fa-solid fa-layer-group"></i> 모든 주제</span>
+                                <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                            </div>
+                            <ul class="custom-dropdown-options category-dropdown-options" id="categoryFilterOptions">
+                                <li class="custom-dropdown-option active" data-type="all" data-value="all">
+                                    <i class="fa-solid fa-layer-group"></i> 모든 주제
+                                </li>
+
+                                <li class="dropdown-divider"></li>
+
+                                <!-- 1. 사이트 버그 문의 -->
+                                <li class="custom-dropdown-option dropdown-category-group-header" data-type="main" data-value="사이트 버그 문의" data-group-id="bug_report" title="사이트 버그 문의 전체 보기">
+                                    <span class="group-main-label"><i class="fa-solid fa-bug" style="color: #3b82f6;"></i> 사이트 버그 문의</span>
+                                    <button type="button" class="group-toggle-btn" title="소주제 펼치기/접기" aria-label="소주제 펼치기/접기">
+                                        <i class="fa-solid fa-chevron-right group-arrow-icon"></i>
+                                    </button>
+                                </li>
+                                <li class="custom-dropdown-option dropdown-sub-option" data-group-id="bug_report" data-type="sub" data-main="사이트 버그 문의" data-value="커뮤니티 창 관련 버그">
+                                    <i class="fa-solid fa-comments sub-icon" style="color: #60a5fa; font-size: 0.85rem;"></i> 커뮤니티 창 관련 버그
+                                </li>
+                                <li class="custom-dropdown-option dropdown-sub-option" data-group-id="bug_report" data-type="sub" data-main="사이트 버그 문의" data-value="설정창 관련 버그">
+                                    <i class="fa-solid fa-gear sub-icon" style="color: #a78bfa; font-size: 0.85rem;"></i> 설정창 관련 버그
+                                </li>
+                                <li class="custom-dropdown-option dropdown-sub-option" data-group-id="bug_report" data-type="sub" data-main="사이트 버그 문의" data-value="인사말 창 관련 버그">
+                                    <i class="fa-solid fa-handshake sub-icon" style="color: #34d399; font-size: 0.85rem;"></i> 인사말 창 관련 버그
+                                </li>
+                                <li class="custom-dropdown-option dropdown-sub-option" data-group-id="bug_report" data-type="sub" data-main="사이트 버그 문의" data-value="기타 버그">
+                                    <i class="fa-solid fa-triangle-exclamation sub-icon" style="color: #f59e0b; font-size: 0.85rem;"></i> 기타 버그
+                                </li>
+
+                                <li class="dropdown-divider"></li>
+
+                                <!-- 2. 과학 동아리 활동 관련 문의 -->
+                                <li class="custom-dropdown-option dropdown-category-group-header" data-type="main" data-value="과학 동아리 활동 관련 문의" data-group-id="activity_inquiry" title="과학 동아리 활동 관련 문의 전체 보기">
+                                    <span class="group-main-label"><i class="fa-solid fa-flask" style="color: var(--accent-color);"></i> 과학 동아리 활동 관련 문의</span>
+                                    <button type="button" class="group-toggle-btn" title="소주제 펼치기/접기" aria-label="소주제 펼치기/접기">
+                                        <i class="fa-solid fa-chevron-right group-arrow-icon"></i>
+                                    </button>
+                                </li>
+                                <li class="custom-dropdown-option dropdown-sub-option" data-group-id="activity_inquiry" data-type="sub" data-main="과학 동아리 활동 관련 문의" data-value="하고 싶은 새로운 활동 제안">
+                                    <i class="fa-solid fa-lightbulb sub-icon" style="color: #fbbf24; font-size: 0.85rem;"></i> 하고 싶은 새로운 활동 제안
+                                </li>
+                                <li class="custom-dropdown-option dropdown-sub-option" data-group-id="activity_inquiry" data-type="sub" data-main="과학 동아리 활동 관련 문의" data-value="예정되어 있는 활동 관련 문의">
+                                    <i class="fa-solid fa-calendar-check sub-icon" style="color: #38bdf8; font-size: 0.85rem;"></i> 예정되어 있는 활동 관련 문의
+                                </li>
+                            </ul>
                         </div>
-                        <ul class="custom-dropdown-options" id="customSortOptions">
-                            <li class="custom-dropdown-option active" data-value="latest"><i
-                                    class="fa-solid fa-arrow-down-short-wide"></i> 최신순</li>
-                            <li class="custom-dropdown-option" data-value="popular"><i class="fa-solid fa-fire"></i> 인기순
-                            </li>
-                        </ul>
+
+                        <!-- 정렬 드롭다운 -->
+                        <div class="custom-dropdown-container" id="customSortDropdown">
+                            <div class="custom-dropdown-selected" id="customSortSelected">
+                                <span><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</span>
+                                <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                            </div>
+                            <ul class="custom-dropdown-options" id="customSortOptions">
+                                <li class="custom-dropdown-option active" data-value="latest"><i
+                                        class="fa-solid fa-arrow-down-short-wide"></i> 최신순</li>
+                                <li class="custom-dropdown-option" data-value="popular"><i class="fa-solid fa-fire"></i> 인기순
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1030,7 +1117,7 @@
                     <div class="side-detail-header">
                         <span class="side-detail-title"
                             style="color: var(--accent-color); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i
-                                class="fa-solid fa-file-lines"></i> 건의글 상세</span>
+                                class="fa-solid fa-file-lines"></i> 게시글 상세</span>
                     </div>
 
                     <div class="post-content-area" id="detailPostArea"
@@ -1126,11 +1213,21 @@
         <button class="greeting-back-btn" id="writePostBackBtn">
             <i class="fa-solid fa-arrow-left"></i> 목록으로
         </button>
-        <h1 class="greeting-title">새 건의사항 작성</h1>
+        <h1 class="greeting-title">게시글 올리기</h1>
 
         <div class="post-detail-container"
             style="background: var(--bg-color); border: 1px solid var(--glass-border); border-radius: 16px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
             <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                <!-- 삼성 멤버스 스타일 게시판/주제 선택 바 -->
+                <div class="post-category-select-bar" id="openCategorySelectBtn" role="button" tabindex="0" title="게시판 선택">
+                    <div class="category-select-content">
+                        <span class="category-select-placeholder" id="selectedCategoryText">게시판 선택</span>
+                    </div>
+                    <i class="fa-solid fa-pen category-select-icon"></i>
+                </div>
+                <input type="hidden" id="postCategoryMain" value="" />
+                <input type="hidden" id="postCategorySub" value="" />
+
                 <input type="text" id="postTitle" class="modal-input upgraded-input" placeholder="제목을 입력하세요"
                     style="font-size: 1.15rem; font-weight: 600;">
 

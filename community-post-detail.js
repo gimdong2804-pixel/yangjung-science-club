@@ -119,7 +119,7 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
     const detailTitle = sideDetailContainer.querySelector('.side-detail-title');
     if (detailTitle) {
         detailTitle.innerHTML = isFullscreen
-            ? '<i class="fa-solid fa-file-lines"></i> 건의글 상세'
+            ? '<i class="fa-solid fa-file-lines"></i> 게시글 상세'
             : '<i class="fa-regular fa-comments"></i> 댓글 보기';
     }
 
@@ -293,9 +293,14 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                 }
             });
 
+            const catIcon = typeof getCategoryIcon === 'function' ? getCategoryIcon(currentPost.categorySub) : 'fa-solid fa-tag';
+            const detailCategoryHtml = (currentPost.categoryMain && currentPost.categorySub)
+                ? `<span class="post-category-badge" style="font-size: 0.82rem; padding: 0.25rem 0.75rem;"><i class="${catIcon}"></i> ${escapeHtml(currentPost.categoryMain)} &gt; ${escapeHtml(currentPost.categorySub)}</span>`
+                : '<div style="color: var(--accent-color); font-size: 0.85rem; font-weight: 600;">커뮤니티 · 게시글</div>';
+
             area.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <div style="color: var(--accent-color); font-size: 0.85rem; font-weight: 600;">커뮤니티 · 게시글</div>
+                            ${detailCategoryHtml}
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 ${pinBtnHtml}
                                 ${deleteBtnHtml}
@@ -918,6 +923,12 @@ window.editPost = async function (id) {
         window._editingPostId = id;
         window._editingPostImages = Array.isArray(post.images) ? [...post.images] : (post.imageUrl ? [post.imageUrl] : []);
         window._editingPostAttachments = Array.isArray(post.attachments) ? [...post.attachments] : [];
+
+        if (post.categoryMain && post.categorySub && typeof window.selectCategory === 'function') {
+            window.selectCategory(post.categoryMain, post.categorySub);
+        } else if (typeof window.resetCategorySelect === 'function') {
+            window.resetCategorySelect();
+        }
 
         if (typeof window.resetSelectedImages === 'function') {
             window.resetSelectedImages();
