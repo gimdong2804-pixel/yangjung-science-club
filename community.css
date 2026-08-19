@@ -1,4 +1,4 @@
-/* ========================================== */
+﻿/* ========================================== */
 /*         Community Board Styles             */
 /* ========================================== */
 /* Community Board Styles */
@@ -19,6 +19,35 @@
     align-items: center;
     margin-bottom: 1.5rem;
     padding: 0 0.5rem;
+}
+
+/* 정렬 드롭다운 (최신순/인기순) - 노트북 & 모바일 공통 고정 폭 적용 */
+#customSortDropdown .custom-dropdown-selected,
+#customSortSelected {
+    width: 108px !important;
+    min-width: 108px !important;
+    max-width: 108px !important;
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+    padding: 0.48rem 0.95rem !important;
+}
+
+#customSortDropdown .custom-dropdown-selected span,
+#customSortSelected span {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+    white-space: nowrap !important;
+}
+
+#customSortDropdown .custom-dropdown-selected span i,
+#customSortSelected span i {
+    width: 1.15em !important;
+    text-align: center !important;
+    display: inline-block !important;
 }
 
 .board-card {
@@ -2779,4 +2808,106 @@ html[data-theme="light"] .dropdown-category-group-header {
 .post-count-number.count-fade-out {
     opacity: 0;
     transform: translateY(-2px);
+}
+
+/* ========================================== */
+/*     Mobile Responsive Header Layout        */
+/* ========================================== */
+@media (max-width: 600px) {
+    .board-header {
+        display: grid !important;
+        grid-template-columns: 1fr auto !important;
+        grid-template-rows: auto auto !important;
+        grid-template-areas:
+            "count sort"
+            "topic topic" !important;
+        gap: 0.65rem 0.5rem !important;
+        align-items: center !important;
+        margin-bottom: 1.25rem !important;
+        padding: 0 0.25rem !important;
+    }
+
+    .board-post-count-label {
+        grid-area: count !important;
+        white-space: nowrap !important;
+        font-size: 0.88rem !important;
+        margin: 0 !important;
+    }
+
+    .board-filter-controls {
+        display: contents !important;
+    }
+
+    /* 1층 우측: 최신순 드롭다운 - 모바일에서도 고정 너비로 흔들림 없음 */
+    #customSortDropdown {
+        grid-area: sort !important;
+        justify-self: end !important;
+        display: inline-block !important;
+    }
+
+    #customSortDropdown .custom-dropdown-selected {
+        width: 104px !important;
+        min-width: 104px !important;
+        max-width: 104px !important;
+        box-sizing: border-box !important;
+        padding: 0.48rem 0.9rem !important;
+        font-size: 0.85rem !important;
+        border-radius: 9999px !important;
+        white-space: nowrap !important;
+        justify-content: space-between !important;
+    }
+
+    #customSortDropdown .custom-dropdown-options {
+        left: auto !important;
+        right: 0 !important;
+        transform: translateY(-8px) !important;
+    }
+
+    #customSortDropdown.open .custom-dropdown-options {
+        transform: translateY(0) !important;
+    }
+
+    /* 2층 우측: 주제 선택 바 - 아래쪽 오른쪽에 딱 붙고, 왼쪽으로 늘어났다 줄어듦! */
+    #categoryFilterDropdown {
+        grid-area: topic !important;
+        justify-self: end !important;
+        display: inline-block !important;
+        max-width: 100% !important;
+    }
+
+    #categoryFilterSelected {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.45rem !important;
+        padding: 0.48rem 1.15rem !important;
+        border-radius: 9999px !important;
+        font-size: 0.88rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        will-change: width;
+        transition: width 0.35s cubic-bezier(0.25, 1, 0.5, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    #categoryFilterSelected span {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.4rem !important;
+        white-space: nowrap !important;
+    }
+
+    /* 드롭다운 옵션 메뉴: 우측 끝 기준 정렬 (화면 오른쪽 짤림 완벽 방지) */
+    .category-dropdown-options {
+        min-width: 260px !important;
+        max-width: calc(100vw - 2rem) !important;
+        left: auto !important;
+        right: 0 !important;
+        transform: translateY(-8px) !important;
+        box-sizing: border-box !important;
+    }
+
+    .custom-dropdown-container.open .category-dropdown-options {
+        transform: translateY(0) !important;
+    }
 }

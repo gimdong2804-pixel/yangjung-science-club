@@ -1,4 +1,4 @@
-/* ========================================== */
+﻿/* ========================================== */
 /*   설정 모달, 드롭다운, 로그인/프로필 스타일   */
 /* ========================================== */
 
@@ -1238,7 +1238,7 @@ body:has(.modal-overlay.active) {
     background: rgba(255, 255, 255, 0.03);
     color: var(--text-primary);
     border: 1px solid var(--glass-border);
-    border-radius: 20px;
+    border-radius: 9999px;
     padding: 0.5rem 1.2rem;
     font-size: 0.9rem;
     cursor: pointer;

@@ -1,4 +1,4 @@
-// 커뮤니티 핵심: 로그인, 글 작성, 게시글 목록과 정렬
+﻿// 커뮤니티 핵심: 로그인, 글 작성, 게시글 목록과 정렬
 var db = window.db || firebase.firestore();
 var auth = window.auth || firebase.auth();
 
@@ -234,6 +234,15 @@ const COMMUNITY_CATEGORIES = [
             { name: '하고 싶은 새로운 활동 제안', icon: 'fa-solid fa-lightbulb', color: '#fbbf24' },
             { name: '예정되어 있는 활동 관련 문의', icon: 'fa-solid fa-calendar-check', color: '#38bdf8' }
         ]
+    },
+    {
+        id: 'other_posts',
+        name: '기타 게시글',
+        icon: 'fa-solid fa-circle-question',
+        color: '#8b5cf6',
+        subCategories: [
+            { name: '기타 게시글', icon: 'fa-solid fa-circle-question', color: '#a78bfa' }
+        ]
     }
 ];
 
@@ -242,12 +251,12 @@ function getCategoryIcon(subName) {
     if (subName.includes('커뮤니티')) return 'fa-solid fa-comments';
     if (subName.includes('설정')) return 'fa-solid fa-gear';
     if (subName.includes('인사말')) return 'fa-solid fa-handshake';
-    if (subName.includes('기타')) return 'fa-solid fa-triangle-exclamation';
-    if (subName.includes('제안') || subName.includes('새로운')) return 'fa-solid fa-lightbulb';
+    if (subName.includes('기타 게시글') || subName.includes('기타 문의') || subName.includes('문의')) return 'fa-solid fa-circle-question';
+    if (subName.includes('기타 버그') || subName.includes('버그')) return 'fa-solid fa-triangle-exclamation';
+    if (subName.includes('제안') || subName.includes('새로운') || subName.includes('건의')) return 'fa-solid fa-lightbulb';
     if (subName.includes('예정') || subName.includes('활동')) return 'fa-solid fa-calendar-check';
     return 'fa-solid fa-tag';
 }
-
 const RECENT_CATEGORIES_KEY = 'yangjung_recent_categories';
 
 function getRecentCategories() {
@@ -502,36 +511,36 @@ let currentCategoryFilterValue = 'all';
 
 function smoothlyUpdateDropdownSelected(selectedEl, textHTML) {
     if (!selectedEl) return;
-    const oldWidth = selectedEl.getBoundingClientRect().width;
 
-    // 현재 너비 고정
+    // 1. 현재 시작 너비 소수점까지 정밀 측정
+    const startWidth = selectedEl.getBoundingClientRect().width;
+
+    // 2. 가상 클론 요소를 오프스크린에 띄워 새 텍스트의 목표 너비(targetWidth) 측정
+    const clone = selectedEl.cloneNode(true);
+    clone.style.cssText = 'position: absolute !important; visibility: hidden !important; width: auto !important; max-width: none !important; pointer-events: none !important; transition: none !important; left: -9999px !important; top: -9999px !important;';
+    clone.innerHTML = `<span>${textHTML}</span> <i class="fa-solid fa-chevron-down arrow-icon"></i>`;
+    document.body.appendChild(clone);
+    const targetWidth = clone.getBoundingClientRect().width;
+    clone.remove();
+
+    if (Math.abs(startWidth - targetWidth) < 1) {
+        selectedEl.innerHTML = `<span>${textHTML}</span> <i class="fa-solid fa-chevron-down arrow-icon"></i>`;
+        return;
+    }
+
+    // 3. 시작 너비 픽셀로 고정
     selectedEl.style.transition = 'none';
-    selectedEl.style.width = oldWidth + 'px';
+    selectedEl.style.width = startWidth + 'px';
 
-    // 내용 교체
+    // 4. 내용물 교체 (줄바꿈 방지 상태)
     selectedEl.innerHTML = `<span>${textHTML}</span> <i class="fa-solid fa-chevron-down arrow-icon"></i>`;
 
-    // 새 너비 측정
-    selectedEl.style.width = 'auto';
-    const newWidth = selectedEl.getBoundingClientRect().width;
+    // 5. 강제 리플로우 후 목표 너비(targetWidth)로 부드럽게 transition 실행 (오른쪽 정렬 상태라 왼쪽으로 부드럽게 늘어남!)
+    void selectedEl.offsetWidth;
 
-    if (Math.abs(oldWidth - newWidth) > 1) {
-        selectedEl.style.width = oldWidth + 'px';
-        void selectedEl.offsetWidth; // 강제 리플로우
-
-        selectedEl.style.transition = 'width 0.35s cubic-bezier(0.25, 1, 0.5, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease';
-        selectedEl.style.width = newWidth + 'px';
-
-        setTimeout(() => {
-            selectedEl.style.width = '';
-            selectedEl.style.transition = '';
-        }, 360);
-    } else {
-        selectedEl.style.width = '';
-        selectedEl.style.transition = '';
-    }
+    selectedEl.style.transition = 'width 0.35s cubic-bezier(0.25, 1, 0.5, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease';
+    selectedEl.style.width = targetWidth + 'px';
 }
-
 function initCategoryFilterDropdown() {
     const dropdownContainer = document.getElementById('categoryFilterDropdown');
     const selectedEl = document.getElementById('categoryFilterSelected');
@@ -582,7 +591,7 @@ function initCategoryFilterDropdown() {
                 const subIcon = item.querySelector('.sub-icon')?.outerHTML || '';
                 textHTML = `${subIcon} ${escapeHtml(filterVal)}`;
             } else {
-                textHTML = `<i class="fa-solid fa-layer-group"></i> 모든 주제`;
+                textHTML = `<i class="fa-solid fa-layer-group"></i> 모든 게시글 (모든 주제)`;
             }
 
             optionItems.forEach(opt => opt.classList.remove('active'));
@@ -1505,7 +1514,7 @@ if (customSortSelected && customSortOptions) {
             item.classList.add('active');
 
             // 선택된 텍스트 및 아이콘 업데이트 (부드러운 너비 전환)
-            smoothlyUpdateDropdownSelected(customSortSelected, textHTML);
+            customSortSelected.innerHTML = `<span>${textHTML}</span> <i class="fa-solid fa-chevron-down arrow-icon"></i>`;
             customDropdownContainer.classList.remove('open');
 
             // 데이터 새로고침
