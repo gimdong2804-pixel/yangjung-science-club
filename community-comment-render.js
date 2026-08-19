@@ -1,17 +1,12 @@
 // 댓글·답글 목록을 만들고 화면에 표시하는 기능
 let commentUnsubscribe = null;
 let currentDetailMode = 'side';
-const PRESIDENT_EMAIL = 'gimdong2804@gmail.com';
 window.expandedCommentIds = new Set();
 window.currentCommentDocs = [];
 window.replyTarget = null;
 
 function isPresidentUser(user = currentUser) {
-    if (!user) return false;
-    if (typeof isAdmin === 'function' && isAdmin(user.email)) return true;
-    if (user.email === PRESIDENT_EMAIL) return true;
-    if (typeof isPresidentOrOwner === 'function' && isPresidentOrOwner(user.email)) return true;
-    return false;
+    return Boolean(user && typeof isAdmin === 'function' && isAdmin(user.email));
 }
 
 function escapeHtml(value) {

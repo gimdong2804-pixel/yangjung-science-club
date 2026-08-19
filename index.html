@@ -69,33 +69,6 @@
     <!-- 사이드 드로어 메뉴 & 오버레이 -->
     <div id="drawerOverlay" class="drawer-overlay"></div>
 
-    <!-- 관리자 비밀번호 모달 -->
-    <div id="adminModalOverlay" class="modal-overlay"></div>
-    <div id="adminModal" class="modal-container">
-        <h3 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-lock"></i> 관리자 인증</h3>
-        <p style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.9rem;">관리자 비밀번호를 입력해주세요.</p>
-        <input type="password" id="adminPwdInput" placeholder="비밀번호" />
-        <div class="modal-buttons" style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
-            <button id="adminModalCancel"
-                style="padding: 0.5rem 1.2rem; border: none; border-radius: 9999px; background: var(--glass-border); color: var(--text-primary); cursor: pointer; font-weight: 600;">취소</button>
-            <button id="adminModalConfirm"
-                style="padding: 0.5rem 1.2rem; border: none; border-radius: 9999px; background: var(--accent-color); color: white; cursor: pointer; font-weight: 600;">확인</button>
-        </div>
-    </div>
-
-    <!-- 관리자 비활성화 확인 모달 -->
-    <div id="adminDeactivateModal" class="modal-container">
-        <h3 style="margin-bottom: 0.5rem;"><i class="fa-solid fa-circle-question" style="color: #ef4444;"></i> 관리자 모드 종료
-        </h3>
-        <p style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.9rem;">관리자 모드를 비활성화하시겠습니까?</p>
-        <div class="modal-buttons" style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
-            <button id="adminDeactivateCancel"
-                style="padding: 0.5rem 1.2rem; border: none; border-radius: 9999px; background: var(--glass-border); color: var(--text-primary); cursor: pointer; font-weight: 600;">취소</button>
-            <button id="adminDeactivateConfirm"
-                style="padding: 0.5rem 1.2rem; border: none; border-radius: 9999px; background: #ef4444; color: white; cursor: pointer; font-weight: 600;">확인</button>
-        </div>
-    </div>
-
     <!-- 전역 커스텀 Confirm 모달 -->
     <div id="customConfirmModalOverlay" class="modal-overlay"></div>
     <div id="customConfirmModal" class="modal-container">
@@ -1531,16 +1504,16 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
-    <script src="script.js?v=1.0.15"></script>
+    <script src="script.js?v=1.0.16"></script>
     <script src="youtube-utils.js?v=1.0.3"></script>
     <!-- 커뮤니티는 역할별 파일로 나누어, 수정할 때 해당 기능만 찾을 수 있게 했습니다. -->
-    <script src="community.js?v=2.1.5"></script>
-    <script src="community-comment-render.js?v=2.0.4"></script>
-    <script src="community-post-detail.js?v=2.0.4"></script>
+    <script src="community.js?v=2.1.6"></script>
+    <script src="community-comment-render.js?v=2.0.5"></script>
+    <script src="community-post-detail.js?v=2.0.5"></script>
     <script src="media-upload.js?v=1.0.3"></script>
     <script src="community-attachments.js?v=2.0.4"></script>
     <script src="community-ui.js?v=2.0.4"></script>
-    <script src="community-interactions.js?v=2.0.5"></script>
+    <script src="community-interactions.js?v=2.0.6"></script>
 </body>
 
 </html>

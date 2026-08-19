@@ -120,18 +120,6 @@ window.addEventListener('popstate', (e) => {
         return;
     }
 
-    // 관리자 비밀번호 모달
-    const adminModal = document.getElementById('adminModal');
-    if (adminModal && adminModal.classList.contains('active')) {
-        if (typeof window.closeAdminModal === 'function') window.closeAdminModal(true);
-        return;
-    }
-    // 관리자 비활성화 모달
-    const adminDeactivateModal = document.getElementById('adminDeactivateModal');
-    if (adminDeactivateModal && adminDeactivateModal.classList.contains('active')) {
-        if (typeof window.closeAdminDeactivateModal === 'function') window.closeAdminDeactivateModal(true);
-        return;
-    }
     // 커스텀 확인 모달 (삭제 확인 등) - 자체 popstate 핸들러가 있으므로 여기서는 fallback
     const customConfirmModal = document.getElementById('customConfirmModal');
     if (customConfirmModal && customConfirmModal.classList.contains('active')) {

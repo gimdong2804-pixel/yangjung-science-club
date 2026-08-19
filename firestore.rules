@@ -1,0 +1,118 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in [
+          'gimdong2804@gmail.com',
+          'sjh20110407@gmail.com'
+        ];
+    }
+
+    function owns(data) {
+      return signedIn() && (
+        (data.keys().hasAny(['uid']) && data.uid == request.auth.uid)
+        || (data.keys().hasAny(['authorUid']) && data.authorUid == request.auth.uid)
+        || (data.keys().hasAny(['email']) && data.email == request.auth.token.email)
+      );
+    }
+
+    function changedOnly(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    function isPostOwner(postId) {
+      return owns(get(/databases/$(database)/documents/posts/$(postId)).data);
+    }
+
+    function isPostInteractionUpdate() {
+      return (
+        signedIn()
+        && changedOnly(['views', 'viewedBy', 'likes', 'likedUsers'])
+      ) || (
+        !signedIn()
+        && changedOnly(['views'])
+        && request.resource.data.views == resource.data.views + 1
+      );
+    }
+
+    function isCommentInteractionUpdate() {
+      return signedIn() && changedOnly(['likes', 'likedUsers']);
+    }
+
+    match /userRoles/{accountEmail} {
+      allow get: if isAdmin()
+        || (signedIn() && request.auth.token.email == accountEmail);
+      allow list, create, update, delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+
+      match /{privateDocument=**} {
+        allow read, write: if signedIn() && request.auth.uid == userId;
+      }
+    }
+
+    match /posts/{postId} {
+      allow read: if true;
+
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.views == 0
+        && request.resource.data.likes == 0;
+
+      allow update: if isAdmin()
+        || (
+          owns(resource.data)
+          && changedOnly([
+            'title', 'body', 'categoryMain', 'categorySub',
+            'images', 'attachments', 'imageDescriptions'
+          ])
+        )
+        || isPostInteractionUpdate();
+
+      allow delete: if isAdmin() || owns(resource.data);
+
+      match /comments/{commentId} {
+        allow read: if true;
+
+        allow create: if signedIn()
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.email == request.auth.token.email
+          && request.resource.data.pinned == false
+          && request.resource.data.likes == 0
+          && request.resource.data.deleted == false;
+
+        allow update: if isAdmin()
+          || (
+            owns(resource.data)
+            && changedOnly([
+              'body', 'content', 'images', 'videos', 'audios', 'pdfs', 'htmls',
+              'imageDescriptions', 'edited', 'editedAt', 'deleted', 'deletedAt'
+            ])
+          )
+          || (isPostOwner(postId) && changedOnly(['pinned']))
+          || isCommentInteractionUpdate();
+
+        allow delete: if isAdmin() || owns(resource.data) || isPostOwner(postId);
+      }
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

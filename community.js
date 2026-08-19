@@ -23,25 +23,14 @@ let currentUser = null;
 var postsUnsubscribe = null;
 var postUnsubscribe = null;
 
-// 관리자 이메일 목록 (회장 + 사장)
-const ADMIN_EMAILS = ['gimdong2804@gmail.com', 'sjh20110407@gmail.com'];
-function isAdmin(email) { return ADMIN_EMAILS.includes(email); }
+// 관리자 계정 판별 함수는 script.js에서 먼저 공통으로 정의합니다.
 function getAdminName(email) {
     const names = { 'gimdong2804@gmail.com': '회장 김동현', 'sjh20110407@gmail.com': '사장' };
     return names[email] || null;
 }
 
-// 개발 모드: URL에 ?dev=true 붙이거나 localStorage 설정 시 로그인 없이 테스트 가능
-let isDevMode = new URLSearchParams(window.location.search).get('dev') === 'true' || localStorage.getItem('dev_mode') === 'true';
-if (isDevMode) {
-    currentUser = {
-        uid: 'dev-test-president',
-        email: 'gimdong2804@gmail.com',
-        displayName: '회장 김동현',
-        photoURL: '',
-    };
-    console.log('%c[개발/테스트 모드] 회장 계정으로 접속 중', 'color: #10b981; font-weight: bold;');
-}
+// 이전 공개 테스트 모드 기록은 실제 로그인 권한으로 오인되지 않도록 제거합니다.
+localStorage.removeItem('dev_mode');
 // 구글 로그인 관련 DOM
 const googleLoginBtn = document.getElementById('googleLoginBtn');
 const userProfileInfo = document.getElementById('userProfileInfo');
@@ -85,13 +74,6 @@ if (googleLoginBtn) {
 if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
         try {
-            if (isDevMode) {
-                localStorage.removeItem('dev_mode');
-                const url = new URL(window.location.href);
-                url.searchParams.delete('dev');
-                window.location.href = url.pathname;
-                return;
-            }
             await auth.signOut();
         } catch (error) {
             console.error("Sign-Out Error: ", error);
@@ -102,26 +84,6 @@ if (logoutBtn) {
 // Auth 상태 리스너
 let authUITimeout;
 auth.onAuthStateChanged(async (user) => {
-    // 개발 모드에서는 Auth 리스너가 currentUser를 덮어쓰지 않음
-    if (isDevMode) {
-        // 개발 모드 UI: 로그인 버튼 숨기고 프로필 표시
-        googleLoginBtn.classList.add('hidden');
-        userProfileInfo.classList.remove('hidden');
-        userName.innerText = '회장 김동현';
-        userEmail.innerText = 'gimdong2804@gmail.com';
-        userAvatar.src = '';
-        const postAuthorInput = document.getElementById('postAuthor');
-        if (postAuthorInput) {
-            postAuthorInput.value = '회장 김동현';
-            postAuthorInput.placeholder = '작성자 이름';
-        }
-        if (typeof window.loadUserAccountData === 'function') {
-            await window.loadUserAccountData(currentUser);
-        }
-        const currentSort = document.querySelector('.custom-dropdown-option.active')?.getAttribute('data-value') || 'latest';
-        loadPosts(currentSort);
-        return;
-    }
     clearTimeout(authUITimeout);
     const postAuthorInput = document.getElementById('postAuthor');
     if (user) {

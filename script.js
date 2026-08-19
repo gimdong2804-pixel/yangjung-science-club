@@ -32,6 +32,32 @@ var db = window.db;
 var auth = window.auth;
 var storage = window.storage;
 
+// 관리자 권한은 Firebase에 실제 로그인된 회장·사장 계정만 인정합니다.
+const ADMIN_EMAILS = Object.freeze(['gimdong2804@gmail.com', 'sjh20110407@gmail.com']);
+
+function isAdmin(email) {
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    return ADMIN_EMAILS.includes(normalizedEmail);
+}
+
+function hasAdminAccess(user = auth.currentUser) {
+    return Boolean(user && isAdmin(user.email));
+}
+
+function showAdminAccessDenied() {
+    if (typeof window.customAlert === 'function') {
+        window.customAlert('접근 권한이 없습니다.', '관리자 모드');
+    } else {
+        alert('접근 권한이 없습니다.');
+    }
+}
+
+function requireAdminAccess(showMessage = true) {
+    if (hasAdminAccess()) return true;
+    if (showMessage) showAdminAccessDenied();
+    return false;
+}
+
 // 전역 커스텀 Confirm 모달 함수 (취소: 왼쪽, 확인: 오른쪽)
 window.customConfirm = function (message, title = '확인') {
     return new Promise((resolve) => {
@@ -465,10 +491,13 @@ function handlePageBack() {
     switchPage(currentPage, mainPage, true);
 }
 
+const ADMIN_PAGE_IDS = new Set(['roleManagePage', 'updateRulesPage']);
+
 function switchPage(fromPage, toPage, skipHistory = false, replaceState = false) {
     if (typeof fromPage === 'string') fromPage = document.getElementById(fromPage) || currentPage;
     if (typeof toPage === 'string') toPage = document.getElementById(toPage);
     if (!fromPage || !toPage) return;
+    if (ADMIN_PAGE_IDS.has(toPage.id) && !requireAdminAccess()) return;
     if (fromPage === toPage) return; // 동일한 페이지로의 전환은 무시
 
     // 페이지 전환 시 다중선택 모드 해제
@@ -620,123 +649,77 @@ suggestionBackBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// 관리자 모드 이스터에그 로직 추가
+// 관리자 메뉴: 실제 로그인 계정에만 연결된 6회 터치 확인 동작
 // ==========================================
 const adminTriggerIcon = document.getElementById('adminTriggerIcon');
-const adminModalOverlay = document.getElementById('adminModalOverlay');
-const adminModal = document.getElementById('adminModal');
-const adminPwdInput = document.getElementById('adminPwdInput');
-const adminModalCancel = document.getElementById('adminModalCancel');
-const adminModalConfirm = document.getElementById('adminModalConfirm');
 const adminCategory = document.getElementById('adminCategory');
-const adminDeactivateModal = document.getElementById('adminDeactivateModal');
-const adminDeactivateCancel = document.getElementById('adminDeactivateCancel');
-const adminDeactivateConfirm = document.getElementById('adminDeactivateConfirm');
 
-const adminNavTab = document.getElementById('adminNavTab');
-function updateAdminNavTab() {
-    if (adminNavTab) {
-        if (localStorage.getItem('isAdminUnlocked') === 'true') {
-            adminNavTab.style.display = 'inline-flex';
-        } else {
-            adminNavTab.style.display = 'none';
-        }
+// 예전 비밀번호 방식으로 남은 값은 더 이상 권한으로 사용하지 않습니다.
+localStorage.removeItem('isAdminUnlocked');
+
+function setAdminCategoryVisible(visible) {
+    if (!adminCategory) return;
+    adminCategory.style.display = visible ? 'block' : 'none';
+    adminCategory.classList.remove('category-fade-in', 'category-fade-out');
+}
+
+function revokeAdminUi() {
+    setAdminCategoryVisible(false);
+
+    if (typeof stopRoleList === 'function') stopRoleList();
+    if (window.isRoleMultiSelectMode && typeof window.cancelRoleMultiDelete === 'function') {
+        window.cancelRoleMultiDelete();
+    }
+
+    const roleList = document.getElementById('roleListContainer');
+    if (roleList) roleList.replaceChildren();
+
+    const roleEditModalOverlay = document.getElementById('roleEditModalOverlay');
+    const roleEditModal = document.getElementById('roleEditModal');
+    if (roleEditModalOverlay) roleEditModalOverlay.classList.remove('active');
+    if (roleEditModal) roleEditModal.classList.remove('active');
+
+    const isAdminPageOpen = currentPage && ['roleManagePage', 'updateRulesPage'].includes(currentPage.id);
+    if (isAdminPageOpen) {
+        history.replaceState({ page: 'mainPage' }, '', '#/mainPage');
+        switchPage(currentPage, mainPage, true);
     }
 }
-updateAdminNavTab();
 
-// 새로고침해도 관리자 모드 유지
-if (localStorage.getItem('isAdminUnlocked') === 'true') {
-    adminCategory.style.display = 'block';
+function syncAdminAccessUi(user = auth.currentUser) {
+    if (hasAdminAccess(user)) {
+        setAdminCategoryVisible(true);
+    } else {
+        revokeAdminUi();
+    }
 }
 
 let adminClickCount = 0;
 let adminLastClickTime = 0;
 
-adminTriggerIcon.addEventListener('click', (e) => {
-    const currentTime = new Date().getTime();
-    if (currentTime - adminLastClickTime > 5000) {
-        adminClickCount = 0;
-    }
-    adminClickCount++;
-    adminLastClickTime = currentTime;
+if (adminTriggerIcon) {
+    adminTriggerIcon.addEventListener('click', () => {
+        const currentTime = Date.now();
+        if (currentTime - adminLastClickTime > 5000) adminClickCount = 0;
 
-    if (adminClickCount >= 5) {
+        adminClickCount += 1;
+        adminLastClickTime = currentTime;
+
+        if (adminClickCount < 6) return;
         adminClickCount = 0;
-        if (localStorage.getItem('isAdminUnlocked') === 'true') {
-            history.pushState({ modal: 'adminDeactivate' }, '', '');
-            adminModalOverlay.classList.add('active');
-            adminDeactivateModal.classList.add('active');
-        } else {
-            history.pushState({ modal: 'adminAuth' }, '', '');
-            adminModalOverlay.classList.add('active');
-            adminModal.classList.add('active');
-            adminPwdInput.value = '';
-            setTimeout(() => adminPwdInput.focus(), 300);
+
+        if (!hasAdminAccess()) {
+            showAdminAccessDenied();
+            return;
         }
-    }
-});
 
-window.closeAdminModal = function (fromPopState = false) {
-    adminModalOverlay.classList.remove('active');
-    adminModal.classList.remove('active');
-    if (!fromPopState && history.state && history.state.modal === 'adminAuth') {
-        window._isProgrammaticBack = true;
-        history.back();
-    }
-};
-adminModalCancel.addEventListener('click', () => window.closeAdminModal(false));
-
-window.closeAdminDeactivateModal = function (fromPopState = false) {
-    adminModalOverlay.classList.remove('active');
-    adminDeactivateModal.classList.remove('active');
-    if (!fromPopState && history.state && history.state.modal === 'adminDeactivate') {
-        window._isProgrammaticBack = true;
-        history.back();
-    }
-};
-adminDeactivateCancel.addEventListener('click', () => window.closeAdminDeactivateModal(false));
-
-adminDeactivateConfirm.addEventListener('click', () => {
-    localStorage.removeItem('isAdminUnlocked');
-    adminCategory.classList.remove('category-fade-in');
-    adminCategory.classList.add('category-fade-out');
-    setTimeout(() => {
-        adminCategory.style.display = 'none';
-        adminCategory.classList.remove('category-fade-out');
-    }, 400);
-    window.closeAdminDeactivateModal(false);
-});
-
-function checkAdminPassword() {
-    if (adminPwdInput.value === '110420') {
-        localStorage.setItem('isAdminUnlocked', 'true');
-        adminCategory.style.display = 'block';
-        window.closeAdminModal(false);
-        adminCategory.classList.remove('category-fade-out');
-        adminCategory.classList.add('category-fade-in');
-
+        setAdminCategoryVisible(true);
         const drawer = document.getElementById('sideDrawer');
-        drawer.scrollTo({
-            top: drawer.scrollHeight,
-            behavior: 'smooth'
-        });
-    } else {
-        adminModal.classList.add('shake-animation');
-        adminPwdInput.value = '';
-        adminPwdInput.focus();
-        setTimeout(() => {
-            adminModal.classList.remove('shake-animation');
-        }, 400);
-    }
+        if (drawer) {
+            drawer.scrollTo({ top: drawer.scrollHeight, behavior: 'smooth' });
+        }
+    });
 }
-
-adminModalConfirm.addEventListener('click', checkAdminPassword);
-adminPwdInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        checkAdminPassword();
-    }
-});
 
 // ==========================================
 // 직책 관리 페이지 로직 (모달에서 변경)
@@ -751,14 +734,10 @@ const roleManageConfirmBtn = document.getElementById('roleManageConfirmBtn');
 if (roleManageMenuBtn) {
     roleManageMenuBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        const isUnlocked = localStorage.getItem('isAdminUnlocked') === 'true';
-        const isPresident = typeof isAdmin === 'function' && currentUser && isAdmin(currentUser.email);
-        if (!isUnlocked && !isPresident) {
-            alert('회장만 접근 가능한 페이지입니다.');
-            return;
-        }
+        if (!requireAdminAccess()) return;
         roleTargetEmail.value = '';
         roleNameInput.value = '';
+        loadRoleList();
         closeDrawer(true);
         switchPage(currentPage, roleManagePage, false, true);
     });
@@ -778,12 +757,7 @@ const updateRulesBackBtn = document.getElementById('updateRulesBackBtn');
 if (updateRulesMenuBtn) {
     updateRulesMenuBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        const isUnlocked = localStorage.getItem('isAdminUnlocked') === 'true';
-        const isPresident = typeof isAdmin === 'function' && currentUser && isAdmin(currentUser.email);
-        if (!isUnlocked && !isPresident) {
-            alert('회장만 접근 가능한 페이지입니다.');
-            return;
-        }
+        if (!requireAdminAccess()) return;
         closeDrawer(true);
         switchPage(currentPage, updateRulesPage, false, true);
     });
@@ -795,17 +769,12 @@ if (updateRulesBackBtn) {
 
 // Auth 변경에 맞춘 관리자 메뉴 표시 리스너
 auth.onAuthStateChanged(user => {
-    const adminCategory = document.getElementById('adminCategory');
-    if (user && isAdmin(user.email)) {
-        if (adminCategory) adminCategory.style.display = 'block';
-    } else if (localStorage.getItem('isAdminUnlocked') !== 'true') {
-        if (adminCategory) adminCategory.style.display = 'none';
-    }
+    syncAdminAccessUi(user);
 });
 
 if (roleManageConfirmBtn) {
     roleManageConfirmBtn.addEventListener('click', async () => {
-        if (!currentUser || !isAdmin(currentUser.email)) return;
+        if (!requireAdminAccess()) return;
 
         const targetEmail = roleTargetEmail.value.trim();
         const roleName = roleNameInput.value.trim();
@@ -856,9 +825,28 @@ let seenRoleEmails = new Set();
 let isRoleInitialLoad = true;
 let roleJustActivated = false;
 
+function stopRoleList() {
+    if (unsubscribeRoles) {
+        unsubscribeRoles();
+        unsubscribeRoles = null;
+    }
+}
+
 function loadRoleList() {
-    if (unsubscribeRoles) unsubscribeRoles();
+    if (!requireAdminAccess(false)) {
+        stopRoleList();
+        if (roleListContainer) roleListContainer.replaceChildren();
+        return;
+    }
+
+    stopRoleList();
     unsubscribeRoles = db.collection('userRoles').onSnapshot(snapshot => {
+        if (!hasAdminAccess()) {
+            stopRoleList();
+            if (roleListContainer) roleListContainer.replaceChildren();
+            return;
+        }
+
         const roles = [];
         snapshot.forEach(doc => {
             const data = doc.data();
@@ -1125,7 +1113,7 @@ window.cancelRoleMultiDelete = function () {
 };
 
 window.executeRoleMultiDelete = async function () {
-    if (!currentUser || !isAdmin(currentUser.email)) return;
+    if (!requireAdminAccess()) return;
     const cbs = document.querySelectorAll('.role-select-cb:checked');
     if (cbs.length === 0) return;
     if (!await window.customConfirm(`선택한 ${cbs.length}명의 직책을 회수하시겠습니까?`, '직책 회수')) return;
@@ -1154,7 +1142,7 @@ const roleEditModalConfirm = document.getElementById('roleEditModalConfirm');
 let currentEditRoleEmail = '';
 
 window.openRoleEditModal = function (email, currentRoleName) {
-    if (!currentUser || !isAdmin(currentUser.email)) return;
+    if (!requireAdminAccess()) return;
     currentEditRoleEmail = email;
     roleEditTargetEmailText.innerText = email;
     roleEditNameInput.value = currentRoleName;
@@ -1171,6 +1159,8 @@ if (roleEditModalCancel) {
 
 if (roleEditModalConfirm) {
     roleEditModalConfirm.addEventListener('click', async () => {
+        if (!requireAdminAccess()) return;
+
         const newRoleName = roleEditNameInput.value.trim();
         if (!newRoleName) {
             alert('새로운 직책명을 입력해주세요.');
@@ -1189,16 +1179,9 @@ if (roleEditModalConfirm) {
     });
 }
 
-// 직책 관리 메뉴 버튼 클릭 시에 loadRoleList 실행
-if (roleManageMenuBtn) {
-    roleManageMenuBtn.addEventListener('click', () => {
-        loadRoleList();
-    });
-}
-
 // 직책 개별 삭제 (페이드 → 공간 접기 → Firestore 삭제)
 window.deleteRoleWithAnim = async function (email, btnEl) {
-    if (!currentUser || !isAdmin(currentUser.email)) return;
+    if (!requireAdminAccess()) return;
     if (!confirm(`'${email}'의 직책을 회수하시겠습니까?`)) return;
 
     const card = btnEl.closest('.board-card');
@@ -1255,7 +1238,7 @@ window.deleteRoleWithAnim = async function (email, btnEl) {
 
 // 직책 개별 고정/해제 (커뮤니티와 동일한 애니메이션)
 window.toggleRolePin = async function (email, currentPinned) {
-    if (!currentUser || !isAdmin(currentUser.email)) return;
+    if (!requireAdminAccess()) return;
     const btn = window.event ? (window.event.currentTarget || window.event.target.closest('.pin-toggle-btn')) : null;
     let isPinned = currentPinned;
     if (btn) {

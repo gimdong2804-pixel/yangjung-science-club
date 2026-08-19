@@ -1192,31 +1192,64 @@ async function deleteSelectedComments(postId, selectedIds) {
     let changedCount = 0;
 
     const toDelete = new Set();
+    const toSoftDelete = new Set();
+    const postData = window.currentPostData || {};
+    const canModerateAllComments = isPresidentUser()
+        || postData.uid === currentUser.uid
+        || postData.email === currentUser.email;
 
     selectedIds.forEach(commentId => {
         const comment = byId.get(commentId);
         if (!comment) return;
 
-        const canDelete = isPresidentUser() || comment.uid === currentUser.uid;
+        const isCommentOwner = comment.uid === currentUser.uid || comment.authorUid === currentUser.uid;
+        const canDelete = canModerateAllComments || isCommentOwner;
         if (!canDelete) {
             blockedCount += 1;
             return;
         }
 
-        // 권한이 있는 경우, 해당 댓글과 모든 대댓글을 삭제 목록에 추가
-        const queue = [commentId];
-        while (queue.length > 0) {
-            const currentId = queue.shift();
-            if (!toDelete.has(currentId)) {
-                toDelete.add(currentId);
-                const kids = childrenMap.get(currentId) || [];
-                kids.forEach(k => queue.push(k.id));
+        const children = childrenMap.get(commentId) || [];
+        if (!canModerateAllComments && children.length > 0) {
+            // 일반 작성자가 댓글을 지울 때 답글 작성자의 글까지 삭제하지 않고 흔적만 남깁니다.
+            toSoftDelete.add(commentId);
+            return;
+        }
+
+        if (canModerateAllComments) {
+            // 회장·사장 또는 게시글 작성자는 댓글 묶음 전체를 정리할 수 있습니다.
+            const queue = [commentId];
+            while (queue.length > 0) {
+                const currentId = queue.shift();
+                if (!toDelete.has(currentId)) {
+                    toDelete.add(currentId);
+                    const kids = childrenMap.get(currentId) || [];
+                    kids.forEach(k => queue.push(k.id));
+                }
             }
+        } else {
+            toDelete.add(commentId);
         }
     });
 
     toDelete.forEach(commentId => {
         batch.delete(commentsRef.doc(commentId));
+        changedCount += 1;
+    });
+
+    toSoftDelete.forEach(commentId => {
+        batch.update(commentsRef.doc(commentId), {
+            body: '',
+            content: '',
+            images: [],
+            videos: [],
+            audios: [],
+            pdfs: [],
+            htmls: [],
+            imageDescriptions: {},
+            deleted: true,
+            deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
         changedCount += 1;
     });
 
