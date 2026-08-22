@@ -1558,8 +1558,8 @@ if (settingsNavItems.length > 0) {
 // 사이트 업데이트 정보: 다음 배포 시 이 값만 변경합니다.
 const SITE_UPDATE_INFO = Object.freeze({
     oneUiVersion: 'One UI 1.0',
-    buildNumber: '20260811.1',
-    message: '우리 동아리 사이트의 첫 버전인 One UI 1.0입니다!'
+    buildNumber: '20260822.1',
+    message: '모바일 화면 사용성 개선 및 게시글 상단 고정 관련 버그 수정 업데이트입니다.'
 });
 
 const checkUpdateBtn = document.getElementById('checkUpdateBtn');
@@ -1672,31 +1672,56 @@ window.showInPageUpdateDetails = function () {
     window.updateSubState = 'details';
     history.pushState({ modal: 'settings', updateSubState: 'details' }, '');
 
-    if (updateMainView) updateMainView.classList.remove('active');
-    if (updateDetailsView) updateDetailsView.classList.add('active');
+    if (!updateMainView || !updateDetailsView) return;
+
+    updateMainView.classList.remove('active');
+    updateMainView.classList.add('leaving');
+
+    setTimeout(() => {
+        updateMainView.classList.remove('leaving');
+        updateMainView.style.display = 'none';
+
+        updateDetailsView.style.display = 'flex';
+        updateDetailsView.classList.remove('leaving');
+        void updateDetailsView.offsetWidth;
+        updateDetailsView.classList.add('active');
+    }, 180);
 };
 
 // 상세 화면에서 "← 돌아가기" 버튼 클릭 시 -> 알약 상태가 보이는 메인 화면으로 복귀
 window.hideInPageUpdateDetails = function (fromPopState = false) {
     window.updateSubState = 'pill';
 
-    if (updateDetailsView) updateDetailsView.classList.remove('active');
-    if (updateMainView) updateMainView.classList.add('active');
-    if (openUpdateDetailsBtn) {
-        openUpdateDetailsBtn.style.display = 'flex';
-    }
-    if (updateMainBackBtn) {
-        updateMainBackBtn.style.display = 'inline-flex';
-        updateMainBackBtn.classList.remove('hiding', 'showing');
-        requestAnimationFrame(() => {
+    if (!updateDetailsView || !updateMainView) return;
+
+    updateDetailsView.classList.remove('active');
+    updateDetailsView.classList.add('leaving');
+
+    setTimeout(() => {
+        updateDetailsView.classList.remove('leaving');
+        updateDetailsView.style.display = 'none';
+
+        updateMainView.style.display = 'flex';
+        updateMainView.classList.remove('leaving');
+        void updateMainView.offsetWidth;
+        updateMainView.classList.add('active');
+
+        if (openUpdateDetailsBtn) {
+            openUpdateDetailsBtn.style.display = 'flex';
+        }
+        if (updateMainBackBtn) {
+            updateMainBackBtn.style.display = 'inline-flex';
+            updateMainBackBtn.classList.remove('hiding', 'showing');
             requestAnimationFrame(() => {
-                updateMainBackBtn.classList.add('showing');
+                requestAnimationFrame(() => {
+                    updateMainBackBtn.classList.add('showing');
+                });
             });
-        });
-    }
-    if (checkUpdateBtn) {
-        checkUpdateBtn.style.display = 'none';
-    }
+        }
+        if (checkUpdateBtn) {
+            checkUpdateBtn.style.display = 'none';
+        }
+    }, 180);
 
     if (!fromPopState && history.state && history.state.updateSubState === 'details') {
         window._isProgrammaticBack = true;
@@ -1707,8 +1732,15 @@ window.hideInPageUpdateDetails = function (fromPopState = false) {
 
 window.resetUpdateTabViews = function () {
     window.updateSubState = null;
-    if (updateDetailsView) updateDetailsView.classList.remove('active');
-    if (updateMainView) updateMainView.classList.add('active');
+    if (updateDetailsView) {
+        updateDetailsView.classList.remove('active', 'leaving');
+        updateDetailsView.style.display = 'none';
+    }
+    if (updateMainView) {
+        updateMainView.style.display = 'flex';
+        updateMainView.classList.remove('leaving');
+        updateMainView.classList.add('active');
+    }
     if (checkUpdateBtn) {
         checkUpdateBtn.style.display = '';
         checkUpdateBtn.classList.remove('hiding', 'showing');
@@ -2093,3 +2125,12 @@ document.addEventListener('click', (e) => {
         }, 190);
     }
 });
+
+window.toggleUpdatePhotos = function (btn) {
+    const collapse = btn.nextElementSibling;
+    if (!collapse) return;
+    const isExpanded = btn.classList.contains('active');
+    btn.classList.toggle('active', !isExpanded);
+    collapse.classList.toggle('active', !isExpanded);
+    btn.setAttribute('aria-expanded', !isExpanded);
+};

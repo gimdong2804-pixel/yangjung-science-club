@@ -1,4 +1,4 @@
-﻿// 커뮤니티 핵심: 로그인, 글 작성, 게시글 목록과 정렬
+// 커뮤니티 핵심: 로그인, 글 작성, 게시글 목록과 정렬
 var db = window.db || firebase.firestore();
 var auth = window.auth || firebase.auth();
 
@@ -1439,11 +1439,12 @@ function loadPosts(sortBy = 'latest') {
                 card.style.transform = 'translateY(0)';
                 setTimeout(() => {
                     card.style.transition = '';
-                    card.style.transform = '';
                     card.style.opacity = '';
+                    card.style.transform = '';
                 }, 500);
             }
         });
+
     }, (error) => {
         console.error("onSnapshot error: ", error);
     });

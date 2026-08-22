@@ -56,7 +56,7 @@ window.openLightbox = function (url, meta) {
     lightboxMeta = meta;
     const descBtn = document.getElementById('lightboxDescBtn');
 
-    if ((meta.postId && meta.imageIndex !== undefined) || (meta.preUpload && meta.imageIndex !== undefined)) {
+    if ((meta.postId && meta.imageIndex !== undefined) || (meta.preUpload && meta.imageIndex !== undefined) || meta.description) {
         descBtn.style.display = '';
     } else {
         descBtn.style.display = 'none';
@@ -130,7 +130,13 @@ document.getElementById('lightboxDescBtn').addEventListener('click', async (e) =
     editArea.style.display = 'none';
     descText.style.display = '';
 
-    if (lightboxMeta.preUpload) {
+    if (lightboxMeta.description) {
+        descText.textContent = lightboxMeta.description;
+        descText.className = 'lightbox-desc-text';
+        editBtn.style.display = 'none';
+        editBtn.dataset.canEdit = 'false';
+        openDescModal();
+    } else if (lightboxMeta.preUpload) {
         const attachedImages = window.commentAttachedImages || [];
         const desc = attachedImages[lightboxMeta.imageIndex]?.description || '';
         descText.textContent = desc || '설명이 없습니다.';

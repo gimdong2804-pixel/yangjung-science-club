@@ -68,21 +68,25 @@ window.executePostMultiPin = async function () {
     if (!currentUser || !isAdmin(currentUser.email)) return;
     const checkboxes = document.querySelectorAll('.post-select-cb:checked');
     if (checkboxes.length === 0) return;
-    if (!await window.customConfirm(`선택한 ${checkboxes.length}개의 게시물 고정 상태를 전환하시겠습니까?`, '게시물 고정 설정')) return;
 
     try {
-        for (let cb of checkboxes) {
-            const pid = cb.value;
-            const doc = await db.collection('posts').doc(pid).get();
-            if (doc.exists) {
-                const currentPinned = doc.data().pinned || false;
-                await db.collection('posts').doc(pid).update({ pinned: !currentPinned });
-            }
-        }
+        const postIds = Array.from(checkboxes).map(cb => cb.value);
+        const docs = await Promise.all(postIds.map(pid => db.collection('posts').doc(pid).get()));
+        
+        // 하나라도 고정 안 된 글이 있으면 모두 '고정(true)', 전부 이미 고정되어 있으면 '고정 해제(false)'
+        const hasUnpinned = docs.some(doc => doc.exists && !doc.data().pinned);
+        const targetPinned = hasUnpinned;
+        const actionText = targetPinned ? '상단 고정' : '고정 해제';
+
+        if (!await window.customConfirm(`선택한 ${postIds.length}개의 게시물을 ${actionText}하시겠습니까?`, `게시물 ${actionText}`)) return;
+
+        const updatePromises = postIds.map(pid => db.collection('posts').doc(pid).update({ pinned: targetPinned }));
+        await Promise.all(updatePromises);
+
         cancelPostMultiDelete();
     } catch (e) {
         console.error("Multi pin post error", e);
-        alert('게시물 고정 중 오류가 발생했습니다.');
+        alert('게시물 고정 처리 중 오류가 발생했습니다: ' + e.message);
     }
 };
 

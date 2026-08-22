@@ -295,13 +295,15 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
 
             const catIcon = typeof getCategoryIcon === 'function' ? getCategoryIcon(currentPost.categorySub) : 'fa-solid fa-tag';
             const detailCategoryHtml = (currentPost.categoryMain && currentPost.categorySub)
-                ? `<span class="post-category-badge" style="font-size: 0.82rem; padding: 0.25rem 0.75rem;"><i class="${catIcon}"></i> ${escapeHtml(currentPost.categoryMain)} &gt; ${escapeHtml(currentPost.categorySub)}</span>`
-                : '<div style="color: var(--accent-color); font-size: 0.85rem; font-weight: 600;">커뮤니티 · 게시글</div>';
+                ? `<span class="post-category-badge detail-category-badge"><i class="${catIcon}"></i> ${escapeHtml(currentPost.categoryMain)} &gt; ${escapeHtml(currentPost.categorySub)}</span>`
+                : '<div class="detail-category-fallback">커뮤니티 · 게시글</div>';
 
             area.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            ${detailCategoryHtml}
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="post-detail-header-top">
+                            <div class="post-detail-category-wrap">
+                                ${detailCategoryHtml}
+                            </div>
+                            <div class="post-detail-action-buttons">
                                 ${pinBtnHtml}
                                 ${deleteBtnHtml}
                                 ${editBtnHtml}
@@ -827,18 +829,30 @@ window.likePost = async function (id, btnEl) {
 window.togglePin = async function (id, currentPinned) {
     if (!currentUser || !isAdmin(currentUser.email)) return;
     const btn = window.event ? (window.event.currentTarget || window.event.target.closest('.pin-toggle-btn')) : null;
-    let isPinned = currentPinned;
-    if (btn) {
-        isPinned = btn.classList.contains('active');
-        btn.classList.toggle('active', !isPinned);
-        btn.classList.remove('animate-pin-action');
-        void btn.offsetWidth;
-        btn.classList.add('animate-pin-action');
-        btn.title = !isPinned ? '고정 해제' : '상단 고정';
-    }
+    if (btn && btn.dataset.processing === 'true') return;
+    if (btn) btn.dataset.processing = 'true';
+
+    const targetPinned = !currentPinned;
+
     try {
-        await db.collection('posts').doc(id).update({ pinned: !isPinned });
-    } catch (e) { console.error(e); }
+        await db.collection('posts').doc(id).update({ pinned: targetPinned });
+        if (btn) {
+            btn.classList.toggle('active', targetPinned);
+            btn.classList.remove('animate-pin-action');
+            void btn.offsetWidth;
+            btn.classList.add('animate-pin-action');
+            btn.title = targetPinned ? '고정 해제' : '상단 고정';
+        }
+    } catch (e) {
+        console.error('togglePin error: ', e);
+        alert('게시글 고정 설정 중 오류가 발생했습니다: ' + e.message);
+        if (btn) {
+            btn.classList.toggle('active', currentPinned);
+            btn.title = currentPinned ? '고정 해제' : '상단 고정';
+        }
+    } finally {
+        if (btn) delete btn.dataset.processing;
+    }
 };
 
 window.togglePinComment = async function (postId, commentId, currentPinned) {
@@ -846,18 +860,30 @@ window.togglePinComment = async function (postId, commentId, currentPinned) {
     const isPostAuthor = currentUser && window.currentPostData && (window.currentPostData.uid === currentUser.uid || window.currentPostData.email === currentUser.email);
     if (!currentUser || (!isPresident && !isPostAuthor)) return;
     const btn = window.event ? (window.event.currentTarget || window.event.target.closest('.pin-toggle-btn')) : null;
-    let isPinned = currentPinned;
-    if (btn) {
-        isPinned = btn.classList.contains('active');
-        btn.classList.toggle('active', !isPinned);
-        btn.classList.remove('animate-pin-action');
-        void btn.offsetWidth;
-        btn.classList.add('animate-pin-action');
-        btn.title = !isPinned ? '고정 해제' : '상단 고정';
-    }
+    if (btn && btn.dataset.processing === 'true') return;
+    if (btn) btn.dataset.processing = 'true';
+
+    const targetPinned = !currentPinned;
+
     try {
-        await db.collection('posts').doc(postId).collection('comments').doc(commentId).update({ pinned: !isPinned });
-    } catch (e) { console.error(e); }
+        await db.collection('posts').doc(postId).collection('comments').doc(commentId).update({ pinned: targetPinned });
+        if (btn) {
+            btn.classList.toggle('active', targetPinned);
+            btn.classList.remove('animate-pin-action');
+            void btn.offsetWidth;
+            btn.classList.add('animate-pin-action');
+            btn.title = targetPinned ? '고정 해제' : '상단 고정';
+        }
+    } catch (e) {
+        console.error('togglePinComment error: ', e);
+        alert('댓글 고정 설정 중 오류가 발생했습니다: ' + e.message);
+        if (btn) {
+            btn.classList.toggle('active', currentPinned);
+            btn.title = currentPinned ? '고정 해제' : '상단 고정';
+        }
+    } finally {
+        if (btn) delete btn.dataset.processing;
+    }
 };
 
 window.deletePostWithAnim = async function (id, btn) {

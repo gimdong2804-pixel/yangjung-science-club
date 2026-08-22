@@ -427,7 +427,7 @@
                             </div>
 
                             <!-- 3단계: 화면 전체를 활용하는 페이드 인 업데이트 내용 상세 화면 -->
-                            <div id="updateDetailsView" class="update-view-panel update-details-full-panel">
+                            <div id="updateDetailsView" class="update-view-panel update-details-full-panel" style="display: none;">
                                 <div class="update-details-header">
                                     <button id="closeUpdateDetailsTopBtn" class="greeting-back-btn"
                                         style="margin-bottom: 0;" type="button">
@@ -438,17 +438,103 @@
                                 </div>
 
                                 <div class="update-history-scroll-area">
-                                    <!-- 최신 버전 카드 (One UI 1.0) -->
+                                    <!-- 최신 버전 카드 (One UI 1.0, Build 20260822.1) -->
                                     <div class="update-history-card current-version-card">
                                         <div class="update-card-header">
                                             <div class="update-version-badge-group">
                                                 <span class="version-tag current">현재 버전</span>
                                                 <h4 class="version-title" data-current-one-ui-version>One UI 1.0</h4>
                                             </div>
-                                            <span class="build-number" data-current-build-number>Build 20260811.1</span>
+                                            <span class="build-number" data-current-build-number>Build 20260822.1</span>
                                         </div>
-                                        <p class="update-description" data-current-update-message>우리 동아리 사이트의 첫 버전인 One
-                                            UI 1.0입니다!</p>
+                                        <p class="update-description" data-current-update-message>모바일 화면 사용성 개선 및 게시글 상단 고정 관련 버그 수정 업데이트입니다.</p>
+                                        <div class="update-features-list">
+                                            <div class="feature-item">
+                                                <i class="fa-solid fa-check"></i>
+                                                <div>
+                                                    <strong>모바일 상단 액션 버튼 잘림 개선</strong>
+                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">모바일 화면에서 긴 주제명으로 인해 고정, 삭제, 수정 버튼이 화면 밖으로 잘리던 문제를 유연한 배치로 개선했습니다.</div>
+                                                </div>
+                                            </div>
+                                            <div class="feature-item">
+                                                <i class="fa-solid fa-check"></i>
+                                                <div>
+                                                    <strong>게시글 고정(Pin) 동기화 및 다중 선택 오류 수정</strong>
+                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">다중 선택 시 기존 고정글이 반대로 해제되던 현상을 해결하고, 데이터베이스 동기화 안정성을 강화했습니다.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 버그 수정 관련 사진 토글 영역 -->
+                                        <div class="update-photos-section">
+                                            <button type="button" class="update-photos-toggle-btn" onclick="toggleUpdatePhotos(this)" aria-expanded="false">
+                                                <div class="update-photos-toggle-left">
+                                                    <i class="fa-solid fa-images"></i>
+                                                    <span>수정된 버그 관련 사진 보기 (3장)</span>
+                                                </div>
+                                                <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                                            </button>
+
+                                            <div class="update-photos-collapse">
+                                                <div class="update-photos-grid">
+                                                    <!-- 1. 모바일 버튼 잘림 1 (9:16 세로형) -->
+                                                    <div class="update-photo-card" onclick="openLightbox('One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 1.jpg', { description: '모바일 화면에서 카테고리 주제명이 길어질 경우, 우측 상단의 고정, 삭제, 수정 액션 버튼이 화면 바깥으로 밀려나 잘리던 버그 현상입니다.' })">
+                                                        <div class="update-photo-thumb-wrap aspect-mobile">
+                                                            <img src="One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 1.jpg" alt="상단 버튼 잘림 1" class="update-photo-img mobile-thumb">
+                                                            <div class="update-photo-zoom-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> 확대</div>
+                                                        </div>
+                                                        <div class="update-photo-info">
+                                                            <div class="update-photo-title">
+                                                                <span class="photo-type-tag mobile">모바일</span>
+                                                                <span>버튼 잘림 현상 1</span>
+                                                            </div>
+                                                            <p class="update-photo-desc">긴 주제명으로 인해 상단 액션 버튼이 우측 화면 밖으로 잘리던 현상</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 2. 모바일 버튼 잘림 2 (9:16 세로형) -->
+                                                    <div class="update-photo-card" onclick="openLightbox('One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 2.jpg', { description: '다른 긴 주제명의 게시글에서도 동일하게 상단 액션 버튼들이 잘려나가 게시글 조작이 불가능했던 현상입니다.' })">
+                                                        <div class="update-photo-thumb-wrap aspect-mobile">
+                                                            <img src="One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 2.jpg" alt="상단 버튼 잘림 2" class="update-photo-img mobile-thumb">
+                                                            <div class="update-photo-zoom-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> 확대</div>
+                                                        </div>
+                                                        <div class="update-photo-info">
+                                                            <div class="update-photo-title">
+                                                                <span class="photo-type-tag mobile">모바일</span>
+                                                                <span>버튼 잘림 현상 2</span>
+                                                            </div>
+                                                            <p class="update-photo-desc">다른 게시글에서도 동일하게 액션 버튼이 잘려 조작이 어렵던 현상</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 3. 고정 동기화 오류 (와이드형) -->
+                                                    <div class="update-photo-card wide-card" onclick="openLightbox('One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/고정 관련 버그 사진.png', { description: '다중 선택 시 기존에 이미 고정되어 있던 글이 반대로 고정 해제되거나, 계정/창 간 고정 상태가 서로 일치하지 않던 동기화 버그입니다.' })">
+                                                        <div class="update-photo-thumb-wrap aspect-desktop">
+                                                            <img src="One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/고정 관련 버그 사진.png" alt="고정 동기화 오류" class="update-photo-img desktop-thumb">
+                                                            <div class="update-photo-zoom-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> 확대</div>
+                                                        </div>
+                                                        <div class="update-photo-info">
+                                                            <div class="update-photo-title">
+                                                                <span class="photo-type-tag pc">PC / 동기화</span>
+                                                                <span>게시글 고정 동기화 오류</span>
+                                                            </div>
+                                                            <p class="update-photo-desc">다중 선택 시 고정 상태가 반전되거나 다른 계정 간 고정 표시가 불일치하던 오류</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 이전 버전 카드 (One UI 1.0, Build 20260811.1) -->
+                                    <div class="update-history-card">
+                                        <div class="update-card-header">
+                                            <div class="update-version-badge-group">
+                                                <h4 class="version-title">One UI 1.0</h4>
+                                            </div>
+                                            <span class="build-number">Build 20260811.1</span>
+                                        </div>
+                                        <p class="update-description">우리 동아리 사이트의 첫 버전인 One UI 1.0입니다!</p>
                                         <div class="update-features-list">
                                             <div class="feature-item">
                                                 <i class="fa-solid fa-check"></i>
@@ -463,12 +549,6 @@
                                                 <span>스마트 부원 편의 및 개인화 기능을 제공합니다.</span>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <!-- 과거 버전 안내 가이드 영역 -->
-                                    <div class="update-history-timeline-footer">
-                                        <i class="fa-solid fa-clock-rotate-left"></i>
-                                        <span>향후 새로운 버전 업데이트 시 이전 업데이트 내역이 이곳에 차곡차곡 기록됩니다.</span>
                                     </div>
                                 </div>
                             </div>
