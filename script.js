@@ -258,6 +258,94 @@ setSiteTheme(ACCOUNT_SETTINGS_DEFAULTS.theme, false);
 window.setSiteTheme = setSiteTheme;
 window.setSettingsSyncEnabled = setSettingsSyncEnabled;
 
+function normalizeAccountSettings(savedSettings = {}) {
+    const validLogoDisplayStyles = ['default', 'icon-only', 'hidden'];
+    return {
+        theme: savedSettings.theme === 'dark' ? 'dark' : 'light',
+        logoDisplayStyle: validLogoDisplayStyles.includes(savedSettings.logoDisplayStyle)
+            ? savedSettings.logoDisplayStyle
+            : ACCOUNT_SETTINGS_DEFAULTS.logoDisplayStyle,
+        scrollHide: savedSettings.scrollHide !== false,
+        commentInputScrollHide: savedSettings.commentInputScrollHide !== false,
+        textSelectPrevent: savedSettings.textSelectPrevent !== false,
+        settingsSyncEnabled: savedSettings.settingsSyncEnabled !== false
+    };
+}
+
+function applyAccountSettings() {
+    setSiteTheme(accountSettings.theme, false);
+    if (typeof applyLogoDisplaySettings === 'function') applyLogoDisplaySettings(accountSettings.logoDisplayStyle);
+    if (typeof setScrollHideEnabled === 'function') setScrollHideEnabled(accountSettings.scrollHide, false);
+    if (typeof setCommentInputScrollHideEnabled === 'function') setCommentInputScrollHideEnabled(accountSettings.commentInputScrollHide, false);
+    if (typeof setTextSelectPreventEnabled === 'function') setTextSelectPreventEnabled(accountSettings.textSelectPrevent, false);
+    setSettingsSyncEnabled(accountSettings.settingsSyncEnabled, false);
+}
+
+window.loadUserAccountData = function (user) {
+    const userId = user?.uid;
+    if (!userId) {
+        window.clearUserAccountData();
+        return;
+    }
+
+    if (unsubscribeAccountSettings) {
+        unsubscribeAccountSettings();
+        unsubscribeAccountSettings = null;
+    }
+
+    activeAccountUserId = userId;
+    isLoadingAccountSettings = true;
+    accountSettings = normalizeAccountSettings(getDeviceAccountSettings(userId) || ACCOUNT_SETTINGS_DEFAULTS);
+    applyAccountSettings();
+
+    const settingsRef = db.collection('users').doc(userId).collection('private').doc('settings');
+    unsubscribeAccountSettings = settingsRef.onSnapshot((settingsSnapshot) => {
+        if (activeAccountUserId !== userId) return;
+
+        const remoteSettings = normalizeAccountSettings(settingsSnapshot.exists
+            ? settingsSnapshot.data()
+            : ACCOUNT_SETTINGS_DEFAULTS);
+
+        if (!settingsSnapshot.exists) {
+            settingsRef.set({
+                ...ACCOUNT_SETTINGS_DEFAULTS,
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+            }).catch((error) => console.error('기본 계정 설정 생성 오류:', error));
+        }
+
+        if (remoteSettings.settingsSyncEnabled) {
+            accountSettings = remoteSettings;
+        } else {
+            const deviceSettings = getDeviceAccountSettings(userId);
+            accountSettings = normalizeAccountSettings({
+                ...remoteSettings,
+                ...(deviceSettings || {}),
+                settingsSyncEnabled: false
+            });
+        }
+
+        saveDeviceAccountSettings(userId, accountSettings);
+        applyAccountSettings();
+        isLoadingAccountSettings = false;
+    }, (error) => {
+        isLoadingAccountSettings = false;
+        console.error('계정 설정 동기화 오류:', error);
+    });
+};
+
+window.clearUserAccountData = function () {
+    if (unsubscribeAccountSettings) {
+        unsubscribeAccountSettings();
+        unsubscribeAccountSettings = null;
+    }
+    activeAccountUserId = null;
+    isLoadingAccountSettings = false;
+    accountSettings = { ...ACCOUNT_SETTINGS_DEFAULTS };
+    applyAccountSettings();
+};
+
+
 if (themeToggleBtn) {
     themeToggleBtn.addEventListener('click', () => {
         setSiteTheme(getSiteTheme() === 'light' ? 'dark' : 'light');
@@ -767,9 +855,14 @@ if (updateRulesBackBtn) {
     updateRulesBackBtn.addEventListener('click', handlePageBack);
 }
 
-// Auth 변경에 맞춘 관리자 메뉴 표시 리스너
+// Auth 변경에 맞춘 관리자 메뉴 표시 및 설정 동기화 리스너
 auth.onAuthStateChanged(user => {
     syncAdminAccessUi(user);
+    if (user) {
+        window.loadUserAccountData(user);
+    } else {
+        window.clearUserAccountData();
+    }
 });
 
 if (roleManageConfirmBtn) {
