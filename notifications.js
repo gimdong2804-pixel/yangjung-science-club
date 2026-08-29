@@ -199,6 +199,22 @@
         updateNotificationSettingsUI();
     }
 
+    function isPushNotificationEnabled() {
+        try {
+            return localStorage.getItem('yangjung_push_notification_enabled') !== '0';
+        } catch {
+            return true;
+        }
+    }
+
+    function setPushNotificationEnabled(enabled) {
+        try {
+            localStorage.setItem('yangjung_push_notification_enabled', enabled ? '1' : '0');
+        } catch (error) {
+            console.warn('푸시 알림 설정 저장 오류:', error);
+        }
+    }
+
     function showNotificationOnce(rawData) {
         if (!activeNotificationUser || !auth.currentUser) return;
         if (!isInSiteNotificationEnabled()) return;
@@ -364,7 +380,9 @@
         if (!window.isSecureContext || !('Notification' in window) || !('PushManager' in window)) return;
 
         if (Notification.permission === 'granted') {
-            await registerPushForUser(user).catch((error) => console.error('푸시 알림 등록 오류:', error));
+            if (isPushNotificationEnabled()) {
+                await registerPushForUser(user).catch((error) => console.error('푸시 알림 등록 오류:', error));
+            }
             return;
         }
 
@@ -563,11 +581,12 @@
         }
 
         if (permission === 'granted') {
+            const isEnabled = isPushNotificationEnabled();
             if (badge) {
-                badge.classList.add('granted');
-                badge.textContent = '알림 켜짐';
+                badge.classList.add(isEnabled ? 'granted' : 'default');
+                badge.textContent = isEnabled ? '알림 켜짐' : '알림 꺼짐';
             }
-            setPushToggles(true, false);
+            setPushToggles(isEnabled, false);
             if (notice) notice.style.display = 'none';
             if (resetCard) resetCard.style.display = 'none';
         } else if (permission === 'denied') {
@@ -629,17 +648,20 @@
             const dismissKey = `yangjung_push_prompt_hidden_${user.uid}`;
 
             if (shouldEnable) {
+                setPushNotificationEnabled(true);
                 try {
                     localStorage.removeItem(dismissKey);
                 } catch {}
 
                 if (!('Notification' in window)) {
+                    setPushNotificationEnabled(false);
                     event.target.checked = false;
                     updateNotificationSettingsUI();
                     return;
                 }
 
                 if (Notification.permission === 'denied') {
+                    setPushNotificationEnabled(false);
                     event.target.checked = false;
                     updateNotificationSettingsUI();
                     queueNotification({
@@ -653,6 +675,7 @@
                 await requestPushPermission(user);
                 updateNotificationSettingsUI();
             } else {
+                setPushNotificationEnabled(false);
                 await unregisterPushSubscription();
                 queueNotification({
                     type: 'notice',
