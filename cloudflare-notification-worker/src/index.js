@@ -339,8 +339,9 @@ async function handleCommentEvent(request, env, ctx, origin) {
     return json({ ok: true, duplicate: true }, 200, origin);
   }
 
-  const actor = personName(comment.author || user.displayName);
-  const commentText = cleanText(comment?.body || comment?.content || '', 40);
+  const actor = cleanText(comment.author || user.displayName) || '회원';
+  const postTag = cleanText(post.title, 18) || '게시물';
+  const commentText = cleanText(comment?.body || comment?.content || '', 100);
   let rows;
   let payload;
 
@@ -349,8 +350,8 @@ async function handleCommentEvent(request, env, ctx, origin) {
     payload = notificationPayload({
       notificationId: eventId,
       type: 'new_comment',
-      title: `${actor}: ${commentText ? `“${commentText}”` : '새 댓글을 남겼어요'}`,
-      body: `${quotedTitle(post.title)} 게시물의 새 댓글`,
+      title: actor,
+      body: `[${postTag}] ${commentText || '새 댓글을 남겼어요.'}`,
       target: 'post',
       postId,
       commentId
@@ -369,13 +370,11 @@ async function handleCommentEvent(request, env, ctx, origin) {
     participantUids.push(post.uid || post.authorUid || '');
     const recipients = uniqueUserIds(participantUids, user.uid);
     rows = await getSubscriptionRows(env, recipients);
-    const parent = commentsById.get(comment.parentId) || {};
-    const repliedTo = personName(comment.replyToAuthor || parent.author || '다른 회원');
     payload = notificationPayload({
       notificationId: eventId,
       type: 'new_reply',
-      title: `${actor}: ${commentText ? `“${commentText}”` : '새 답글을 남겼어요'}`,
-      body: `${repliedTo}의 댓글에 남긴 답글 (${quotedTitle(post.title)})`,
+      title: `${actor} (답글)`,
+      body: `[${postTag}] ${commentText || '새 답글을 남겼어요.'}`,
       target: 'post',
       postId,
       commentId

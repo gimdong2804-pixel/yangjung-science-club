@@ -9,6 +9,10 @@ export function personName(value, fallback = '회원') {
   return name.endsWith('님') ? name : `${name}님`;
 }
 
+export function senderTitle(value, fallback = '회원') {
+  return cleanText(value, 40) || fallback;
+}
+
 export function quotedTitle(value) {
   return `“${cleanText(value, 34) || '제목 없는 게시물'}”`;
 }
