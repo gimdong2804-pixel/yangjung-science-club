@@ -76,6 +76,25 @@
         body.textContent = item.body;
         content.append(title, body);
 
+        let dismissButton = null;
+        if (item.dismissKey) {
+            dismissButton = document.createElement('button');
+            dismissButton.type = 'button';
+            dismissButton.className = 'site-notification-dismiss-button';
+            dismissButton.textContent = item.dismissLabel || '다시 보지 않기';
+            dismissButton.title = '이 계정에서만 다시 표시하지 않기';
+            dismissButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                try {
+                    localStorage.setItem(item.dismissKey, '1');
+                } catch (error) {
+                    console.warn('알림 표시 설정 저장 오류:', error);
+                }
+                closeToast();
+            });
+            content.appendChild(dismissButton);
+        }
+
         const controls = document.createElement('div');
         controls.className = 'site-notification-controls';
 
@@ -153,7 +172,9 @@
             duration: item.duration,
             actionLabel: item.actionLabel,
             onAction: item.onAction,
-            onClick: item.onClick
+            onClick: item.onClick,
+            dismissKey: item.dismissKey,
+            dismissLabel: item.dismissLabel
         });
         showNextNotification();
     }
@@ -323,10 +344,14 @@
         }
 
         if (Notification.permission === 'default') {
-            const promptKey = `yangjung_push_prompt_${user.uid}`;
-            const lastPromptAt = Number(localStorage.getItem(promptKey) || 0);
-            if (Date.now() - lastPromptAt < 7 * 24 * 60 * 60 * 1000) return;
-            localStorage.setItem(promptKey, String(Date.now()));
+            const dismissKey = `yangjung_push_prompt_hidden_${user.uid}`;
+            let isDismissed = false;
+            try {
+                isDismissed = localStorage.getItem(dismissKey) === '1';
+            } catch (error) {
+                console.warn('알림 표시 설정 읽기 오류:', error);
+            }
+            if (isDismissed) return;
 
             queueNotification({
                 type: 'permission',
@@ -334,7 +359,9 @@
                 body: '알림을 켜면 사이트를 닫아도 댓글·답글·고정·삭제·업데이트 소식이 떠요.',
                 duration: 12000,
                 actionLabel: '알림 켜기',
-                onAction: () => requestPushPermission(user)
+                onAction: () => requestPushPermission(user),
+                dismissKey,
+                dismissLabel: '다시 보지 않기'
             });
         }
     }

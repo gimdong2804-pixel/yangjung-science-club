@@ -2036,6 +2036,25 @@ body.no-text-select *:not(input):not(textarea):not([contenteditable="true"]) {
     -webkit-line-clamp: 2;
 }
 
+.site-notification-dismiss-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    margin-top: 0.5rem;
+    color: var(--text-secondary);
+    border: 0;
+    background: transparent;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 0.18rem;
+}
+
+.site-notification-dismiss-button:hover {
+    color: var(--text-primary);
+}
+
 .site-notification-controls {
     display: flex;
     align-items: center;
