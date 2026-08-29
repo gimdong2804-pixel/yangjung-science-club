@@ -1,6 +1,6 @@
 // 커뮤니티 보조 화면: 사이드 메뉴와 이미지 크게 보기
 // 사이드 메뉴 아이템 클릭 시 알림 및 드로어 닫기 (연결된 페이지 메뉴는 제외)
-document.querySelectorAll('.drawer-menu a:not(#greetingLink):not(#goalLink):not(#suggestionLink):not(#roleManageMenuBtn):not(#aiSettingsMenuBtn):not(#updateRulesMenuBtn):not(#cloudAccountManageMenuBtn)').forEach(item => {
+document.querySelectorAll('.drawer-menu a:not(#greetingLink):not(#goalLink):not(#suggestionLink):not(#roleManageMenuBtn):not(#aiSettingsMenuBtn):not(#updateRulesMenuBtn):not(#cloudAccountManageMenuBtn):not(#versionManageMenuBtn)').forEach(item => {
     item.addEventListener('click', (e) => {
         e.preventDefault();
         const title = item.innerText.trim();

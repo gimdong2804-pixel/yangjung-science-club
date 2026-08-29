@@ -186,6 +186,7 @@ const COMMUNITY_CATEGORIES = [
         subCategories: [
             { name: '커뮤니티 창 관련 버그', icon: 'fa-solid fa-comments', color: '#60a5fa' },
             { name: '설정창 관련 버그', icon: 'fa-solid fa-gear', color: '#a78bfa' },
+            { name: '알림 관련 버그', icon: 'fa-solid fa-bell', color: '#f43f5e' },
             { name: '인사말 창 관련 버그', icon: 'fa-solid fa-handshake', color: '#34d399' },
             { name: '기타 버그', icon: 'fa-solid fa-triangle-exclamation', color: '#f59e0b' }
         ]
@@ -213,6 +214,7 @@ const COMMUNITY_CATEGORIES = [
 
 function getCategoryIcon(subName) {
     if (!subName) return 'fa-solid fa-tag';
+    if (subName.includes('알림')) return 'fa-solid fa-bell';
     if (subName.includes('커뮤니티')) return 'fa-solid fa-comments';
     if (subName.includes('설정')) return 'fa-solid fa-gear';
     if (subName.includes('인사말')) return 'fa-solid fa-handshake';

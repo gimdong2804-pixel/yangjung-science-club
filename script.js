@@ -169,6 +169,8 @@ const ACCOUNT_SETTINGS_DEFAULTS = Object.freeze({
     scrollHide: true,
     commentInputScrollHide: true,
     textSelectPrevent: true,
+    inSiteNotification: true,
+    pushNotification: true,
     settingsSyncEnabled: true
 });
 
@@ -224,6 +226,8 @@ function saveAccountSettings(changes) {
     });
 }
 
+window.saveAccountSettings = saveAccountSettings;
+
 function getSiteTheme() {
     return rootElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
 }
@@ -268,6 +272,8 @@ function normalizeAccountSettings(savedSettings = {}) {
         scrollHide: savedSettings.scrollHide !== false,
         commentInputScrollHide: savedSettings.commentInputScrollHide !== false,
         textSelectPrevent: savedSettings.textSelectPrevent !== false,
+        inSiteNotification: savedSettings.inSiteNotification !== false,
+        pushNotification: savedSettings.pushNotification !== false,
         settingsSyncEnabled: savedSettings.settingsSyncEnabled !== false
     };
 }
@@ -278,6 +284,14 @@ function applyAccountSettings() {
     if (typeof setScrollHideEnabled === 'function') setScrollHideEnabled(accountSettings.scrollHide, false);
     if (typeof setCommentInputScrollHideEnabled === 'function') setCommentInputScrollHideEnabled(accountSettings.commentInputScrollHide, false);
     if (typeof setTextSelectPreventEnabled === 'function') setTextSelectPreventEnabled(accountSettings.textSelectPrevent, false);
+    if (window.clubNotifications) {
+        if (typeof window.clubNotifications.setInSiteNotificationEnabled === 'function') {
+            window.clubNotifications.setInSiteNotificationEnabled(accountSettings.inSiteNotification, false);
+        }
+        if (typeof window.clubNotifications.syncPushNotificationState === 'function') {
+            window.clubNotifications.syncPushNotificationState(accountSettings.pushNotification);
+        }
+    }
     setSettingsSyncEnabled(accountSettings.settingsSyncEnabled, false);
 }
 
@@ -579,7 +593,7 @@ function handlePageBack() {
     switchPage(currentPage, mainPage, true);
 }
 
-const ADMIN_PAGE_IDS = new Set(['roleManagePage', 'updateRulesPage']);
+const ADMIN_PAGE_IDS = new Set(['roleManagePage', 'updateRulesPage', 'versionManagePage']);
 
 function switchPage(fromPage, toPage, skipHistory = false, replaceState = false) {
     if (typeof fromPage === 'string') fromPage = document.getElementById(fromPage) || currentPage;
@@ -773,7 +787,7 @@ function revokeAdminUi() {
     if (roleEditModalOverlay) roleEditModalOverlay.classList.remove('active');
     if (roleEditModal) roleEditModal.classList.remove('active');
 
-    const isAdminPageOpen = currentPage && ['roleManagePage', 'updateRulesPage'].includes(currentPage.id);
+    const isAdminPageOpen = currentPage && ['roleManagePage', 'updateRulesPage', 'versionManagePage'].includes(currentPage.id);
     if (isAdminPageOpen) {
         history.replaceState({ page: 'mainPage' }, '', '#/mainPage');
         switchPage(currentPage, mainPage, true);
@@ -861,6 +875,197 @@ if (updateRulesBackBtn) {
     updateRulesBackBtn.addEventListener('click', handlePageBack);
 }
 
+// ==========================================
+// 버전 관리 페이지 로직 (회장, 사장 전용)
+// ==========================================
+const versionManageMenuBtn = document.getElementById('versionManageMenuBtn');
+const versionManagePage = document.getElementById('versionManagePage');
+const versionManageBackBtn = document.getElementById('versionManageBackBtn');
+const versionManageSaveBtn = document.getElementById('versionManageSaveBtn');
+
+const presidentVersionSelect = document.getElementById('presidentVersionSelect');
+const leaderVersionSelect = document.getElementById('leaderVersionSelect');
+const memberVersionSelect = document.getElementById('memberVersionSelect');
+
+const DEFAULT_VERSION_CONTROL = {
+    president: '1.5',
+    leader: '1.0',
+    member: '1.0'
+};
+
+let currentVersionControl = { ...DEFAULT_VERSION_CONTROL };
+
+function getUserRoleTier(user = auth.currentUser) {
+    if (!user) return 'member';
+    const email = (user.email || '').toLowerCase();
+    if (typeof ADMIN_EMAILS !== 'undefined' && ADMIN_EMAILS.includes(email)) {
+        return 'president';
+    }
+    if (typeof window.currentUserRoleName === 'string') {
+        const role = window.currentUserRoleName.trim();
+        if (role.includes('회장') && !role.includes('부회장')) return 'president';
+        if (role.includes('사장') || role.includes('부회장') || role.includes('운영진')) return 'leader';
+    }
+    return 'member';
+}
+
+window.applyUserEffectiveVersion = function (user = auth.currentUser) {
+    const roleTier = getUserRoleTier(user);
+    const effectiveVersion = currentVersionControl[roleTier] || '1.0';
+    window.currentEffectiveOneUiVersion = effectiveVersion;
+
+    const versionNumber = effectiveVersion;
+    const buildNumber = effectiveVersion === '1.5' ? '20260829.1' : '20260822.1';
+    const updateMessage = effectiveVersion === '1.5'
+        ? '실시간 알림 시스템 도입 및 모바일 사용성 개선 업데이트입니다.'
+        : '초기 버전 배포입니다.';
+
+    // 1. 버전 텍스트 및 빌드 번호 갱신
+    document.querySelectorAll('[data-current-one-ui-version]').forEach((element) => {
+        if (element.tagName === 'svg' || element.tagName === 'SVG') {
+            element.setAttribute('aria-label', `One UI ${versionNumber}`);
+            const textEl = element.querySelector('.one-ui-version-number');
+            if (textEl) textEl.textContent = versionNumber;
+        } else {
+            element.textContent = `One UI ${versionNumber}`;
+        }
+    });
+
+    document.querySelectorAll('[data-current-build-number]').forEach((element) => {
+        element.textContent = `Build ${buildNumber}`;
+    });
+
+    document.querySelectorAll('[data-current-update-message]').forEach((element) => {
+        element.textContent = updateMessage;
+    });
+
+    // 2. 설정창 [알림] 탭 제어 (1.5 전용 기능)
+    const notiTabNav = document.querySelector('.settings-nav-item[data-tab="notification"]');
+    if (notiTabNav) {
+        notiTabNav.style.display = effectiveVersion === '1.5' ? '' : 'none';
+    }
+    if (effectiveVersion !== '1.5' && notiTabNav && notiTabNav.classList.contains('active')) {
+        const displayNav = document.querySelector('.settings-nav-item[data-tab="display"]');
+        if (displayNav && typeof displayNav.click === 'function') {
+            displayNav.click();
+        }
+    }
+
+    // 3. 업데이트 화면 알약 버튼 제어
+    const pill15 = document.getElementById('openUpdateDetailsBtn');
+    const pill10 = document.getElementById('openUpdateDetails10Btn');
+    if (pill15) {
+        pill15.style.display = effectiveVersion === '1.5' ? 'flex' : 'none';
+        const tag15 = pill15.querySelector('.version-tag');
+        if (tag15) {
+            tag15.className = 'version-tag current';
+            tag15.textContent = '현재 버전';
+            tag15.style.background = '';
+            tag15.style.color = '';
+        }
+    }
+    if (pill10) {
+        pill10.style.display = 'flex';
+        const tag10 = pill10.querySelector('.version-tag');
+        if (tag10) {
+            if (effectiveVersion === '1.5') {
+                tag10.className = 'version-tag';
+                tag10.textContent = '이전 버전';
+                tag10.style.background = 'rgba(255, 255, 255, 0.12)';
+                tag10.style.color = 'var(--text-secondary)';
+            } else {
+                tag10.className = 'version-tag current';
+                tag10.textContent = '현재 버전';
+                tag10.style.background = '';
+                tag10.style.color = '';
+            }
+        }
+    }
+
+    // 4. 업데이트 상세 화면 기본 표시 제어
+    const sec15 = document.getElementById('updateSection15');
+    const sec10 = document.getElementById('updateSection10');
+    if (sec15 && sec10) {
+        if (effectiveVersion === '1.5') {
+            sec15.style.display = 'flex';
+            sec10.style.display = 'none';
+        } else {
+            sec15.style.display = 'none';
+            sec10.style.display = 'flex';
+        }
+    }
+
+    // 5. 게시판 카테고리 [알림 관련 버그] 표시 제어 (1.5 전용)
+    document.querySelectorAll('[data-value="알림 관련 버그"]').forEach(el => {
+        el.style.display = effectiveVersion === '1.5' ? '' : 'none';
+    });
+};
+
+if (typeof db !== 'undefined' && db) {
+    db.collection('userRoles').doc('system_version_control').onSnapshot(doc => {
+        if (doc.exists) {
+            currentVersionControl = { ...DEFAULT_VERSION_CONTROL, ...doc.data() };
+            try {
+                localStorage.setItem('cached_version_control', JSON.stringify(currentVersionControl));
+            } catch (e) {}
+        } else {
+            currentVersionControl = { ...DEFAULT_VERSION_CONTROL };
+        }
+        if (presidentVersionSelect) presidentVersionSelect.value = currentVersionControl.president || '1.5';
+        if (leaderVersionSelect) leaderVersionSelect.value = currentVersionControl.leader || '1.0';
+        if (memberVersionSelect) memberVersionSelect.value = currentVersionControl.member || '1.0';
+
+        window.applyUserEffectiveVersion();
+    }, err => {
+        console.warn('버전 설정 실시간 동기화 실패 (기본값 유지):', err);
+        try {
+            const cached = localStorage.getItem('cached_version_control');
+            if (cached) currentVersionControl = JSON.parse(cached);
+        } catch (e) {}
+        window.applyUserEffectiveVersion();
+    });
+}
+
+if (versionManageMenuBtn) {
+    versionManageMenuBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!requireAdminAccess()) return;
+        if (presidentVersionSelect) presidentVersionSelect.value = currentVersionControl.president || '1.5';
+        if (leaderVersionSelect) leaderVersionSelect.value = currentVersionControl.leader || '1.0';
+        if (memberVersionSelect) memberVersionSelect.value = currentVersionControl.member || '1.0';
+        closeDrawer(true);
+        switchPage(currentPage, versionManagePage, false, true);
+    });
+}
+
+if (versionManageBackBtn) {
+    versionManageBackBtn.addEventListener('click', handlePageBack);
+}
+
+if (versionManageSaveBtn) {
+    versionManageSaveBtn.addEventListener('click', async () => {
+        if (!requireAdminAccess()) return;
+        const newSettings = {
+            president: presidentVersionSelect ? presidentVersionSelect.value : '1.5',
+            leader: leaderVersionSelect ? leaderVersionSelect.value : '1.0',
+            member: memberVersionSelect ? memberVersionSelect.value : '1.0',
+            timestamp: Date.now()
+        };
+
+        try {
+            await db.collection('userRoles').doc('system_version_control').set(newSettings, { merge: true });
+            try {
+                localStorage.setItem('cached_version_control', JSON.stringify(newSettings));
+            } catch (e) {}
+            alert('버전 설정이 성공적으로 저장되었습니다.');
+            handlePageBack();
+        } catch (e) {
+            console.error('버전 설정 저장 실패:', e);
+            alert('버전 설정 저장 중 오류가 발생했습니다.');
+        }
+    });
+}
+
 // Auth 변경에 맞춘 관리자 메뉴 표시 및 설정 동기화 리스너
 auth.onAuthStateChanged(user => {
     syncAdminAccessUi(user);
@@ -869,6 +1074,7 @@ auth.onAuthStateChanged(user => {
     } else {
         window.clearUserAccountData();
     }
+    window.applyUserEffectiveVersion(user);
 });
 
 if (roleManageConfirmBtn) {
@@ -948,7 +1154,9 @@ function loadRoleList() {
 
         const roles = [];
         snapshot.forEach(doc => {
+            if (doc.id === 'system_version_control') return;
             const data = doc.data();
+            if (!data || !data.roleName) return;
             roles.push({
                 email: doc.id,
                 roleName: data.roleName,
@@ -1729,7 +1937,7 @@ if (settingsNavItems.length > 0) {
 const SITE_UPDATE_INFO = Object.freeze({
     oneUiVersion: 'One UI 1.5',
     buildNumber: '20260829.1',
-    message: '로그인 사용자용 댓글·답글·고정·삭제 및 사이트 업데이트 알림 기능을 추가했습니다.'
+    message: '실시간 알림 시스템 도입 및 모바일 사용성 개선 업데이트입니다.'
 });
 window.SITE_UPDATE_INFO = SITE_UPDATE_INFO;
 
@@ -2347,6 +2555,15 @@ document.addEventListener('click', (e) => {
 });
 
 window.toggleUpdatePhotos = function (btn) {
+    const collapse = btn.nextElementSibling;
+    if (!collapse) return;
+    const isExpanded = btn.classList.contains('active');
+    btn.classList.toggle('active', !isExpanded);
+    collapse.classList.toggle('active', !isExpanded);
+    btn.setAttribute('aria-expanded', !isExpanded);
+};
+
+window.toggleUpdateSection = function (btn) {
     const collapse = btn.nextElementSibling;
     if (!collapse) return;
     const isExpanded = btn.classList.contains('active');

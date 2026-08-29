@@ -1,7 +1,7 @@
 /* ========================================== */
 /*         Community Board Styles             */
 /* ========================================== */
-/* Community Board Styles */
+
 .board-container {
     max-width: 800px;
     margin: 0 auto;
@@ -19,6 +19,12 @@
     align-items: center;
     margin-bottom: 1.5rem;
     padding: 0 0.5rem;
+}
+
+.board-filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 /* 정렬 드롭다운 (최신순/인기순) - 노트북 & 모바일 공통 고정 폭 적용 */

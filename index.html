@@ -239,6 +239,63 @@
         </div>
     </div>
 
+    <!-- 버전 관리 페이지 (회장, 사장 전용) -->
+    <div id="versionManagePage" class="page hidden fade-out">
+        <button class="greeting-back-btn" id="versionManageBackBtn">
+            <i class="fa-solid fa-arrow-left"></i> 돌아가기
+        </button>
+        <h1 class="greeting-title">버전 관리 (회장, 사장 전용)</h1>
+        <div class="greeting-card"
+            style="max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; padding: 2rem; padding-bottom: 2.25rem;">
+            <p style="margin: 0; color: var(--text-secondary); line-height: 1.6;">
+                회원 등급별로 표시되고 적용될 One UI 버전을 설정할 수 있습니다.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 1.25rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+                <!-- 회장 버전 설정 -->
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <div>
+                        <strong style="color: var(--text-primary); font-size: 1rem;">👑 회장</strong>
+                        <div style="color: var(--text-secondary); font-size: 0.82rem; margin-top: 0.2rem;">회장 권한 계정에 적용될 버전</div>
+                    </div>
+                    <select id="presidentVersionSelect" class="version-select-box" style="padding: 0.6rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--card-bg, rgba(255,255,255,0.05)); color: var(--text-primary); font-size: 0.92rem; outline: none; font-weight: 600;">
+                        <option value="1.5" selected>One UI 1.5 (최신)</option>
+                        <option value="1.0">One UI 1.0</option>
+                    </select>
+                </div>
+
+                <!-- 사장/부회장 버전 설정 -->
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <div>
+                        <strong style="color: var(--text-primary); font-size: 1rem;">💼 사장 (운영진)</strong>
+                        <div style="color: var(--text-secondary); font-size: 0.82rem; margin-top: 0.2rem;">사장 및 운영진 계정에 적용될 버전</div>
+                    </div>
+                    <select id="leaderVersionSelect" class="version-select-box" style="padding: 0.6rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--card-bg, rgba(255,255,255,0.05)); color: var(--text-primary); font-size: 0.92rem; outline: none; font-weight: 600;">
+                        <option value="1.5">One UI 1.5 (최신)</option>
+                        <option value="1.0" selected>One UI 1.0</option>
+                    </select>
+                </div>
+
+                <!-- 일반 회원 버전 설정 -->
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <div>
+                        <strong style="color: var(--text-primary); font-size: 1rem;">👤 일반 회원</strong>
+                        <div style="color: var(--text-secondary); font-size: 0.82rem; margin-top: 0.2rem;">일반 동아리 부원 및 게스트에 적용될 버전</div>
+                    </div>
+                    <select id="memberVersionSelect" class="version-select-box" style="padding: 0.6rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--card-bg, rgba(255,255,255,0.05)); color: var(--text-primary); font-size: 0.92rem; outline: none; font-weight: 600;">
+                        <option value="1.5">One UI 1.5 (최신)</option>
+                        <option value="1.0" selected>One UI 1.0</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button id="versionManageSaveBtn"
+                    style="padding: 0.75rem 2rem; border: none; border-radius: 9999px; background: var(--accent-color); color: white; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background 0.2s;">확인</button>
+            </div>
+        </div>
+    </div>
+
 
 
     <div id="multiDeleteBar"
@@ -301,7 +358,7 @@
             <strong data-current-one-ui-version>One UI 1.5</strong>
             <span data-current-build-number>Build 20260829.1</span>
         </div>
-        <p class="update-details-message" data-current-update-message>로그인 사용자용 댓글·답글·고정·삭제 및 사이트 업데이트 알림 기능을 추가했습니다.</p>
+        <p class="update-details-message" data-current-update-message>실시간 알림 시스템 도입 및 모바일 사용성 개선 업데이트입니다.</p>
         <button id="updateDetailsConfirmBtn" class="update-details-confirm" type="button">확인</button>
     </div>
 
@@ -612,27 +669,131 @@
                                                 </div>
                                                 <span class="build-number" data-current-build-number>Build 20260829.1</span>
                                             </div>
-                                            <p class="update-description" data-current-update-message>로그인 사용자용 댓글·답글·고정·삭제 및 사이트 업데이트 알림 기능을 추가했습니다.</p>
+                                            <p class="update-description" data-current-update-message>실시간 알림 시스템 도입 및 모바일 사용성 개선 업데이트입니다.</p>
                                             <div class="update-features-list">
-                                                <div class="feature-item">
-                                                    <i class="fa-solid fa-check"></i>
-                                                    <div>
-                                                        <strong>댓글 전체 알림 및 답글 참여자 알림</strong>
-                                                        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">일반 댓글은 작성자를 제외한 로그인 회원에게, 답글은 게시물 작성자와 같은 댓글 줄 참여자에게 알립니다.</div>
+                                                <!-- 1. 새로운 기능 아코디언 -->
+                                                <div class="update-section-accordion">
+                                                    <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
+                                                        <div class="update-section-category-title">
+                                                            <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent-color);"></i>
+                                                            <span>새로운 기능</span>
+                                                        </div>
+                                                        <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                                                    </button>
+                                                    <div class="update-section-collapse">
+                                                        <div class="update-section-collapse-content">
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>댓글 전체 알림 및 답글 참여자 알림</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">일반 댓글은 작성자를 제외한 로그인 회원에게, 답글은 게시물 작성자와 같은 댓글 줄 참여자에게 알립니다.</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>고정·관리자 삭제 알림</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">다른 사람이 내 댓글이나 답글을 고정하거나 관리자가 내 게시물을 삭제했을 때 알려줍니다.</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>사이트 안 배너 및 사이트 밖 푸시</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">사이트를 보고 있을 때는 화면 위 배너로, 사이트가 닫혀 있을 때는 허용된 기기의 알림창으로 표시합니다.</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>알림 설정 기기 간 실시간 자동 동기화</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">화면 상단 알림 배너 및 사이트 밖 푸시 알림 설정이 로그인된 모든 기기 간에 실시간으로 자동 동기화됩니다.</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div class="feature-item">
-                                                    <i class="fa-solid fa-check"></i>
-                                                    <div>
-                                                        <strong>고정·관리자 삭제 알림</strong>
-                                                        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">다른 사람이 내 댓글이나 답글을 고정하거나 관리자가 내 게시물을 삭제했을 때 알려줍니다.</div>
+
+                                                <div class="update-section-divider"></div>
+
+                                                <!-- 2. 사용성 및 기능 개선 아코디언 -->
+                                                <div class="update-section-accordion">
+                                                    <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
+                                                        <div class="update-section-category-title">
+                                                            <i class="fa-solid fa-lightbulb" style="color: var(--accent-color);"></i>
+                                                            <span>사용성 및 기능 개선</span>
+                                                        </div>
+                                                        <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                                                    </button>
+                                                    <div class="update-section-collapse">
+                                                        <div class="update-section-collapse-content">
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>기본 설정 보기 및 전체 설정 초기화 업데이트</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">새로 추가된 알림 2종에 대한 기본값 안내와 설정 초기화 기능이 함께 업데이트되었습니다.</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>하단 저작권 및 회칙 안내 문구 전환 애니메이션 추가</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">ⓒ 양중과학동아리. All rights reserved. 및 본 규정은 동아리 부원 모두의 동의 하에 제정, 개정, 폐지됩니다. 글자가 나타나고 사라질 때 애니메이션을 추가했습니다.</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>모바일 설정창 및 상세 화면 좌우 여백 최적화</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">모바일 화면에서 카드 좌우에 불필요하게 넓던 여백을 줄여 콘텐츠가 더 넓고 시원하게 보이도록 개선했습니다.</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>게시판 버그 제보에 '알림 관련 버그' 주제 추가</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">게시판 주제 선택 및 필터 목록에 알림 기능 관련 버그를 별도로 제보할 수 있는 소주제를 추가했습니다.</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>게시판 상단 필터 및 정렬 버튼 간격 최적화</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">주제 선택 드롭다운과 정렬 방식 버튼 사이 간격을 조정하여 더 쾌적하게 구분되도록 개선했습니다.</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div class="feature-item">
-                                                    <i class="fa-solid fa-check"></i>
-                                                    <div>
-                                                        <strong>사이트 안 배너 및 사이트 밖 푸시</strong>
-                                                        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">사이트를 보고 있을 때는 화면 위 배너로, 사이트가 닫혀 있을 때는 허용된 기기의 알림창으로 표시합니다.</div>
+
+                                                <div class="update-section-divider"></div>
+
+                                                <!-- 3. 버그 수정 아코디언 -->
+                                                <div class="update-section-accordion">
+                                                    <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
+                                                        <div class="update-section-category-title">
+                                                            <i class="fa-solid fa-wrench" style="color: var(--accent-color);"></i>
+                                                            <span>버그 수정</span>
+                                                        </div>
+                                                        <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                                                    </button>
+                                                    <div class="update-section-collapse">
+                                                        <div class="update-section-collapse-content">
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>게시물 작성·수정창 첨부 안내 줄바꿈 및 UI 개선</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">모바일 화면에서 첨부 기준 안내 버튼이 어색하게 줄바꿈되던 현상을 수정하고 관련 UI를 개선했습니다.</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>게시판 선택창 스크롤바 애니메이션 및 위치 최적화</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">스크롤바가 위아래로 늘어나고 줄어들 때 끊기던 현상과 스크롤바 위치가 어색하던 점을 수정했습니다.</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1183,6 +1344,10 @@
                         <a href="#" id="updateRulesMenuBtn">
                             <i class="fa-solid fa-arrows-rotate"></i> 업데이트 규칙
                         </a>
+
+                        <a href="#" id="versionManageMenuBtn">
+                            <i class="fa-solid fa-code-branch"></i> 버전 관리
+                        </a>
                     </div>
                 </div>
             </div>
@@ -1336,6 +1501,9 @@
                                 </li>
                                 <li class="custom-dropdown-option dropdown-sub-option" data-group-id="bug_report" data-type="sub" data-main="사이트 버그 문의" data-value="설정창 관련 버그">
                                     <i class="fa-solid fa-gear sub-icon" style="color: #a78bfa; font-size: 0.85rem;"></i> 설정창 관련 버그
+                                </li>
+                                <li class="custom-dropdown-option dropdown-sub-option" data-group-id="bug_report" data-type="sub" data-main="사이트 버그 문의" data-value="알림 관련 버그">
+                                    <i class="fa-solid fa-bell sub-icon" style="color: #f43f5e; font-size: 0.85rem;"></i> 알림 관련 버그
                                 </li>
                                 <li class="custom-dropdown-option dropdown-sub-option" data-group-id="bug_report" data-type="sub" data-main="사이트 버그 문의" data-value="인사말 창 관련 버그">
                                     <i class="fa-solid fa-handshake sub-icon" style="color: #34d399; font-size: 0.85rem;"></i> 인사말 창 관련 버그

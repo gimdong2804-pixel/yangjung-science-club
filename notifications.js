@@ -168,6 +168,9 @@
     }
 
     function queueNotification(item) {
+        if (window.currentEffectiveOneUiVersion && window.currentEffectiveOneUiVersion !== '1.5') {
+            return;
+        }
         notificationQueue.push({
             type: item.type || 'notice',
             title: cleanText(item.title || '양중과학동아리', 80),
@@ -190,13 +193,17 @@
         }
     }
 
-    function setInSiteNotificationEnabled(enabled) {
+    function setInSiteNotificationEnabled(enabled, saveAccount = true) {
+        const normalized = Boolean(enabled);
         try {
-            localStorage.setItem('yangjung_in_site_notification_enabled', enabled ? '1' : '0');
+            localStorage.setItem('yangjung_in_site_notification_enabled', normalized ? '1' : '0');
         } catch (error) {
             console.warn('알림 배너 설정 저장 오류:', error);
         }
         updateNotificationSettingsUI();
+        if (saveAccount && typeof window.saveAccountSettings === 'function') {
+            window.saveAccountSettings({ inSiteNotification: normalized });
+        }
     }
 
     function isPushNotificationEnabled() {
@@ -207,12 +214,29 @@
         }
     }
 
-    function setPushNotificationEnabled(enabled) {
+    function setPushNotificationEnabled(enabled, saveAccount = true) {
+        const normalized = Boolean(enabled);
         try {
-            localStorage.setItem('yangjung_push_notification_enabled', enabled ? '1' : '0');
+            localStorage.setItem('yangjung_push_notification_enabled', normalized ? '1' : '0');
         } catch (error) {
             console.warn('푸시 알림 설정 저장 오류:', error);
         }
+        if (saveAccount && typeof window.saveAccountSettings === 'function') {
+            window.saveAccountSettings({ pushNotification: normalized });
+        }
+    }
+
+    async function syncPushNotificationState(enabled) {
+        const normalized = Boolean(enabled);
+        setPushNotificationEnabled(normalized, false);
+        const user = auth.currentUser || activeNotificationUser;
+
+        if (!normalized) {
+            await unregisterPushSubscription();
+        } else if (user && Notification.permission === 'granted') {
+            await registerPushForUser(user).catch((err) => console.warn('원격 푸시 구독 동기화 오류:', err));
+        }
+        updateNotificationSettingsUI();
     }
 
     function showNotificationOnce(rawData) {
@@ -757,7 +781,10 @@
         updateSettingsUI: updateNotificationSettingsUI,
         initSettingsUI: initNotificationSettingsUI,
         isInSiteNotificationEnabled,
-        setInSiteNotificationEnabled
+        setInSiteNotificationEnabled,
+        isPushNotificationEnabled,
+        setPushNotificationEnabled,
+        syncPushNotificationState
     };
 
     window.clubNotifications = clubNotifications;
