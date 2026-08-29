@@ -295,9 +295,11 @@
     }
 
     async function registerPushForUser(user) {
-        if (!user || activeNotificationUser?.uid !== user.uid || !isWorkerConfigured()) return false;
+        if (!user || !isWorkerConfigured()) return false;
         if (!window.isSecureContext || !('serviceWorker' in navigator) || !('PushManager' in window)) return false;
         if (!('Notification' in window) || Notification.permission !== 'granted') return false;
+
+        await syncServiceWorkerAuthState(user);
 
         const keyResult = await callWorker('/vapid-public-key', {
             method: 'GET',
