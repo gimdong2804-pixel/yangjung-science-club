@@ -1,0 +1,19 @@
+{
+  "name": "yangjung-science-notification-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/index.js && node --test test/*.test.mjs",
+    "dev": "wrangler dev --local --persist-to .wrangler/state",
+    "db:local": "wrangler d1 execute yangjung-science-notifications --local --file=schema.sql --persist-to .wrangler/state",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260829.1",
+    "wrangler": "^4.127.1"
+  }
+}
+

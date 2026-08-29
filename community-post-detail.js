@@ -867,6 +867,10 @@ window.togglePinComment = async function (postId, commentId, currentPinned) {
 
     try {
         await db.collection('posts').doc(postId).collection('comments').doc(commentId).update({ pinned: targetPinned });
+        if (window.clubNotifications?.isConfigured()) {
+            window.clubNotifications.notifyCommentPinChanged(postId, commentId, targetPinned)
+                .catch((error) => console.error('댓글 고정 알림 전송 오류:', error));
+        }
         if (btn) {
             btn.classList.toggle('active', targetPinned);
             btn.classList.remove('animate-pin-action');
@@ -886,6 +890,14 @@ window.togglePinComment = async function (postId, commentId, currentPinned) {
     }
 };
 
+window.deletePostDocumentWithNotification = async function (id) {
+    if (!currentUser) throw new Error('로그인이 필요합니다.');
+    if (!window.clubNotifications?.isConfigured()) {
+        throw new Error('Cloudflare 알림 서버 주소가 아직 설정되지 않았습니다.');
+    }
+    await window.clubNotifications.deletePost(id);
+};
+
 window.deletePostWithAnim = async function (id, btn) {
     if (!await window.customConfirm('정말 이 게시글을 삭제하시겠습니까?', '게시글 삭제')) return;
     const card = btn.closest('.board-card');
@@ -893,10 +905,11 @@ window.deletePostWithAnim = async function (id, btn) {
         card.classList.add('deleting');
         setTimeout(async () => {
             try {
-                await db.collection('posts').doc(id).delete();
+                await window.deletePostDocumentWithNotification(id);
             } catch (error) {
                 console.error("Error deleting post: ", error);
-                alert('삭제 중 오류가 발생했습니다.');
+                card.classList.remove('deleting');
+                alert('삭제 중 오류가 발생했습니다: ' + error.message);
             }
         }, 300);
     } else {
@@ -907,12 +920,12 @@ window.deletePostWithAnim = async function (id, btn) {
 window.deletePost = async function (id) {
     if (!await window.customConfirm('정말로 이 게시글을 삭제하시겠습니까?', '게시글 삭제')) return;
     try {
-        await db.collection('posts').doc(id).delete();
+        await window.deletePostDocumentWithNotification(id);
         alert('게시글이 성공적으로 삭제되었습니다.');
         closeSideDetail();
     } catch (error) {
         console.error("Error deleting post: ", error);
-        alert('삭제 중 오류가 발생했습니다.');
+        alert('삭제 중 오류가 발생했습니다: ' + error.message);
     }
 };
 
@@ -1160,16 +1173,28 @@ window.executeMultiPin = async function () {
     try {
         window.skipCommentFlip = true;
         const batch = db.batch();
+        const pinChanges = [];
         for (let cb of checkboxes) {
             const cid = cb.value;
             const ref = db.collection('posts').doc(currentPostId).collection('comments').doc(cid);
             const doc = await ref.get();
             if (doc.exists) {
                 const currentPinned = doc.data().pinned || false;
-                batch.update(ref, { pinned: !currentPinned });
+                const targetPinned = !currentPinned;
+                batch.update(ref, { pinned: targetPinned });
+                pinChanges.push({ commentId: cid, pinned: targetPinned });
             }
         }
         await batch.commit();
+        if (window.clubNotifications?.isConfigured()) {
+            Promise.allSettled(pinChanges.map((change) =>
+                window.clubNotifications.notifyCommentPinChanged(currentPostId, change.commentId, change.pinned)
+            )).then((results) => {
+                results.forEach((result) => {
+                    if (result.status === 'rejected') console.error('댓글 고정 알림 전송 오류:', result.reason);
+                });
+            });
+        }
         cancelMultiDelete();
         setTimeout(() => { window.skipCommentFlip = false; }, 450);
     } catch (e) {
@@ -1572,5 +1597,3 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeBtn) closeBtn.addEventListener('click', window.closeFilePreviewModal);
     if (overlay) overlay.addEventListener('click', window.closeFilePreviewModal);
 });
-
-

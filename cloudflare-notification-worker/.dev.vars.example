@@ -1,0 +1,4 @@
+VAPID_PUBLIC_KEY=generate_with_npx_web_push
+VAPID_PRIVATE_KEY=keep_this_private
+VAPID_SUBJECT=https://replace-with-your-live-site.example
+

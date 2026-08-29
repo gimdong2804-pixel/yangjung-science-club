@@ -74,6 +74,9 @@ if (googleLoginBtn) {
 if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
         try {
+            if (typeof window.unregisterPushToken === 'function') {
+                await window.unregisterPushToken();
+            }
             await auth.signOut();
         } catch (error) {
             console.error("Sign-Out Error: ", error);
@@ -318,15 +321,53 @@ function renderCategoryModal() {
             </div>
         `;
     }).join('');
+
+    requestAnimationFrame(() => {
+        updateCategoryModalScrollbar();
+    });
 }
+
+let categoryAccordionAnimId = null;
 
 window.toggleCategoryGroup = function (headerEl) {
     const card = headerEl.closest('.category-group-card');
-    if (card) {
-        card.classList.toggle('open');
-        setTimeout(updateCategoryModalScrollbar, 150);
-        setTimeout(updateCategoryModalScrollbar, 360);
+    if (!card) return;
+    const subList = card.querySelector('.category-sub-list');
+    if (!subList) return;
+
+    const willOpen = !card.classList.contains('open');
+
+    if (willOpen) {
+        card.classList.add('open');
+        subList.style.maxHeight = '0px';
+        void subList.offsetHeight; // 강제 리플로우
+        subList.style.maxHeight = subList.scrollHeight + 'px';
+        setTimeout(() => {
+            if (card.classList.contains('open')) {
+                subList.style.maxHeight = '';
+            }
+        }, 320);
+    } else {
+        subList.style.maxHeight = subList.scrollHeight + 'px';
+        void subList.offsetHeight; // 강제 리플로우
+        subList.style.maxHeight = '0px';
+        card.classList.remove('open');
     }
+
+    // 아코디언 높이 전환(0.35s) 동안 매 프레임 스크롤바를 갱신해 썸 크기/위치가 끊기지 않고 부드럽게 따라오도록 함
+    if (categoryAccordionAnimId) cancelAnimationFrame(categoryAccordionAnimId);
+    const startTime = performance.now();
+    const duration = 350;
+    const animateScrollbar = (now) => {
+        updateCategoryModalScrollbar();
+        if (now - startTime < duration) {
+            categoryAccordionAnimId = requestAnimationFrame(animateScrollbar);
+        } else {
+            updateCategoryModalScrollbar();
+            categoryAccordionAnimId = null;
+        }
+    };
+    categoryAccordionAnimId = requestAnimationFrame(animateScrollbar);
 };
 
 window.selectCategory = function (main, sub) {
@@ -377,19 +418,27 @@ let modalStartScrollTop = 0;
 
 function updateCategoryModalScrollbar() {
     if (!categoryModalBody || !categoryModalScrollbar || !categoryModalScrollbarThumb) return;
+
+    const modalHeader = document.querySelector('.category-modal-header');
+    const headerHeight = modalHeader ? modalHeader.offsetHeight : (categoryModalBody.offsetTop || 72);
+    categoryModalScrollbar.style.top = `${headerHeight + 6}px`;
+
     const scrollHeight = categoryModalBody.scrollHeight;
     const clientHeight = categoryModalBody.clientHeight;
     const scrollTop = categoryModalBody.scrollTop;
 
-    if (scrollHeight <= clientHeight + 2) {
+    const trackHeight = categoryModalScrollbar.clientHeight || Math.max(10, clientHeight - 16);
+
+    if (scrollHeight <= clientHeight + 1) {
         categoryModalScrollbar.classList.remove('visible');
+        categoryModalScrollbarThumb.style.height = `${trackHeight}px`;
+        categoryModalScrollbarThumb.style.transform = 'translateY(0px)';
         return;
     }
 
-    const trackHeight = clientHeight - 16;
     const thumbHeight = Math.max(30, (clientHeight / scrollHeight) * trackHeight);
     const maxScrollTop = scrollHeight - clientHeight;
-    const maxThumbTop = trackHeight - thumbHeight;
+    const maxThumbTop = Math.max(0, trackHeight - thumbHeight);
 
     const thumbTop = maxScrollTop > 0 ? (scrollTop / maxScrollTop) * maxThumbTop : 0;
 
@@ -408,6 +457,14 @@ function updateCategoryModalScrollbar() {
 
 if (categoryModalBody) {
     categoryModalBody.addEventListener('scroll', updateCategoryModalScrollbar, { passive: true });
+}
+
+if (typeof ResizeObserver !== 'undefined' && categoryModalBody) {
+    const categoryResizeObserver = new ResizeObserver(() => {
+        updateCategoryModalScrollbar();
+    });
+    categoryResizeObserver.observe(categoryModalBody);
+    if (categoryGroupList) categoryResizeObserver.observe(categoryGroupList);
 }
 
 if (categoryModalScrollbar) {
@@ -438,7 +495,7 @@ if (categoryModalScrollbarThumb) {
             const deltaY = moveEvent.clientY - modalStartY;
             const scrollHeight = categoryModalBody.scrollHeight;
             const clientHeight = categoryModalBody.clientHeight;
-            const trackHeight = clientHeight - 16;
+            const trackHeight = categoryModalScrollbar.clientHeight || Math.max(10, clientHeight - 16);
             const thumbHeight = parseFloat(categoryModalScrollbarThumb.style.height) || 30;
             const maxThumbTop = trackHeight - thumbHeight;
             const maxScrollTop = scrollHeight - clientHeight;
@@ -1530,4 +1587,3 @@ if (commentSortSelected && commentSortOptions) {
         }
     });
 }
-

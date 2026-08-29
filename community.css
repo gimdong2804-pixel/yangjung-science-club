@@ -2430,8 +2430,8 @@ body.multi-select-active .comment-header .board-time {
 .modal-custom-scrollbar {
     position: absolute;
     right: 5px;
-    top: 65px;
-    bottom: 10px;
+    top: 76px;
+    bottom: 12px;
     width: 8px;
     z-index: 10;
     pointer-events: none;

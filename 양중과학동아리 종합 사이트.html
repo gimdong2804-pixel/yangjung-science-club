@@ -18,9 +18,9 @@
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <link rel="stylesheet" href="style.css?v=42">
-    <link rel="stylesheet" href="ui-components.css?v=38">
-    <link rel="stylesheet" href="community.css?v=34">
+    <link rel="stylesheet" href="style.css?v=43">
+    <link rel="stylesheet" href="ui-components.css?v=39">
+    <link rel="stylesheet" href="community.css?v=44">
     <link rel="stylesheet" href="youtube-style.css?v=33">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2c52ed">
@@ -66,6 +66,9 @@
         </div>
     </header>
 
+    <!-- 로그인 사용자에게 휴대폰 알림처럼 표시되는 상단 알림 영역 -->
+    <div id="siteNotificationRegion" class="site-notification-region" aria-live="polite" aria-atomic="true"></div>
+
     <!-- 사이드 드로어 메뉴 & 오버레이 -->
     <div id="drawerOverlay" class="drawer-overlay"></div>
 
@@ -96,6 +99,38 @@
         <div class="modal-buttons" style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
             <button id="customAlertOk"
                 style="padding: 0.5rem 1.2rem; border: none; border-radius: 9999px; background: var(--accent-color); color: white; cursor: pointer; user-select: none; font-weight: 600;">확인</button>
+        </div>
+    </div>
+
+    <!-- 게시판 주제 선택 모달 (삼성 멤버스 스타일) -->
+    <div id="categorySelectModalOverlay" class="modal-overlay category-modal-overlay"></div>
+    <div id="categorySelectModal" class="modal-container category-modal-container">
+        <div class="category-modal-header">
+            <div class="category-modal-title-wrap">
+                <i class="fa-solid fa-layer-group" style="color: var(--accent-color);"></i>
+                <h3 class="category-modal-title">게시판 선택</h3>
+            </div>
+            <button type="button" class="close-btn" id="categorySelectModalCloseBtn" aria-label="닫기">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="category-modal-body" id="categoryModalBody">
+            <!-- 최근 사용 섹션 -->
+            <div class="category-recent-section" id="categoryRecentSection" style="display: none;">
+                <div class="category-section-label">
+                    <i class="fa-regular fa-clock"></i> 최근 사용
+                </div>
+                <div class="category-recent-list" id="categoryRecentList"></div>
+            </div>
+
+            <!-- 대주제 및 소주제 아코디언 트리 -->
+            <div class="category-group-list" id="categoryGroupList">
+                <!-- 자바스크립트로 카테고리 렌더링 -->
+            </div>
+        </div>
+        <!-- 인사말과 100% 동일한 커스텀 스크롤바 -->
+        <div id="categoryModalScrollbar" class="modal-custom-scrollbar">
+            <div id="categoryModalScrollbarThumb" class="modal-custom-scrollbar-thumb"></div>
         </div>
     </div>
 
@@ -264,9 +299,9 @@
         <h3 id="updateDetailsTitle"><i class="fa-solid fa-sparkles"></i> 업데이트 내용</h3>
         <div class="update-details-version">
             <strong data-current-one-ui-version>One UI 1.0</strong>
-            <span data-current-build-number>Build 20260811.1</span>
+            <span data-current-build-number>Build 20260829.1</span>
         </div>
-        <p class="update-details-message" data-current-update-message>우리 동아리 사이트의 첫 버전인 One UI 1.0입니다!</p>
+        <p class="update-details-message" data-current-update-message>로그인 사용자용 댓글·답글·고정·삭제 및 사이트 업데이트 알림 기능을 추가했습니다.</p>
         <button id="updateDetailsConfirmBtn" class="update-details-confirm" type="button">확인</button>
     </div>
 
@@ -365,7 +400,8 @@
                             <!-- 메인 화면 (One UI 1.0 로고 + [업데이트 내용 확인] 버튼 -> [현재 버전 One UI 1.0 >] 알약 버튼) -->
                             <div id="updateMainView" class="update-view-panel active">
                                 <div class="update-main-header">
-                                    <button id="updateMainBackBtn" class="greeting-back-btn update-main-back-btn" type="button" style="display: none;" aria-label="돌아가기">
+                                    <button id="updateMainBackBtn" class="greeting-back-btn update-main-back-btn"
+                                        type="button" style="display: none;" aria-label="돌아가기">
                                         <i class="fa-solid fa-arrow-left"></i> 돌아가기
                                     </button>
                                 </div>
@@ -394,7 +430,7 @@
                             </div>
 
                             <!-- 3단계: 화면 전체를 활용하는 페이드 인 업데이트 내용 상세 화면 -->
-                            <div id="updateDetailsView" class="update-view-panel update-details-full-panel">
+                            <div id="updateDetailsView" class="update-view-panel update-details-full-panel" style="display: none;">
                                 <div class="update-details-header">
                                     <button id="closeUpdateDetailsTopBtn" class="greeting-back-btn"
                                         style="margin-bottom: 0;" type="button">
@@ -405,17 +441,144 @@
                                 </div>
 
                                 <div class="update-history-scroll-area">
-                                    <!-- 최신 버전 카드 (One UI 1.0) -->
+                                    <!-- 최신 버전 카드 (One UI 1.0, Build 20260829.1) -->
                                     <div class="update-history-card current-version-card">
                                         <div class="update-card-header">
                                             <div class="update-version-badge-group">
                                                 <span class="version-tag current">현재 버전</span>
                                                 <h4 class="version-title" data-current-one-ui-version>One UI 1.0</h4>
                                             </div>
-                                            <span class="build-number" data-current-build-number>Build 20260811.1</span>
+                                            <span class="build-number" data-current-build-number>Build 20260829.1</span>
                                         </div>
-                                        <p class="update-description" data-current-update-message>우리 동아리 사이트의 첫 버전인 One
-                                            UI 1.0입니다!</p>
+                                        <p class="update-description" data-current-update-message>로그인 사용자용 댓글·답글·고정·삭제 및 사이트 업데이트 알림 기능을 추가했습니다.</p>
+                                        <div class="update-features-list">
+                                            <div class="feature-item">
+                                                <i class="fa-solid fa-check"></i>
+                                                <div>
+                                                    <strong>댓글 전체 알림 및 답글 참여자 알림</strong>
+                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">일반 댓글은 작성자를 제외한 로그인 회원에게, 답글은 게시물 작성자와 같은 댓글 줄 참여자에게 알립니다.</div>
+                                                </div>
+                                            </div>
+                                            <div class="feature-item">
+                                                <i class="fa-solid fa-check"></i>
+                                                <div>
+                                                    <strong>고정·관리자 삭제 알림</strong>
+                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">다른 사람이 내 댓글이나 답글을 고정하거나 관리자가 내 게시물을 삭제했을 때 알려줍니다.</div>
+                                                </div>
+                                            </div>
+                                            <div class="feature-item">
+                                                <i class="fa-solid fa-check"></i>
+                                                <div>
+                                                    <strong>사이트 안 배너 및 사이트 밖 푸시</strong>
+                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">사이트를 보고 있을 때는 화면 위 배너로, 사이트가 닫혀 있을 때는 허용된 기기의 알림창으로 표시합니다.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 이전 버전 카드 (One UI 1.0, Build 20260822.1) -->
+                                    <div class="update-history-card">
+                                        <div class="update-card-header">
+                                            <div class="update-version-badge-group">
+                                                <h4 class="version-title">One UI 1.0</h4>
+                                            </div>
+                                            <span class="build-number">Build 20260822.1</span>
+                                        </div>
+                                        <p class="update-description">모바일 화면 사용성 개선 및 게시글 상단 고정 관련 버그 수정 업데이트입니다.</p>
+                                        <div class="update-features-list">
+                                            <div class="feature-item">
+                                                <i class="fa-solid fa-check"></i>
+                                                <div>
+                                                    <strong>모바일 상단 액션 버튼 잘림 개선</strong>
+                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">모바일 화면에서 긴 주제명으로 인해 고정, 삭제, 수정 버튼이 화면 밖으로 잘리던 문제를 유연한 배치로 개선했습니다.</div>
+                                                </div>
+                                            </div>
+                                            <div class="feature-item">
+                                                <i class="fa-solid fa-check"></i>
+                                                <div>
+                                                    <strong>게시글 고정(Pin) 동기화 및 다중 선택 오류 수정</strong>
+                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">다중 선택 시 기존 고정글이 반대로 해제되던 현상을 해결하고, 데이터베이스 동기화 안정성을 강화했습니다.</div>
+                                                </div>
+                                            </div>
+                                            <div class="feature-item">
+                                                <i class="fa-solid fa-check"></i>
+                                                <div>
+                                                    <strong>기기 간 설정 자동 동기화 기능 복구</strong>
+                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">휴대폰과 노트북 등 다른 기기 간에 다크모드 및 일반 설정이 실시간으로 동기화되지 않던 문제를 해결했습니다.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- 버그 수정 관련 사진 토글 영역 -->
+                                        <div class="update-photos-section">
+                                            <button type="button" class="update-photos-toggle-btn" onclick="toggleUpdatePhotos(this)" aria-expanded="false">
+                                                <div class="update-photos-toggle-left">
+                                                    <i class="fa-solid fa-images"></i>
+                                                    <span>수정된 버그 관련 사진 보기 (3장)</span>
+                                                </div>
+                                                <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                                            </button>
+
+                                            <div class="update-photos-collapse">
+                                                <div class="update-photos-grid">
+                                                    <!-- 1. 모바일 버튼 잘림 1 (9:16 세로형) -->
+                                                    <div class="update-photo-card" onclick="openLightbox('One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 1.jpg', { description: '모바일 화면에서 카테고리 주제명이 길어질 경우, 우측 상단의 고정, 삭제, 수정 액션 버튼이 화면 바깥으로 밀려나 잘리던 버그 현상입니다.' })">
+                                                        <div class="update-photo-thumb-wrap aspect-mobile">
+                                                            <img src="One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 1.jpg" alt="상단 버튼 잘림 1" class="update-photo-img mobile-thumb">
+                                                            <div class="update-photo-zoom-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> 확대</div>
+                                                        </div>
+                                                        <div class="update-photo-info">
+                                                            <div class="update-photo-title">
+                                                                <span class="photo-type-tag mobile">모바일</span>
+                                                                <span>버튼 잘림 현상 1</span>
+                                                            </div>
+                                                            <p class="update-photo-desc">긴 주제명으로 인해 상단 액션 버튼이 우측 화면 밖으로 잘리던 현상</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 2. 모바일 버튼 잘림 2 (9:16 세로형) -->
+                                                    <div class="update-photo-card" onclick="openLightbox('One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 2.jpg', { description: '다른 긴 주제명의 게시글에서도 동일하게 상단 액션 버튼들이 잘려나가 게시글 조작이 불가능했던 현상입니다.' })">
+                                                        <div class="update-photo-thumb-wrap aspect-mobile">
+                                                            <img src="One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 2.jpg" alt="상단 버튼 잘림 2" class="update-photo-img mobile-thumb">
+                                                            <div class="update-photo-zoom-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> 확대</div>
+                                                        </div>
+                                                        <div class="update-photo-info">
+                                                            <div class="update-photo-title">
+                                                                <span class="photo-type-tag mobile">모바일</span>
+                                                                <span>버튼 잘림 현상 2</span>
+                                                            </div>
+                                                            <p class="update-photo-desc">다른 게시글에서도 동일하게 액션 버튼이 잘려 조작이 어렵던 현상</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- 3. 고정 동기화 오류 (와이드형) -->
+                                                    <div class="update-photo-card wide-card" onclick="openLightbox('One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/고정 관련 버그 사진.png', { description: '다중 선택 시 기존에 이미 고정되어 있던 글이 반대로 고정 해제되거나, 계정/창 간 고정 상태가 서로 일치하지 않던 동기화 버그입니다.' })">
+                                                        <div class="update-photo-thumb-wrap aspect-desktop">
+                                                            <img src="One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/고정 관련 버그 사진.png" alt="고정 동기화 오류" class="update-photo-img desktop-thumb">
+                                                            <div class="update-photo-zoom-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> 확대</div>
+                                                        </div>
+                                                        <div class="update-photo-info">
+                                                            <div class="update-photo-title">
+                                                                <span class="photo-type-tag pc">PC / 동기화</span>
+                                                                <span>게시글 고정 동기화 오류</span>
+                                                            </div>
+                                                            <p class="update-photo-desc">다중 선택 시 고정 상태가 반전되거나 다른 계정 간 고정 표시가 불일치하던 오류</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 이전 버전 카드 (One UI 1.0, Build 20260811.1) -->
+                                    <div class="update-history-card">
+                                        <div class="update-card-header">
+                                            <div class="update-version-badge-group">
+                                                <h4 class="version-title">One UI 1.0</h4>
+                                            </div>
+                                            <span class="build-number">Build 20260811.1</span>
+                                        </div>
+                                        <p class="update-description">우리 동아리 사이트의 첫 버전인 One UI 1.0입니다!</p>
                                         <div class="update-features-list">
                                             <div class="feature-item">
                                                 <i class="fa-solid fa-check"></i>
@@ -431,12 +594,6 @@
                                             </div>
                                         </div>
                                     </div>
-
-                                    <!-- 과거 버전 안내 가이드 영역 -->
-                                    <div class="update-history-timeline-footer">
-                                        <i class="fa-solid fa-clock-rotate-left"></i>
-                                        <span>향후 새로운 버전 업데이트 시 이전 업데이트 내역이 이곳에 차곡차곡 기록됩니다.</span>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -444,14 +601,15 @@
                 </div>
 
                 <!-- 초기화 탭 내용 -->
-                <div id="settingsTab-reset" class="settings-tab-content"
-                    style="display: none; flex-direction: column;">
+                <div id="settingsTab-reset" class="settings-tab-content" style="display: none; flex-direction: column;">
                     <div class="settings-card-group">
                         <div class="settings-item" style="padding: 1.25rem 1.5rem; border: none; gap: 1rem;">
                             <div class="settings-label">
                                 <div>
-                                    <div style="font-weight: 600; font-size: 1.05rem; display: flex; align-items: center; gap: 0.5rem;">
-                                        <i class="fa-solid fa-arrow-rotate-left" style="font-size: 1rem; color: var(--text-secondary);"></i>
+                                    <div
+                                        style="font-weight: 600; font-size: 1.05rem; display: flex; align-items: center; gap: 0.5rem;">
+                                        <i class="fa-solid fa-arrow-rotate-left"
+                                            style="font-size: 1rem; color: var(--text-secondary);"></i>
                                         <span>설정 초기화</span>
                                     </div>
                                     <div
@@ -466,12 +624,30 @@
                     <details class="settings-defaults-details">
                         <summary>기본 설정 보기</summary>
                         <dl class="settings-defaults-list">
-                            <div><dt>다크 모드</dt><dd>꺼짐(라이트 모드)</dd></div>
-                            <div><dt>기기 간 설정 자동 동기화</dt><dd>켜짐</dd></div>
-                            <div><dt>상단 로고 표시</dt><dd>아이콘 + 텍스트</dd></div>
-                            <div><dt>스크롤 시 메뉴 숨김</dt><dd>켜짐</dd></div>
-                            <div><dt>댓글 입력창 자동 숨김</dt><dd>켜짐</dd></div>
-                            <div><dt>텍스트 선택 방지</dt><dd>켜짐</dd></div>
+                            <div>
+                                <dt>다크 모드</dt>
+                                <dd>꺼짐(라이트 모드)</dd>
+                            </div>
+                            <div>
+                                <dt>기기 간 설정 자동 동기화</dt>
+                                <dd>켜짐</dd>
+                            </div>
+                            <div>
+                                <dt>상단 로고 표시</dt>
+                                <dd>아이콘 + 텍스트</dd>
+                            </div>
+                            <div>
+                                <dt>스크롤 시 메뉴 숨김</dt>
+                                <dd>켜짐</dd>
+                            </div>
+                            <div>
+                                <dt>댓글 입력창 자동 숨김</dt>
+                                <dd>켜짐</dd>
+                            </div>
+                            <div>
+                                <dt>텍스트 선택 방지</dt>
+                                <dd>켜짐</dd>
+                            </div>
                         </dl>
                     </details>
                 </div>
@@ -957,23 +1133,89 @@
         <div class="community-layout">
             <div class="board-container">
                 <div class="board-header">
-                    <span style="color: var(--text-secondary); font-size: 0.9rem;">전체 게시글 <span
-                            style="color: var(--accent-color); font-weight: bold;">0</span>개</span>
-                    <div class="custom-dropdown-container" id="customSortDropdown">
-                        <div class="custom-dropdown-selected" id="customSortSelected">
-                            <span><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</span>
-                            <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                    <span class="board-post-count-label" style="color: var(--text-secondary); font-size: 0.9rem;">전체 게시글 <span
+                            id="totalPostCount" class="post-count-number">0</span>개</span>
+                    
+                    <div class="board-filter-controls">
+                        <!-- 카테고리 / 소주제 필터 드롭다운 -->
+                        <div class="custom-dropdown-container" id="categoryFilterDropdown">
+                            <div class="custom-dropdown-selected" id="categoryFilterSelected" title="주제 선택">
+                                <span><i class="fa-solid fa-layer-group"></i> 모든 게시글 (모든 주제)</span>
+                                <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                            </div>
+                            <ul class="custom-dropdown-options category-dropdown-options" id="categoryFilterOptions">
+                                <li class="custom-dropdown-option active" data-type="all" data-value="all">
+                                    <i class="fa-solid fa-layer-group"></i> 모든 게시글 (모든 주제)
+                                </li>
+
+                                <li class="dropdown-divider"></li>
+
+                                <!-- 1. 사이트 버그 문의 -->
+                                <li class="custom-dropdown-option dropdown-category-group-header" data-type="main" data-value="사이트 버그 문의" data-group-id="bug_report" title="사이트 버그 문의 전체 보기">
+                                    <span class="group-main-label"><i class="fa-solid fa-bug" style="color: #3b82f6;"></i> 사이트 버그 문의</span>
+                                    <button type="button" class="group-toggle-btn" title="소주제 펼치기/접기" aria-label="소주제 펼치기/접기">
+                                        <i class="fa-solid fa-chevron-right group-arrow-icon"></i>
+                                    </button>
+                                </li>
+                                <li class="custom-dropdown-option dropdown-sub-option" data-group-id="bug_report" data-type="sub" data-main="사이트 버그 문의" data-value="커뮤니티 창 관련 버그">
+                                    <i class="fa-solid fa-comments sub-icon" style="color: #60a5fa; font-size: 0.85rem;"></i> 커뮤니티 창 관련 버그
+                                </li>
+                                <li class="custom-dropdown-option dropdown-sub-option" data-group-id="bug_report" data-type="sub" data-main="사이트 버그 문의" data-value="설정창 관련 버그">
+                                    <i class="fa-solid fa-gear sub-icon" style="color: #a78bfa; font-size: 0.85rem;"></i> 설정창 관련 버그
+                                </li>
+                                <li class="custom-dropdown-option dropdown-sub-option" data-group-id="bug_report" data-type="sub" data-main="사이트 버그 문의" data-value="인사말 창 관련 버그">
+                                    <i class="fa-solid fa-handshake sub-icon" style="color: #34d399; font-size: 0.85rem;"></i> 인사말 창 관련 버그
+                                </li>
+                                <li class="custom-dropdown-option dropdown-sub-option" data-group-id="bug_report" data-type="sub" data-main="사이트 버그 문의" data-value="기타 버그">
+                                    <i class="fa-solid fa-triangle-exclamation sub-icon" style="color: #f59e0b; font-size: 0.85rem;"></i> 기타 버그
+                                </li>
+
+                                <li class="dropdown-divider"></li>
+
+                                <!-- 2. 과학 동아리 활동 관련 문의 -->
+                                <li class="custom-dropdown-option dropdown-category-group-header" data-type="main" data-value="과학 동아리 활동 관련 문의" data-group-id="activity_inquiry" title="과학 동아리 활동 관련 문의 전체 보기">
+                                    <span class="group-main-label"><i class="fa-solid fa-flask" style="color: var(--accent-color);"></i> 과학 동아리 활동 관련 문의</span>
+                                    <button type="button" class="group-toggle-btn" title="소주제 펼치기/접기" aria-label="소주제 펼치기/접기">
+                                        <i class="fa-solid fa-chevron-right group-arrow-icon"></i>
+                                    </button>
+                                </li>
+                                <li class="custom-dropdown-option dropdown-sub-option" data-group-id="activity_inquiry" data-type="sub" data-main="과학 동아리 활동 관련 문의" data-value="하고 싶은 새로운 활동 제안">
+                                    <i class="fa-solid fa-lightbulb sub-icon" style="color: #fbbf24; font-size: 0.85rem;"></i> 하고 싶은 새로운 활동 제안
+                                </li>
+                                <li class="custom-dropdown-option dropdown-sub-option" data-group-id="activity_inquiry" data-type="sub" data-main="과학 동아리 활동 관련 문의" data-value="예정되어 있는 활동 관련 문의">
+                                    <i class="fa-solid fa-calendar-check sub-icon" style="color: #38bdf8; font-size: 0.85rem;"></i> 예정되어 있는 활동 관련 문의
+                                </li>
+
+                                <li class="dropdown-divider"></li>
+
+                                <!-- 3. 기타 게시글 -->
+                                <li class="custom-dropdown-option dropdown-category-group-header" data-type="main" data-value="기타 게시글" data-group-id="other_posts" title="기타 게시글 전체 보기">
+                                    <span class="group-main-label"><i class="fa-solid fa-circle-question" style="color: #8b5cf6;"></i> 기타 게시글</span>
+                                    <button type="button" class="group-toggle-btn" title="소주제 펼치기/접기" aria-label="소주제 펼치기/접기">
+                                        <i class="fa-solid fa-chevron-right group-arrow-icon"></i>
+                                    </button>
+                                </li>
+                                <li class="custom-dropdown-option dropdown-sub-option" data-group-id="other_posts" data-type="sub" data-main="기타 게시글" data-value="기타 게시글">
+                                    <i class="fa-solid fa-circle-question sub-icon" style="color: #a78bfa; font-size: 0.85rem;"></i> 기타 게시글
+                                </li>
+                            </ul>
                         </div>
-                        <ul class="custom-dropdown-options" id="customSortOptions">
-                            <li class="custom-dropdown-option active" data-value="latest"><i
-                                    class="fa-solid fa-arrow-down-short-wide"></i> 최신순</li>
-                            <li class="custom-dropdown-option" data-value="popular"><i class="fa-solid fa-fire"></i> 인기순
-                            </li>
-                        </ul>
+                        <!-- 정렬 드롭다운 -->
+                        <div class="custom-dropdown-container" id="customSortDropdown">
+                            <div class="custom-dropdown-selected" id="customSortSelected">
+                                <span><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</span>
+                                <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                            </div>
+                            <ul class="custom-dropdown-options" id="customSortOptions">
+                                <li class="custom-dropdown-option active" data-value="latest"><i
+                                        class="fa-solid fa-arrow-down-short-wide"></i> 최신순</li>
+                                <li class="custom-dropdown-option" data-value="popular"><i class="fa-solid fa-fire"></i> 인기순
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
-
             <!-- 우측 상세 보기 창 (데스크탑에선 옆에 붙고, 모바일에선 전체화면) -->
             <div class="side-detail-container detail-hidden" id="sideDetailContainer">
                 <button class="close-btn" id="closeSideDetailBtn" aria-label="상세 닫기">
@@ -983,7 +1225,7 @@
                     <div class="side-detail-header">
                         <span class="side-detail-title"
                             style="color: var(--accent-color); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i
-                                class="fa-solid fa-file-lines"></i> 건의글 상세</span>
+                                class="fa-solid fa-file-lines"></i> 게시글 상세</span>
                     </div>
 
                     <div class="post-content-area" id="detailPostArea"
@@ -1079,11 +1321,21 @@
         <button class="greeting-back-btn" id="writePostBackBtn">
             <i class="fa-solid fa-arrow-left"></i> 목록으로
         </button>
-        <h1 class="greeting-title">새 건의사항 작성</h1>
+        <h1 class="greeting-title">게시글 올리기</h1>
 
         <div class="post-detail-container"
             style="background: var(--bg-color); border: 1px solid var(--glass-border); border-radius: 16px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
             <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                <!-- 삼성 멤버스 스타일 게시판/주제 선택 바 -->
+                <div class="post-category-select-bar" id="openCategorySelectBtn" role="button" tabindex="0" title="게시판 선택">
+                    <div class="category-select-content">
+                        <span class="category-select-placeholder" id="selectedCategoryText">게시판 선택</span>
+                    </div>
+                    <i class="fa-solid fa-pen category-select-icon"></i>
+                </div>
+                <input type="hidden" id="postCategoryMain" value="" />
+                <input type="hidden" id="postCategorySub" value="" />
+
                 <input type="text" id="postTitle" class="modal-input upgraded-input" placeholder="제목을 입력하세요"
                     style="font-size: 1.15rem; font-weight: 600;">
 
@@ -1102,13 +1354,14 @@
                 </div>
 
                 <!-- 통합 파일 첨부 영역 (최대 40개, 파일당 100MB) -->
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.2rem;">
-                    <span style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">
+                <div
+                    style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.35rem 0.75rem; margin-top: 0.2rem;">
+                    <span style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary); white-space: nowrap;">
                         <i class="fa-solid fa-paperclip" style="color: var(--accent-color); margin-right: 0.3rem;"></i>
-                        파일 첨부 (파일당 최대 100MB)
+                        파일 첨부
                     </span>
                     <button type="button" id="attachGuideBtn"
-                        style="background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); color: var(--accent-color); padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.2s;">
+                        style="background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); color: var(--accent-color); padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; margin-left: auto;">
                         <i class="fa-solid fa-circle-info"></i>
                         <span>첨부 기준 안내</span>
                     </button>
@@ -1121,7 +1374,8 @@
                         style="cursor: pointer; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
                         <i class="fa-solid fa-cloud-arrow-up"
                             style="font-size: 2.2rem; color: var(--accent-color);"></i>
-                        <span style="font-weight: 600; font-size: 0.98rem; color: var(--text-primary);">클릭하여 파일을 추가하세요
+                        <span
+                            style="font-weight: 600; font-size: 0.98rem; color: var(--text-primary); word-break: keep-all;">클릭하여 파일을 추가하세요
                             (파일당 최대 100MB)</span>
                         <span
                             style="font-size: 0.82rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; justify-content: center; margin-top: 0.2rem;">
@@ -1376,16 +1630,18 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
-    <script src="script.js?v=1.0.16"></script>
+    <script src="script.js?v=1.0.18"></script>
     <script src="youtube-utils.js?v=1.0.3"></script>
     <!-- 커뮤니티는 역할별 파일로 나누어, 수정할 때 해당 기능만 찾을 수 있게 했습니다. -->
-    <script src="community.js?v=2.1.6"></script>
+    <script src="community.js?v=2.1.8"></script>
     <script src="community-comment-render.js?v=2.0.5"></script>
-    <script src="community-post-detail.js?v=2.0.5"></script>
+    <script src="community-post-detail.js?v=2.0.7"></script>
     <script src="media-upload.js?v=1.0.3"></script>
-    <script src="community-attachments.js?v=2.0.4"></script>
+    <script src="community-attachments.js?v=2.0.5"></script>
     <script src="community-ui.js?v=2.0.4"></script>
-    <script src="community-interactions.js?v=2.0.6"></script>
+    <script src="community-interactions.js?v=2.0.7"></script>
+    <script src="notification-worker-config.js?v=1.0.1"></script>
+    <script src="notifications.js?v=2.0.0"></script>
 </body>
 
 </html>

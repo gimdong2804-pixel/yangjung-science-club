@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 
 <head>
@@ -18,9 +18,9 @@
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <link rel="stylesheet" href="style.css?v=42">
-    <link rel="stylesheet" href="ui-components.css?v=38">
-    <link rel="stylesheet" href="community.css?v=43">
+    <link rel="stylesheet" href="style.css?v=43">
+    <link rel="stylesheet" href="ui-components.css?v=39">
+    <link rel="stylesheet" href="community.css?v=44">
     <link rel="stylesheet" href="youtube-style.css?v=33">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2c52ed">
@@ -65,6 +65,9 @@
             </button>
         </div>
     </header>
+
+    <!-- 로그인 사용자에게 휴대폰 알림처럼 표시되는 상단 알림 영역 -->
+    <div id="siteNotificationRegion" class="site-notification-region" aria-live="polite" aria-atomic="true"></div>
 
     <!-- 사이드 드로어 메뉴 & 오버레이 -->
     <div id="drawerOverlay" class="drawer-overlay"></div>
@@ -296,9 +299,9 @@
         <h3 id="updateDetailsTitle"><i class="fa-solid fa-sparkles"></i> 업데이트 내용</h3>
         <div class="update-details-version">
             <strong data-current-one-ui-version>One UI 1.0</strong>
-            <span data-current-build-number>Build 20260811.1</span>
+            <span data-current-build-number>Build 20260829.1</span>
         </div>
-        <p class="update-details-message" data-current-update-message>우리 동아리 사이트의 첫 버전인 One UI 1.0입니다!</p>
+        <p class="update-details-message" data-current-update-message>로그인 사용자용 댓글·답글·고정·삭제 및 사이트 업데이트 알림 기능을 추가했습니다.</p>
         <button id="updateDetailsConfirmBtn" class="update-details-confirm" type="button">확인</button>
     </div>
 
@@ -438,16 +441,50 @@
                                 </div>
 
                                 <div class="update-history-scroll-area">
-                                    <!-- 최신 버전 카드 (One UI 1.0, Build 20260822.1) -->
+                                    <!-- 최신 버전 카드 (One UI 1.0, Build 20260829.1) -->
                                     <div class="update-history-card current-version-card">
                                         <div class="update-card-header">
                                             <div class="update-version-badge-group">
                                                 <span class="version-tag current">현재 버전</span>
                                                 <h4 class="version-title" data-current-one-ui-version>One UI 1.0</h4>
                                             </div>
-                                            <span class="build-number" data-current-build-number>Build 20260822.1</span>
+                                            <span class="build-number" data-current-build-number>Build 20260829.1</span>
                                         </div>
-                                        <p class="update-description" data-current-update-message>모바일 화면 사용성 개선 및 게시글 상단 고정 관련 버그 수정 업데이트입니다.</p>
+                                        <p class="update-description" data-current-update-message>로그인 사용자용 댓글·답글·고정·삭제 및 사이트 업데이트 알림 기능을 추가했습니다.</p>
+                                        <div class="update-features-list">
+                                            <div class="feature-item">
+                                                <i class="fa-solid fa-check"></i>
+                                                <div>
+                                                    <strong>댓글 전체 알림 및 답글 참여자 알림</strong>
+                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">일반 댓글은 작성자를 제외한 로그인 회원에게, 답글은 게시물 작성자와 같은 댓글 줄 참여자에게 알립니다.</div>
+                                                </div>
+                                            </div>
+                                            <div class="feature-item">
+                                                <i class="fa-solid fa-check"></i>
+                                                <div>
+                                                    <strong>고정·관리자 삭제 알림</strong>
+                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">다른 사람이 내 댓글이나 답글을 고정하거나 관리자가 내 게시물을 삭제했을 때 알려줍니다.</div>
+                                                </div>
+                                            </div>
+                                            <div class="feature-item">
+                                                <i class="fa-solid fa-check"></i>
+                                                <div>
+                                                    <strong>사이트 안 배너 및 사이트 밖 푸시</strong>
+                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">사이트를 보고 있을 때는 화면 위 배너로, 사이트가 닫혀 있을 때는 허용된 기기의 알림창으로 표시합니다.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 이전 버전 카드 (One UI 1.0, Build 20260822.1) -->
+                                    <div class="update-history-card">
+                                        <div class="update-card-header">
+                                            <div class="update-version-badge-group">
+                                                <h4 class="version-title">One UI 1.0</h4>
+                                            </div>
+                                            <span class="build-number">Build 20260822.1</span>
+                                        </div>
+                                        <p class="update-description">모바일 화면 사용성 개선 및 게시글 상단 고정 관련 버그 수정 업데이트입니다.</p>
                                         <div class="update-features-list">
                                             <div class="feature-item">
                                                 <i class="fa-solid fa-check"></i>
@@ -1317,13 +1354,14 @@
                 </div>
 
                 <!-- 통합 파일 첨부 영역 (최대 40개, 파일당 100MB) -->
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.2rem;">
-                    <span style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary);">
+                <div
+                    style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.35rem 0.75rem; margin-top: 0.2rem;">
+                    <span style="font-size: 0.88rem; font-weight: 600; color: var(--text-primary); white-space: nowrap;">
                         <i class="fa-solid fa-paperclip" style="color: var(--accent-color); margin-right: 0.3rem;"></i>
-                        파일 첨부 (파일당 최대 100MB)
+                        파일 첨부
                     </span>
                     <button type="button" id="attachGuideBtn"
-                        style="background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); color: var(--accent-color); padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.2s;">
+                        style="background: rgba(255,255,255,0.06); border: 1px solid var(--glass-border); color: var(--accent-color); padding: 0.3rem 0.75rem; border-radius: 20px; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.35rem; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; margin-left: auto;">
                         <i class="fa-solid fa-circle-info"></i>
                         <span>첨부 기준 안내</span>
                     </button>
@@ -1336,7 +1374,8 @@
                         style="cursor: pointer; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
                         <i class="fa-solid fa-cloud-arrow-up"
                             style="font-size: 2.2rem; color: var(--accent-color);"></i>
-                        <span style="font-weight: 600; font-size: 0.98rem; color: var(--text-primary);">클릭하여 파일을 추가하세요
+                        <span
+                            style="font-weight: 600; font-size: 0.98rem; color: var(--text-primary); word-break: keep-all;">클릭하여 파일을 추가하세요
                             (파일당 최대 100MB)</span>
                         <span
                             style="font-size: 0.82rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; justify-content: center; margin-top: 0.2rem;">
@@ -1591,16 +1630,18 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
-    <script src="script.js?v=1.0.16"></script>
+    <script src="script.js?v=1.0.18"></script>
     <script src="youtube-utils.js?v=1.0.3"></script>
     <!-- 커뮤니티는 역할별 파일로 나누어, 수정할 때 해당 기능만 찾을 수 있게 했습니다. -->
-    <script src="community.js?v=2.1.6"></script>
+    <script src="community.js?v=2.1.8"></script>
     <script src="community-comment-render.js?v=2.0.5"></script>
-    <script src="community-post-detail.js?v=2.0.5"></script>
+    <script src="community-post-detail.js?v=2.0.7"></script>
     <script src="media-upload.js?v=1.0.3"></script>
-    <script src="community-attachments.js?v=2.0.4"></script>
+    <script src="community-attachments.js?v=2.0.5"></script>
     <script src="community-ui.js?v=2.0.4"></script>
-    <script src="community-interactions.js?v=2.0.6"></script>
+    <script src="community-interactions.js?v=2.0.7"></script>
+    <script src="notification-worker-config.js?v=1.0.1"></script>
+    <script src="notifications.js?v=2.0.0"></script>
 </body>
 
 </html>

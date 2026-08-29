@@ -1126,7 +1126,7 @@ if (commentSubmitBtn && commentInput) {
                     if (img.description) imgDescs[String(idx)] = img.description;
                 });
 
-                await db.collection('posts').doc(currentPostId).collection('comments').add({
+                const createdCommentRef = await db.collection('posts').doc(currentPostId).collection('comments').add({
                     author: isAdmin(currentUser.email) ? getAdminName(currentUser.email) : currentUser.displayName,
                     uid: currentUser.uid,
                     userPhoto: currentUser.photoURL || '',
@@ -1148,6 +1148,10 @@ if (commentSubmitBtn && commentInput) {
                 });
                 if (parentId) {
                     window.expandCommentLineage(parentId);
+                }
+                if (window.clubNotifications?.isConfigured()) {
+                    window.clubNotifications.notifyCommentCreated(currentPostId, createdCommentRef.id)
+                        .catch((error) => console.error('댓글 알림 전송 오류:', error));
                 }
                 console.log(`[댓글 작성 성공] DB 등록 완료`);
             }

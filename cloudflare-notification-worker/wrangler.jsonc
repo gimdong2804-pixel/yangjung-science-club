@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "yangjung-science-notifications",
+  "account_id": "9656dbffb473143f1f91b3f21330d6d1",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-29",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "FIREBASE_PROJECT_ID": "yangjung-science",
+    "FIREBASE_API_KEY": "AIzaSyAjYVdkxXL8Z0eaFGGtiwn3qIXUreD8_lc",
+    "ALLOWED_ORIGINS": "https://gimdong2804-pixel.github.io,http://127.0.0.1:8080,http://localhost:8080",
+    "ADMIN_EMAILS": "gimdong2804@gmail.com,sjh20110407@gmail.com",
+    "ADMIN_DISPLAY_NAMES": "{\"gimdong2804@gmail.com\":\"회장 김동현\",\"sjh20110407@gmail.com\":\"사장\"}"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "yangjung-science-notifications",
+      "database_id": "0421d302-048c-469b-9b16-77b5926451ba"
+    }
+  ]
+}

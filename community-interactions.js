@@ -109,7 +109,11 @@ window.executePostMultiDelete = async function () {
     try {
         for (let cb of checkboxes) {
             const pid = cb.value;
-            await db.collection('posts').doc(pid).delete();
+            if (typeof window.deletePostDocumentWithNotification === 'function') {
+                await window.deletePostDocumentWithNotification(pid);
+            } else {
+                await db.collection('posts').doc(pid).delete();
+            }
         }
         cancelPostMultiDelete();
     } catch (e) {

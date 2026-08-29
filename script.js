@@ -614,7 +614,8 @@ function switchPage(fromPage, toPage, skipHistory = false, replaceState = false)
     fromPage.classList.remove('fade-in');
 
     // 메인 페이지에서 서브 페이지로 이동할 때 푸터 페이드 아웃 시작
-    if (fromPage === mainPage) {
+    if (fromPage === mainPage && siteFooter) {
+        siteFooter.classList.remove('fade-in');
         siteFooter.classList.add('fade-out');
     }
 
@@ -644,12 +645,17 @@ function switchPage(fromPage, toPage, skipHistory = false, replaceState = false)
             toPage.classList.remove('fade-out');
             toPage.classList.add('fade-in');
 
-            if (toPage === mainPage) {
-                // 메인 페이지로 돌아올 때는 푸터 display를 복원하고 페이드 인 적용
+            if (toPage === mainPage && siteFooter) {
+                // 메인 페이지로 돌아올 때는 푸터 display를 복원하고 투명(fade-out) 상태에서 페이드 인 적용
                 siteFooter.style.display = '';
+                siteFooter.classList.add('fade-out');
+                siteFooter.classList.remove('fade-in');
                 siteFooter.offsetHeight; // 리플로우
-                siteFooter.classList.remove('fade-out');
-            } else {
+                requestAnimationFrame(() => {
+                    siteFooter.classList.remove('fade-out');
+                    siteFooter.classList.add('fade-in');
+                });
+            } else if (siteFooter) {
                 // 서브 페이지로 전환 완료 시점에는 푸터를 완전히 숨김
                 siteFooter.style.display = 'none';
             }
@@ -1651,9 +1657,10 @@ if (settingsNavItems.length > 0) {
 // 사이트 업데이트 정보: 다음 배포 시 이 값만 변경합니다.
 const SITE_UPDATE_INFO = Object.freeze({
     oneUiVersion: 'One UI 1.0',
-    buildNumber: '20260822.1',
-    message: '모바일 화면 사용성 개선 및 게시글 상단 고정 관련 버그 수정 업데이트입니다.'
+    buildNumber: '20260829.1',
+    message: '로그인 사용자용 댓글·답글·고정·삭제 및 사이트 업데이트 알림 기능을 추가했습니다.'
 });
+window.SITE_UPDATE_INFO = SITE_UPDATE_INFO;
 
 const checkUpdateBtn = document.getElementById('checkUpdateBtn');
 const openUpdateDetailsBtn = document.getElementById('openUpdateDetailsBtn');

@@ -401,6 +401,17 @@
             width: 100%;
             background: transparent;
             z-index: 50;
+            opacity: 1;
+            transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        footer.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        footer.fade-in {
+            opacity: 1;
         }
 
         .footer-content {
