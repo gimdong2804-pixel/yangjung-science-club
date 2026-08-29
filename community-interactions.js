@@ -1,4 +1,4 @@
-// 게시글 다중 선택, 휴대폰 뒤로가기, PWA 기능
+﻿// 게시글 다중 선택, 휴대폰 뒤로가기, PWA 기능
 // Post Multi Select Variables
 window.isPostMultiSelectMode = false;
 let postPressTimer = null;
@@ -128,10 +128,10 @@ window.addEventListener('popstate', (e) => {
         return;
     }
 
-    // 커스텀 확인 모달 (삭제 확인 등) - 자체 popstate 핸들러가 있으므로 여기서는 fallback
+    // 커스텀 확인 모달 (삭제 확인 등)
     const customConfirmModal = document.getElementById('customConfirmModal');
     if (customConfirmModal && customConfirmModal.classList.contains('active')) {
-        return; // customConfirm 자체 popstate 핸들러가 처리
+        return;
     }
 
     // 댓글/답글 다중선택 모드
@@ -156,6 +156,8 @@ window.addEventListener('popstate', (e) => {
             window.hideInPageUpdateDetails(true);
         } else if (window.updateSubState === 'pill' && typeof window.resetUpdateCheckState === 'function') {
             window.resetUpdateCheckState(true);
+        } else if (window.isNotificationSubPageOpen && typeof window.closeNotificationSubPage === 'function') {
+            window.closeNotificationSubPage(window.currentNotificationSubPage, true);
         } else if (window.isUsefulSubPageOpen && typeof window.closeUsefulSubPage === 'function') {
             window.closeUsefulSubPage(true);
         } else if (window.isDisplaySubPageOpen && typeof window.closeDisplaySubPage === 'function') {
@@ -196,6 +198,7 @@ window.addEventListener('popstate', (e) => {
         if (currentPage !== mainPage) switchPage(currentPage, mainPage, true);
     }
 });
+
 // 초기 상태 히스토리 설정
 window.addEventListener('DOMContentLoaded', () => {
     if ('scrollRestoration' in history) {
@@ -214,4 +217,3 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
         });
     });
 }
-
