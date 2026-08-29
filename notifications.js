@@ -160,7 +160,10 @@
             });
         }
 
-        requestAnimationFrame(() => toast.classList.add('show'));
+        // 첫 페인트에서 시작 상태가 그려진 뒤 show를 붙여야 등장 전환이 보인다.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => toast.classList.add('show'));
+        });
         closeTimer = setTimeout(closeToast, item.duration || 6500);
     }
 
