@@ -182,8 +182,26 @@
         showNextNotification();
     }
 
+    function isInSiteNotificationEnabled() {
+        try {
+            return localStorage.getItem('yangjung_in_site_notification_enabled') !== '0';
+        } catch {
+            return true;
+        }
+    }
+
+    function setInSiteNotificationEnabled(enabled) {
+        try {
+            localStorage.setItem('yangjung_in_site_notification_enabled', enabled ? '1' : '0');
+        } catch (error) {
+            console.warn('알림 배너 설정 저장 오류:', error);
+        }
+        updateNotificationSettingsUI();
+    }
+
     function showNotificationOnce(rawData) {
         if (!activeNotificationUser || !auth.currentUser) return;
+        if (!isInSiteNotificationEnabled()) return;
         const data = normalizeNotificationData(rawData);
         if (data.recipientUid && data.recipientUid !== activeNotificationUser.uid) return;
         if (data.notificationId && shownNotificationIds.has(data.notificationId)) return;
@@ -317,6 +335,7 @@
 
         try {
             const registered = await registerPushForUser(user);
+            updateNotificationSettingsUI();
             queueNotification({
                 type: registered ? 'success' : 'notice',
                 title: registered ? '푸시 알림을 켰어요' : '푸시 알림을 켜지 못했어요',
@@ -325,6 +344,7 @@
                     : '이 브라우저가 Web Push를 지원하는지 확인해 주세요.'
             });
         } catch (error) {
+            updateNotificationSettingsUI();
             console.error('푸시 알림 등록 오류:', error);
             queueNotification({
                 type: 'notice',
@@ -372,19 +392,25 @@
     async function unregisterPushSubscription() {
         const user = auth.currentUser || activeNotificationUser;
         await syncServiceWorkerAuthState(null);
-        if (!user || !('serviceWorker' in navigator) || !isWorkerConfigured()) return;
+        if (!user || !('serviceWorker' in navigator) || !isWorkerConfigured()) {
+            updateNotificationSettingsUI();
+            return;
+        }
 
         try {
             const registration = await navigator.serviceWorker.ready;
             const subscription = await registration.pushManager.getSubscription();
-            if (!subscription) return;
-            await callWorker('/subscriptions', {
-                method: 'DELETE',
-                body: { subscription: subscription.toJSON() }
-            });
-            await subscription.unsubscribe();
+            if (subscription) {
+                await callWorker('/subscriptions', {
+                    method: 'DELETE',
+                    body: { subscription: subscription.toJSON() }
+                });
+                await subscription.unsubscribe();
+            }
         } catch (error) {
             console.error('푸시 구독 해제 오류:', error);
+        } finally {
+            updateNotificationSettingsUI();
         }
     }
 
@@ -487,6 +513,200 @@
         return { type, target, recipientUid, postId, commentId, buildNumber };
     }
 
+    function updateNotificationSettingsUI() {
+        const pushToggle = document.getElementById('pushNotificationSettingToggle');
+        const pushQuickToggle = document.getElementById('pushNotificationQuickToggle');
+        const inSiteToggle = document.getElementById('inSiteNotificationSettingToggle');
+        const badge = document.getElementById('pushNotificationBadge');
+        const notice = document.getElementById('pushNotificationNotice');
+        const resetCard = document.getElementById('notificationDismissResetCard');
+
+        if (inSiteToggle) {
+            inSiteToggle.checked = isInSiteNotificationEnabled();
+        }
+
+        const isSupported = window.isSecureContext && ('Notification' in window) && ('serviceWorker' in navigator) && ('PushManager' in window);
+        const permission = isSupported ? Notification.permission : 'unsupported';
+        const user = auth.currentUser || activeNotificationUser;
+        const dismissKey = user ? `yangjung_push_prompt_hidden_${user.uid}` : '';
+        const isDismissed = Boolean(dismissKey && localStorage.getItem(dismissKey) === '1');
+
+        const setPushToggles = (checked, disabled) => {
+            if (pushToggle) {
+                pushToggle.checked = checked;
+                pushToggle.disabled = disabled;
+            }
+            if (pushQuickToggle) {
+                pushQuickToggle.checked = checked;
+                pushQuickToggle.disabled = disabled;
+            }
+        };
+
+        if (badge) {
+            badge.className = 'notification-status-badge';
+        }
+
+        if (!isSupported) {
+            if (badge) {
+                badge.classList.add('unsupported');
+                badge.textContent = '미지원';
+            }
+            setPushToggles(false, true);
+            if (notice) {
+                notice.style.display = 'block';
+                notice.textContent = '현재 브라우저에서는 사이트 밖 푸시 알림을 지원하지 않습니다.';
+            }
+            if (resetCard) resetCard.style.display = 'none';
+            return;
+        }
+
+        if (permission === 'granted') {
+            if (badge) {
+                badge.classList.add('granted');
+                badge.textContent = '알림 켜짐';
+            }
+            setPushToggles(true, false);
+            if (notice) notice.style.display = 'none';
+            if (resetCard) resetCard.style.display = 'none';
+        } else if (permission === 'denied') {
+            if (badge) {
+                badge.classList.add('denied');
+                badge.textContent = '차단됨';
+            }
+            setPushToggles(false, false);
+            if (notice) {
+                notice.style.display = 'block';
+                notice.textContent = '브라우저에서 알림이 차단되어 있습니다. 주소창 좌측 사이트 설정(자물쇠)에서 알림을 허용해 주세요.';
+            }
+            if (resetCard) resetCard.style.display = 'none';
+        } else {
+            if (badge) {
+                badge.classList.add('default');
+                badge.textContent = '알림 꺼짐';
+            }
+            setPushToggles(false, false);
+            if (notice) notice.style.display = 'none';
+            if (resetCard) {
+                resetCard.style.display = isDismissed ? 'block' : 'none';
+            }
+        }
+    }
+
+    function initNotificationSettingsUI() {
+        const pushToggle = document.getElementById('pushNotificationSettingToggle');
+        const pushQuickToggle = document.getElementById('pushNotificationQuickToggle');
+        const inSiteToggle = document.getElementById('inSiteNotificationSettingToggle');
+        const resetDismissBtn = document.getElementById('resetNotificationDismissBtn');
+
+        const handlePushToggleChange = async (event) => {
+            const shouldEnable = event.target.checked;
+            const user = auth.currentUser || activeNotificationUser;
+
+            if (!user) {
+                event.target.checked = false;
+                queueNotification({
+                    type: 'notice',
+                    title: '로그인이 필요해요',
+                    body: '알림 설정은 로그인 후에 이용할 수 있습니다.'
+                });
+                updateNotificationSettingsUI();
+                return;
+            }
+
+            if (!isWorkerConfigured()) {
+                event.target.checked = false;
+                queueNotification({
+                    type: 'notice',
+                    title: '알림 서버 준비 중',
+                    body: '알림 서버 주소가 아직 구성되지 않았습니다.'
+                });
+                updateNotificationSettingsUI();
+                return;
+            }
+
+            const dismissKey = `yangjung_push_prompt_hidden_${user.uid}`;
+
+            if (shouldEnable) {
+                try {
+                    localStorage.removeItem(dismissKey);
+                } catch {}
+
+                if (!('Notification' in window)) {
+                    event.target.checked = false;
+                    updateNotificationSettingsUI();
+                    return;
+                }
+
+                if (Notification.permission === 'denied') {
+                    event.target.checked = false;
+                    updateNotificationSettingsUI();
+                    queueNotification({
+                        type: 'notice',
+                        title: '브라우저 알림이 차단되어 있어요',
+                        body: '브라우저 주소창 왼쪽 사이트 설정(자물쇠)에서 알림을 허용해 주세요.'
+                    });
+                    return;
+                }
+
+                await requestPushPermission(user);
+                updateNotificationSettingsUI();
+            } else {
+                await unregisterPushSubscription();
+                queueNotification({
+                    type: 'notice',
+                    title: '푸시 알림을 껐어요',
+                    body: '사이트 밖 푸시 알림 수신이 해제되었습니다.'
+                });
+                updateNotificationSettingsUI();
+            }
+        };
+
+        if (pushToggle && !pushToggle.dataset.bound) {
+            pushToggle.dataset.bound = 'true';
+            pushToggle.addEventListener('change', handlePushToggleChange);
+        }
+
+        if (pushQuickToggle && !pushQuickToggle.dataset.bound) {
+            pushQuickToggle.dataset.bound = 'true';
+            pushQuickToggle.addEventListener('change', handlePushToggleChange);
+        }
+
+        if (inSiteToggle && !inSiteToggle.dataset.bound) {
+            inSiteToggle.dataset.bound = 'true';
+            inSiteToggle.addEventListener('change', (event) => {
+                setInSiteNotificationEnabled(event.target.checked);
+                queueNotification({
+                    type: 'notice',
+                    title: event.target.checked ? '화면 상단 알림을 켰어요' : '화면 상단 알림을 껐어요',
+                    body: event.target.checked
+                        ? '사이트 이용 중 새 소식을 상단 배너로 안내합니다.'
+                        : '사이트 이용 중 화면 상단 알림 배너가 표시되지 않습니다.'
+                });
+            });
+        }
+
+        if (resetDismissBtn && !resetDismissBtn.dataset.bound) {
+            resetDismissBtn.dataset.bound = 'true';
+            resetDismissBtn.addEventListener('click', () => {
+                const user = auth.currentUser || activeNotificationUser;
+                if (user) {
+                    const dismissKey = `yangjung_push_prompt_hidden_${user.uid}`;
+                    try {
+                        localStorage.removeItem(dismissKey);
+                    } catch {}
+                }
+                updateNotificationSettingsUI();
+                queueNotification({
+                    type: 'success',
+                    title: '안내 배너 상태 초기화 완료',
+                    body: '알림 권한 안내 배너가 다음 접속 시 다시 표시됩니다.'
+                });
+            });
+        }
+
+        updateNotificationSettingsUI();
+    }
+
     const clubNotifications = {
         isConfigured: isWorkerConfigured,
 
@@ -508,7 +728,11 @@
             });
         },
 
-        unregister: unregisterPushSubscription
+        unregister: unregisterPushSubscription,
+        updateSettingsUI: updateNotificationSettingsUI,
+        initSettingsUI: initNotificationSettingsUI,
+        isInSiteNotificationEnabled,
+        setInSiteNotificationEnabled
     };
 
     window.clubNotifications = clubNotifications;
@@ -531,10 +755,18 @@
 
     pendingNotificationTarget = readTargetFromUrl();
 
+    // DOM 준비 시 설정 UI 초기화 바인딩
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initNotificationSettingsUI);
+    } else {
+        initNotificationSettingsUI();
+    }
+
     auth.onAuthStateChanged(async (user) => {
         shownNotificationIds.clear();
         activeNotificationUser = user || null;
         await syncServiceWorkerAuthState(user);
+        updateNotificationSettingsUI();
 
         if (!user) return;
 

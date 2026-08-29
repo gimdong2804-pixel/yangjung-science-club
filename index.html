@@ -298,7 +298,7 @@
         <p class="update-details-eyebrow">현재 버전</p>
         <h3 id="updateDetailsTitle"><i class="fa-solid fa-sparkles"></i> 업데이트 내용</h3>
         <div class="update-details-version">
-            <strong data-current-one-ui-version>One UI 1.0</strong>
+            <strong data-current-one-ui-version>One UI 1.5</strong>
             <span data-current-build-number>Build 20260829.1</span>
         </div>
         <p class="update-details-message" data-current-update-message>로그인 사용자용 댓글·답글·고정·삭제 및 사이트 업데이트 알림 기능을 추가했습니다.</p>
@@ -325,6 +325,7 @@
                     style="padding: 0 1rem 1.5rem 1rem; font-size: 1.2rem; font-weight: bold; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
                     <i class="fa-solid fa-gear"></i> 설정
                 </div>
+                <div class="settings-nav-item" data-tab="notification">알림</div>
                 <div class="settings-nav-item active" data-tab="display">디스플레이</div>
                 <div class="settings-nav-item" data-tab="useful">유용한 기능</div>
                 <div class="settings-nav-item" data-tab="update">업데이트</div>
@@ -339,6 +340,158 @@
                     <button class="close-btn" id="settingsModalCloseBtn" aria-label="닫기">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
+                </div>
+
+                <!-- 알림 탭 내용 -->
+                <div id="settingsTab-notification" class="settings-tab-content"
+                    style="display: none; flex-direction: column;">
+                    
+                    <!-- 알림 메인 카드 목록 -->
+                    <div id="notificationCategoryList" class="settings-sub-category-list"
+                        style="display: flex; flex-direction: column; gap: 1rem;">
+
+                        <!-- 그룹 1: 사이트 밖 푸시 알림 카드 (빠른 토글 및 서브페이지 진입 지원) -->
+                        <div class="settings-card-group">
+                            <div class="settings-card-item" id="openPushNotificationSettings" style="cursor: pointer;">
+                                <div class="settings-card-icon">
+                                    <i class="fa-solid fa-bell"></i>
+                                </div>
+                                <div class="settings-card-info">
+                                    <div class="settings-card-title">사이트 밖 푸시 알림</div>
+                                    <div class="settings-card-desc">사이트를 닫아도 기기 알림창으로 받는 새 소식 설정</div>
+                                </div>
+                                <label class="settings-toggle" style="margin-left: auto;" onclick="event.stopPropagation();">
+                                    <input type="checkbox" id="pushNotificationQuickToggle" aria-label="사이트 밖 푸시 알림 켜기">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 그룹 2: 화면 상단 배너 알림 -->
+                        <div class="settings-card-group">
+                            <div class="settings-card-item" style="cursor: default;">
+                                <div class="settings-card-icon">
+                                    <i class="fa-solid fa-comment-dots"></i>
+                                </div>
+                                <div class="settings-card-info">
+                                    <div class="settings-card-title">
+                                        <span>화면 상단 알림 배너</span>
+                                    </div>
+                                    <div class="settings-card-desc">
+                                        사이트를 이용하는 동안 화면 상단에 실시간 소식 배너를 띄웁니다.
+                                    </div>
+                                </div>
+                                <label class="settings-toggle" style="margin-left: auto;" onclick="event.stopPropagation();">
+                                    <input type="checkbox" id="inSiteNotificationSettingToggle" checked aria-label="화면 상단 알림 배너 켜기">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- 사이트 밖 푸시 알림 세부 설정 서브페이지 -->
+                    <div id="pushNotificationSettingsSubPage" class="settings-sub-page" style="display: none;">
+                        <div class="settings-sub-header">
+                            <button class="settings-back-btn" id="backToNotificationCategoriesBtn" aria-label="뒤로가기"
+                                title="알림으로 돌아가기">
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <span class="settings-sub-title">사이트 밖 푸시 알림</span>
+                        </div>
+
+                        <div class="settings-sub-content" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            <div class="settings-item" style="border: none; padding: 0;">
+                                <div class="settings-label" style="align-items: flex-start; max-width: 80%;">
+                                    <i class="fa-solid fa-bell" style="margin-top: 0.2rem;"></i>
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 1.05rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                            <span>사이트 밖 푸시 알림</span>
+                                            <span id="pushNotificationBadge" class="notification-status-badge">확인 중</span>
+                                        </div>
+                                        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4;">
+                                            사이트를 닫아도 기기 알림창으로 새 소식(댓글·답글·고정·삭제·업데이트)을 받습니다.
+                                        </div>
+                                        <div id="pushNotificationNotice" style="display: none; font-size: 0.82rem; color: #f87171; margin-top: 0.45rem; line-height: 1.35;"></div>
+                                    </div>
+                                </div>
+                                <label class="settings-toggle">
+                                    <input type="checkbox" id="pushNotificationSettingToggle" aria-label="사이트 밖 푸시 알림 켜기">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <!-- 알림 켰을 때 표시 예시 미리보기 사진 영역 -->
+                            <div style="border-top: 1px solid var(--glass-border); padding-top: 1.25rem;">
+                                <div
+                                    style="display: flex; gap: 0.75rem; align-items: center; font-size: 0.95rem; color: var(--text-primary); font-weight: bold; margin-bottom: 0.4rem;">
+                                    <span style="width: 20px; text-align: center; display: inline-block;">💡</span>
+                                    <span>알림을 켜면 어떻게 보이나요?</span>
+                                </div>
+                                <div style="padding-left: calc(20px + 0.75rem);">
+                                    <div
+                                        style="font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1.2rem;">
+                                        알림을 켜면 사이트가 닫혀 있어도 기기 알림창으로 새 소식이 실시간 도착합니다. (사진을 누르면 확대됩니다)
+                                    </div>
+
+                                    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                                        <!-- 1. 노트북 알림 미리보기 -->
+                                        <div class="update-photo-card" style="max-width: 520px; width: 100%;"
+                                            onclick="openLightbox('설정창/설정창 관련 사진/사이트 밖 푸시 알림 미리보기(노트북).png', { description: '노트북 및 PC 환경에서 사이트를 닫아도 화면 우측 하단 알림창에 새 글·댓글·답글·고정·삭제 소식이 표시되는 예시 화면입니다.' })">
+                                            <div class="update-photo-thumb-wrap" style="aspect-ratio: auto; height: auto; background: transparent;">
+                                                <img src="설정창/설정창 관련 사진/사이트 밖 푸시 알림 미리보기(노트북).png"
+                                                    alt="노트북 푸시 알림 미리보기" class="update-photo-img" style="width: 100%; height: auto; display: block; border-radius: 10px;">
+                                                <div class="update-photo-zoom-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> 확대</div>
+                                            </div>
+                                            <div class="update-photo-info">
+                                                <div class="update-photo-title">
+                                                    <span class="photo-type-tag pc">PC / 노트북</span>
+                                                    <span>노트북 알림 표시 예시</span>
+                                                </div>
+                                                <p class="update-photo-desc">사이트를 닫아도 화면 우측 하단 알림창으로 새 글·댓글·답글·고정·삭제·공지 소식이 실시간 도착합니다.</p>
+                                            </div>
+                                        </div>
+
+                                        <!-- 2. 휴대폰 알림 미리보기 -->
+                                        <div class="update-photo-card" style="max-width: 360px; width: 100%;"
+                                            onclick="openLightbox('설정창/설정창 관련 사진/사이트 밖 푸시 알림 미리보기(휴대폰).jpg', { description: '휴대폰 및 모바일 환경에서 사이트를 닫아도 상단 알림바 및 알림창에 새 글·댓글·답글·고정·삭제 소식이 표시되는 예시 화면입니다.' })">
+                                            <div class="update-photo-thumb-wrap" style="aspect-ratio: auto; height: auto; background: transparent;">
+                                                <img src="설정창/설정창 관련 사진/사이트 밖 푸시 알림 미리보기(휴대폰).jpg"
+                                                    alt="휴대폰 푸시 알림 미리보기" class="update-photo-img" style="width: 100%; height: auto; display: block; border-radius: 10px;">
+                                                <div class="update-photo-zoom-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> 확대</div>
+                                            </div>
+                                            <div class="update-photo-info">
+                                                <div class="update-photo-title">
+                                                    <span class="photo-type-tag mobile">모바일</span>
+                                                    <span>휴대폰 알림 표시 예시</span>
+                                                </div>
+                                                <p class="update-photo-desc">휴대폰 화면 상단 알림창 및 잠금화면으로 새 소식이 실시간 도착합니다.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 다시 보지 않기 초기화 버튼 카드 -->
+                            <div class="settings-card-group" id="notificationDismissResetCard" style="display: none;">
+                                <div class="settings-item" style="padding: 1.25rem 1.5rem; border: none; gap: 1rem;">
+                                    <div class="settings-label" style="align-items: flex-start; max-width: 80%;">
+                                        <i class="fa-solid fa-rotate-left" style="margin-top: 0.2rem; font-size: 1.1rem;"></i>
+                                        <div>
+                                            <div style="font-weight: 600; font-size: 1.05rem;">
+                                                <span>알림 권한 안내 배너 다시 띄우기</span>
+                                            </div>
+                                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.4rem; line-height: 1.4;">
+                                                '다시 보지 않기'로 숨겨진 알림 요청 배너 상태를 초기화합니다.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button id="resetNotificationDismissBtn" type="button" class="settings-reset-button" style="padding: 0.45rem 0.9rem; font-size: 0.85rem; white-space: nowrap;">다시 표시</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- 디스플레이 탭 내용 -->
@@ -407,26 +560,34 @@
                                 </div>
                                 <div class="update-status-copy">
                                     <svg data-current-one-ui-version class="one-ui-version-svg" viewBox="0 0 256 56"
-                                        xmlns="http://www.w3.org/2000/svg" aria-label="One UI 1.0">
+                                        xmlns="http://www.w3.org/2000/svg" aria-label="One UI 1.5">
                                         <circle cx="18" cy="28" r="14.5" fill="none" stroke="currentColor"
                                             stroke-width="5.0" />
                                         <text x="40" y="44" fill="currentColor" font-family="'Outfit', sans-serif"
                                             font-size="44" font-weight="500" letter-spacing="3">ne UI <tspan
                                                 class="one-ui-version-number" font-family="'Source Sans 3', sans-serif"
-                                                font-weight="600" font-size="48">1.0</tspan></text>
+                                                font-weight="600" font-size="48">1.5</tspan></text>
                                     </svg>
                                 </div>
                                 <button id="checkUpdateBtn" class="update-check-button" type="button">
                                     업데이트 내용 확인
                                 </button>
-                                <button id="openUpdateDetailsBtn" class="update-details-pill-card" type="button"
-                                    style="display: none;">
-                                    <div class="update-pill-left">
-                                        <span class="version-tag current">현재 버전</span>
-                                        <span class="version-title" data-current-one-ui-version>One UI 1.0</span>
-                                    </div>
-                                    <i class="fa-solid fa-chevron-right update-pill-arrow"></i>
-                                </button>
+                                <div id="updatePillsGroup" class="update-pills-group" style="display: none;">
+                                    <button id="openUpdateDetailsBtn" class="update-details-pill-card" type="button" data-version="1.5">
+                                        <div class="update-pill-left">
+                                            <span class="version-tag current">현재 버전</span>
+                                            <span class="version-title">One UI 1.5</span>
+                                        </div>
+                                        <i class="fa-solid fa-chevron-right update-pill-arrow"></i>
+                                    </button>
+                                    <button id="openUpdateDetails10Btn" class="update-details-pill-card" type="button" data-version="1.0">
+                                        <div class="update-pill-left">
+                                            <span class="version-tag" style="background: rgba(255, 255, 255, 0.12); color: var(--text-secondary);">이전 버전</span>
+                                            <span class="version-title">One UI 1.0</span>
+                                        </div>
+                                        <i class="fa-solid fa-chevron-right update-pill-arrow"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- 3단계: 화면 전체를 활용하는 페이드 인 업데이트 내용 상세 화면 -->
@@ -436,161 +597,166 @@
                                         style="margin-bottom: 0;" type="button">
                                         <i class="fa-solid fa-arrow-left"></i> 돌아가기
                                     </button>
-                                    <h3 class="update-details-page-title"><i class="fa-solid fa-sparkles"
+                                    <h3 class="update-details-page-title" id="updateDetailsPageTitle"><i class="fa-solid fa-sparkles"
                                             style="color: var(--accent-color);"></i> 소프트웨어 업데이트 정보</h3>
                                 </div>
 
                                 <div class="update-history-scroll-area">
-                                    <!-- 최신 버전 카드 (One UI 1.0, Build 20260829.1) -->
-                                    <div class="update-history-card current-version-card">
-                                        <div class="update-card-header">
-                                            <div class="update-version-badge-group">
-                                                <span class="version-tag current">현재 버전</span>
-                                                <h4 class="version-title" data-current-one-ui-version>One UI 1.0</h4>
-                                            </div>
-                                            <span class="build-number" data-current-build-number>Build 20260829.1</span>
-                                        </div>
-                                        <p class="update-description" data-current-update-message>로그인 사용자용 댓글·답글·고정·삭제 및 사이트 업데이트 알림 기능을 추가했습니다.</p>
-                                        <div class="update-features-list">
-                                            <div class="feature-item">
-                                                <i class="fa-solid fa-check"></i>
-                                                <div>
-                                                    <strong>댓글 전체 알림 및 답글 참여자 알림</strong>
-                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">일반 댓글은 작성자를 제외한 로그인 회원에게, 답글은 게시물 작성자와 같은 댓글 줄 참여자에게 알립니다.</div>
+                                    <!-- One UI 1.5 업데이트 상세 섹션 (알림 업데이트) -->
+                                    <div id="updateSection15" class="update-version-section" style="display: flex; flex-direction: column; gap: 1rem;">
+                                        <div class="update-history-card current-version-card">
+                                            <div class="update-card-header">
+                                                <div class="update-version-badge-group">
+                                                    <span class="version-tag current">현재 버전</span>
+                                                    <h4 class="version-title" data-current-one-ui-version>One UI 1.5</h4>
                                                 </div>
+                                                <span class="build-number" data-current-build-number>Build 20260829.1</span>
                                             </div>
-                                            <div class="feature-item">
-                                                <i class="fa-solid fa-check"></i>
-                                                <div>
-                                                    <strong>고정·관리자 삭제 알림</strong>
-                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">다른 사람이 내 댓글이나 답글을 고정하거나 관리자가 내 게시물을 삭제했을 때 알려줍니다.</div>
-                                                </div>
-                                            </div>
-                                            <div class="feature-item">
-                                                <i class="fa-solid fa-check"></i>
-                                                <div>
-                                                    <strong>사이트 안 배너 및 사이트 밖 푸시</strong>
-                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">사이트를 보고 있을 때는 화면 위 배너로, 사이트가 닫혀 있을 때는 허용된 기기의 알림창으로 표시합니다.</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- 이전 버전 카드 (One UI 1.0, Build 20260822.1) -->
-                                    <div class="update-history-card">
-                                        <div class="update-card-header">
-                                            <div class="update-version-badge-group">
-                                                <h4 class="version-title">One UI 1.0</h4>
-                                            </div>
-                                            <span class="build-number">Build 20260822.1</span>
-                                        </div>
-                                        <p class="update-description">모바일 화면 사용성 개선 및 게시글 상단 고정 관련 버그 수정 업데이트입니다.</p>
-                                        <div class="update-features-list">
-                                            <div class="feature-item">
-                                                <i class="fa-solid fa-check"></i>
-                                                <div>
-                                                    <strong>모바일 상단 액션 버튼 잘림 개선</strong>
-                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">모바일 화면에서 긴 주제명으로 인해 고정, 삭제, 수정 버튼이 화면 밖으로 잘리던 문제를 유연한 배치로 개선했습니다.</div>
-                                                </div>
-                                            </div>
-                                            <div class="feature-item">
-                                                <i class="fa-solid fa-check"></i>
-                                                <div>
-                                                    <strong>게시글 고정(Pin) 동기화 및 다중 선택 오류 수정</strong>
-                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">다중 선택 시 기존 고정글이 반대로 해제되던 현상을 해결하고, 데이터베이스 동기화 안정성을 강화했습니다.</div>
-                                                </div>
-                                            </div>
-                                            <div class="feature-item">
-                                                <i class="fa-solid fa-check"></i>
-                                                <div>
-                                                    <strong>기기 간 설정 자동 동기화 기능 복구</strong>
-                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">휴대폰과 노트북 등 다른 기기 간에 다크모드 및 일반 설정이 실시간으로 동기화되지 않던 문제를 해결했습니다.</div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- 버그 수정 관련 사진 토글 영역 -->
-                                        <div class="update-photos-section">
-                                            <button type="button" class="update-photos-toggle-btn" onclick="toggleUpdatePhotos(this)" aria-expanded="false">
-                                                <div class="update-photos-toggle-left">
-                                                    <i class="fa-solid fa-images"></i>
-                                                    <span>수정된 버그 관련 사진 보기 (3장)</span>
-                                                </div>
-                                                <i class="fa-solid fa-chevron-down toggle-arrow"></i>
-                                            </button>
-
-                                            <div class="update-photos-collapse">
-                                                <div class="update-photos-grid">
-                                                    <!-- 1. 모바일 버튼 잘림 1 (9:16 세로형) -->
-                                                    <div class="update-photo-card" onclick="openLightbox('One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 1.jpg', { description: '모바일 화면에서 카테고리 주제명이 길어질 경우, 우측 상단의 고정, 삭제, 수정 액션 버튼이 화면 바깥으로 밀려나 잘리던 버그 현상입니다.' })">
-                                                        <div class="update-photo-thumb-wrap aspect-mobile">
-                                                            <img src="One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 1.jpg" alt="상단 버튼 잘림 1" class="update-photo-img mobile-thumb">
-                                                            <div class="update-photo-zoom-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> 확대</div>
-                                                        </div>
-                                                        <div class="update-photo-info">
-                                                            <div class="update-photo-title">
-                                                                <span class="photo-type-tag mobile">모바일</span>
-                                                                <span>버튼 잘림 현상 1</span>
-                                                            </div>
-                                                            <p class="update-photo-desc">긴 주제명으로 인해 상단 액션 버튼이 우측 화면 밖으로 잘리던 현상</p>
-                                                        </div>
+                                            <p class="update-description" data-current-update-message>로그인 사용자용 댓글·답글·고정·삭제 및 사이트 업데이트 알림 기능을 추가했습니다.</p>
+                                            <div class="update-features-list">
+                                                <div class="feature-item">
+                                                    <i class="fa-solid fa-check"></i>
+                                                    <div>
+                                                        <strong>댓글 전체 알림 및 답글 참여자 알림</strong>
+                                                        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">일반 댓글은 작성자를 제외한 로그인 회원에게, 답글은 게시물 작성자와 같은 댓글 줄 참여자에게 알립니다.</div>
                                                     </div>
-
-                                                    <!-- 2. 모바일 버튼 잘림 2 (9:16 세로형) -->
-                                                    <div class="update-photo-card" onclick="openLightbox('One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 2.jpg', { description: '다른 긴 주제명의 게시글에서도 동일하게 상단 액션 버튼들이 잘려나가 게시글 조작이 불가능했던 현상입니다.' })">
-                                                        <div class="update-photo-thumb-wrap aspect-mobile">
-                                                            <img src="One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 2.jpg" alt="상단 버튼 잘림 2" class="update-photo-img mobile-thumb">
-                                                            <div class="update-photo-zoom-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> 확대</div>
-                                                        </div>
-                                                        <div class="update-photo-info">
-                                                            <div class="update-photo-title">
-                                                                <span class="photo-type-tag mobile">모바일</span>
-                                                                <span>버튼 잘림 현상 2</span>
-                                                            </div>
-                                                            <p class="update-photo-desc">다른 게시글에서도 동일하게 액션 버튼이 잘려 조작이 어렵던 현상</p>
-                                                        </div>
+                                                </div>
+                                                <div class="feature-item">
+                                                    <i class="fa-solid fa-check"></i>
+                                                    <div>
+                                                        <strong>고정·관리자 삭제 알림</strong>
+                                                        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">다른 사람이 내 댓글이나 답글을 고정하거나 관리자가 내 게시물을 삭제했을 때 알려줍니다.</div>
                                                     </div>
-
-                                                    <!-- 3. 고정 동기화 오류 (와이드형) -->
-                                                    <div class="update-photo-card wide-card" onclick="openLightbox('One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/고정 관련 버그 사진.png', { description: '다중 선택 시 기존에 이미 고정되어 있던 글이 반대로 고정 해제되거나, 계정/창 간 고정 상태가 서로 일치하지 않던 동기화 버그입니다.' })">
-                                                        <div class="update-photo-thumb-wrap aspect-desktop">
-                                                            <img src="One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/고정 관련 버그 사진.png" alt="고정 동기화 오류" class="update-photo-img desktop-thumb">
-                                                            <div class="update-photo-zoom-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> 확대</div>
-                                                        </div>
-                                                        <div class="update-photo-info">
-                                                            <div class="update-photo-title">
-                                                                <span class="photo-type-tag pc">PC / 동기화</span>
-                                                                <span>게시글 고정 동기화 오류</span>
-                                                            </div>
-                                                            <p class="update-photo-desc">다중 선택 시 고정 상태가 반전되거나 다른 계정 간 고정 표시가 불일치하던 오류</p>
-                                                        </div>
+                                                </div>
+                                                <div class="feature-item">
+                                                    <i class="fa-solid fa-check"></i>
+                                                    <div>
+                                                        <strong>사이트 안 배너 및 사이트 밖 푸시</strong>
+                                                        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">사이트를 보고 있을 때는 화면 위 배너로, 사이트가 닫혀 있을 때는 허용된 기기의 알림창으로 표시합니다.</div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- 이전 버전 카드 (One UI 1.0, Build 20260811.1) -->
-                                    <div class="update-history-card">
-                                        <div class="update-card-header">
-                                            <div class="update-version-badge-group">
-                                                <h4 class="version-title">One UI 1.0</h4>
+                                    <!-- One UI 1.0 업데이트 상세 섹션 (기존 업데이트 내역) -->
+                                    <div id="updateSection10" class="update-version-section" style="display: none;">
+                                        <!-- 이전 버전 카드 (One UI 1.0, Build 20260822.1) -->
+                                        <div class="update-history-card">
+                                            <div class="update-card-header">
+                                                <div class="update-version-badge-group">
+                                                    <h4 class="version-title">One UI 1.0</h4>
+                                                </div>
+                                                <span class="build-number">Build 20260822.1</span>
                                             </div>
-                                            <span class="build-number">Build 20260811.1</span>
+                                            <p class="update-description">모바일 화면 사용성 개선 및 게시글 상단 고정 관련 버그 수정 업데이트입니다.</p>
+                                            <div class="update-features-list">
+                                                <div class="feature-item">
+                                                    <i class="fa-solid fa-check"></i>
+                                                    <div>
+                                                        <strong>모바일 상단 액션 버튼 잘림 개선</strong>
+                                                        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">모바일 화면에서 긴 주제명으로 인해 고정, 삭제, 수정 버튼이 화면 밖으로 잘리던 문제를 유연한 배치로 개선했습니다.</div>
+                                                    </div>
+                                                </div>
+                                                <div class="feature-item">
+                                                    <i class="fa-solid fa-check"></i>
+                                                    <div>
+                                                        <strong>게시글 고정(Pin) 동기화 및 다중 선택 오류 수정</strong>
+                                                        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">다중 선택 시 기존 고정글이 반대로 해제되던 현상을 해결하고, 데이터베이스 동기화 안정성을 강화했습니다.</div>
+                                                    </div>
+                                                </div>
+                                                <div class="feature-item">
+                                                    <i class="fa-solid fa-check"></i>
+                                                    <div>
+                                                        <strong>기기 간 설정 자동 동기화 기능 복구</strong>
+                                                        <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">휴대폰과 노트북 등 다른 기기 간에 다크모드 및 일반 설정이 실시간으로 동기화되지 않던 문제를 해결했습니다.</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- 버그 수정 관련 사진 토글 영역 -->
+                                            <div class="update-photos-section">
+                                                <button type="button" class="update-photos-toggle-btn" onclick="toggleUpdatePhotos(this)" aria-expanded="false">
+                                                    <div class="update-photos-toggle-left">
+                                                        <i class="fa-solid fa-images"></i>
+                                                        <span>수정된 버그 관련 사진 보기 (3장)</span>
+                                                    </div>
+                                                    <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                                                </button>
+
+                                                <div class="update-photos-collapse">
+                                                    <div class="update-photos-grid">
+                                                        <!-- 1. 모바일 버튼 잘림 1 (9:16 세로형) -->
+                                                        <div class="update-photo-card" onclick="openLightbox('One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 1.jpg', { description: '모바일 화면에서 카테고리 주제명이 길어질 경우, 우측 상단의 고정, 삭제, 수정 액션 버튼이 화면 바깥으로 밀려나 잘리던 버그 현상입니다.' })">
+                                                            <div class="update-photo-thumb-wrap aspect-mobile">
+                                                                <img src="One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 1.jpg" alt="상단 버튼 잘림 1" class="update-photo-img mobile-thumb">
+                                                                <div class="update-photo-zoom-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> 확대</div>
+                                                            </div>
+                                                            <div class="update-photo-info">
+                                                                <div class="update-photo-title">
+                                                                    <span class="photo-type-tag mobile">모바일</span>
+                                                                    <span>버튼 잘림 현상 1</span>
+                                                                </div>
+                                                                <p class="update-photo-desc">긴 주제명으로 인해 상단 액션 버튼이 우측 화면 밖으로 잘리던 현상</p>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- 2. 모바일 버튼 잘림 2 (9:16 세로형) -->
+                                                        <div class="update-photo-card" onclick="openLightbox('One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 2.jpg', { description: '다른 긴 주제명의 게시글에서도 동일하게 상단 액션 버튼들이 잘려나가 게시글 조작이 불가능했던 현상입니다.' })">
+                                                            <div class="update-photo-thumb-wrap aspect-mobile">
+                                                                <img src="One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/상단 고정, 삭제, 수정 버튼 잘림 사진 2.jpg" alt="상단 버튼 잘림 2" class="update-photo-img mobile-thumb">
+                                                                <div class="update-photo-zoom-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> 확대</div>
+                                                            </div>
+                                                            <div class="update-photo-info">
+                                                                <div class="update-photo-title">
+                                                                    <span class="photo-type-tag mobile">모바일</span>
+                                                                    <span>버튼 잘림 현상 2</span>
+                                                                </div>
+                                                                <p class="update-photo-desc">다른 게시글에서도 동일하게 액션 버튼이 잘려 조작이 어렵던 현상</p>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- 3. 고정 동기화 오류 (와이드형) -->
+                                                        <div class="update-photo-card wide-card" onclick="openLightbox('One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/고정 관련 버그 사진.png', { description: '다중 선택 시 기존에 이미 고정되어 있던 글이 반대로 고정 해제되거나, 계정/창 간 고정 상태가 서로 일치하지 않던 동기화 버그입니다.' })">
+                                                            <div class="update-photo-thumb-wrap aspect-desktop">
+                                                                <img src="One UI/One UI 1.0 업데이트 관련 사진/One UI 1.0, Build 20260822.1/고정 관련 버그 사진.png" alt="고정 동기화 오류" class="update-photo-img desktop-thumb">
+                                                                <div class="update-photo-zoom-badge"><i class="fa-solid fa-magnifying-glass-plus"></i> 확대</div>
+                                                            </div>
+                                                            <div class="update-photo-info">
+                                                                <div class="update-photo-title">
+                                                                    <span class="photo-type-tag pc">PC / 동기화</span>
+                                                                    <span>게시글 고정 동기화 오류</span>
+                                                                </div>
+                                                                <p class="update-photo-desc">다중 선택 시 고정 상태가 반전되거나 다른 계정 간 고정 표시가 불일치하던 오류</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <p class="update-description">우리 동아리 사이트의 첫 버전인 One UI 1.0입니다!</p>
-                                        <div class="update-features-list">
-                                            <div class="feature-item">
-                                                <i class="fa-solid fa-check"></i>
-                                                <span>종합 소통 및 활동 관리 시스템을 도입했습니다.</span>
+
+                                        <!-- 이전 버전 카드 (One UI 1.0, Build 20260811.1) -->
+                                        <div class="update-history-card">
+                                            <div class="update-card-header">
+                                                <div class="update-version-badge-group">
+                                                    <h4 class="version-title">One UI 1.0</h4>
+                                                </div>
+                                                <span class="build-number">Build 20260811.1</span>
                                             </div>
-                                            <div class="feature-item">
-                                                <i class="fa-solid fa-check"></i>
-                                                <span>커뮤니티 게시판, 첨부파일 및 실시간 반응을 지원합니다.</span>
-                                            </div>
-                                            <div class="feature-item">
-                                                <i class="fa-solid fa-check"></i>
-                                                <span>스마트 부원 편의 및 개인화 기능을 제공합니다.</span>
+                                            <p class="update-description">우리 동아리 사이트의 첫 버전인 One UI 1.0입니다!</p>
+                                            <div class="update-features-list">
+                                                <div class="feature-item">
+                                                    <i class="fa-solid fa-check"></i>
+                                                    <span>종합 소통 및 활동 관리 시스템을 도입했습니다.</span>
+                                                </div>
+                                                <div class="feature-item">
+                                                    <i class="fa-solid fa-check"></i>
+                                                    <span>커뮤니티 게시판, 첨부파일 및 실시간 반응을 지원합니다.</span>
+                                                </div>
+                                                <div class="feature-item">
+                                                    <i class="fa-solid fa-check"></i>
+                                                    <span>스마트 부원 편의 및 개인화 기능을 제공합니다.</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -624,6 +790,14 @@
                     <details class="settings-defaults-details">
                         <summary>기본 설정 보기</summary>
                         <dl class="settings-defaults-list">
+                            <div>
+                                <dt>사이트 밖 푸시 알림</dt>
+                                <dd>기기 알림 권한 기준</dd>
+                            </div>
+                            <div>
+                                <dt>화면 상단 알림 배너</dt>
+                                <dd>켜짐</dd>
+                            </div>
                             <div>
                                 <dt>다크 모드</dt>
                                 <dd>꺼짐(라이트 모드)</dd>

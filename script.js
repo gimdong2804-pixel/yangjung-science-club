@@ -1368,6 +1368,7 @@ window.openSettingsModal = function (tabName = 'display') {
     
     resetUsefulSettingsSubPage();
     resetDisplaySettingsSubPage();
+    if (typeof resetNotificationSettingsSubPage === 'function') resetNotificationSettingsSubPage();
     if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
 
     if (settingsModalOverlay && settingsModal) {
@@ -1390,6 +1391,7 @@ window.closeSettingsModal = function (fromPopState = false) {
     if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
     resetDisplaySettingsSubPage();
     resetUsefulSettingsSubPage();
+    if (typeof resetNotificationSettingsSubPage === 'function') resetNotificationSettingsSubPage();
     if (settingsModalOverlay && settingsModal) {
         settingsModalOverlay.classList.remove('active');
         settingsModal.classList.remove('active');
@@ -1438,6 +1440,8 @@ const backFromTextSelectBtn = document.getElementById('backFromTextSelectBtn');
 const openDarkModeSettings = document.getElementById('openDarkModeSettings');
 const backToDisplayCategoriesBtn = document.getElementById('backToDisplayCategoriesBtn');
 const darkModeSettingToggle = document.getElementById('darkModeSettingToggle');
+const openPushNotificationSettings = document.getElementById('openPushNotificationSettings');
+const backToNotificationCategoriesBtn = document.getElementById('backToNotificationCategoriesBtn');
 const openSettingsSync = document.getElementById('openSettingsSync');
 const backFromSettingsSyncBtn = document.getElementById('backFromSettingsSyncBtn');
 const settingsSyncToggle = document.getElementById('settingsSyncToggle');
@@ -1449,6 +1453,8 @@ const commentInputSettingsSubPage = document.getElementById('commentInputSetting
 const textSelectSettingsSubPage = document.getElementById('textSelectSettingsSubPage');
 const displayCategoryList = document.getElementById('displayCategoryList');
 const darkModeSettingsSubPage = document.getElementById('darkModeSettingsSubPage');
+const notificationCategoryList = document.getElementById('notificationCategoryList');
+const pushNotificationSettingsSubPage = document.getElementById('pushNotificationSettingsSubPage');
 const settingsSyncSubPage = document.getElementById('settingsSyncSubPage');
 
 window.isUsefulSubPageOpen = false;
@@ -1584,6 +1590,67 @@ window.resetDisplaySettingsSubPage = function () {
     }
 };
 
+window.isNotificationSubPageOpen = false;
+window.currentNotificationSubPage = null;
+
+window.openNotificationSubPage = function (subPage, subPageId = 'pushNotificationSettingsSubPage') {
+    if (!notificationCategoryList || !subPage) return;
+    window.isNotificationSubPageOpen = true;
+    window.currentNotificationSubPage = subPage;
+
+    notificationCategoryList.style.display = 'none';
+    subPage.style.display = 'block';
+    subPage.classList.remove('sub-page-exit');
+    subPage.classList.add('sub-page-enter');
+
+    history.pushState({ modal: 'settings', subPage: subPageId }, '');
+};
+
+window.closeNotificationSubPage = function (subPage, fromPopState = false) {
+    const targetSubPage = subPage || window.currentNotificationSubPage;
+    if (!notificationCategoryList || !targetSubPage || !window.isNotificationSubPageOpen) return;
+    window.isNotificationSubPageOpen = false;
+    window.currentNotificationSubPage = null;
+
+    targetSubPage.classList.remove('sub-page-enter');
+    targetSubPage.classList.add('sub-page-exit');
+
+    setTimeout(() => {
+        targetSubPage.style.display = 'none';
+        targetSubPage.classList.remove('sub-page-exit');
+        notificationCategoryList.style.display = 'flex';
+        notificationCategoryList.classList.remove('category-list-enter');
+        void notificationCategoryList.offsetWidth;
+        notificationCategoryList.classList.add('category-list-enter');
+    }, 200);
+
+    if (!fromPopState && history.state && history.state.subPage) {
+        window._isProgrammaticBack = true;
+        history.back();
+        setTimeout(() => { window._isProgrammaticBack = false; }, 50);
+    }
+};
+
+window.resetNotificationSettingsSubPage = function () {
+    window.isNotificationSubPageOpen = false;
+    window.currentNotificationSubPage = null;
+    if (notificationCategoryList) {
+        notificationCategoryList.style.display = 'flex';
+        notificationCategoryList.classList.remove('category-list-enter');
+    }
+    if (pushNotificationSettingsSubPage) {
+        pushNotificationSettingsSubPage.style.display = 'none';
+        pushNotificationSettingsSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
+    }
+};
+
+if (openPushNotificationSettings) {
+    openPushNotificationSettings.addEventListener('click', () => window.openNotificationSubPage(pushNotificationSettingsSubPage));
+}
+if (backToNotificationCategoriesBtn) {
+    backToNotificationCategoriesBtn.addEventListener('click', () => window.closeNotificationSubPage(pushNotificationSettingsSubPage, false));
+}
+
 if (openTopButtonSettings) {
     openTopButtonSettings.addEventListener('click', () => window.openUsefulSubPage('topButtonSettingsSubPage'));
 }
@@ -1649,14 +1716,18 @@ if (settingsNavItems.length > 0) {
             // 탭을 전환할 때 서브페이지를 메인 카드 목록으로 초기화
             resetUsefulSettingsSubPage();
             resetDisplaySettingsSubPage();
+            if (typeof resetNotificationSettingsSubPage === 'function') resetNotificationSettingsSubPage();
             if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
+            if (window.clubNotifications && typeof window.clubNotifications.updateSettingsUI === 'function') {
+                window.clubNotifications.updateSettingsUI();
+            }
         });
     });
 }
 
 // 사이트 업데이트 정보: 다음 배포 시 이 값만 변경합니다.
 const SITE_UPDATE_INFO = Object.freeze({
-    oneUiVersion: 'One UI 1.0',
+    oneUiVersion: 'One UI 1.5',
     buildNumber: '20260829.1',
     message: '로그인 사용자용 댓글·답글·고정·삭제 및 사이트 업데이트 알림 기능을 추가했습니다.'
 });
@@ -1664,9 +1735,14 @@ window.SITE_UPDATE_INFO = SITE_UPDATE_INFO;
 
 const checkUpdateBtn = document.getElementById('checkUpdateBtn');
 const openUpdateDetailsBtn = document.getElementById('openUpdateDetailsBtn');
+const openUpdateDetails10Btn = document.getElementById('openUpdateDetails10Btn');
+const updatePillsGroup = document.getElementById('updatePillsGroup');
 const updateMainBackBtn = document.getElementById('updateMainBackBtn');
 const updateMainView = document.getElementById('updateMainView');
 const updateDetailsView = document.getElementById('updateDetailsView');
+const updateDetailsPageTitle = document.getElementById('updateDetailsPageTitle');
+const updateSection15 = document.getElementById('updateSection15');
+const updateSection10 = document.getElementById('updateSection10');
 const closeUpdateDetailsInPageBtn = document.getElementById('closeUpdateDetailsInPageBtn');
 const closeUpdateDetailsTopBtn = document.getElementById('closeUpdateDetailsTopBtn');
 
@@ -1692,8 +1768,8 @@ document.querySelectorAll('[data-current-update-message]').forEach((element) => 
 // 업데이트 서브 상태 Tracing ('pill' | 'details' | null)
 window.updateSubState = null;
 
-// "업데이트 내용 확인" 버튼 클릭 시 -> 알약 버튼과 메인 상단 "← 돌아가기" 버튼 표시
-if (checkUpdateBtn && openUpdateDetailsBtn) {
+// "업데이트 내용 확인" 버튼 클릭 시 -> 알약 목록과 메인 상단 "← 돌아가기" 버튼 표시
+if (checkUpdateBtn && updatePillsGroup) {
     checkUpdateBtn.addEventListener('click', function () {
         if (checkUpdateBtn.classList.contains('hiding')) return;
         checkUpdateBtn.classList.add('hiding');
@@ -1705,8 +1781,9 @@ if (checkUpdateBtn && openUpdateDetailsBtn) {
             checkUpdateBtn.style.display = 'none';
             checkUpdateBtn.classList.remove('hiding');
 
-            openUpdateDetailsBtn.style.display = 'flex';
-            openUpdateDetailsBtn.classList.add('showing');
+            updatePillsGroup.style.display = 'flex';
+            updatePillsGroup.classList.remove('hiding');
+            updatePillsGroup.classList.add('showing');
 
             if (updateMainBackBtn) {
                 updateMainBackBtn.style.display = 'inline-flex';
@@ -1725,18 +1802,18 @@ if (checkUpdateBtn && openUpdateDetailsBtn) {
 window.resetUpdateCheckState = function (fromPopState = false) {
     window.updateSubState = null;
 
-    if (openUpdateDetailsBtn) {
-        openUpdateDetailsBtn.classList.remove('showing');
-        openUpdateDetailsBtn.classList.add('hiding');
+    if (updatePillsGroup) {
+        updatePillsGroup.classList.remove('showing');
+        updatePillsGroup.classList.add('hiding');
     }
     if (updateMainBackBtn) {
         updateMainBackBtn.classList.remove('showing');
         updateMainBackBtn.classList.add('hiding');
     }
     setTimeout(() => {
-        if (openUpdateDetailsBtn) {
-            openUpdateDetailsBtn.style.display = 'none';
-            openUpdateDetailsBtn.classList.remove('hiding');
+        if (updatePillsGroup) {
+            updatePillsGroup.style.display = 'none';
+            updatePillsGroup.classList.remove('hiding');
         }
         if (updateMainBackBtn) {
             updateMainBackBtn.style.display = 'none';
@@ -1767,12 +1844,31 @@ if (updateMainBackBtn) {
     });
 }
 
-// "[현재 버전] One UI 1.0 >" 알약 버튼 클릭시 상세 업데이트 내역 화면으로 진입
-window.showInPageUpdateDetails = function () {
+// 알약 버튼 클릭 시 버전별 상세 업데이트 내역 화면으로 진입
+window.showInPageUpdateDetails = function (targetVersion = '1.5') {
+    if (typeof targetVersion !== 'string') {
+        targetVersion = '1.5';
+    }
     window.updateSubState = 'details';
-    history.pushState({ modal: 'settings', updateSubState: 'details' }, '');
+    history.pushState({ modal: 'settings', updateSubState: 'details', updateVersion: targetVersion }, '');
 
     if (!updateMainView || !updateDetailsView) return;
+
+    if (updateSection15 && updateSection10) {
+        if (targetVersion === '1.0') {
+            updateSection15.style.display = 'none';
+            updateSection10.style.display = 'flex';
+            if (updateDetailsPageTitle) {
+                updateDetailsPageTitle.innerHTML = '<i class="fa-solid fa-sparkles" style="color: var(--accent-color);"></i> One UI 1.0 업데이트 정보';
+            }
+        } else {
+            updateSection15.style.display = 'flex';
+            updateSection10.style.display = 'none';
+            if (updateDetailsPageTitle) {
+                updateDetailsPageTitle.innerHTML = '<i class="fa-solid fa-sparkles" style="color: var(--accent-color);"></i> One UI 1.5 업데이트 정보';
+            }
+        }
+    }
 
     updateMainView.classList.remove('active');
     updateMainView.classList.add('leaving');
@@ -1785,6 +1881,14 @@ window.showInPageUpdateDetails = function () {
         updateDetailsView.classList.remove('leaving');
         void updateDetailsView.offsetWidth;
         updateDetailsView.classList.add('active');
+
+        // 진입 시 활성화된 카드의 slideUpFade 애니메이션을 자연스럽게 동일 재생
+        const activeCards = updateDetailsView.querySelectorAll('.update-version-section:not([style*="display: none"]) .update-history-card');
+        activeCards.forEach((card, idx) => {
+            card.style.animation = 'none';
+            void card.offsetHeight;
+            card.style.animation = `slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${0.06 + idx * 0.05}s both`;
+        });
     }, 180);
 };
 
@@ -1806,8 +1910,9 @@ window.hideInPageUpdateDetails = function (fromPopState = false) {
         void updateMainView.offsetWidth;
         updateMainView.classList.add('active');
 
-        if (openUpdateDetailsBtn) {
-            openUpdateDetailsBtn.style.display = 'flex';
+        if (updatePillsGroup) {
+            updatePillsGroup.style.display = 'flex';
+            updatePillsGroup.classList.remove('hiding');
         }
         if (updateMainBackBtn) {
             updateMainBackBtn.style.display = 'inline-flex';
@@ -1845,9 +1950,9 @@ window.resetUpdateTabViews = function () {
         checkUpdateBtn.style.display = '';
         checkUpdateBtn.classList.remove('hiding', 'showing');
     }
-    if (openUpdateDetailsBtn) {
-        openUpdateDetailsBtn.style.display = 'none';
-        openUpdateDetailsBtn.classList.remove('showing', 'hiding');
+    if (updatePillsGroup) {
+        updatePillsGroup.style.display = 'none';
+        updatePillsGroup.classList.remove('showing', 'hiding');
     }
     if (updateMainBackBtn) {
         updateMainBackBtn.style.display = 'none';
@@ -1856,15 +1961,19 @@ window.resetUpdateTabViews = function () {
 };
 
 if (openUpdateDetailsBtn) {
-    openUpdateDetailsBtn.addEventListener('click', window.showInPageUpdateDetails);
+    openUpdateDetailsBtn.addEventListener('click', () => window.showInPageUpdateDetails('1.5'));
+}
+
+if (openUpdateDetails10Btn) {
+    openUpdateDetails10Btn.addEventListener('click', () => window.showInPageUpdateDetails('1.0'));
 }
 
 if (closeUpdateDetailsInPageBtn) {
-    closeUpdateDetailsInPageBtn.addEventListener('click', window.hideInPageUpdateDetails);
+    closeUpdateDetailsInPageBtn.addEventListener('click', () => window.hideInPageUpdateDetails(false));
 }
 
 if (closeUpdateDetailsTopBtn) {
-    closeUpdateDetailsTopBtn.addEventListener('click', window.hideInPageUpdateDetails);
+    closeUpdateDetailsTopBtn.addEventListener('click', () => window.hideInPageUpdateDetails(false));
 }
 
 const logoDisplayDropdown = document.getElementById('logoDisplayDropdown');
@@ -2181,7 +2290,18 @@ async function resetAllAccountSettings() {
     isLoadingAccountSettings = true;
     accountSettings = { ...ACCOUNT_SETTINGS_DEFAULTS };
     applyAccountSettings();
-    if (userId) saveDeviceAccountSettings(userId, accountSettings);
+    if (userId) {
+        saveDeviceAccountSettings(userId, accountSettings);
+        try {
+            localStorage.removeItem(`yangjung_push_prompt_hidden_${userId}`);
+            localStorage.removeItem('yangjung_in_site_notification_enabled');
+            if (window.clubNotifications && typeof window.clubNotifications.updateSettingsUI === 'function') {
+                window.clubNotifications.updateSettingsUI();
+            }
+        } catch (storageError) {
+            console.warn('알림 설정 로컬 초기화 오류:', storageError);
+        }
+    }
 
     try {
         if (userId) {

@@ -79,7 +79,8 @@ self.addEventListener('push', event => {
       icon: iconUrl,
       badge: iconUrl,
       tag: data.notificationId || undefined,
-      renotify: false,
+      vibrate: [200, 100, 200],
+      renotify: true,
       data
     });
   })());
