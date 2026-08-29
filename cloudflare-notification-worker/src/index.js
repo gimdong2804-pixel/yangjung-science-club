@@ -340,6 +340,7 @@ async function handleCommentEvent(request, env, ctx, origin) {
   }
 
   const actor = personName(comment.author || user.displayName);
+  const commentText = cleanText(comment?.body || comment?.content || '', 40);
   let rows;
   let payload;
 
@@ -348,8 +349,8 @@ async function handleCommentEvent(request, env, ctx, origin) {
     payload = notificationPayload({
       notificationId: eventId,
       type: 'new_comment',
-      title: '새 댓글',
-      body: `${actor}이 ${quotedTitle(post.title)} 게시물에 댓글을 남겼어요.${commentPreview(comment)}`,
+      title: `${actor}: ${commentText ? `“${commentText}”` : '새 댓글을 남겼어요'}`,
+      body: `${quotedTitle(post.title)} 게시물의 새 댓글`,
       target: 'post',
       postId,
       commentId
@@ -373,8 +374,8 @@ async function handleCommentEvent(request, env, ctx, origin) {
     payload = notificationPayload({
       notificationId: eventId,
       type: 'new_reply',
-      title: '새 답글',
-      body: `${actor}이 ${repliedTo}의 댓글에 답글을 남겼어요.${commentPreview(comment)}`,
+      title: `${actor}: ${commentText ? `“${commentText}”` : '새 답글을 남겼어요'}`,
+      body: `${repliedTo}의 댓글에 남긴 답글 (${quotedTitle(post.title)})`,
       target: 'post',
       postId,
       commentId
