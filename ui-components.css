@@ -67,6 +67,8 @@
     gap: 0.75rem;
     color: var(--text-primary);
     font-size: 1.05rem;
+    word-break: keep-all;
+    overflow-wrap: break-word;
 }
 
 .settings-label i {
@@ -152,6 +154,8 @@ body:has(.modal-overlay.active) {
     flex-direction: column;
     overflow: hidden;
     overscroll-behavior: contain;
+    word-break: keep-all;
+    overflow-wrap: break-word;
 }
 
 .settings-layout {
@@ -180,7 +184,7 @@ body:has(.modal-overlay.active) {
     animation: fadeInTab 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-/* 사이트 업데이트 화면 */
+/* 사이트 업데이트 화면 (PC/기본) */
 .update-status-screen {
     position: relative;
     isolation: isolate;
@@ -230,6 +234,9 @@ body:has(.modal-overlay.active) {
     position: relative;
     z-index: 1;
     text-align: center;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: transform;
 }
 
 .update-status-view-container {
@@ -577,12 +584,15 @@ body:has(.modal-overlay.active) {
 .update-history-scroll-area {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
-    padding: 0.25rem 0.25rem 2.5rem 0.25rem;
+    padding: 0.5rem 0.25rem 3rem 0.25rem;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 24px), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 14px, black calc(100% - 24px), transparent 100%);
 }
 
 .update-version-section {
@@ -1078,28 +1088,123 @@ body:has(.modal-overlay.active) {
 }
 
 .settings-nav-item {
-    padding: 0.6rem 1rem;
-    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.55rem 0.95rem;
+    border-radius: 9999px;
     cursor: pointer;
     color: var(--text-secondary);
     white-space: nowrap;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.2s, color 0.2s, transform 0.2s;
     font-size: 0.95rem;
+    font-weight: 500;
+    user-select: none;
+    flex-shrink: 0;
 }
 
 .settings-nav-item:hover {
     background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
 }
 
 .settings-nav-item.active {
     background: rgba(255, 255, 255, 0.1);
     color: var(--text-primary);
-    font-weight: bold;
+    font-weight: 700;
+}
+
+[data-theme="light"] .settings-nav-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .settings-nav-item.active {
+    background: rgba(0, 0, 0, 0.07);
+}
+
+.settings-nav-icon {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50% !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff !important;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+.settings-nav-icon i,
+.settings-nav-icon svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+}
+
+.settings-nav-icon.icon-notification {
+    background: linear-gradient(135deg, #ff8c00, #ff6b35) !important;
+}
+
+.settings-nav-icon.icon-display {
+    background: linear-gradient(135deg, #8dc63f, #6ab04c) !important;
+}
+
+.settings-nav-icon.icon-useful {
+    background: linear-gradient(135deg, #786fa6, #574b90) !important;
+}
+
+.settings-nav-icon.icon-update {
+    background: linear-gradient(135deg, #3867d6, #2e5bc7) !important;
+}
+
+.settings-nav-icon.icon-reset {
+    background: linear-gradient(135deg, #778ca3, #576574) !important;
+}
+
+.settings-mobile-menu-item .settings-card-icon {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    border-radius: 50% !important;
+    color: #ffffff !important;
+    font-size: 0.85rem !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18) !important;
+}
+
+.settings-mobile-menu-item .settings-card-icon i,
+.settings-mobile-menu-item .settings-card-icon svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+    fill: currentColor !important;
+}
+
+.settings-mobile-menu-item .settings-card-icon.icon-notification {
+    background: linear-gradient(135deg, #ff8c00, #ff6b35) !important;
+}
+
+.settings-mobile-menu-item .settings-card-icon.icon-display {
+    background: linear-gradient(135deg, #8dc63f, #6ab04c) !important;
+}
+
+.settings-mobile-menu-item .settings-card-icon.icon-useful {
+    background: linear-gradient(135deg, #786fa6, #574b90) !important;
+}
+
+.settings-mobile-menu-item .settings-card-icon.icon-update {
+    background: linear-gradient(135deg, #3867d6, #2e5bc7) !important;
+}
+
+.settings-mobile-menu-item .settings-card-icon.icon-reset {
+    background: linear-gradient(135deg, #778ca3, #576574) !important;
 }
 
 .settings-content {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
+    width: 100%;
+    box-sizing: border-box;
     padding: 1.25rem 1rem;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -1163,12 +1268,16 @@ body:has(.modal-overlay.active) {
     font-size: 1.05rem;
     color: var(--text-primary);
     margin-bottom: 0.25rem;
+    word-break: keep-all;
+    overflow-wrap: break-word;
 }
 
 .settings-card-desc {
     font-size: 0.85rem;
     color: var(--text-secondary);
     line-height: 1.4;
+    word-break: keep-all;
+    overflow-wrap: break-word;
 }
 
 .settings-card-arrow {
@@ -1338,6 +1447,8 @@ body:has(.modal-overlay.active) {
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--text-primary);
+    word-break: keep-all;
+    overflow-wrap: break-word;
 }
 
 /* 서브 페이지 전환 애니메이션 */
@@ -1397,22 +1508,223 @@ body:has(.modal-overlay.active) {
     border-bottom: 1px solid var(--glass-border);
 }
 
+/* 모바일 설정 화면 및 계층형 내비게이션 스타일 */
+.settings-mobile-back-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.15rem;
+    cursor: pointer;
+    padding: 0;
+    width: 0;
+    opacity: 0;
+    margin-right: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    overflow: hidden;
+    pointer-events: none;
+    transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.18s ease,
+                margin-right 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.15s ease,
+                color 0.15s ease;
+}
+
+.settings-mobile-back-btn.active {
+    width: 26px;
+    opacity: 1;
+    margin-right: 0.35rem;
+    pointer-events: auto;
+}
+
+.settings-mobile-back-btn:active {
+    transform: scale(0.9);
+    color: var(--accent-color);
+}
+
+#settingsMobileHeaderTitle {
+    display: flex;
+    align-items: center;
+    transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.settings-mobile-main-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+@keyframes mobilePageSlideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes mobileMainSlideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.mobile-tab-enter {
+    animation: mobilePageSlideInRight 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.mobile-main-enter {
+    animation: mobileMainSlideInLeft 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.settings-mobile-menu-item {
+    transition: transform 0.18s ease, background 0.18s ease;
+}
+
+.settings-mobile-menu-item:active {
+    transform: scale(0.985);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .settings-mobile-menu-item:active {
+    background: rgba(0, 0, 0, 0.05);
+}
+
 .desktop-only {
     display: none !important;
 }
 
-@media (min-width: 768px) {
+/* 모바일 전용 (768px 미만 또는 모바일 기기 터치 가로모드) */
+@media (max-width: 767px), (orientation: landscape) and (max-height: 550px) and (hover: none) {
+    .settings-sidebar {
+        display: none !important;
+    }
+
+    body:not(.settings-sub-active) .settings-content > .settings-tab-content:not(.mobile-tab-exit) {
+        display: none !important;
+    }
+
+    /* 모바일 전용 One UI 업데이트 화면 */
+    #settingsTab-update {
+        height: 100%;
+        min-height: 100%;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .update-status-screen {
+        height: 100%;
+        min-height: clamp(380px, 60vh, 560px);
+        gap: 0;
+        padding: 0;
+    }
+
+    .update-status-screen::before,
+    .update-status-screen::after {
+        display: none !important;
+    }
+
+    #updateMainView {
+        position: relative;
+        height: 100%;
+        min-height: clamp(380px, 60vh, 560px);
+        justify-content: flex-end !important;
+        padding: 1rem 1rem 1.5rem 1rem !important;
+        box-sizing: border-box;
+    }
+
+    #updateMainView .update-status-copy {
+        position: absolute;
+        top: 0;
+        bottom: 90px;
+        left: 0;
+        right: 0;
+        margin: auto !important;
+        transform: none !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: auto;
+        pointer-events: none;
+    }
+
+    #updateMainView .update-status-copy::before,
+    #updateMainView .update-status-copy::after {
+        content: '';
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(45px);
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    #updateMainView .update-status-copy::before {
+        width: min(80vw, 22rem);
+        height: min(80vw, 22rem);
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(circle, rgba(102, 208, 230, 0.45), rgba(102, 208, 230, 0) 68%);
+    }
+
+    #updateMainView .update-status-copy::after {
+        width: min(65vw, 18rem);
+        height: min(65vw, 18rem);
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(circle, rgba(248, 185, 113, 0.42), rgba(248, 185, 113, 0) 70%);
+    }
+
+    #updateMainView .one-ui-version-svg {
+        width: clamp(240px, 75vw, 360px);
+        max-width: calc(100% - 2rem);
+        height: auto;
+    }
+
+    #updateMainView .update-check-button {
+        width: min(100%, 340px);
+        padding: 0.95rem 2.5rem;
+        font-size: 1.05rem;
+        margin-top: auto;
+        margin-bottom: 0.5rem;
+    }
+
+    #updateMainView .update-pills-group {
+        width: min(100%, 340px);
+        margin-top: auto;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* 데스크톱 전용 (768px 이상이면서 터치 가로모드가 아닌 환경) */
+@media (min-width: 768px) and (min-height: 551px), (min-width: 1024px) {
     .settings-layout {
         flex-direction: row;
     }
 
     .settings-sidebar {
+        display: flex !important;
         flex-direction: column;
         width: 250px;
         border-bottom: none;
         border-right: 1px solid var(--glass-border);
         padding: 2.5rem 1rem;
         background: rgba(255, 255, 255, 0.015);
+    }
+
+    .settings-mobile-main-list {
+        display: none !important;
     }
 
     .settings-content {
@@ -1615,17 +1927,53 @@ body:has(.modal-overlay.active) {
 .custom-dropdown-selected i.arrow-icon {
     font-size: 0.8rem;
     color: var(--text-secondary);
-    transition: transform 0.3s ease, color 0.3s ease;
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), color 0.25s ease;
 }
 
-.custom-dropdown-container.open .custom-dropdown-selected {
-    border-color: var(--accent-color);
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+.custom-dropdown-container.open .custom-dropdown-selected,
+#logoDisplayDropdown.open .custom-dropdown-selected {
+    border-color: var(--accent-color) !important;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2) !important;
 }
 
 .custom-dropdown-container.open .custom-dropdown-selected i.arrow-icon {
     transform: rotate(180deg);
     color: var(--accent-color);
+}
+
+/* 버전 관리 페이지 커스텀 드롭다운 (커뮤니티 정렬/주제 드롭다운과 100% 동일한 UI 컴포넌트) */
+.version-dropdown-container {
+    position: relative;
+    display: inline-block;
+    user-select: none;
+}
+
+.version-dropdown-container .custom-dropdown-selected {
+    width: 172px !important;
+    min-width: 172px !important;
+    max-width: 172px !important;
+    box-sizing: border-box !important;
+    justify-content: space-between;
+    padding: 0.48rem 1rem;
+    font-size: 0.88rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.version-dropdown-container .custom-dropdown-options {
+    top: calc(100% + 6px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    transform: translateY(-8px) !important;
+    box-sizing: border-box !important;
+}
+
+.version-dropdown-container.open .custom-dropdown-options {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateY(0) !important;
 }
 
 .custom-dropdown-options {
@@ -1640,26 +1988,42 @@ body:has(.modal-overlay.active) {
     margin: 0;
     width: max-content;
     min-width: 120px;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
     opacity: 0;
     visibility: hidden;
     transform: translateX(-50%) translateY(-10px);
-    transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
-    background: rgba(30, 41, 59, 0.5) !important;
-    backdrop-filter: blur(20px) saturate(1.4) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(1.4) !important;
+    transition: opacity 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                visibility 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    background: #1e293b !important;
 }
 
 [data-theme="light"] .custom-dropdown-options {
-    background: rgba(255, 255, 255, 0.6) !important;
-    backdrop-filter: blur(20px) saturate(1.4) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(1.4) !important;
+    background: #ffffff !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
 }
 
 .custom-dropdown-container.open .custom-dropdown-options {
     opacity: 1;
     visibility: visible;
     transform: translateX(-50%) translateY(0);
+}
+
+/* 설정창 로고 표시 드롭다운 위치 정렬 */
+#logoDisplayDropdown .custom-dropdown-options {
+    top: calc(100% + 6px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    transform: translateY(-8px) !important;
+    box-sizing: border-box !important;
+}
+
+#logoDisplayDropdown.open .custom-dropdown-options {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateY(0) !important;
 }
 
 .custom-dropdown-option {
@@ -2129,6 +2493,7 @@ body.no-text-select *:not(input):not(textarea):not([contenteditable="true"]) {
     line-height: 1.25;
     text-overflow: ellipsis;
     white-space: nowrap;
+    word-break: keep-all;
 }
 
 .site-notification-body {
@@ -2138,7 +2503,8 @@ body.no-text-select *:not(input):not(textarea):not([contenteditable="true"]) {
     color: var(--text-secondary);
     font-size: 0.82rem;
     line-height: 1.35;
-    overflow-wrap: anywhere;
+    word-break: keep-all;
+    overflow-wrap: break-word;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     line-clamp: 2;

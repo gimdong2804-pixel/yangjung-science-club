@@ -610,6 +610,11 @@ function switchPage(fromPage, toPage, skipHistory = false, replaceState = false)
         window.cancelMultiDelete(true);
     }
 
+    // 페이지 전환 시 댓글 첨부 메뉴 닫기
+    if (typeof window.closeCommentAttachMenu === 'function') {
+        window.closeCommentAttachMenu();
+    }
+
     if (toPage !== mainPage) {
         document.body.classList.remove('home-active');
     }
@@ -915,7 +920,7 @@ window.applyUserEffectiveVersion = function (user = auth.currentUser) {
     window.currentEffectiveOneUiVersion = effectiveVersion;
 
     const versionNumber = effectiveVersion;
-    const buildNumber = effectiveVersion === '1.5' ? '20260829.1' : '20260822.1';
+    const buildNumber = effectiveVersion === '1.5' ? '20260830.1' : '20260822.1';
     const updateMessage = effectiveVersion === '1.5'
         ? '실시간 알림 시스템 도입 및 모바일 사용성 개선 업데이트입니다.'
         : '초기 버전 배포입니다.';
@@ -941,8 +946,12 @@ window.applyUserEffectiveVersion = function (user = auth.currentUser) {
 
     // 2. 설정창 [알림] 탭 제어 (1.5 전용 기능)
     const notiTabNav = document.querySelector('.settings-nav-item[data-tab="notification"]');
+    const notiMobileItem = document.querySelector('.settings-mobile-menu-item[data-tab="notification"]');
     if (notiTabNav) {
         notiTabNav.style.display = effectiveVersion === '1.5' ? '' : 'none';
+    }
+    if (notiMobileItem) {
+        notiMobileItem.style.display = effectiveVersion === '1.5' ? '' : 'none';
     }
     if (effectiveVersion !== '1.5' && notiTabNav && notiTabNav.classList.contains('active')) {
         const displayNav = document.querySelector('.settings-nav-item[data-tab="display"]');
@@ -1001,6 +1010,58 @@ window.applyUserEffectiveVersion = function (user = auth.currentUser) {
     });
 };
 
+// 버전 관리 커스텀 드롭다운 동기화 헬퍼 함수
+function setVersionDropdownValue(role, val) {
+    const hiddenInput = document.getElementById(`${role}VersionSelect`);
+    const textEl = document.getElementById(`${role}VersionSelectedText`);
+    const dropdown = document.getElementById(`${role}VersionDropdown`);
+    const targetVal = String(val || (role === 'president' ? '1.5' : '1.0'));
+    if (hiddenInput) hiddenInput.value = targetVal;
+    if (textEl) {
+        textEl.textContent = targetVal === '1.5' ? 'One UI 1.5 (최신)' : 'One UI 1.0';
+    }
+    if (dropdown) {
+        dropdown.querySelectorAll('.custom-dropdown-option').forEach(opt => {
+            if (opt.getAttribute('data-value') === targetVal) {
+                opt.classList.add('active');
+            } else {
+                opt.classList.remove('active');
+            }
+        });
+    }
+}
+
+function setupVersionDropdown(role) {
+    const dropdown = document.getElementById(`${role}VersionDropdown`);
+    const selectedBtn = document.getElementById(`${role}VersionSelected`);
+    if (!dropdown || !selectedBtn) return;
+
+    selectedBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.version-dropdown-container').forEach(d => {
+            if (d !== dropdown) d.classList.remove('open');
+        });
+        dropdown.classList.toggle('open');
+    });
+
+    dropdown.querySelectorAll('.custom-dropdown-option').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const val = opt.getAttribute('data-value');
+            setVersionDropdownValue(role, val);
+            dropdown.classList.remove('open');
+        });
+    });
+}
+
+['president', 'leader', 'member'].forEach(setupVersionDropdown);
+
+document.addEventListener('click', (e) => {
+    document.querySelectorAll('.version-dropdown-container').forEach(d => {
+        if (!d.contains(e.target)) d.classList.remove('open');
+    });
+});
+
 if (typeof db !== 'undefined' && db) {
     db.collection('userRoles').doc('system_version_control').onSnapshot(doc => {
         if (doc.exists) {
@@ -1011,9 +1072,9 @@ if (typeof db !== 'undefined' && db) {
         } else {
             currentVersionControl = { ...DEFAULT_VERSION_CONTROL };
         }
-        if (presidentVersionSelect) presidentVersionSelect.value = currentVersionControl.president || '1.5';
-        if (leaderVersionSelect) leaderVersionSelect.value = currentVersionControl.leader || '1.0';
-        if (memberVersionSelect) memberVersionSelect.value = currentVersionControl.member || '1.0';
+        setVersionDropdownValue('president', currentVersionControl.president || '1.5');
+        setVersionDropdownValue('leader', currentVersionControl.leader || '1.0');
+        setVersionDropdownValue('member', currentVersionControl.member || '1.0');
 
         window.applyUserEffectiveVersion();
     }, err => {
@@ -1030,9 +1091,9 @@ if (versionManageMenuBtn) {
     versionManageMenuBtn.addEventListener('click', (e) => {
         e.preventDefault();
         if (!requireAdminAccess()) return;
-        if (presidentVersionSelect) presidentVersionSelect.value = currentVersionControl.president || '1.5';
-        if (leaderVersionSelect) leaderVersionSelect.value = currentVersionControl.leader || '1.0';
-        if (memberVersionSelect) memberVersionSelect.value = currentVersionControl.member || '1.0';
+        setVersionDropdownValue('president', currentVersionControl.president || '1.5');
+        setVersionDropdownValue('leader', currentVersionControl.leader || '1.0');
+        setVersionDropdownValue('member', currentVersionControl.member || '1.0');
         closeDrawer(true);
         switchPage(currentPage, versionManagePage, false, true);
     });
@@ -1564,8 +1625,148 @@ window.toggleRolePin = async function (email, currentPinned) {
     }
 };
 
-// --- 설정 창 로직 ---
-window.openSettingsModal = function (tabName = 'display') {
+// --- 모바일 기기 및 화면 판별 로직 ---
+function isMobileView() {
+    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    const isMobileUA = /Android|iPhone|iPad|iPod|Windows Phone|webOS|BlackBerry/i.test(navigator.userAgent);
+    const isNarrow = window.innerWidth < 768;
+    const isMobileLandscape = isTouch && window.innerHeight <= 550;
+    return isNarrow || (isTouch && isMobileUA) || isMobileLandscape;
+}
+
+function updateDeviceClass() {
+    const isMobile = isMobileView();
+    document.body.classList.toggle('is-mobile-device', isMobile);
+}
+
+window.addEventListener('resize', updateDeviceClass, { passive: true });
+window.addEventListener('orientationchange', updateDeviceClass, { passive: true });
+updateDeviceClass();
+
+const SETTINGS_TAB_TITLES = Object.freeze({
+    notification: '알림',
+    display: '디스플레이',
+    useful: '유용한 기능',
+    update: '소프트웨어 업데이트',
+    reset: '설정 초기화'
+});
+
+window.activeSettingsMobileTab = null;
+
+// 모바일 전용: 특정 탭 상세 화면으로 진입
+window.openSettingsTabOnMobile = function (tabName, fromPopState = false) {
+    if (!tabName) return;
+    window.activeSettingsMobileTab = tabName;
+    document.body.classList.add('settings-sub-active');
+
+    const mobileBackBtn = document.getElementById('settingsMobileBackBtn');
+    const mobileTitle = document.getElementById('settingsMobileHeaderTitle');
+    const mobileMainList = document.getElementById('settingsMobileMainList');
+    const contentEl = document.querySelector('.settings-content');
+    if (contentEl) contentEl.scrollTop = 0;
+
+    if (mobileBackBtn) mobileBackBtn.classList.add('active');
+    if (mobileTitle) {
+        const titleText = SETTINGS_TAB_TITLES[tabName] || '설정';
+        mobileTitle.style.opacity = '0';
+        setTimeout(() => {
+            mobileTitle.innerHTML = `<span>${titleText}</span>`;
+            mobileTitle.style.opacity = '1';
+        }, 80);
+    }
+
+    // 메인 목록 즉시 숨김 (동시 표시로 인한 레이아웃 점프 방지)
+    if (mobileMainList) {
+        mobileMainList.style.display = 'none';
+        mobileMainList.classList.remove('mobile-main-enter');
+    }
+
+    const settingsTabContents = document.querySelectorAll('.settings-tab-content');
+    settingsTabContents.forEach(content => {
+        if (content.id === `settingsTab-${tabName}`) {
+            content.style.display = 'flex';
+            content.classList.remove('mobile-tab-enter');
+            void content.offsetWidth; // 리플로우
+            content.classList.add('mobile-tab-enter', 'mobile-active');
+        } else {
+            content.classList.remove('mobile-tab-enter', 'mobile-active');
+            content.style.display = 'none';
+        }
+    });
+
+    if (settingsModal) {
+        settingsModal.classList.toggle('update-tab-active', tabName === 'update');
+    }
+
+    const settingsNavItems = document.querySelectorAll('.settings-nav-item');
+    settingsNavItems.forEach(nav => {
+        nav.classList.toggle('active', nav.getAttribute('data-tab') === tabName);
+    });
+
+    resetUsefulSettingsSubPage();
+    resetDisplaySettingsSubPage();
+    if (typeof resetNotificationSettingsSubPage === 'function') resetNotificationSettingsSubPage();
+    if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
+    if (window.clubNotifications && typeof window.clubNotifications.updateSettingsUI === 'function') {
+        window.clubNotifications.updateSettingsUI();
+    }
+
+    if (!fromPopState) {
+        history.pushState({ modal: 'settings', mobileTab: tabName }, '');
+    }
+};
+
+// 모바일 전용: 상세 화면에서 설정 메인 메뉴 목록으로 복귀
+window.backToSettingsMainOnMobile = function (fromPopState = false) {
+    window.activeSettingsMobileTab = null;
+    document.body.classList.remove('settings-sub-active');
+
+    const mobileBackBtn = document.getElementById('settingsMobileBackBtn');
+    const mobileTitle = document.getElementById('settingsMobileHeaderTitle');
+    const mobileMainList = document.getElementById('settingsMobileMainList');
+    const contentEl = document.querySelector('.settings-content');
+    if (contentEl) contentEl.scrollTop = 0;
+
+    if (mobileBackBtn) mobileBackBtn.classList.remove('active');
+    if (mobileTitle) {
+        mobileTitle.style.opacity = '0';
+        setTimeout(() => {
+            mobileTitle.innerHTML = `<i class="fa-solid fa-gear" style="margin-left: 2px; margin-right: calc(0.5rem + 2px);"></i><span>설정</span>`;
+            mobileTitle.style.opacity = '1';
+        }, 80);
+    }
+
+    const settingsTabContents = document.querySelectorAll('.settings-tab-content');
+    settingsTabContents.forEach(content => {
+        content.classList.remove('mobile-tab-enter', 'mobile-active');
+        content.style.display = 'none';
+    });
+
+    if (mobileMainList) {
+        mobileMainList.style.display = 'flex';
+        mobileMainList.classList.remove('mobile-main-enter');
+        void mobileMainList.offsetWidth; // 리플로우
+        mobileMainList.classList.add('mobile-main-enter');
+    }
+
+    if (settingsModal) {
+        settingsModal.classList.remove('update-tab-active');
+    }
+
+    resetUsefulSettingsSubPage();
+    resetDisplaySettingsSubPage();
+    if (typeof resetNotificationSettingsSubPage === 'function') resetNotificationSettingsSubPage();
+    if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
+
+    if (!fromPopState && history.state && history.state.mobileTab) {
+        window._isProgrammaticBack = true;
+        history.back();
+        setTimeout(() => { window._isProgrammaticBack = false; }, 50);
+    }
+};
+
+// --- 설정 창 열기/닫기 로직 ---
+window.openSettingsModal = function (tabName = null) {
     const hadDrawer = (history.state && history.state.modal === 'drawer') || (sideDrawer && sideDrawer.classList.contains('active'));
     
     // 드로어에서 설정창으로 바로 진입할 때는 오버레이 블러를 끊김 없이 유지하기 위해 closeDrawer()로 오버레이를 끄지 않음
@@ -1584,8 +1785,19 @@ window.openSettingsModal = function (tabName = 'display') {
         settingsModal.classList.add('active');
         document.body.classList.add('settings-open');
 
-        const navTab = document.querySelector(`.settings-nav-item[data-tab="${tabName}"]`);
-        if (navTab) navTab.click();
+        const isMobile = isMobileView();
+
+        if (isMobile) {
+            if (tabName) {
+                window.openSettingsTabOnMobile(tabName, true);
+            } else {
+                window.backToSettingsMainOnMobile(true);
+            }
+        } else {
+            const targetTab = tabName || 'display';
+            const navTab = document.querySelector(`.settings-nav-item[data-tab="${targetTab}"]`);
+            if (navTab) navTab.click();
+        }
 
         if (hadDrawer) {
             history.replaceState({ modal: 'settings' }, '', '#settings');
@@ -1600,6 +1812,8 @@ window.closeSettingsModal = function (fromPopState = false) {
     resetDisplaySettingsSubPage();
     resetUsefulSettingsSubPage();
     if (typeof resetNotificationSettingsSubPage === 'function') resetNotificationSettingsSubPage();
+    window.backToSettingsMainOnMobile(true);
+
     if (settingsModalOverlay && settingsModal) {
         settingsModalOverlay.classList.remove('active');
         settingsModal.classList.remove('active');
@@ -1902,6 +2116,55 @@ if (settingsSyncToggle) {
     });
 }
 
+// 모바일 설정 메인 메뉴 아이템 클릭 이벤트
+const mobileMenuItems = document.querySelectorAll('.settings-mobile-menu-item');
+if (mobileMenuItems.length > 0) {
+    mobileMenuItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const targetTab = item.getAttribute('data-tab');
+            window.openSettingsTabOnMobile(targetTab);
+        });
+    });
+}
+
+// 브라우저 뒤로가기 제스처 / 백버튼 통합 처리
+window.addEventListener('popstate', () => {
+    if (window._isProgrammaticBack) return;
+
+    if (window.isUsefulSubPageOpen) {
+        window.closeUsefulSubPage(true);
+        return;
+    }
+    if (window.isDisplaySubPageOpen) {
+        window.closeDisplaySubPage(null, true);
+        return;
+    }
+    if (window.isNotificationSubPageOpen) {
+        window.closeNotificationSubPage(null, true);
+        return;
+    }
+    if (window.updateSubState === 'details') {
+        window.hideInPageUpdateDetails(true);
+        return;
+    }
+    if (window.updateSubState === 'pill') {
+        window.resetUpdateCheckState(true);
+        return;
+    }
+    if (window.activeSettingsMobileTab) {
+        window.backToSettingsMainOnMobile(true);
+        return;
+    }
+    if (settingsModal && settingsModal.classList.contains('active')) {
+        window.closeSettingsModal(true);
+        return;
+    }
+    if (sideDrawer && sideDrawer.classList.contains('active')) {
+        closeDrawer(true);
+        return;
+    }
+});
+
 if (settingsNavItems.length > 0) {
     settingsNavItems.forEach(item => {
         item.addEventListener('click', () => {
@@ -1936,7 +2199,7 @@ if (settingsNavItems.length > 0) {
 // 사이트 업데이트 정보: 다음 배포 시 이 값만 변경합니다.
 const SITE_UPDATE_INFO = Object.freeze({
     oneUiVersion: 'One UI 1.5',
-    buildNumber: '20260829.1',
+    buildNumber: '20260830.1',
     message: '실시간 알림 시스템 도입 및 모바일 사용성 개선 업데이트입니다.'
 });
 window.SITE_UPDATE_INFO = SITE_UPDATE_INFO;
@@ -1980,29 +2243,48 @@ window.updateSubState = null;
 if (checkUpdateBtn && updatePillsGroup) {
     checkUpdateBtn.addEventListener('click', function () {
         if (checkUpdateBtn.classList.contains('hiding')) return;
-        checkUpdateBtn.classList.add('hiding');
+
+        const copyEl = document.querySelector('.update-status-copy');
+        const firstRect = copyEl ? copyEl.getBoundingClientRect() : null;
 
         window.updateSubState = 'pill';
         history.pushState({ modal: 'settings', updateSubState: 'pill' }, '');
 
-        setTimeout(() => {
-            checkUpdateBtn.style.display = 'none';
-            checkUpdateBtn.classList.remove('hiding');
+        // 즉각 전환
+        checkUpdateBtn.style.display = 'none';
+        checkUpdateBtn.classList.remove('hiding', 'showing');
 
-            updatePillsGroup.style.display = 'flex';
-            updatePillsGroup.classList.remove('hiding');
-            updatePillsGroup.classList.add('showing');
+        updatePillsGroup.style.display = 'flex';
+        updatePillsGroup.classList.remove('hiding');
+        updatePillsGroup.classList.add('showing');
 
-            if (updateMainBackBtn) {
-                updateMainBackBtn.style.display = 'inline-flex';
-                updateMainBackBtn.classList.remove('hiding', 'showing');
+        if (!isMobileView() && copyEl && firstRect) {
+            const lastRect = copyEl.getBoundingClientRect();
+            const deltaY = firstRect.top - lastRect.top;
+            if (Math.abs(deltaY) > 1) {
+                copyEl.style.transition = 'none';
+                copyEl.style.transform = `translateY(${deltaY}px)`;
                 requestAnimationFrame(() => {
                     requestAnimationFrame(() => {
-                        updateMainBackBtn.classList.add('showing');
+                        copyEl.style.transition = 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)';
+                        copyEl.style.transform = 'translateY(0)';
                     });
                 });
             }
-        }, 200);
+        } else if (copyEl) {
+            copyEl.style.transform = '';
+            copyEl.style.transition = '';
+        }
+
+        if (updateMainBackBtn) {
+            updateMainBackBtn.style.display = 'inline-flex';
+            updateMainBackBtn.classList.remove('hiding');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    updateMainBackBtn.classList.add('showing');
+                });
+            });
+        }
     });
 }
 
@@ -2010,34 +2292,51 @@ if (checkUpdateBtn && updatePillsGroup) {
 window.resetUpdateCheckState = function (fromPopState = false) {
     window.updateSubState = null;
 
-    if (updatePillsGroup) {
-        updatePillsGroup.classList.remove('showing');
-        updatePillsGroup.classList.add('hiding');
-    }
+    const copyEl = document.querySelector('.update-status-copy');
+    const firstRect = copyEl ? copyEl.getBoundingClientRect() : null;
+
     if (updateMainBackBtn) {
         updateMainBackBtn.classList.remove('showing');
         updateMainBackBtn.classList.add('hiding');
+        setTimeout(() => {
+            if (updateMainBackBtn) {
+                updateMainBackBtn.style.display = 'none';
+                updateMainBackBtn.classList.remove('hiding');
+            }
+        }, 150);
     }
-    setTimeout(() => {
-        if (updatePillsGroup) {
-            updatePillsGroup.style.display = 'none';
-            updatePillsGroup.classList.remove('hiding');
-        }
-        if (updateMainBackBtn) {
-            updateMainBackBtn.style.display = 'none';
-            updateMainBackBtn.classList.remove('hiding');
-        }
-        if (checkUpdateBtn) {
-            checkUpdateBtn.style.display = '';
-            checkUpdateBtn.classList.remove('hiding', 'showing');
+
+    // 딜레이 없이 즉시 전환하여 숫자가 바로 내려오도록 실행
+    if (updatePillsGroup) {
+        updatePillsGroup.style.display = 'none';
+        updatePillsGroup.classList.remove('showing', 'hiding');
+    }
+    if (checkUpdateBtn) {
+        checkUpdateBtn.style.display = '';
+        checkUpdateBtn.classList.remove('hiding');
+        checkUpdateBtn.classList.add('showing');
+        setTimeout(() => {
+            checkUpdateBtn.classList.remove('showing');
+        }, 300);
+    }
+
+    if (!isMobileView() && copyEl && firstRect) {
+        const lastRect = copyEl.getBoundingClientRect();
+        const deltaY = firstRect.top - lastRect.top;
+        if (Math.abs(deltaY) > 1) {
+            copyEl.style.transition = 'none';
+            copyEl.style.transform = `translateY(${deltaY}px)`;
             requestAnimationFrame(() => {
-                checkUpdateBtn.classList.add('showing');
-                setTimeout(() => {
-                    checkUpdateBtn.classList.remove('showing');
-                }, 300);
+                requestAnimationFrame(() => {
+                    copyEl.style.transition = 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)';
+                    copyEl.style.transform = 'translateY(0)';
+                });
             });
         }
-    }, 200);
+    } else if (copyEl) {
+        copyEl.style.transform = '';
+        copyEl.style.transition = '';
+    }
 
     if (!fromPopState && history.state && history.state.updateSubState === 'pill') {
         window._isProgrammaticBack = true;

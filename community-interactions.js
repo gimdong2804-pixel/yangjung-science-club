@@ -1,4 +1,4 @@
-﻿// 게시글 다중 선택, 휴대폰 뒤로가기, PWA 기능
+// 게시글 다중 선택, 휴대폰 뒤로가기, PWA 기능
 // Post Multi Select Variables
 window.isPostMultiSelectMode = false;
 let postPressTimer = null;
@@ -123,6 +123,11 @@ window.executePostMultiDelete = async function () {
 };
 
 window.addEventListener('popstate', (e) => {
+    // 열려있는 댓글 첨부 메뉴 닫기
+    if (typeof window.closeCommentAttachMenu === 'function') {
+        window.closeCommentAttachMenu();
+    }
+
     if (window._isProgrammaticBack) {
         setTimeout(() => { window._isProgrammaticBack = false; }, 200);
         return;

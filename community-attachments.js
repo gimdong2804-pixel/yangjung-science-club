@@ -112,6 +112,11 @@ const commentHtmlInput = document.getElementById('commentHtmlInput');
 
 const commentImagePreviewContainer = document.getElementById('commentImagePreviewContainer');
 
+window.closeCommentAttachMenu = function () {
+    if (commentAttachBtn) commentAttachBtn.classList.remove('open');
+    if (commentAttachMenu) commentAttachMenu.classList.remove('active');
+};
+
 function updateCommentAttachMenuPosition() {
     if (!commentAttachBtn || !commentAttachMenu) return;
     if (commentAttachMenu.parentElement !== document.body) {

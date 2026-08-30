@@ -4,6 +4,11 @@ function closeSideDetail(e) {
     const sideDetailContainer = document.getElementById('sideDetailContainer');
     const writePostBtn = document.getElementById('writePostBtn');
 
+    // 첨부 메뉴 닫기
+    if (typeof window.closeCommentAttachMenu === 'function') {
+        window.closeCommentAttachMenu();
+    }
+
     // 댓글 다중선택 모드가 켜져 있으면 먼저 해제
     if (window.isMultiSelectMode) {
         window.cancelMultiDelete(true);

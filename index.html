@@ -258,10 +258,17 @@
                         <strong style="color: var(--text-primary); font-size: 1rem;">👑 회장</strong>
                         <div style="color: var(--text-secondary); font-size: 0.82rem; margin-top: 0.2rem;">회장 권한 계정에 적용될 버전</div>
                     </div>
-                    <select id="presidentVersionSelect" class="version-select-box" style="padding: 0.6rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--card-bg, rgba(255,255,255,0.05)); color: var(--text-primary); font-size: 0.92rem; outline: none; font-weight: 600;">
-                        <option value="1.5" selected>One UI 1.5 (최신)</option>
-                        <option value="1.0">One UI 1.0</option>
-                    </select>
+                    <div class="custom-dropdown-container version-dropdown-container" id="presidentVersionDropdown">
+                        <div class="custom-dropdown-selected" id="presidentVersionSelected">
+                            <span id="presidentVersionSelectedText">One UI 1.5 (최신)</span>
+                            <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                        </div>
+                        <ul class="custom-dropdown-options" id="presidentVersionOptions">
+                            <li class="custom-dropdown-option active" data-value="1.5">One UI 1.5 (최신)</li>
+                            <li class="custom-dropdown-option" data-value="1.0">One UI 1.0</li>
+                        </ul>
+                        <input type="hidden" id="presidentVersionSelect" value="1.5">
+                    </div>
                 </div>
 
                 <!-- 사장/부회장 버전 설정 -->
@@ -270,10 +277,17 @@
                         <strong style="color: var(--text-primary); font-size: 1rem;">💼 사장 (운영진)</strong>
                         <div style="color: var(--text-secondary); font-size: 0.82rem; margin-top: 0.2rem;">사장 및 운영진 계정에 적용될 버전</div>
                     </div>
-                    <select id="leaderVersionSelect" class="version-select-box" style="padding: 0.6rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--card-bg, rgba(255,255,255,0.05)); color: var(--text-primary); font-size: 0.92rem; outline: none; font-weight: 600;">
-                        <option value="1.5">One UI 1.5 (최신)</option>
-                        <option value="1.0" selected>One UI 1.0</option>
-                    </select>
+                    <div class="custom-dropdown-container version-dropdown-container" id="leaderVersionDropdown">
+                        <div class="custom-dropdown-selected" id="leaderVersionSelected">
+                            <span id="leaderVersionSelectedText">One UI 1.0</span>
+                            <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                        </div>
+                        <ul class="custom-dropdown-options" id="leaderVersionOptions">
+                            <li class="custom-dropdown-option" data-value="1.5">One UI 1.5 (최신)</li>
+                            <li class="custom-dropdown-option active" data-value="1.0">One UI 1.0</li>
+                        </ul>
+                        <input type="hidden" id="leaderVersionSelect" value="1.0">
+                    </div>
                 </div>
 
                 <!-- 일반 회원 버전 설정 -->
@@ -282,10 +296,17 @@
                         <strong style="color: var(--text-primary); font-size: 1rem;">👤 일반 회원</strong>
                         <div style="color: var(--text-secondary); font-size: 0.82rem; margin-top: 0.2rem;">일반 동아리 부원 및 게스트에 적용될 버전</div>
                     </div>
-                    <select id="memberVersionSelect" class="version-select-box" style="padding: 0.6rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--card-bg, rgba(255,255,255,0.05)); color: var(--text-primary); font-size: 0.92rem; outline: none; font-weight: 600;">
-                        <option value="1.5">One UI 1.5 (최신)</option>
-                        <option value="1.0" selected>One UI 1.0</option>
-                    </select>
+                    <div class="custom-dropdown-container version-dropdown-container" id="memberVersionDropdown">
+                        <div class="custom-dropdown-selected" id="memberVersionSelected">
+                            <span id="memberVersionSelectedText">One UI 1.0</span>
+                            <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                        </div>
+                        <ul class="custom-dropdown-options" id="memberVersionOptions">
+                            <li class="custom-dropdown-option" data-value="1.5">One UI 1.5 (최신)</li>
+                            <li class="custom-dropdown-option active" data-value="1.0">One UI 1.0</li>
+                        </ul>
+                        <input type="hidden" id="memberVersionSelect" value="1.0">
+                    </div>
                 </div>
             </div>
 
@@ -356,7 +377,7 @@
         <h3 id="updateDetailsTitle"><i class="fa-solid fa-sparkles"></i> 업데이트 내용</h3>
         <div class="update-details-version">
             <strong data-current-one-ui-version>One UI 1.5</strong>
-            <span data-current-build-number>Build 20260829.1</span>
+            <span data-current-build-number>Build 20260830.1</span>
         </div>
         <p class="update-details-message" data-current-update-message>실시간 알림 시스템 도입 및 모바일 사용성 개선 업데이트입니다.</p>
         <button id="updateDetailsConfirmBtn" class="update-details-confirm" type="button">확인</button>
@@ -366,9 +387,13 @@
     <div id="settingsModalOverlay" class="modal-overlay"></div>
     <div id="settingsModal" class="modal-container settings-modal-container">
         <!-- 모바일 전용 헤더 -->
-        <div class="settings-header-mobile">
-            <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                <i class="fa-solid fa-gear"></i> 설정
+        <div class="settings-header-mobile" id="settingsMobileHeader">
+            <button class="settings-mobile-back-btn" id="settingsMobileBackBtn" onclick="window.backToSettingsMainOnMobile()" aria-label="뒤로가기">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h3 id="settingsMobileHeaderTitle" style="margin: 0; display: flex; align-items: center; flex: 1;">
+                <i class="fa-solid fa-gear" style="margin-left: 2px; margin-right: calc(0.5rem + 2px);"></i>
+                <span>설정</span>
             </h3>
             <button class="close-btn" onclick="window.closeSettingsModal()" aria-label="닫기">
                 <i class="fa-solid fa-xmark"></i>
@@ -379,14 +404,42 @@
             <!-- 좌측 메뉴바 -->
             <div class="settings-sidebar">
                 <div class="settings-sidebar-title desktop-only"
-                    style="padding: 0 1rem 1.5rem 1rem; font-size: 1.2rem; font-weight: bold; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
-                    <i class="fa-solid fa-gear"></i> 설정
+                    style="padding: 0 1rem 1.5rem 1rem; font-size: 1.2rem; font-weight: bold; color: var(--text-primary); display: flex; align-items: center;">
+                    <i class="fa-solid fa-gear" style="margin-left: 2px; margin-right: calc(0.5rem + 2px);"></i>
+                    <span>설정</span>
                 </div>
-                <div class="settings-nav-item" data-tab="notification">알림</div>
-                <div class="settings-nav-item active" data-tab="display">디스플레이</div>
-                <div class="settings-nav-item" data-tab="useful">유용한 기능</div>
-                <div class="settings-nav-item" data-tab="update">업데이트</div>
-                <div class="settings-nav-item" data-tab="reset">초기화</div>
+                <div class="settings-nav-item" data-tab="notification">
+                    <span class="settings-nav-icon icon-notification"><i class="fa-solid fa-bell"></i></span>
+                    <span class="settings-nav-text">알림</span>
+                </div>
+                <div class="settings-nav-item active" data-tab="display">
+                    <span class="settings-nav-icon icon-display">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5" fill="currentColor"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3.5"></line>
+                            <line x1="12" y1="20.5" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="6" y2="6"></line>
+                            <line x1="18" y1="18" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3.5" y2="12"></line>
+                            <line x1="20.5" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="6" y2="18"></line>
+                            <line x1="18" y1="6" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </span>
+                    <span class="settings-nav-text">디스플레이</span>
+                </div>
+                <div class="settings-nav-item" data-tab="useful">
+                    <span class="settings-nav-icon icon-useful"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+                    <span class="settings-nav-text">유용한 기능</span>
+                </div>
+                <div class="settings-nav-item" data-tab="update">
+                    <span class="settings-nav-icon icon-update"><i class="fa-solid fa-arrows-rotate"></i></span>
+                    <span class="settings-nav-text">업데이트</span>
+                </div>
+                <div class="settings-nav-item" data-tab="reset">
+                    <span class="settings-nav-icon icon-reset"><i class="fa-solid fa-arrow-rotate-left"></i></span>
+                    <span class="settings-nav-text">초기화</span>
+                </div>
             </div>
 
             <!-- 우측 컨텐츠 영역 -->
@@ -397,6 +450,77 @@
                     <button class="close-btn" id="settingsModalCloseBtn" aria-label="닫기">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
+                </div>
+
+                <!-- 모바일 전용 설정 메인 메뉴 화면 (갤럭시 One UI 스타일) -->
+                <div id="settingsMobileMainList" class="settings-mobile-main-list" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- 그룹 1: 기본 기능 -->
+                    <div class="settings-card-group">
+                        <div class="settings-card-item settings-mobile-menu-item" data-tab="notification" style="cursor: pointer;">
+                            <div class="settings-card-icon settings-nav-icon icon-notification" style="margin-right: 0.2rem;">
+                                <i class="fa-solid fa-bell"></i>
+                            </div>
+                            <div class="settings-card-info">
+                                <div class="settings-card-title">알림</div>
+                                <div class="settings-card-desc">사이트 밖 푸시 알림, 화면 상단 알림 배너</div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right settings-card-arrow"></i>
+                        </div>
+                        <div class="settings-card-item settings-mobile-menu-item" data-tab="display" style="cursor: pointer;">
+                            <div class="settings-card-icon settings-nav-icon icon-display" style="margin-right: 0.2rem;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="5" fill="currentColor"></circle>
+                                    <line x1="12" y1="1" x2="12" y2="3.5"></line>
+                                    <line x1="12" y1="20.5" x2="12" y2="23"></line>
+                                    <line x1="4.22" y1="4.22" x2="6" y2="6"></line>
+                                    <line x1="18" y1="18" x2="19.78" y2="19.78"></line>
+                                    <line x1="1" y1="12" x2="3.5" y2="12"></line>
+                                    <line x1="20.5" y1="12" x2="23" y2="12"></line>
+                                    <line x1="4.22" y1="19.78" x2="6" y2="18"></line>
+                                    <line x1="18" y1="6" x2="19.78" y2="4.22"></line>
+                                </svg>
+                            </div>
+                            <div class="settings-card-info">
+                                <div class="settings-card-title">디스플레이</div>
+                                <div class="settings-card-desc">다크 모드</div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right settings-card-arrow"></i>
+                        </div>
+                        <div class="settings-card-item settings-mobile-menu-item" data-tab="useful" style="cursor: pointer;">
+                            <div class="settings-card-icon settings-nav-icon icon-useful" style="margin-right: 0.2rem;">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </div>
+                            <div class="settings-card-info">
+                                <div class="settings-card-title">유용한 기능</div>
+                                <div class="settings-card-desc">상단 버튼, 댓글 입력창, 텍스트 선택 방지, 설정 동기화</div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right settings-card-arrow"></i>
+                        </div>
+                    </div>
+
+                    <!-- 그룹 2: 시스템 및 관리 -->
+                    <div class="settings-card-group">
+                        <div class="settings-card-item settings-mobile-menu-item" data-tab="update" style="cursor: pointer;">
+                            <div class="settings-card-icon settings-nav-icon icon-update" style="margin-right: 0.2rem;">
+                                <i class="fa-solid fa-arrows-rotate"></i>
+                            </div>
+                            <div class="settings-card-info">
+                                <div class="settings-card-title">소프트웨어 업데이트</div>
+                                <div class="settings-card-desc">One UI 1.5 최신 버전 확인 및 업데이트 내역</div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right settings-card-arrow"></i>
+                        </div>
+                        <div class="settings-card-item settings-mobile-menu-item" data-tab="reset" style="cursor: pointer;">
+                            <div class="settings-card-icon settings-nav-icon icon-reset" style="margin-right: 0.2rem;">
+                                <i class="fa-solid fa-arrow-rotate-left"></i>
+                            </div>
+                            <div class="settings-card-info">
+                                <div class="settings-card-title">설정 초기화</div>
+                                <div class="settings-card-desc">모든 개인 설정을 기본값으로 되돌리기</div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right settings-card-arrow"></i>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 알림 탭 내용 -->
@@ -667,7 +791,7 @@
                                                     <span class="version-tag current">현재 버전</span>
                                                     <h4 class="version-title" data-current-one-ui-version>One UI 1.5</h4>
                                                 </div>
-                                                <span class="build-number" data-current-build-number>Build 20260829.1</span>
+                                                <span class="build-number" data-current-build-number>Build 20260830.1</span>
                                             </div>
                                             <p class="update-description" data-current-update-message>실시간 알림 시스템 도입 및 모바일 사용성 개선 업데이트입니다.</p>
                                             <div class="update-features-list">
@@ -708,6 +832,13 @@
                                                                 <div>
                                                                     <strong>알림 설정 기기 간 실시간 자동 동기화</strong>
                                                                     <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">화면 상단 알림 배너 및 사이트 밖 푸시 알림 설정이 로그인된 모든 기기 간에 실시간으로 자동 동기화됩니다.</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>갤럭시 One UI 스타일 모바일 설정창 개편</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">모바일 환경에 맞춰 상단 탭 대신 깔끔한 메뉴 목록과 상세 페이지로 이동하는 계층형 구조를 적용하고, 부드러운 화면 전환 애니메이션 및 스마트폰 뒤로가기 제스처를 연동했습니다.</div>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -762,6 +893,27 @@
                                                                     <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">주제 선택 드롭다운과 정렬 방식 버튼 사이 간격을 조정하여 더 쾌적하게 구분되도록 개선했습니다.</div>
                                                                 </div>
                                                             </div>
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>업데이트 확인 화면 타이틀 전환 애니메이션 개선</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">업데이트 내용 확인 및 돌아가기 버튼을 누를 때 버전 타이틀이 끊김 없이 즉각적이고 부드럽게 이동하도록 개선했습니다.</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>드롭다운 메뉴 가독성 및 애니메이션 반응 속도 개선</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">상단 로고 버튼 설정 드롭다운을 불투명하게 변경하여 뒤쪽 텍스트 비침을 방지하고, 모든 드롭다운 박스가 열리고 닫힐 때 더 빠르고 부드럽게 반응하도록 애니메이션 속도를 최적화했습니다.</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>설정 메뉴 One UI 스타일 컬러 아이콘 배지 추가</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">설정 창의 각 탭(알림, 디스플레이, 유용한 기능 등) 앞에 갤럭시 One UI 디자인의 컬러 아이콘 배지를 적용하여 메뉴 구분을 더 직관적으로 개선했습니다.</div>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -791,6 +943,20 @@
                                                                 <div>
                                                                     <strong>게시판 선택창 스크롤바 애니메이션 및 위치 최적화</strong>
                                                                     <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">스크롤바가 위아래로 늘어나고 줄어들 때 끊기던 현상과 스크롤바 위치가 어색하던 점을 수정했습니다.</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>사진 확대 시 닫기(X) 버튼 가림 현상 수정</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">사진 확대 뷰어에서 사진을 확대하거나 이동할 때 닫기(X) 버튼이 사진 뒤로 가려지던 현상을 수정했습니다.</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="feature-item">
+                                                                <i class="fa-solid fa-check"></i>
+                                                                <div>
+                                                                    <strong>게시글 상세창 뒤로가기 시 첨부 메뉴 잔류 현상 수정</strong>
+                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">댓글 첨부 팝업 메뉴가 열린 상태에서 뒤로가기나 화면을 닫을 때 첨부 메뉴가 계속 남아있던 현상을 수정했습니다.</div>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -1124,12 +1290,11 @@
                                         <div class="custom-dropdown-container" id="logoDisplayDropdown"
                                             style="width: 100%;">
                                             <div class="custom-dropdown-selected" id="logoDisplaySelected"
-                                                style="padding: 0.8rem 1.2rem; border-radius: 999px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); color: var(--text-primary); font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between;">
+                                                style="padding: 0.8rem 1.2rem; font-size: 1rem; justify-content: space-between;">
                                                 <span><i class="fa-solid fa-font"></i> 기본 (아이콘 + 텍스트)</span>
                                                 <i class="fa-solid fa-chevron-down arrow-icon"></i>
                                             </div>
-                                            <ul class="custom-dropdown-options" id="logoDisplayOptions"
-                                                style="top: calc(100% + 4px); border-radius: 12px;">
+                                            <ul class="custom-dropdown-options" id="logoDisplayOptions">
                                                 <li class="custom-dropdown-option active" data-value="default"><i
                                                         class="fa-solid fa-font"></i> 기본 (아이콘 + 텍스트)</li>
                                                 <li class="custom-dropdown-option" data-value="icon-only"><i

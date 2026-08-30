@@ -269,7 +269,10 @@ function closeLightbox(e) {
     }
 }
 
-imageLightboxClose.addEventListener('click', closeLightbox);
+imageLightboxClose.addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeLightbox(e);
+});
 imageLightbox.addEventListener('click', (e) => {
     if (e.target === imageLightbox) closeLightbox();
 });

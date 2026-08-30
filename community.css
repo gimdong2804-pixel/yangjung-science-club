@@ -1451,6 +1451,7 @@ body.multi-select-active .reply-target-bar {
     line-height: 1;
     padding: 0;
     transition: background 0.2s, transform 0.2s;
+    z-index: 9994;
 }
 
 .image-lightbox-close:hover {
