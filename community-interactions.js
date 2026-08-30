@@ -155,25 +155,6 @@ window.addEventListener('popstate', (e) => {
         closeLightbox(true);
         return;
     }
-    const settingsModal = document.getElementById('settingsModal');
-    if (settingsModal && settingsModal.classList.contains('active')) {
-        if (window.updateSubState === 'details' && typeof window.hideInPageUpdateDetails === 'function') {
-            window.hideInPageUpdateDetails(true);
-        } else if (window.updateSubState === 'pill' && typeof window.resetUpdateCheckState === 'function') {
-            window.resetUpdateCheckState(true);
-        } else if (window.isNotificationSubPageOpen && typeof window.closeNotificationSubPage === 'function') {
-            window.closeNotificationSubPage(window.currentNotificationSubPage, true);
-        } else if (window.isUsefulSubPageOpen && typeof window.closeUsefulSubPage === 'function') {
-            window.closeUsefulSubPage(true);
-        } else if (window.isDisplaySubPageOpen && typeof window.closeDisplaySubPage === 'function') {
-            window.closeDisplaySubPage(window.currentDisplaySubPage, true);
-        } else if (window.activeSettingsMobileTab && typeof window.backToSettingsMainOnMobile === 'function') {
-            window.backToSettingsMainOnMobile(true);
-        } else if (typeof window.closeSettingsModal === 'function') {
-            window.closeSettingsModal(true);
-        }
-        return;
-    }
     const aiChatbotWindow = document.getElementById('aiChatbotWindow');
     if (aiChatbotWindow && aiChatbotWindow.classList.contains('active')) {
         if (typeof window.closeAiChatbotModal === 'function') {
