@@ -2870,3 +2870,52 @@ window.toggleUpdateSection = function (btn) {
     collapse.classList.toggle('active', !isExpanded);
     btn.setAttribute('aria-expanded', !isExpanded);
 };
+
+window.switchUpdateSubTab = function (tabId, btn) {
+    const parent = btn.closest('.update-section-collapse-content');
+    if (!parent) return;
+
+    const container = parent.querySelector('.update-sub-tab-container');
+    const targetPanel = parent.querySelector(`#subTab-${tabId}`);
+    const currentPanel = parent.querySelector('.update-sub-tab-panel.active');
+
+    if (!targetPanel || targetPanel === currentPanel) return;
+
+    parent.querySelectorAll('.update-pill-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    if (container && currentPanel) {
+        const startHeight = currentPanel.offsetHeight;
+        container.style.height = `${startHeight}px`;
+
+        // 탭 패널 교체
+        currentPanel.style.display = 'none';
+        currentPanel.classList.remove('active');
+
+        targetPanel.style.display = 'flex';
+        targetPanel.classList.add('active');
+
+        const targetHeight = targetPanel.offsetHeight;
+
+        // 다음 프레임에서 목표 높이로 부드럽게 트랜지션
+        requestAnimationFrame(() => {
+            container.style.height = `${targetHeight}px`;
+        });
+
+        const resetHeight = () => {
+            container.style.height = 'auto';
+            container.removeEventListener('transitionend', resetHeight);
+        };
+        container.addEventListener('transitionend', resetHeight);
+    } else {
+        parent.querySelectorAll('.update-sub-tab-panel').forEach(panel => {
+            if (panel.id === `subTab-${tabId}`) {
+                panel.style.display = 'flex';
+                panel.classList.add('active');
+            } else {
+                panel.style.display = 'none';
+                panel.classList.remove('active');
+            }
+        });
+    }
+};

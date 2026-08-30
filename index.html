@@ -805,42 +805,73 @@
                                                         <i class="fa-solid fa-chevron-down toggle-arrow"></i>
                                                     </button>
                                                     <div class="update-section-collapse">
-                                                        <div class="update-section-collapse-content">
-                                                            <div class="feature-item">
-                                                                <i class="fa-solid fa-check"></i>
-                                                                <div>
-                                                                    <strong>댓글 전체 알림 및 답글 참여자 알림</strong>
-                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">일반 댓글은 작성자를 제외한 로그인 회원에게, 답글은 게시물 작성자와 같은 댓글 줄 참여자에게 알립니다.</div>
+                                                        <div class="update-section-collapse-content" style="gap: 0.6rem;">
+                                                            
+                                                            <!-- 글자 맞춤 콤팩트 알약 탭 바 -->
+                                                            <div class="update-pill-tab-bar">
+                                                                <button type="button" class="update-pill-tab-btn active" onclick="switchUpdateSubTab('features-notif', this)">
+                                                                    <i class="fa-solid fa-bell"></i>
+                                                                    <span>실시간 알림</span>
+                                                                </button>
+                                                                <button type="button" class="update-pill-tab-btn" onclick="switchUpdateSubTab('features-mobile', this)">
+                                                                    <i class="fa-solid fa-mobile-screen"></i>
+                                                                    <span>모바일 설정창</span>
+                                                                </button>
+                                                            </div>
+
+                                                            <!-- 서브 탭 컨테이너 (부드러운 높이 애니메이션) -->
+                                                            <div class="update-sub-tab-container">
+                                                                <!-- 서브 탭 1: 실시간 알림 -->
+                                                                <div id="subTab-features-notif" class="update-sub-tab-panel active">
+                                                                    <div class="feature-item">
+                                                                        <i class="fa-solid fa-check"></i>
+                                                                        <div>
+                                                                            <strong>댓글 전체 알림 및 답글 참여자 알림</strong>
+                                                                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">일반 댓글은 작성자를 제외한 로그인 회원에게, 답글은 게시물 작성자와 같은 댓글 줄 참여자에게 알립니다.</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="feature-item">
+                                                                        <i class="fa-solid fa-check"></i>
+                                                                        <div>
+                                                                            <strong>고정·관리자 삭제 알림</strong>
+                                                                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">다른 사람이 내 댓글이나 답글을 고정하거나 관리자가 내 게시물을 삭제했을 때 알려줍니다.</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="feature-item">
+                                                                        <i class="fa-solid fa-check"></i>
+                                                                        <div>
+                                                                            <strong>사이트 안 배너 및 사이트 밖 푸시</strong>
+                                                                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">사이트를 보고 있을 때는 화면 위 배너로, 사이트가 닫혀 있을 때는 허용된 기기의 알림창으로 표시합니다.</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="feature-item">
+                                                                        <i class="fa-solid fa-check"></i>
+                                                                        <div>
+                                                                            <strong>알림 설정 기기 간 실시간 자동 동기화</strong>
+                                                                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">화면 상단 알림 배너 및 사이트 밖 푸시 알림 설정이 로그인된 모든 기기 간에 실시간으로 자동 동기화됩니다.</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <!-- 서브 탭 2: 모바일 설정창 -->
+                                                                <div id="subTab-features-mobile" class="update-sub-tab-panel" style="display: none;">
+                                                                    <div class="feature-item">
+                                                                        <i class="fa-solid fa-check"></i>
+                                                                        <div>
+                                                                            <strong>갤럭시 One UI 스타일 계층형 구조 개편</strong>
+                                                                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">모바일 환경에 맞춰 상단 탭 대신 깔끔한 메뉴 목록과 상세 페이지로 이동하는 계층형 구조를 적용했습니다.</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="feature-item">
+                                                                        <i class="fa-solid fa-check"></i>
+                                                                        <div>
+                                                                            <strong>화면 전환 애니메이션 및 뒤로가기 제스처 연동</strong>
+                                                                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">자연스러운 슬라이드 전환 애니메이션과 스마트폰 시스템 뒤로가기 제스처를 연동하여 편의성을 높였습니다.</div>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <div class="feature-item">
-                                                                <i class="fa-solid fa-check"></i>
-                                                                <div>
-                                                                    <strong>고정·관리자 삭제 알림</strong>
-                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">다른 사람이 내 댓글이나 답글을 고정하거나 관리자가 내 게시물을 삭제했을 때 알려줍니다.</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="feature-item">
-                                                                <i class="fa-solid fa-check"></i>
-                                                                <div>
-                                                                    <strong>사이트 안 배너 및 사이트 밖 푸시</strong>
-                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">사이트를 보고 있을 때는 화면 위 배너로, 사이트가 닫혀 있을 때는 허용된 기기의 알림창으로 표시합니다.</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="feature-item">
-                                                                <i class="fa-solid fa-check"></i>
-                                                                <div>
-                                                                    <strong>알림 설정 기기 간 실시간 자동 동기화</strong>
-                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">화면 상단 알림 배너 및 사이트 밖 푸시 알림 설정이 로그인된 모든 기기 간에 실시간으로 자동 동기화됩니다.</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="feature-item">
-                                                                <i class="fa-solid fa-check"></i>
-                                                                <div>
-                                                                    <strong>갤럭시 One UI 스타일 모바일 설정창 개편</strong>
-                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">모바일 환경에 맞춰 상단 탭 대신 깔끔한 메뉴 목록과 상세 페이지로 이동하는 계층형 구조를 적용하고, 부드러운 화면 전환 애니메이션 및 스마트폰 뒤로가기 제스처를 연동했습니다.</div>
-                                                                </div>
-                                                            </div>
+
                                                         </div>
                                                     </div>
                                                 </div>
@@ -857,63 +888,95 @@
                                                         <i class="fa-solid fa-chevron-down toggle-arrow"></i>
                                                     </button>
                                                     <div class="update-section-collapse">
-                                                        <div class="update-section-collapse-content">
-                                                            <div class="feature-item">
-                                                                <i class="fa-solid fa-check"></i>
-                                                                <div>
-                                                                    <strong>기본 설정 보기 및 전체 설정 초기화 업데이트</strong>
-                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">새로 추가된 알림 2종에 대한 기본값 안내와 설정 초기화 기능이 함께 업데이트되었습니다.</div>
+                                                        <div class="update-section-collapse-content" style="gap: 0.6rem;">
+                                                            
+                                                            <!-- 글자 맞춤 콤팩트 알약 탭 바 -->
+                                                            <div class="update-pill-tab-bar">
+                                                                <button type="button" class="update-pill-tab-btn active" onclick="switchUpdateSubTab('improve-settings', this)">
+                                                                    <i class="fa-solid fa-sliders"></i>
+                                                                    <span>설정 및 편의</span>
+                                                                </button>
+                                                                <button type="button" class="update-pill-tab-btn" onclick="switchUpdateSubTab('improve-board', this)">
+                                                                    <i class="fa-solid fa-comments"></i>
+                                                                    <span>게시판</span>
+                                                                </button>
+                                                                <button type="button" class="update-pill-tab-btn" onclick="switchUpdateSubTab('improve-ui', this)">
+                                                                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                                                    <span>화면 및 효과</span>
+                                                                </button>
+                                                            </div>
+
+                                                            <!-- 서브 탭 컨테이너 (부드러운 높이 애니메이션) -->
+                                                            <div class="update-sub-tab-container">
+                                                                <!-- 서브 탭 1: 설정 및 편의 -->
+                                                                <div id="subTab-improve-settings" class="update-sub-tab-panel active">
+                                                                    <div class="feature-item">
+                                                                        <i class="fa-solid fa-check"></i>
+                                                                        <div>
+                                                                            <strong>설정 메뉴 One UI 스타일 컬러 아이콘 배지 추가</strong>
+                                                                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">설정 창의 각 탭(알림, 디스플레이, 유용한 기능 등) 앞에 갤럭시 One UI 디자인의 컬러 아이콘 배지를 적용하여 메뉴 구분을 더 직관적으로 개선했습니다.</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="feature-item">
+                                                                        <i class="fa-solid fa-check"></i>
+                                                                        <div>
+                                                                            <strong>기본 설정 보기 및 전체 설정 초기화 업데이트</strong>
+                                                                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">새로 추가된 알림 2종에 대한 기본값 안내와 설정 초기화 기능이 함께 업데이트되었습니다.</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="feature-item">
+                                                                        <i class="fa-solid fa-check"></i>
+                                                                        <div>
+                                                                            <strong>모바일 설정창 및 상세 화면 좌우 여백 최적화</strong>
+                                                                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">모바일 화면에서 카드 좌우에 불필요하게 넓던 여백을 줄여 콘텐츠가 더 넓고 시원하게 보이도록 개선했습니다.</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <!-- 서브 탭 2: 게시판 -->
+                                                                <div id="subTab-improve-board" class="update-sub-tab-panel" style="display: none;">
+                                                                    <div class="feature-item">
+                                                                        <i class="fa-solid fa-check"></i>
+                                                                        <div>
+                                                                            <strong>게시판 버그 제보에 '알림 관련 버그' 주제 추가</strong>
+                                                                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">게시판 주제 선택 및 필터 목록에 알림 기능 관련 버그를 별도로 제보할 수 있는 소주제를 추가했습니다.</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="feature-item">
+                                                                        <i class="fa-solid fa-check"></i>
+                                                                        <div>
+                                                                            <strong>게시판 상단 필터 및 정렬 버튼 간격 최적화</strong>
+                                                                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">주제 선택 드롭다운과 정렬 방식 버튼 사이 간격을 조정하여 더 쾌적하게 구분되도록 개선했습니다.</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <!-- 서브 탭 3: 화면 및 효과 -->
+                                                                <div id="subTab-improve-ui" class="update-sub-tab-panel" style="display: none;">
+                                                                    <div class="feature-item">
+                                                                        <i class="fa-solid fa-check"></i>
+                                                                        <div>
+                                                                            <strong>드롭다운 메뉴 가독성 및 애니메이션 반응 속도 개선</strong>
+                                                                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">상단 로고 버튼 설정 드롭다운을 불투명하게 변경하여 뒤쪽 텍스트 비침을 방지하고, 모든 드롭다운 박스가 열리고 닫힐 때 더 빠르고 부드럽게 반응하도록 애니메이션 속도를 최적화했습니다.</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="feature-item">
+                                                                        <i class="fa-solid fa-check"></i>
+                                                                        <div>
+                                                                            <strong>업데이트 확인 화면 타이틀 전환 애니메이션 개선</strong>
+                                                                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">업데이트 내용 확인 및 돌아가기 버튼을 누를 때 버전 타이틀이 끊김 없이 즉각적이고 부드럽게 이동하도록 개선했습니다.</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="feature-item">
+                                                                        <i class="fa-solid fa-check"></i>
+                                                                        <div>
+                                                                            <strong>하단 저작권 및 회칙 안내 문구 전환 애니메이션 추가</strong>
+                                                                            <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">ⓒ 양중과학동아리. All rights reserved. 및 본 규정은 동아리 부원 모두의 동의 하에 제정, 개정, 폐지됩니다. 글자가 나타나고 사라질 때 애니메이션을 추가했습니다.</div>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <div class="feature-item">
-                                                                <i class="fa-solid fa-check"></i>
-                                                                <div>
-                                                                    <strong>하단 저작권 및 회칙 안내 문구 전환 애니메이션 추가</strong>
-                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">ⓒ 양중과학동아리. All rights reserved. 및 본 규정은 동아리 부원 모두의 동의 하에 제정, 개정, 폐지됩니다. 글자가 나타나고 사라질 때 애니메이션을 추가했습니다.</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="feature-item">
-                                                                <i class="fa-solid fa-check"></i>
-                                                                <div>
-                                                                    <strong>모바일 설정창 및 상세 화면 좌우 여백 최적화</strong>
-                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">모바일 화면에서 카드 좌우에 불필요하게 넓던 여백을 줄여 콘텐츠가 더 넓고 시원하게 보이도록 개선했습니다.</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="feature-item">
-                                                                <i class="fa-solid fa-check"></i>
-                                                                <div>
-                                                                    <strong>게시판 버그 제보에 '알림 관련 버그' 주제 추가</strong>
-                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">게시판 주제 선택 및 필터 목록에 알림 기능 관련 버그를 별도로 제보할 수 있는 소주제를 추가했습니다.</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="feature-item">
-                                                                <i class="fa-solid fa-check"></i>
-                                                                <div>
-                                                                    <strong>게시판 상단 필터 및 정렬 버튼 간격 최적화</strong>
-                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">주제 선택 드롭다운과 정렬 방식 버튼 사이 간격을 조정하여 더 쾌적하게 구분되도록 개선했습니다.</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="feature-item">
-                                                                <i class="fa-solid fa-check"></i>
-                                                                <div>
-                                                                    <strong>업데이트 확인 화면 타이틀 전환 애니메이션 개선</strong>
-                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">업데이트 내용 확인 및 돌아가기 버튼을 누를 때 버전 타이틀이 끊김 없이 즉각적이고 부드럽게 이동하도록 개선했습니다.</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="feature-item">
-                                                                <i class="fa-solid fa-check"></i>
-                                                                <div>
-                                                                    <strong>드롭다운 메뉴 가독성 및 애니메이션 반응 속도 개선</strong>
-                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">상단 로고 버튼 설정 드롭다운을 불투명하게 변경하여 뒤쪽 텍스트 비침을 방지하고, 모든 드롭다운 박스가 열리고 닫힐 때 더 빠르고 부드럽게 반응하도록 애니메이션 속도를 최적화했습니다.</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="feature-item">
-                                                                <i class="fa-solid fa-check"></i>
-                                                                <div>
-                                                                    <strong>설정 메뉴 One UI 스타일 컬러 아이콘 배지 추가</strong>
-                                                                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">설정 창의 각 탭(알림, 디스플레이, 유용한 기능 등) 앞에 갤럭시 One UI 디자인의 컬러 아이콘 배지를 적용하여 메뉴 구분을 더 직관적으로 개선했습니다.</div>
-                                                                </div>
-                                                            </div>
+
                                                         </div>
                                                     </div>
                                                 </div>
