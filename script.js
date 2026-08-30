@@ -2151,10 +2151,13 @@ window.addEventListener('popstate', () => {
         window.resetUpdateCheckState(true);
         return;
     }
-    if (window.activeSettingsMobileTab) {
+    
+    // 모바일 설정창 하위 탭 상세 화면에 진입한 상태라면 -> 상위 메인 목록으로 복귀
+    if (window.activeSettingsMobileTab || document.body.classList.contains('settings-sub-active')) {
         window.backToSettingsMainOnMobile(true);
         return;
     }
+
     if (settingsModal && settingsModal.classList.contains('active')) {
         window.closeSettingsModal(true);
         return;
