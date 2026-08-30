@@ -2557,22 +2557,6 @@ if (logoDisplaySelected && logoDisplayOptions) {
     });
 }
 
-if (drawerSettingsBtn) {
-    drawerSettingsBtn.addEventListener('click', () => {
-        openSettingsModal();
-    });
-}
-if (settingsModalCloseBtn) {
-    settingsModalCloseBtn.addEventListener('click', () => {
-        window.closeSettingsModal(false);
-    });
-}
-if (settingsModalOverlay) {
-    settingsModalOverlay.addEventListener('click', () => {
-        window.closeSettingsModal(false);
-    });
-}
-
 // 스크롤 시 상단 버튼 숨김/표시 (One UI 스타일)
 let _lastScrollY = window.scrollY;
 let _isScrollingDown = false;

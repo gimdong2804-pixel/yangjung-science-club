@@ -167,6 +167,8 @@ window.addEventListener('popstate', (e) => {
             window.closeUsefulSubPage(true);
         } else if (window.isDisplaySubPageOpen && typeof window.closeDisplaySubPage === 'function') {
             window.closeDisplaySubPage(window.currentDisplaySubPage, true);
+        } else if (window.activeSettingsMobileTab && typeof window.backToSettingsMainOnMobile === 'function') {
+            window.backToSettingsMainOnMobile(true);
         } else if (typeof window.closeSettingsModal === 'function') {
             window.closeSettingsModal(true);
         }
