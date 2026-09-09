@@ -1,4 +1,4 @@
-const CACHE_NAME = 'yangjung-science-club-v37';
+const CACHE_NAME = 'yangjung-science-club-v38';
 const NOTIFICATION_AUTH_CACHE = 'yangjung-notification-auth-v1';
 const urlsToCache = [
   './',
@@ -70,19 +70,26 @@ self.addEventListener('push', event => {
         type: 'SHOW_SITE_NOTIFICATION',
         notification: data
       });
-      return;
     }
 
     const iconUrl = new URL('logo-192.png', self.registration.scope).href;
-    await self.registration.showNotification(data.title, {
+    const options = {
       body: data.body,
       icon: iconUrl,
       badge: iconUrl,
       tag: data.notificationId || undefined,
-      vibrate: [200, 100, 200],
-      renotify: true,
+      renotify: false,
       data
-    });
+    };
+
+    if (focusedClient) {
+      // 사이트 안 배너와 함께 알림 센터 기록도 남기되, 두 번 울리지는 않게 합니다.
+      options.silent = true;
+    } else {
+      options.vibrate = [200, 100, 200];
+    }
+
+    await self.registration.showNotification(data.title, options);
   })());
 });
 
@@ -153,4 +160,3 @@ self.addEventListener('fetch', event => {
     }).catch(() => caches.match(event.request))
   );
 });
-

@@ -78,3 +78,9 @@ export function uniqueUserIds(values, excludedUid = '') {
   return [...new Set(values.filter(Boolean))].filter((uid) => uid !== excludedUid);
 }
 
+export function pushErrorDisposition(statusCode) {
+  const status = Number(statusCode || 0);
+  if (status === 404 || status === 410) return 'remove';
+  if (!status || status === 408 || status === 425 || status === 429 || status >= 500) return 'retry';
+  return 'fail';
+}

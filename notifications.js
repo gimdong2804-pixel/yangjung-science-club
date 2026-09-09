@@ -287,7 +287,8 @@
         const response = await fetch(`${baseUrl}${path}`, {
             method,
             headers,
-            body: body === undefined ? undefined : JSON.stringify(body)
+            body: body === undefined ? undefined : JSON.stringify(body),
+            keepalive: method !== 'GET'
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) {

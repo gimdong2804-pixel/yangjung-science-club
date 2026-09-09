@@ -6,6 +6,7 @@ import {
   findRootCommentId,
   getCommentUid,
   personName,
+  pushErrorDisposition,
   quotedTitle,
   uniqueUserIds
 } from './logic.js';
@@ -253,6 +254,12 @@ async function claimEvent(env, eventId, eventType) {
   return Number(result.meta?.changes || 0) > 0;
 }
 
+async function releaseEvent(env, eventId) {
+  await env.DB.prepare('DELETE FROM processed_events WHERE event_id = ?')
+    .bind(eventId)
+    .run();
+}
+
 function requireVapid(env) {
   if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY || !env.VAPID_SUBJECT) {
     throw new HttpError(503, 'Web Push 키가 아직 설정되지 않았습니다.');
@@ -261,8 +268,10 @@ function requireVapid(env) {
 }
 
 async function sendPushes(env, rows, payload) {
-  if (!rows.length) return;
+  if (!rows.length) return { attempted: 0, sent: 0, removed: 0, failed: 0 };
   requireVapid(env);
+
+  const retryDelays = [0, 400, 1200];
 
   const sendOne = async (row) => {
     const subscription = {
@@ -270,25 +279,61 @@ async function sendPushes(env, rows, payload) {
       keys: { p256dh: row.p256dh, auth: row.auth }
     };
 
-    try {
-      await webpush.sendNotification(subscription, JSON.stringify({
-        ...payload,
-        recipientUid: row.uid
-      }), {
-        TTL: 24 * 60 * 60,
-        urgency: 'high'
-      });
-    } catch (error) {
-      if (error?.statusCode === 404 || error?.statusCode === 410) {
-        await env.DB.prepare('DELETE FROM push_subscriptions WHERE id = ?').bind(row.id).run();
-        return;
+    let lastError;
+    for (let attempt = 0; attempt < retryDelays.length; attempt += 1) {
+      if (retryDelays[attempt]) {
+        await new Promise((resolve) => setTimeout(resolve, retryDelays[attempt]));
       }
-      console.error('Web Push 전송 실패', error?.statusCode || error?.message || error);
+
+      try {
+        await webpush.sendNotification(subscription, JSON.stringify({
+          ...payload,
+          recipientUid: row.uid
+        }), {
+          TTL: 24 * 60 * 60,
+          urgency: 'high'
+        });
+        return 'sent';
+      } catch (error) {
+        lastError = error;
+        const disposition = pushErrorDisposition(error?.statusCode);
+        if (disposition === 'remove') {
+          await env.DB.prepare('DELETE FROM push_subscriptions WHERE id = ?').bind(row.id).run();
+          return 'removed';
+        }
+        if (disposition !== 'retry' || attempt === retryDelays.length - 1) break;
+      }
     }
+
+    console.error('Web Push 전송 실패', lastError?.statusCode || lastError?.message || lastError);
+    return 'failed';
   };
 
+  const outcomes = [];
   for (let index = 0; index < rows.length; index += 5) {
-    await Promise.all(rows.slice(index, index + 5).map(sendOne));
+    outcomes.push(...await Promise.all(rows.slice(index, index + 5).map(sendOne)));
+  }
+
+  const summary = {
+    attempted: rows.length,
+    sent: outcomes.filter((outcome) => outcome === 'sent').length,
+    removed: outcomes.filter((outcome) => outcome === 'removed').length,
+    failed: outcomes.filter((outcome) => outcome === 'failed').length
+  };
+  console.log('Web Push 발송 결과', JSON.stringify({ notificationId: payload.notificationId, ...summary }));
+  return summary;
+}
+
+async function sendClaimedPushes(env, eventId, rows, payload, failureMessage) {
+  try {
+    const delivery = await sendPushes(env, rows, payload);
+    if (delivery.failed > 0) throw new HttpError(503, failureMessage);
+    return delivery;
+  } catch (error) {
+    await releaseEvent(env, eventId).catch((releaseError) => {
+      console.error('푸시 이벤트 재시도 준비 실패', releaseError);
+    });
+    throw error;
   }
 }
 
@@ -381,8 +426,19 @@ async function handleCommentEvent(request, env, ctx, origin) {
     });
   }
 
-  ctx.waitUntil(sendPushes(env, rows, payload));
-  return json({ ok: true, recipientDevices: rows.length }, 202, origin);
+  const delivery = await sendClaimedPushes(
+    env,
+    eventId,
+    rows,
+    payload,
+    '일부 기기의 푸시 발송에 실패했습니다. 잠시 후 다시 시도합니다.'
+  );
+  return json({
+    ok: true,
+    recipientDevices: rows.length,
+    deliveredDevices: delivery.sent,
+    removedSubscriptions: delivery.removed
+  }, 202, origin);
 }
 
 async function handleCommentPinEvent(request, env, ctx, origin) {
@@ -494,8 +550,19 @@ async function handleSiteUpdate(request, env, ctx, origin) {
     target: 'update',
     buildNumber
   });
-  ctx.waitUntil(sendPushes(env, rows, payload));
-  return json({ ok: true, recipientDevices: rows.length }, 202, origin);
+  const delivery = await sendClaimedPushes(
+    env,
+    eventId,
+    rows,
+    payload,
+    '업데이트 푸시 발송에 실패했습니다. 잠시 후 다시 시도합니다.'
+  );
+  return json({
+    ok: true,
+    recipientDevices: rows.length,
+    deliveredDevices: delivery.sent,
+    removedSubscriptions: delivery.removed
+  }, 202, origin);
 }
 
 export default {

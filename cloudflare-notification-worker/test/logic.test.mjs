@@ -4,6 +4,7 @@ import {
   decodeFirestoreDocument,
   findRootCommentId,
   personName,
+  pushErrorDisposition,
   uniqueUserIds
 } from '../src/logic.js';
 
@@ -46,3 +47,11 @@ test('이름에는 님을 한 번만 붙인다', () => {
   assert.equal(personName('사장님'), '사장님');
 });
 
+test('일시적인 푸시 오류만 재시도하고 만료된 구독은 제거한다', () => {
+  assert.equal(pushErrorDisposition(undefined), 'retry');
+  assert.equal(pushErrorDisposition(429), 'retry');
+  assert.equal(pushErrorDisposition(503), 'retry');
+  assert.equal(pushErrorDisposition(404), 'remove');
+  assert.equal(pushErrorDisposition(410), 'remove');
+  assert.equal(pushErrorDisposition(403), 'fail');
+});

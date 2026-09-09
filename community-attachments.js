@@ -1156,6 +1156,7 @@ if (commentSubmitBtn && commentInput) {
                 }
                 if (window.clubNotifications?.isConfigured()) {
                     window.clubNotifications.notifyCommentCreated(currentPostId, createdCommentRef.id)
+                        .then((result) => console.log('댓글 알림 발송 결과:', result))
                         .catch((error) => console.error('댓글 알림 전송 오류:', error));
                 }
                 console.log(`[댓글 작성 성공] DB 등록 완료`);
