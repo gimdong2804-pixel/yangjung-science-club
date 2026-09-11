@@ -1466,15 +1466,17 @@ function renderPosts(snapshot, sortBy = currentSortOrder) {
         const filteredIds = new Set(docs.map(doc => doc.id));
         clearPostCommentCountSubscriptions(filteredIds);
         const containerRect = boardContainer.getBoundingClientRect();
+        let hasOutgoingCards = boardContainer.querySelector('.board-card.deleting') !== null;
         boardContainer.querySelectorAll('.board-card:not(.deleting)').forEach(card => {
             const id = card.getAttribute('data-id');
             if (!filteredIds.has(id)) {
+                hasOutgoingCards = true;
                 const oldPos = oldPositions.get(id) || card.getBoundingClientRect();
                 card.style.position = 'absolute';
                 card.style.top = (oldPos.top - containerRect.top) + 'px';
                 card.style.left = (oldPos.left - containerRect.left) + 'px';
                 card.style.width = oldPos.width + 'px';
-                card.style.zIndex = '0';
+                card.style.zIndex = '11';
                 card.classList.add('deleting');
                 setTimeout(() => {
                     card.remove();
@@ -1792,18 +1794,19 @@ function renderPosts(snapshot, sortBy = currentSortOrder) {
                     });
                 }
             } else {
-                // 새 카드 등장 (기존 오리지널 0.5s 및 15px 애니메이션)
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(15px)';
-                card.offsetHeight;
-                card.style.transition = 'transform 0.5s cubic-bezier(0.2, 0, 0, 1), opacity 0.5s ease, border-color 0.3s ease, box-shadow 0.3s ease';
-                card.style.opacity = '1';
-                card.style.transform = 'translateY(0)';
-                setTimeout(() => {
-                    card.style.transition = '';
-                    card.style.opacity = '';
-                    card.style.transform = '';
-                }, 500);
+                if (!hasOutgoingCards) {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(15px)';
+                    card.offsetHeight;
+                    card.style.transition = 'transform 0.5s cubic-bezier(0.2, 0, 0, 1), opacity 0.5s ease, border-color 0.3s ease, box-shadow 0.3s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                    setTimeout(() => {
+                        card.style.transition = '';
+                        card.style.opacity = '';
+                        card.style.transform = '';
+                    }, 500);
+                }
             }
         });
 }

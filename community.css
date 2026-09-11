@@ -155,11 +155,11 @@
 @keyframes slideOutAndFade {
     0% {
         opacity: 1;
-        transform: scale(1);
+        transform: translateY(0);
     }
     100% {
         opacity: 0;
-        transform: scale(0.92);
+        transform: translateY(-6px);
     }
 }
 
@@ -420,40 +420,6 @@
 
 .comment-item .pin-badge-wrapper.active {
     margin-bottom: 1rem;
-}
-
-/* 카드 내부 요소 개별 트랜지션 (지연 정렬 효과) */
-.board-card .board-author {
-    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.board-card .board-title {
-    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
-}
-
-.board-card .board-preview {
-    transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
-}
-
-.board-card .board-footer {
-    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease;
-}
-
-/* 이동 중 내부 레이어의 시간차 정렬 모션 */
-.board-card.flipping .board-author {
-    transform: translateY(-3px);
-}
-
-.board-card.flipping .board-title {
-    transform: translateY(-1px);
-}
-
-.board-card.flipping .board-preview {
-    transform: translateY(1px);
-}
-
-.board-card.flipping .board-footer {
-    transform: translateY(3px);
 }
 
 .board-card.flipping {
