@@ -20,8 +20,45 @@ function escapeHtml(value) {
 }
 
 function toJsString(value) {
-    return String(value ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const escapedForJs = String(value ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r/g, '\\r')
+        .replace(/\n/g, '\\n')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
+    return escapeHtml(escapedForJs);
 }
+
+function safeDisplayCount(value) {
+    const count = Number(value);
+    return Number.isFinite(count) ? Math.max(0, Math.trunc(count)) : 0;
+}
+
+function getSafeAttachmentUrl(value, allowedDataTypes = []) {
+    const raw = String(value ?? '').trim();
+    if (!raw) return '';
+    if (raw.startsWith('blob:')) return raw;
+    if (raw.startsWith('localmedia://')) return raw;
+
+    if (raw.startsWith('data:')) {
+        const header = raw.slice(5, raw.indexOf(',') > -1 ? raw.indexOf(',') : raw.length).toLowerCase();
+        return allowedDataTypes.some(type => header.startsWith(String(type).toLowerCase())) ? raw : '';
+    }
+
+    try {
+        const parsed = new URL(raw, window.location.href);
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.href : '';
+    } catch (error) {
+        return '';
+    }
+}
+
+function isOfficialComment(comment) {
+    return Boolean(comment && comment.official === true);
+}
+
+window.getSafeAttachmentUrl = getSafeAttachmentUrl;
 
 function commentTimeValue(comment) {
     const createdAt = comment.createdAt;
@@ -44,7 +81,19 @@ function buildCommentTree(comments) {
     const childrenMap = new Map();
 
     comments.forEach(comment => {
-        const parentId = comment.parentId && byId.has(comment.parentId) ? comment.parentId : null;
+        let parentId = comment.parentId && byId.has(comment.parentId) ? comment.parentId : null;
+        if (parentId) {
+            const visited = new Set([comment.id]);
+            let cursor = parentId;
+            while (cursor) {
+                if (visited.has(cursor)) {
+                    parentId = null;
+                    break;
+                }
+                visited.add(cursor);
+                cursor = byId.get(cursor)?.parentId || null;
+            }
+        }
         if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
         childrenMap.get(parentId).push(comment);
     });
@@ -106,8 +155,9 @@ function getCommentAvatar(comment, isPresidentComment, isDeleted) {
     if (isDeleted) {
         return `<div class="board-author-avatar" style="background: #64748b; width: 32px; height: 32px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;"><i class="fa-solid fa-minus"></i></div>`;
     }
-    if (comment.userPhoto) {
-        return `<img class="board-author-avatar" src="${escapeHtml(comment.userPhoto)}" alt="${escapeHtml(comment.author || '사용자')}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; border: 1px solid var(--glass-border);" decoding="sync">`;
+    const safePhotoUrl = getSafeAttachmentUrl(comment.userPhoto, ['image/']);
+    if (safePhotoUrl) {
+        return `<img class="board-author-avatar" src="${escapeHtml(safePhotoUrl)}" alt="${escapeHtml(comment.author || '사용자')}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; border: 1px solid var(--glass-border);" decoding="sync">`;
     }
     const initial = (comment.author || '?').substring(0, 1);
     return `<div class="board-author-avatar" style="background: ${isPresidentComment ? 'var(--accent-color)' : '#9ca3af'}; width: 32px; height: 32px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;">${isPresidentComment ? '<i class="fa-solid fa-crown" style="font-size: 0.6rem;"></i>' : escapeHtml(initial)}</div>`;
@@ -138,7 +188,9 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
     if (comment.images && Array.isArray(comment.images) && comment.images.length > 0) {
         html += `<div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">`;
         comment.images.forEach((imgUrl, imgIdx) => {
-            html += `<img src="${escapeHtml(imgUrl)}" alt="첨부 이미지" style="max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover; border: 1px solid var(--glass-border); cursor: pointer;" onclick="event.stopPropagation(); openLightbox('${escapeHtml(imgUrl)}', {postId:'${safePostId}', commentId:'${safeCommentId}', authorUid:'${escapeHtml(comment.uid || '')}', imageIndex:${imgIdx}})">`;
+            const safeUrl = getSafeAttachmentUrl(imgUrl, ['image/']);
+            if (!safeUrl) return;
+            html += `<img src="${escapeHtml(safeUrl)}" alt="첨부 이미지" style="max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover; border: 1px solid var(--glass-border); cursor: pointer;" onclick="event.stopPropagation(); openLightbox('${toJsString(safeUrl)}', {postId:'${safePostId}', commentId:'${safeCommentId}', authorUid:'${toJsString(comment.uid || '')}', imageIndex:${imgIdx}})">`;
         });
         html += `</div>`;
     }
@@ -147,7 +199,7 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
         html += `<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">`;
         comment.videos.forEach((v, vIdx) => {
             const parsed = parseAttachmentItem(v, '동영상');
-            const rawUrl = parsed.url;
+            const rawUrl = getSafeAttachmentUrl(parsed.url, ['video/']);
             const vidId = `c-vid-${safeCommentId}-${vIdx}`;
             if (rawUrl) {
                 let mimeType = 'video/mp4';
@@ -200,7 +252,7 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
         html += `<div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">`;
         comment.audios.forEach(a => {
             const parsed = parseAttachmentItem(a, '음성 파일');
-            const url = parsed.url;
+            const url = getSafeAttachmentUrl(parsed.url, ['audio/']);
             const name = parsed.name;
             if (url) {
                 html += `
@@ -220,7 +272,7 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
         html += `<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">`;
         comment.pdfs.forEach(p => {
             const parsed = parseAttachmentItem(p, 'PDF 문서');
-            const url = parsed.url;
+            const url = getSafeAttachmentUrl(parsed.url, ['application/pdf']);
             const name = parsed.name;
             if (url) {
                 html += `
@@ -242,7 +294,7 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
         html += `<div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;">`;
         comment.htmls.forEach(h => {
             const parsed = parseAttachmentItem(h, 'HTML 문서');
-            const url = parsed.url;
+            const url = getSafeAttachmentUrl(parsed.url, ['text/html', 'application/xhtml+xml']);
             const name = parsed.name;
             if (url) {
                 html += `
@@ -265,11 +317,11 @@ function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDele
 
 function renderFlatReply(comment, tree, postId, depth = 1) {
     const isDeleted = !!comment.deleted;
-    const isPresidentComment = !isDeleted && ((comment.author || '').includes('회장') || (typeof isAdmin === 'function' && isAdmin(comment.email)));
+    const isPresidentComment = !isDeleted && isOfficialComment(comment);
     const isPresident = typeof isPresidentUser === 'function' ? isPresidentUser() : (currentUser && typeof isAdmin === 'function' && isAdmin(currentUser.email));
-    const isCommentAuthor = !isDeleted && !!(currentUser && (comment.uid === currentUser.uid || comment.authorUid === currentUser.uid || comment.email === currentUser.email));
+    const isCommentAuthor = !isDeleted && !!(currentUser && (comment.uid === currentUser.uid || comment.authorUid === currentUser.uid));
     const currentPost = window.currentPostData;
-    const isPostAuthor = !isDeleted && !!(currentUser && currentPost && (currentPost.uid === currentUser.uid || currentPost.email === currentUser.email));
+    const isPostAuthor = !isDeleted && !!(currentUser && currentPost && (currentPost.uid === currentUser.uid || currentPost.authorUid === currentUser.uid));
 
     // 회장은 모든 권한(수정, 삭제, 고정), 일반인은 본인 댓글 수정/삭제 + 본인 게시물인 경우 댓글 고정 가능
     const canDelete = isPresident || isCommentAuthor;
@@ -304,7 +356,7 @@ function renderFlatReply(comment, tree, postId, depth = 1) {
     const pinBtn = canPin ? `<button type="button" class="board-action-btn pin-toggle-btn ${pinned ? 'active' : ''}" onclick="togglePinComment('${safePostId}', '${safeCommentId}', ${pinned})" title="${pinned ? '댓글 고정 해제' : '댓글 고정'}"><i class="fa-solid fa-thumbtack"></i></button>` : '';
     const replyBtn = !isDeleted ? `<button type="button" class="reply-action-btn" onclick="startReplyTarget('${safePostId}', '${safeCommentId}')" title="답글"><i class="fa-regular fa-comment-dots"></i> 답글</button>` : '';
     const heartClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-    const likeBtn = !isDeleted ? `<button type="button" class="board-action-btn c-like-btn" onclick="toggleLikeComment('${safePostId}', '${safeCommentId}', this, ${isLiked})" title="좋아요"><i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="c-like-cnt like-count" style="margin-left: 0.1rem;">${comment.likes || 0}</span></button>` : '';
+    const likeBtn = !isDeleted ? `<button type="button" class="board-action-btn c-like-btn" onclick="toggleLikeComment('${safePostId}', '${safeCommentId}', this, ${isLiked})" title="좋아요"><i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="c-like-cnt like-count" style="margin-left: 0.1rem;">${safeDisplayCount(comment.likes)}</span></button>` : '';
 
     const isExpanded = window.expandedCommentIds.has(comment.id);
     const isJustExpanded = window.justExpandedCommentId === comment.id;
@@ -377,11 +429,11 @@ function renderFlatReply(comment, tree, postId, depth = 1) {
 
 function renderCommentBranch(comment, depth, tree, postId) {
     const isDeleted = !!comment.deleted;
-    const isPresidentComment = !isDeleted && ((comment.author || '').includes('회장') || (typeof isAdmin === 'function' && isAdmin(comment.email)));
+    const isPresidentComment = !isDeleted && isOfficialComment(comment);
     const isPresident = typeof isPresidentUser === 'function' ? isPresidentUser() : (currentUser && typeof isAdmin === 'function' && isAdmin(currentUser.email));
-    const isCommentAuthor = !isDeleted && !!(currentUser && (comment.uid === currentUser.uid || comment.authorUid === currentUser.uid || comment.email === currentUser.email));
+    const isCommentAuthor = !isDeleted && !!(currentUser && (comment.uid === currentUser.uid || comment.authorUid === currentUser.uid));
     const currentPost = window.currentPostData;
-    const isPostAuthor = !isDeleted && !!(currentUser && currentPost && (currentPost.uid === currentUser.uid || currentPost.email === currentUser.email));
+    const isPostAuthor = !isDeleted && !!(currentUser && currentPost && (currentPost.uid === currentUser.uid || currentPost.authorUid === currentUser.uid));
 
     // 회장은 모든 권한(수정, 삭제, 고정), 일반인은 본인 댓글 수정/삭제 + 본인 게시물인 경우 댓글 고정 가능
     const canDelete = isPresident || isCommentAuthor;
@@ -438,7 +490,7 @@ function renderCommentBranch(comment, depth, tree, postId) {
     const heartClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
     const likeBtn = !isDeleted ? `
                 <button type="button" class="board-action-btn c-like-btn" onclick="toggleLikeComment('${safePostId}', '${safeCommentId}', this, ${isLiked})" title="좋아요">
-                    <i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="c-like-cnt like-count" style="margin-left: 0.1rem;">${comment.likes || 0}</span>
+                    <i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="c-like-cnt like-count" style="margin-left: 0.1rem;">${safeDisplayCount(comment.likes)}</span>
                 </button>
             ` : '';
     const itemStyle = '';

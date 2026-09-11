@@ -157,20 +157,18 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
 
     const area = document.getElementById('detailPostArea');
     if (currentUser) {
-        const viewedBy = post.viewedBy || [];
-        if (!viewedBy.includes(currentUser.uid)) {
-            db.collection('posts').doc(id).update({
-                views: firebase.firestore.FieldValue.increment(1),
-                viewedBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+        const postRef = db.collection('posts').doc(id);
+        db.runTransaction(async (transaction) => {
+            const postSnapshot = await transaction.get(postRef);
+            if (!postSnapshot.exists) return;
+            const postData = postSnapshot.data() || {};
+            const viewedBy = Array.isArray(postData.viewedBy) ? postData.viewedBy : [];
+            if (viewedBy.includes(currentUser.uid)) return;
+            transaction.update(postRef, {
+                views: Math.max(0, Number(postData.views) || 0) + 1,
+                viewedBy: [...viewedBy, currentUser.uid]
             });
-        }
-    } else {
-        const viewedPosts = JSON.parse(localStorage.getItem('viewedPosts') || '[]');
-        if (!viewedPosts.includes(id)) {
-            viewedPosts.push(id);
-            localStorage.setItem('viewedPosts', JSON.stringify(viewedPosts));
-            db.collection('posts').doc(id).update({ views: firebase.firestore.FieldValue.increment(1) });
-        }
+        }).catch((error) => console.warn('게시글 조회 수 저장 실패:', error));
     }
 
     let detailUpdateTimeout = null;
@@ -192,38 +190,42 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
         const updateUI = () => {
             const isPresident = currentUser && isAdmin(currentUser.email);
             const isAuthor = currentUser && (currentPost.uid === currentUser.uid || isPresident);
+            const safePostId = toJsString(id);
+            const isPinned = currentPost.pinned === true;
 
             // 삭제 버튼 (작성자 또는 회장)
             const deleteBtnHtml = isAuthor ? `
-                        <button type="button" class="board-action-btn delete-btn" onclick="event.stopPropagation(); deletePost('${id}')" title="삭제하기">
+                        <button type="button" class="board-action-btn delete-btn" onclick="event.stopPropagation(); deletePost('${safePostId}')" title="삭제하기">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     ` : '';
 
             // 수정 버튼 (작성자 또는 회장)
             const editBtnHtml = isAuthor ? `
-                        <button type="button" class="board-action-btn edit-btn role-edit-btn" onclick="event.stopPropagation(); editPost('${id}')" title="수정하기" style="color: #007bff !important;">
+                        <button type="button" class="board-action-btn edit-btn role-edit-btn" onclick="event.stopPropagation(); editPost('${safePostId}')" title="수정하기" style="color: #007bff !important;">
                             <i class="fa-solid fa-pen-to-square" style="color: #007bff !important;"></i>
                         </button>
                     ` : '';
 
             // 고정 버튼 (회장, 사장 전용)
             const pinBtnHtml = isPresident ? `
-                        <button type="button" class="board-action-btn pin-toggle-btn ${currentPost.pinned ? 'active' : ''}" onclick="event.stopPropagation(); togglePin('${id}', ${currentPost.pinned || false})" title="${currentPost.pinned ? '고정 해제' : '상단 고정'}">
+                        <button type="button" class="board-action-btn pin-toggle-btn ${isPinned ? 'active' : ''}" onclick="event.stopPropagation(); togglePin('${safePostId}', ${isPinned})" title="${isPinned ? '고정 해제' : '상단 고정'}">
                             <i class="fa-solid fa-thumbtack"></i>
                         </button>
                     ` : '';
 
-            const isLiked = currentUser && currentPost.likedUsers && currentPost.likedUsers.includes(currentUser.uid);
+            const isLiked = currentUser && Array.isArray(currentPost.likedUsers) && currentPost.likedUsers.includes(currentUser.uid);
             const existingTopCountEl = document.getElementById('detailTopCommentCount');
-            const currentTopCount = existingTopCountEl ? existingTopCountEl.innerText : '0';
+            const currentTopCount = existingTopCountEl && typeof safeDisplayCount === 'function'
+                ? safeDisplayCount(existingTopCountEl.innerText)
+                : 0;
 
             const heartClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
             const heartColor = isLiked ? 'color: #ff6b6b;' : 'color: var(--text-primary);';
 
             // 첨부파일 및 이미지 자동 분류 및 정제
-            const rawImages = currentPost.images || [];
-            const rawAttachments = currentPost.attachments || [];
+            const rawImages = Array.isArray(currentPost.images) ? currentPost.images : [];
+            const rawAttachments = Array.isArray(currentPost.attachments) ? currentPost.attachments : [];
 
             const displayImages = [];
             const displayAttachments = [];
@@ -237,10 +239,13 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                     url = img;
                 } else if (img && typeof img === 'object') {
                     url = img.url || '';
-                    name = img.name || '첨부파일';
-                    type = img.type || '';
+                    name = String(img.name || '첨부파일');
+                    type = String(img.type || '');
                 }
 
+                url = typeof getSafeAttachmentUrl === 'function'
+                    ? getSafeAttachmentUrl(url, ['image/', 'video/', 'audio/', 'application/pdf', 'text/html', 'application/xhtml+xml'])
+                    : String(url || '');
                 if (!url) return;
 
                 const lowerUrl = url.toLowerCase();
@@ -270,10 +275,13 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                     url = att;
                 } else if (att && typeof att === 'object') {
                     url = att.url || att.dataUrl || '';
-                    name = att.name || '첨부파일';
-                    type = att.type || '';
+                    name = String(att.name || '첨부파일');
+                    type = String(att.type || '');
                 }
 
+                url = typeof getSafeAttachmentUrl === 'function'
+                    ? getSafeAttachmentUrl(url, ['image/', 'video/', 'audio/', 'application/pdf', 'text/html', 'application/xhtml+xml'])
+                    : String(url || '');
                 if (!url) return;
 
                 const lowerUrl = url.toLowerCase();
@@ -314,31 +322,33 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                                 ${editBtnHtml}
                             </div>
                         </div>
-                        <h2 class="post-body-title" style="margin-bottom: 0.5rem; font-size: 1.6rem; color: var(--text-primary); word-break: break-word; overflow-wrap: anywhere;">${currentPost.title}</h2>
+                        <h2 class="post-body-title" style="margin-bottom: 0.5rem; font-size: 1.6rem; color: var(--text-primary); word-break: break-word; overflow-wrap: anywhere;">${escapeHtml(currentPost.title || '')}</h2>
                         <div style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
-                            ${timeStr} &nbsp;|&nbsp; 조회 ${currentPost.views || 0}회
+                            ${timeStr} &nbsp;|&nbsp; 조회 ${typeof safeDisplayCount === 'function' ? safeDisplayCount(currentPost.views) : 0}회
                         </div>
                         
                         <div class="board-card-header" style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
                             <div class="board-author" style="flex: 1;">
                                 ${avatar}
-                                <span class="board-author-name" style="font-weight: 600; font-size: 1rem;">${currentPost.author}</span>
+                                <span class="board-author-name" style="font-weight: 600; font-size: 1rem;">${escapeHtml(currentPost.author || '사용자')}</span>
                             </div>
                             <div class="board-stats" style="font-size: 0.95rem;">
                                 <span style="cursor: default; user-select: none; margin-right: 0.8rem;"><i class="fa-regular fa-comment"></i> <span id="detailTopCommentCount">${currentTopCount}</span></span>
-                                <button type="button" class="board-action-btn" onclick="likePost('${id}', this)" id="detailLikeBtn" title="좋아요">
-                                    <i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span id="detailLikeCnt" class="like-count">${currentPost.likes || 0}</span>
+                                <button type="button" class="board-action-btn" onclick="likePost('${safePostId}', this)" id="detailLikeBtn" title="좋아요">
+                                    <i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span id="detailLikeCnt" class="like-count">${typeof safeDisplayCount === 'function' ? safeDisplayCount(currentPost.likes) : 0}</span>
                                 </button>
                             </div>
                         </div>
                         
                         <div class="post-body" style="font-size: 1.05rem; line-height: 1.7; color: var(--text-primary); padding-bottom: 1rem;">
-                            ${typeof window.renderTextWithYoutubeLinks === 'function' ? window.renderTextWithYoutubeLinks(currentPost.body.replace(/\n/g, '<br>')) : currentPost.body.replace(/\n/g, '<br>')}
+                            ${typeof window.renderTextWithYoutubeLinks === 'function'
+                    ? window.renderTextWithYoutubeLinks(escapeHtml(String(currentPost.body || '')).replace(/\n/g, '<br>'))
+                    : escapeHtml(String(currentPost.body || '')).replace(/\n/g, '<br>')}
                         </div>
 
                         ${displayImages.length > 0 ? `
                             <div class="post-image-gallery">
-                                ${displayImages.map((imgObj, imgIdx) => `<img src="${escapeHtml(imgObj.url)}" alt="게시글 첨부 사진" style="cursor: pointer;" onclick="openLightbox('${toJsString(imgObj.url)}', {postId:'${currentPostId}', commentId:null, authorUid:'${currentPost.uid || ''}', imageIndex:${imgIdx}})">`).join('')}
+                                ${displayImages.map((imgObj, imgIdx) => `<img src="${escapeHtml(imgObj.url)}" alt="게시글 첨부 사진" style="cursor: pointer;" onclick="openLightbox('${toJsString(imgObj.url)}', {postId:'${toJsString(currentPostId)}', commentId:null, authorUid:'${toJsString(currentPost.uid || '')}', imageIndex:${imgIdx}})">`).join('')}
                             </div>
                         ` : ''}
 
@@ -357,10 +367,10 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                 let isAudio = false;
                 let isVideo = false;
 
-                const attName = att.name || '첨부파일';
+                const attName = String(att.name || '첨부파일');
                 const lowerAttName = attName.toLowerCase();
                 const lowerAttUrl = (att.url || '').toLowerCase();
-                const type = (att.type || '').toLowerCase();
+                const type = String(att.type || '').toLowerCase();
 
                 if (type.includes('html') || lowerAttUrl.startsWith('data:text/html') || /\.(html|htm)$/i.test(lowerAttName)) {
                     iconClass = 'fa-solid fa-file-code'; iconColor = '#7c3aed'; isHtml = true;
@@ -428,321 +438,6 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
             updateComments();
         }
         return;
-
-        const topCountEl = document.getElementById('detailTopCommentCount');
-        if (topCountEl) topCountEl.innerText = snap.size;
-        const detailCommentCount = document.getElementById('detailCommentCount');
-        if (detailCommentCount) detailCommentCount.innerText = snap.size;
-
-        const commentList = document.getElementById('detailCommentList');
-        if (!commentList) return;
-
-        // 1. 이전 위치 백업
-        const oldPositions = new Map();
-        commentList.querySelectorAll('.comment-item').forEach(item => {
-            const cid = item.getAttribute('data-id');
-            const opacity = window.getComputedStyle(item).opacity;
-            oldPositions.set(cid, { rect: item.getBoundingClientRect(), opacity });
-        });
-
-        // 2. 현재 스냅샷 ID 목록
-        const currentIds = new Set(snap.docs.map(doc => doc.id));
-
-        // 3. 삭제된 댓글 제거 (애니메이션)
-        const itemsToDelete = [];
-        commentList.querySelectorAll('.comment-item').forEach(item => {
-            if (!currentIds.has(item.getAttribute('data-id')) && !item.classList.contains('deleting')) {
-                item.classList.add('deleting');
-                item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                item.style.opacity = '0';
-                item.style.transform = 'scale(0.95)';
-                itemsToDelete.push(item);
-            }
-        });
-
-        if (itemsToDelete.length > 0) {
-            setTimeout(() => {
-                // 지워지기 직전 남아있는 아이템들의 위치 백업
-                const beforeRemovePositions = new Map();
-                commentList.querySelectorAll('.comment-item:not(.deleting)').forEach(el => {
-                    beforeRemovePositions.set(el.getAttribute('data-id'), el.getBoundingClientRect());
-                });
-
-                itemsToDelete.forEach(item => item.remove()); // DOM에서 일괄 제거
-
-                // 제거 후 남아있는 아이템들이 빈 공간으로 자연스럽게 밀려 올라가는 애니메이션 (FLIP)
-                requestAnimationFrame(() => {
-                    commentList.querySelectorAll('.comment-item:not(.deleting)').forEach(el => {
-                        const id = el.getAttribute('data-id');
-                        const oldR = beforeRemovePositions.get(id);
-                        if (oldR) {
-                            const newR = el.getBoundingClientRect();
-                            const deltaY = oldR.top - newR.top;
-                            if (Math.abs(deltaY) > 1) {
-                                el.style.transform = `translateY(${deltaY}px)`;
-                                el.style.transition = 'none';
-                                el.offsetHeight; // 플로우 강제 리페인트 (버그 수정)
-
-                                // 거리 비례 속도 자동 조절 (최소 0.35초 ~ 최대 1.0초)
-                                const distance = Math.abs(deltaY);
-                                const duration = Math.min(Math.max(0.35, distance / 600), 1.0);
-
-                                requestAnimationFrame(() => {
-                                    el.style.transform = '';
-                                    el.style.transition = `transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1)`;
-                                });
-                            }
-                        }
-                    });
-                });
-            }, 300);
-        }
-
-        // 클라이언트 단에서 정렬: pinned가 참이면 위로, 그 다음 작성일 순 정렬
-        const sortedDocs = [...snap.docs].sort((a, b) => {
-            const pinA = a.data().pinned ? 1 : 0;
-            const pinB = b.data().pinned ? 1 : 0;
-            if (pinB !== pinA) {
-                return pinB - pinA; // 고정이 위로
-            }
-            const timeA = (a.data().createdAt && typeof a.data().createdAt.toMillis === 'function') ? a.data().createdAt.toMillis() : (a.data().createdAt instanceof Date ? a.data().createdAt.getTime() : Date.now());
-            const timeB = (b.data().createdAt && typeof b.data().createdAt.toMillis === 'function') ? b.data().createdAt.toMillis() : (b.data().createdAt instanceof Date ? b.data().createdAt.getTime() : Date.now());
-            return timeB - timeA; // 작성일 내림차순 (최신순)
-        });
-
-        sortedDocs.forEach((cDoc, index) => {
-            const c = cDoc.data();
-            const cid = cDoc.id;
-            const cTime = formatDate(c.createdAt) + (c.edited && !c.deleted ? ' <span style="font-size: 0.8em; color: var(--text-secondary);">(수정됨)</span>' : '');
-            const isPresidentComment = c.author.includes('회장') || (c.email && isAdmin(c.email));
-            const badge = isPresidentComment ? '<span class="official-badge" style="background: var(--accent-color); color: #fff; font-size: 0.75rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: bold; margin-left: 0.5rem; white-space: nowrap; flex-shrink: 0;">공식 답변</span>' : '';
-
-            const cPinBadge = `<div class="pin-badge-wrapper ${c.pinned ? 'active' : ''}">
-                                        <span class="pin-badge-ui" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; display: inline-block;">
-                                            <i class="fa-solid fa-thumbtack"></i> 상단 고정
-                                        </span>
-                                    </div>`;
-
-            let cAvatarHtml = `<div class="board-author-avatar" style="background: ${isPresidentComment ? 'var(--accent-color)' : '#9ca3af'}; width: 32px; height: 32px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;">${isPresidentComment ? '<i class="fa-solid fa-crown" style="font-size: 0.6rem;"></i>' : c.author.substring(0, 1)}</div>`;
-            if (c.userPhoto) {
-                cAvatarHtml = `<img class="board-author-avatar" src="${c.userPhoto}" alt="${c.author}" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%; border: 1px solid var(--glass-border);" decoding="sync">`;
-            }
-
-            const isCommentAuthor = currentUser && (c.uid === currentUser.uid || isAdmin(currentUser.email));
-            const isPresident = typeof isPresidentUser === 'function' ? isPresidentUser() : (currentUser && isAdmin(currentUser.email));
-            const isPostAuthor = currentUser && window.currentPostData && (window.currentPostData.uid === currentUser.uid || window.currentPostData.email === currentUser.email);
-            const canDelete = isPresident || isCommentAuthor;
-            const canEdit = isPresident || isCommentAuthor;
-            const canPin = !c.deleted && (isPresident || isPostAuthor);
-
-            const cCheckbox = canDelete ? `
-                        <label class="comment-checkbox-wrapper" style="align-items: center; margin-top: 0.2rem; padding-right: 0;">
-                            <input type="checkbox" class="comment-select-cb" value="${cid}" onchange="updateMultiDeleteUI()" style="width: 1.1rem; height: 1.1rem; accent-color: var(--accent-color); cursor: pointer;">
-                        </label>
-                    ` : '';
-
-            const cDeleteBtn = canDelete ? `
-                        <button type="button" class="board-action-btn delete-btn" onclick="deleteComment('${id}', '${cid}')" title="댓글 삭제" style="color: #ff6b6b !important;">
-                            <i class="fa-solid fa-trash-can" style="color: #ff6b6b !important;"></i>
-                        </button>
-                    ` : '';
-            const cEditBtn = canEdit ? `
-                        <button type="button" class="board-action-btn edit-btn role-edit-btn" onclick="event.stopPropagation(); editComment('${id}', '${cid}')" title="댓글 수정" style="color: #007bff !important;">
-                            <i class="fa-solid fa-pen-to-square" style="color: #007bff !important;"></i>
-                        </button>
-                    ` : '';
-
-            const cPinBtn = canPin ? `
-                        <button type="button" class="board-action-btn pin-toggle-btn ${c.pinned ? 'active' : ''}" onclick="togglePinComment('${id}', '${cid}', ${c.pinned || false})" title="${c.pinned ? '댓글 고정 해제' : '댓글 고정'}">
-                            <i class="fa-solid fa-thumbtack"></i>
-                        </button>
-                    ` : '';
-
-            const isLiked = c.likedUsers && currentUser ? c.likedUsers.includes(currentUser.uid) : false;
-            const cLikeClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
-            const cLikeBtn = `
-                        <button type="button" class="board-action-btn c-like-btn" onclick="toggleLikeComment('${id}', '${cid}', this, ${isLiked})" title="좋아요">
-                            <i class="${cLikeClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="c-like-cnt like-count" style="margin-left: 0.1rem;">${c.likes || 0}</span>
-                        </button>
-                    `;
-
-            const cItemStyle = 'border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 1rem; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, padding-left 0.3s ease, border-radius 0.3s ease;';
-
-            let item = commentList.querySelector(`.comment-item[data-id="${cid}"]`);
-            const isNew = !item;
-
-            if (isNew) {
-                const innerHtml = `
-                            ${cPinBadge}
-                            <div style="display: flex; align-items: flex-start; width: 100%;">
-                                ${cCheckbox}
-                                ${cAvatarHtml}
-                                <div class="comment-content" style="flex: 1; min-width: 0; padding-top: 0.2rem; margin-left: 0.75rem;">
-                                    <div class="comment-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; margin-bottom: 0.4rem;">
-                                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap; min-width: 0;">
-                                            <span class="board-author-name" style="font-weight: 600; font-size: 0.95rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.author}</span>
-                                            ${badge}
-                                        </div>
-                                        <div class="comment-actions" style="display: flex; align-items: center; gap: 0.5rem;">
-                                            <div class="mobile-hide" style="display: flex; align-items: center; gap: 0.5rem;">
-                                                ${cPinBtn}
-                                                ${cDeleteBtn}
-                                                ${cEditBtn}
-                                            </div>
-                                            <span class="board-time" style="font-weight: 400;">${cTime}</span>
-                                        </div>
-                                    </div>
-                                    <div class="comment-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-primary); word-break: break-all; margin-bottom: 0.8rem;">${c.body}</div>
-                                    <div class="comment-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: nowrap; width: 100%;">
-                                        <div class="mobile-show" style="display: none; align-items: center; gap: 0.5rem; flex-shrink: 0;">
-                                            ${cPinBtn}
-                                            ${cDeleteBtn}
-                                            ${cEditBtn}
-                                        </div>
-                                        <div class="board-stats" style="margin-left: auto; flex-shrink: 0;">
-                                            ${cLikeBtn}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                item = document.createElement('div');
-                item.className = 'comment-item new-comment-flip';
-                item.setAttribute('data-id', cid);
-                item.setAttribute('data-pinned', c.pinned ? 'true' : 'false');
-                item.style.cssText = `margin-bottom: 1.25rem; ${cItemStyle}`;
-                item.innerHTML = innerHtml;
-                item.style.order = index;
-
-                // 다중 선택(꾹 누르기) 이벤트 등록
-                if (canDelete) {
-                    item.addEventListener('pointerdown', (e) => window.handleCommentPointerDown(e, cid));
-                    item.addEventListener('pointerup', window.handleCommentPointerUp);
-                    item.addEventListener('pointercancel', window.handleCommentPointerUp);
-                    item.addEventListener('pointerleave', window.handleCommentPointerUp);
-                    item.addEventListener('contextmenu', (e) => {
-                        if (window.isMultiSelectMode) {
-                            e.preventDefault();
-                        }
-                    });
-                    item.addEventListener('click', (e) => {
-                        if (window.ignoreNextCommentClick) {
-                            window.ignoreNextCommentClick = false;
-                            e.preventDefault();
-                            e.stopPropagation();
-                            return;
-                        }
-                        if (window.isMultiSelectMode) {
-                            if (e.target.classList.contains('comment-select-cb') || e.target.closest('label')) {
-                                return;
-                            }
-                            e.preventDefault();
-                            e.stopPropagation();
-                            const cb = item.querySelector('.comment-select-cb');
-                            if (cb) {
-                                cb.checked = !cb.checked;
-                                updateMultiDeleteUI();
-                            }
-                        }
-                    });
-                }
-
-                commentList.appendChild(item);
-            } else {
-                const wasPinned = item.getAttribute('data-pinned') === 'true';
-                if (wasPinned !== !!c.pinned) {
-                    item.style.cssText = `margin-bottom: 1.25rem; ${cItemStyle}`;
-                    item.setAttribute('data-pinned', c.pinned ? 'true' : 'false');
-                }
-
-                if (item.style.order !== String(index)) {
-                    item.style.order = index;
-                }
-
-                const pinBadgeEl = item.querySelector('.pin-badge-wrapper');
-                if (pinBadgeEl) {
-                    pinBadgeEl.className = 'pin-badge-wrapper ' + (c.pinned ? 'active' : '');
-                }
-
-                const pinBtnEls = item.querySelectorAll('.pin-toggle-btn');
-                pinBtnEls.forEach(pinBtnEl => {
-                    pinBtnEl.classList.toggle('active', !!c.pinned);
-                    pinBtnEl.title = c.pinned ? '댓글 고정 해제' : '댓글 고정';
-                    pinBtnEl.setAttribute('onclick', `togglePinComment('${id}', '${cid}', ${c.pinned || false})`);
-                });
-
-                const likeBtnEl = item.querySelector('.c-like-btn');
-                if (likeBtnEl) {
-                    const isLiked = c.likedUsers && currentUser ? c.likedUsers.includes(currentUser.uid) : false;
-                    const icon = likeBtnEl.querySelector('i');
-                    const cnt = likeBtnEl.querySelector('.c-like-cnt');
-                    if (icon) {
-                        if (!icon.classList.contains('animate-heart') && !icon.classList.contains('animate-heart-cancel')) {
-                            if (isLiked) {
-                                icon.classList.remove('fa-regular');
-                                icon.classList.add('fa-solid');
-                                icon.style.color = '#ff6b6b';
-                            } else {
-                                icon.classList.remove('fa-solid');
-                                icon.classList.add('fa-regular');
-                                icon.style.color = '';
-                            }
-                        }
-                    }
-                    if (cnt) cnt.textContent = c.likes || 0;
-                    likeBtnEl.setAttribute('onclick', `toggleLikeComment('${id}', '${cid}', this, ${isLiked})`);
-                }
-            }
-        });
-
-        // 5. FLIP 애니메이션 실행 (선택 해제 중에는 건너뛰기)
-        if (window.skipCommentFlip) return;
-        requestAnimationFrame(() => {
-            commentList.querySelectorAll('.comment-item').forEach(item => {
-                const cid = item.getAttribute('data-id');
-                const oldData = oldPositions.get(cid);
-                if (oldData) {
-                    const newRect = item.getBoundingClientRect();
-                    const deltaY = oldData.rect.top - newRect.top;
-
-                    if (parseFloat(oldData.opacity) < 1) {
-                        item.style.opacity = oldData.opacity;
-                        requestAnimationFrame(() => {
-                            item.style.transition = 'opacity 0.4s ease';
-                            item.style.opacity = '1';
-                        });
-                    }
-
-                    if (Math.abs(deltaY) > 1) {
-                        item.style.transform = `translateY(${deltaY}px)`;
-                        item.style.transition = 'none';
-                        item.offsetHeight; // 플로우 강제 리페인트 (버그 수정)
-                        requestAnimationFrame(() => {
-                            item.classList.add('flipping');
-                            item.style.transform = '';
-                            item.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.4s ease, border-radius 0.3s ease';
-                            setTimeout(() => {
-                                item.classList.remove('flipping');
-                                item.style.transition = '';
-                            }, 400);
-                        });
-                    }
-                } else if (item.classList.contains('new-comment-flip')) {
-                    // 기존 댓글들이 먼저 내려가서 빈 공간을 만든 뒤에 나타나도록 지연(delay) 적용
-                    item.style.opacity = '0';
-                    item.style.transform = 'scale(0.95)';
-                    item.style.transition = 'none';
-                    item.offsetHeight; // 플로우 강제 리페인트 (버그 수정)
-
-                    requestAnimationFrame(() => {
-                        item.style.opacity = '1';
-                        item.style.transform = 'scale(1)';
-                        item.style.transition = 'opacity 0.3s ease 0.2s, transform 0.3s ease 0.2s';
-                        item.classList.remove('new-comment-flip');
-                    });
-                }
-            });
-        });
     });
 
     // openPostDetail 하단에 있던 중복 hidden 제거 로직은 함수 내부(상단)로 옮겼으므로 여기서는 삭제합니다.
@@ -752,6 +447,18 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
 const closeSideDetailBtn = document.getElementById('closeSideDetailBtn');
 if (closeSideDetailBtn) {
     closeSideDetailBtn.addEventListener('click', closeSideDetail);
+}
+
+function applyLikeButtonState(button, liked, count) {
+    if (!button) return;
+    const icon = button.querySelector('i');
+    const countElement = button.querySelector('.like-count') || button.querySelector('#detailLikeCnt');
+    if (icon) {
+        icon.classList.toggle('fa-solid', liked);
+        icon.classList.toggle('fa-regular', !liked);
+        icon.style.color = liked ? '#ff6b6b' : '';
+    }
+    if (countElement) countElement.textContent = Math.max(0, Number(count) || 0);
 }
 
 window.likePost = async function (id, btnEl) {
@@ -804,26 +511,33 @@ window.likePost = async function (id, btnEl) {
 
     const postRef = db.collection('posts').doc(id);
     try {
-        const doc = await postRef.get();
-        if (doc.exists) {
-            const postData = doc.data();
-            const likedUsers = postData.likedUsers || [];
-            const isLiked = likedUsers.includes(currentUser.uid);
+        const finalState = await db.runTransaction(async (transaction) => {
+            const doc = await transaction.get(postRef);
+            if (!doc.exists) throw new Error('게시글을 찾을 수 없습니다.');
+            const postData = doc.data() || {};
+            const likedUsers = Array.isArray(postData.likedUsers) ? postData.likedUsers : [];
+            const wasLiked = likedUsers.includes(currentUser.uid);
+            const nextUsers = wasLiked
+                ? likedUsers.filter(uid => uid !== currentUser.uid)
+                : [...likedUsers, currentUser.uid];
+            const nextLikes = Math.max(0, (Number(postData.likes) || 0) + (wasLiked ? -1 : 1));
 
-            if (isLiked) {
-                await postRef.update({
-                    likes: firebase.firestore.FieldValue.increment(-1),
-                    likedUsers: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-                });
-            } else {
-                await postRef.update({
-                    likes: firebase.firestore.FieldValue.increment(1),
-                    likedUsers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-                });
-            }
-        }
+            transaction.update(postRef, { likes: nextLikes, likedUsers: nextUsers });
+            return { liked: !wasLiked, count: nextLikes };
+        });
+        applyLikeButtonState(btnEl, finalState.liked, finalState.count);
     } catch (error) {
         console.error("Error toggling like: ", error);
+        try {
+            const latest = await postRef.get();
+            if (latest.exists) {
+                const data = latest.data() || {};
+                const users = Array.isArray(data.likedUsers) ? data.likedUsers : [];
+                applyLikeButtonState(btnEl, users.includes(currentUser.uid), data.likes);
+            }
+        } catch (syncError) {
+            console.warn('좋아요 화면 복구 실패:', syncError);
+        }
     } finally {
         if (btnEl) {
             delete btnEl.dataset.processing;
@@ -862,7 +576,7 @@ window.togglePin = async function (id, currentPinned) {
 
 window.togglePinComment = async function (postId, commentId, currentPinned) {
     const isPresident = typeof isPresidentUser === 'function' ? isPresidentUser() : (currentUser && isAdmin(currentUser.email));
-    const isPostAuthor = currentUser && window.currentPostData && (window.currentPostData.uid === currentUser.uid || window.currentPostData.email === currentUser.email);
+    const isPostAuthor = currentUser && window.currentPostData && (window.currentPostData.uid === currentUser.uid || window.currentPostData.authorUid === currentUser.uid);
     if (!currentUser || (!isPresident && !isPostAuthor)) return;
     const btn = window.event ? (window.event.currentTarget || window.event.target.closest('.pin-toggle-btn')) : null;
     if (btn && btn.dataset.processing === 'true') return;
@@ -895,12 +609,35 @@ window.togglePinComment = async function (postId, commentId, currentPinned) {
     }
 };
 
+async function deletePostAndCommentsDirectly(id) {
+    const postRef = db.collection('posts').doc(id);
+    const commentsSnapshot = await postRef.collection('comments').get();
+    const commentDocs = commentsSnapshot.docs;
+
+    for (let start = 0; start < commentDocs.length; start += 400) {
+        const batch = db.batch();
+        commentDocs.slice(start, start + 400).forEach(commentDoc => batch.delete(commentDoc.ref));
+        await batch.commit();
+    }
+
+    await postRef.delete();
+}
+
 window.deletePostDocumentWithNotification = async function (id) {
     if (!currentUser) throw new Error('로그인이 필요합니다.');
-    if (!window.clubNotifications?.isConfigured()) {
-        throw new Error('Cloudflare 알림 서버 주소가 아직 설정되지 않았습니다.');
+
+    if (window.clubNotifications?.isConfigured()) {
+        try {
+            await window.clubNotifications.deletePost(id);
+            return;
+        } catch (error) {
+            if (error?.status === 401 || error?.status === 403) throw error;
+            if (error?.status === 404) return;
+            console.warn('알림 서버를 통한 삭제 실패, Firebase에서 직접 삭제합니다:', error);
+        }
     }
-    await window.clubNotifications.deletePost(id);
+
+    await deletePostAndCommentsDirectly(id);
 };
 
 window.deletePostWithAnim = async function (id, btn) {
@@ -1090,29 +827,35 @@ window.toggleLikeComment = async function (postId, commentId, btn, isLiked) {
         }
     }
 
-    // DB 업데이트
+    const commentRef = db.collection('posts').doc(postId).collection('comments').doc(commentId);
     try {
-        const commentRef = db.collection('posts').doc(postId).collection('comments').doc(commentId);
-        const doc = await commentRef.get();
-        if (doc.exists) {
-            const commentData = doc.data();
-            const likedUsers = commentData.likedUsers || [];
-            const actualIsLiked = likedUsers.includes(currentUser.uid);
+        const finalState = await db.runTransaction(async (transaction) => {
+            const doc = await transaction.get(commentRef);
+            if (!doc.exists) throw new Error('댓글을 찾을 수 없습니다.');
+            const commentData = doc.data() || {};
+            const likedUsers = Array.isArray(commentData.likedUsers) ? commentData.likedUsers : [];
+            const wasLiked = likedUsers.includes(currentUser.uid);
+            const nextUsers = wasLiked
+                ? likedUsers.filter(uid => uid !== currentUser.uid)
+                : [...likedUsers, currentUser.uid];
+            const nextLikes = Math.max(0, (Number(commentData.likes) || 0) + (wasLiked ? -1 : 1));
 
-            if (actualIsLiked) {
-                await commentRef.update({
-                    likes: firebase.firestore.FieldValue.increment(-1),
-                    likedUsers: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-                });
-            } else {
-                await commentRef.update({
-                    likes: firebase.firestore.FieldValue.increment(1),
-                    likedUsers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-                });
-            }
-        }
+            transaction.update(commentRef, { likes: nextLikes, likedUsers: nextUsers });
+            return { liked: !wasLiked, count: nextLikes };
+        });
+        applyLikeButtonState(btn, finalState.liked, finalState.count);
     } catch (error) {
         console.error("Error toggling comment like: ", error);
+        try {
+            const latest = await commentRef.get();
+            if (latest.exists) {
+                const data = latest.data() || {};
+                const users = Array.isArray(data.likedUsers) ? data.likedUsers : [];
+                applyLikeButtonState(btn, users.includes(currentUser.uid), data.likes);
+            }
+        } catch (syncError) {
+            console.warn('댓글 좋아요 화면 복구 실패:', syncError);
+        }
     } finally {
         if (btn) {
             delete btn.dataset.processing;
@@ -1169,7 +912,7 @@ window.updateMultiDeleteUI = function () {
 
 window.executeMultiPin = async function () {
     const isPresident = typeof isPresidentUser === 'function' ? isPresidentUser() : (currentUser && isAdmin(currentUser.email));
-    const isPostAuthor = currentUser && window.currentPostData && (window.currentPostData.uid === currentUser.uid || window.currentPostData.email === currentUser.email);
+    const isPostAuthor = currentUser && window.currentPostData && (window.currentPostData.uid === currentUser.uid || window.currentPostData.authorUid === currentUser.uid);
     if (!currentUser || (!isPresident && !isPostAuthor)) return;
     const checkboxes = document.querySelectorAll('.comment-select-cb:checked');
     if (checkboxes.length === 0) return;
@@ -1252,7 +995,7 @@ async function deleteSelectedComments(postId, selectedIds) {
     const postData = window.currentPostData || {};
     const canModerateAllComments = isPresidentUser()
         || postData.uid === currentUser.uid
-        || postData.email === currentUser.email;
+        || postData.authorUid === currentUser.uid;
 
     selectedIds.forEach(commentId => {
         const comment = byId.get(commentId);
@@ -1422,17 +1165,23 @@ function parseDataUrlToText(dataUrl) {
 }
 
 window.downloadFileAttachment = function (url, filename = 'download') {
-    if (!url) return;
+    const safeUrl = typeof getSafeAttachmentUrl === 'function'
+        ? getSafeAttachmentUrl(url, ['image/', 'video/', 'audio/', 'application/pdf', 'text/html', 'application/xhtml+xml', 'application/octet-stream'])
+        : String(url || '');
+    if (!safeUrl) {
+        alert('안전하지 않은 파일 주소라서 열 수 없습니다.');
+        return;
+    }
     try {
-        if (url.startsWith('data:') || url.startsWith('blob:')) {
+        if (safeUrl.startsWith('data:') || safeUrl.startsWith('blob:')) {
             const a = document.createElement('a');
-            a.href = url;
+            a.href = safeUrl;
             a.download = filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-        } else if (url.startsWith('http')) {
-            fetch(url)
+        } else if (safeUrl.startsWith('http')) {
+            fetch(safeUrl)
                 .then(res => res.blob())
                 .then(blob => {
                     const blobUrl = URL.createObjectURL(blob);
@@ -1445,16 +1194,22 @@ window.downloadFileAttachment = function (url, filename = 'download') {
                     setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
                 })
                 .catch(() => {
-                    window.open(url, '_blank');
+                    window.open(safeUrl, '_blank', 'noopener,noreferrer');
                 });
-        } else {
-            window.open(url, '_blank');
         }
     } catch (e) {
         console.error('Download error:', e);
-        window.open(url, '_blank');
+        if (safeUrl.startsWith('http')) window.open(safeUrl, '_blank', 'noopener,noreferrer');
     }
 };
+
+let currentFilePreviewBlobUrl = '';
+
+function clearFilePreviewBlobUrl() {
+    if (!currentFilePreviewBlobUrl) return;
+    URL.revokeObjectURL(currentFilePreviewBlobUrl);
+    currentFilePreviewBlobUrl = '';
+}
 
 window.openHtmlPreviewModal = function (url, filename = 'HTML 문서') {
     const overlay = document.getElementById('filePreviewModalOverlay');
@@ -1465,13 +1220,22 @@ window.openHtmlPreviewModal = function (url, filename = 'HTML 문서') {
     const downloadBtn = document.getElementById('filePreviewDownloadBtn');
 
     if (!overlay || !modal || !iframe) return;
+    const safeUrl = typeof getSafeAttachmentUrl === 'function'
+        ? getSafeAttachmentUrl(url, ['text/html', 'application/xhtml+xml'])
+        : '';
+    if (!safeUrl) {
+        alert('안전하지 않은 HTML 파일 주소라서 미리 볼 수 없습니다.');
+        return;
+    }
+    clearFilePreviewBlobUrl();
+    iframe.setAttribute('sandbox', '');
 
     if (titleEl) titleEl.textContent = filename || 'HTML 미리보기';
     if (iconEl) iconEl.className = 'fa-solid fa-file-code';
     if (iconEl) iconEl.style.color = '#7c3aed';
 
     if (downloadBtn) {
-        downloadBtn.onclick = () => window.downloadFileAttachment(url, filename);
+        downloadBtn.onclick = () => window.downloadFileAttachment(safeUrl, filename);
     }
 
     // 초기 로딩 상태 설정
@@ -1487,15 +1251,15 @@ window.openHtmlPreviewModal = function (url, filename = 'HTML 문서') {
     overlay.classList.add('active');
     modal.classList.add('active');
 
-    if (url.startsWith('data:')) {
-        const htmlText = parseDataUrlToText(url);
+    if (safeUrl.startsWith('data:')) {
+        const htmlText = parseDataUrlToText(safeUrl);
         if (htmlText) {
             iframe.srcdoc = htmlText;
         } else {
             iframe.srcdoc = '<div style="padding:2rem; font-family:sans-serif; color:#475569;">HTML 문서 내용을 표시할 수 없습니다.</div>';
         }
-    } else if (url.startsWith('http')) {
-        fetch(url)
+    } else if (safeUrl.startsWith('http')) {
+        fetch(safeUrl)
             .then(res => {
                 if (!res.ok) throw new Error('Network response error');
                 return res.text();
@@ -1507,11 +1271,11 @@ window.openHtmlPreviewModal = function (url, filename = 'HTML 문서') {
             .catch(err => {
                 console.warn('HTML fetch preview error:', err);
                 iframe.removeAttribute('srcdoc');
-                iframe.src = url;
+                iframe.src = safeUrl;
             });
     } else {
         iframe.removeAttribute('srcdoc');
-        iframe.src = url;
+        iframe.src = safeUrl;
     }
 };
 
@@ -1524,13 +1288,22 @@ window.openPdfPreviewModal = function (url, filename = 'PDF 문서') {
     const downloadBtn = document.getElementById('filePreviewDownloadBtn');
 
     if (!overlay || !modal || !iframe) return;
+    const safeUrl = typeof getSafeAttachmentUrl === 'function'
+        ? getSafeAttachmentUrl(url, ['application/pdf'])
+        : '';
+    if (!safeUrl) {
+        alert('안전하지 않은 PDF 파일 주소라서 미리 볼 수 없습니다.');
+        return;
+    }
+    clearFilePreviewBlobUrl();
+    iframe.setAttribute('sandbox', 'allow-scripts allow-forms allow-popups allow-downloads');
 
     if (titleEl) titleEl.textContent = filename || 'PDF 미리보기';
     if (iconEl) iconEl.className = 'fa-solid fa-file-pdf';
     if (iconEl) iconEl.style.color = '#ea580c';
 
     if (downloadBtn) {
-        downloadBtn.onclick = () => window.downloadFileAttachment(url, filename);
+        downloadBtn.onclick = () => window.downloadFileAttachment(safeUrl, filename);
     }
 
     iframe.removeAttribute('src');
@@ -1545,23 +1318,24 @@ window.openPdfPreviewModal = function (url, filename = 'PDF 문서') {
     overlay.classList.add('active');
     modal.classList.add('active');
 
-    if (url.startsWith('data:')) {
+    if (safeUrl.startsWith('data:')) {
         try {
-            const arr = url.split(',');
+            const arr = safeUrl.split(',');
             const bstr = atob(arr[1]);
             let n = bstr.length;
             const u8arr = new Uint8Array(n);
             while (n--) u8arr[n] = bstr.charCodeAt(n);
             const blob = new Blob([u8arr], { type: 'application/pdf' });
             const blobUrl = URL.createObjectURL(blob);
+            currentFilePreviewBlobUrl = blobUrl;
             iframe.removeAttribute('srcdoc');
             iframe.src = blobUrl;
         } catch (e) {
             iframe.removeAttribute('srcdoc');
-            iframe.src = url;
+            iframe.src = safeUrl;
         }
-    } else if (url.startsWith('http')) {
-        fetch(url)
+    } else if (safeUrl.startsWith('http')) {
+        fetch(safeUrl)
             .then(res => {
                 if (!res.ok) throw new Error('PDF fetch error');
                 return res.blob();
@@ -1569,17 +1343,18 @@ window.openPdfPreviewModal = function (url, filename = 'PDF 문서') {
             .then(blob => {
                 const pdfBlob = new Blob([blob], { type: 'application/pdf' });
                 const blobUrl = URL.createObjectURL(pdfBlob);
+                currentFilePreviewBlobUrl = blobUrl;
                 iframe.removeAttribute('srcdoc');
                 iframe.src = blobUrl;
             })
             .catch(err => {
                 console.warn('PDF fetch preview error:', err);
                 iframe.removeAttribute('srcdoc');
-                iframe.src = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+                iframe.src = `https://docs.google.com/viewer?url=${encodeURIComponent(safeUrl)}&embedded=true`;
             });
     } else {
         iframe.removeAttribute('srcdoc');
-        iframe.src = url;
+        iframe.src = safeUrl;
     }
 };
 
@@ -1593,7 +1368,9 @@ window.closeFilePreviewModal = function () {
     if (iframe) {
         iframe.removeAttribute('srcdoc');
         iframe.src = 'about:blank';
+        iframe.setAttribute('sandbox', '');
     }
+    clearFilePreviewBlobUrl();
 };
 
 document.addEventListener('DOMContentLoaded', () => {

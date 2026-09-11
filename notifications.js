@@ -638,6 +638,61 @@
         }
     }
 
+    function initNotificationGuideTabs() {
+        const tabs = Array.from(document.querySelectorAll('[data-notification-guide-target]'));
+        const panels = Array.from(document.querySelectorAll('[data-notification-guide-panel]'));
+        if (!tabs.length || !panels.length) return;
+
+        const activateTab = (selectedTab) => {
+            const targetId = selectedTab.dataset.notificationGuideTarget;
+            const currentIndex = tabs.findIndex((tab) => tab.getAttribute('aria-selected') === 'true');
+            const selectedIndex = tabs.indexOf(selectedTab);
+            if (currentIndex === selectedIndex) return;
+
+            tabs.forEach((tab) => {
+                const isSelected = tab === selectedTab;
+                tab.classList.toggle('active', isSelected);
+                tab.setAttribute('aria-selected', String(isSelected));
+                tab.tabIndex = isSelected ? 0 : -1;
+            });
+
+            const animationClass = selectedIndex > currentIndex
+                ? 'guide-panel-enter-forward'
+                : 'guide-panel-enter-backward';
+            panels.forEach((panel) => {
+                const isTarget = panel.id === targetId;
+                panel.hidden = !isTarget;
+                panel.classList.remove('guide-panel-enter-forward', 'guide-panel-enter-backward');
+                if (isTarget) {
+                    void panel.offsetWidth;
+                    panel.classList.add(animationClass);
+                    panel.addEventListener('animationend', () => {
+                        panel.classList.remove(animationClass);
+                    }, { once: true });
+                }
+            });
+        };
+
+        tabs.forEach((tab, tabIndex) => {
+            if (!tab.dataset.guideBound) {
+                tab.dataset.guideBound = 'true';
+                tab.addEventListener('click', () => activateTab(tab));
+                tab.addEventListener('keydown', (event) => {
+                    let nextIndex = tabIndex;
+                    if (event.key === 'ArrowRight') nextIndex = (tabIndex + 1) % tabs.length;
+                    else if (event.key === 'ArrowLeft') nextIndex = (tabIndex - 1 + tabs.length) % tabs.length;
+                    else if (event.key === 'Home') nextIndex = 0;
+                    else if (event.key === 'End') nextIndex = tabs.length - 1;
+                    else return;
+
+                    event.preventDefault();
+                    activateTab(tabs[nextIndex]);
+                    tabs[nextIndex].focus();
+                });
+            }
+        });
+    }
+
     function initNotificationSettingsUI() {
         const pushToggle = document.getElementById('pushNotificationSettingToggle');
         const pushQuickToggle = document.getElementById('pushNotificationQuickToggle');
@@ -754,6 +809,7 @@
             });
         }
 
+        initNotificationGuideTabs();
         updateNotificationSettingsUI();
     }
 

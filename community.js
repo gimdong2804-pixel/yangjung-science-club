@@ -22,6 +22,19 @@ let currentUser = null;
 // Firestore 리스너 구독 해제 변수 (TDZ 방지를 위해 상단 선언)
 var postsUnsubscribe = null;
 var postUnsubscribe = null;
+const postCommentCountUnsubscribes = new Map();
+
+function clearPostCommentCountSubscriptions(keepIds = null) {
+    postCommentCountUnsubscribes.forEach((unsubscribe, postId) => {
+        if (keepIds && keepIds.has(postId)) return;
+        try {
+            unsubscribe();
+        } catch (error) {
+            console.warn('댓글 수 구독 해제 실패:', error);
+        }
+        postCommentCountUnsubscribes.delete(postId);
+    });
+}
 
 // 관리자 계정 판별 함수는 script.js에서 먼저 공통으로 정의합니다.
 function getAdminName(email) {
@@ -91,9 +104,6 @@ auth.onAuthStateChanged(async (user) => {
     const postAuthorInput = document.getElementById('postAuthor');
     if (user) {
         currentUser = user;
-        if (typeof window.loadUserAccountData === 'function') {
-            await window.loadUserAccountData(user);
-        }
 
         // 직책 정보 조회
         try {
@@ -135,6 +145,13 @@ auth.onAuthStateChanged(async (user) => {
         // [추가] 로그인 상태에 따라 게시글 목록 리로드 (고정 버튼 표시/숨김용)
         const currentSort = document.querySelector('.custom-dropdown-option.active')?.getAttribute('data-value') || 'latest';
         loadPosts(currentSort);
+
+        if (isAdmin(user.email)) {
+            migrateLegacyCommunityIdentityFields().catch((error) => {
+                sessionStorage.removeItem('community_privacy_cleanup_started');
+                console.warn('기존 커뮤니티 개인정보 정리 실패:', error);
+            });
+        }
     } else {
         currentUser = null;
         if (typeof window.clearUserAccountData === 'function') {
@@ -175,6 +192,84 @@ function escapeHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+function escapeInlineJsString(value) {
+    const escapedForJs = String(value ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r/g, '\\r')
+        .replace(/\n/g, '\\n')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
+    return escapeHtml(escapedForJs);
+}
+
+function safeNonNegativeInteger(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? Math.max(0, Math.trunc(number)) : 0;
+}
+
+function getSafeImageUrl(value) {
+    const raw = String(value ?? '').trim();
+    if (!raw) return '';
+    if (raw.startsWith('blob:') || raw.startsWith('data:image/')) return raw;
+    try {
+        const parsed = new URL(raw, window.location.href);
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.href : '';
+    } catch (error) {
+        return '';
+    }
+}
+
+async function commitMigrationOperations(operations) {
+    for (let start = 0; start < operations.length; start += 400) {
+        const batch = db.batch();
+        operations.slice(start, start + 400).forEach(({ ref, data }) => batch.update(ref, data));
+        await batch.commit();
+    }
+}
+
+async function migrateLegacyCommunityIdentityFields() {
+    if (sessionStorage.getItem('community_privacy_cleanup_started') === 'true') return;
+    sessionStorage.setItem('community_privacy_cleanup_started', 'true');
+    const markerRef = db.collection('settings').doc('community_privacy_v1');
+    const postsSnapshot = await db.collection('posts').get();
+    const operations = [];
+
+    for (const postDoc of postsSnapshot.docs) {
+        const post = postDoc.data() || {};
+        if (Object.prototype.hasOwnProperty.call(post, 'email')) {
+            operations.push({
+                ref: postDoc.ref,
+                data: { email: firebase.firestore.FieldValue.delete() }
+            });
+        }
+
+        const commentsSnapshot = await postDoc.ref.collection('comments').get();
+        commentsSnapshot.forEach((commentDoc) => {
+            const comment = commentDoc.data() || {};
+            const update = {};
+            let needsUpdate = false;
+
+            if (Object.prototype.hasOwnProperty.call(comment, 'email')) {
+                update.email = firebase.firestore.FieldValue.delete();
+                needsUpdate = true;
+            }
+            if (typeof comment.official !== 'boolean') {
+                update.official = typeof isAdmin === 'function' && isAdmin(comment.email || '');
+                needsUpdate = true;
+            }
+            if (needsUpdate) operations.push({ ref: commentDoc.ref, data: update });
+        });
+    }
+
+    await commitMigrationOperations(operations);
+    await markerRef.set({
+        completed: true,
+        migratedDocuments: operations.length,
+        completedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
 }
 
 const COMMUNITY_CATEGORIES = [
@@ -280,7 +375,7 @@ function renderCategoryModal() {
     if (recents.length > 0 && categoryRecentSection && categoryRecentList) {
         categoryRecentSection.style.display = 'block';
         categoryRecentList.innerHTML = recents.map(r => `
-            <div class="recent-category-chip" onclick="window.selectCategory('${escapeHtml(r.main)}', '${escapeHtml(r.sub)}')">
+            <div class="recent-category-chip" onclick="window.selectCategory('${escapeInlineJsString(r.main)}', '${escapeInlineJsString(r.sub)}')">
                 <i class="${getCategoryIcon(r.sub)}"></i>
                 <span>${escapeHtml(r.main)} &gt; ${escapeHtml(r.sub)}</span>
             </div>
@@ -298,7 +393,7 @@ function renderCategoryModal() {
             const subColor = (typeof subItem === 'object' && subItem.color) ? subItem.color : 'var(--accent-color)';
             const isSelected = (currentMain === cat.name && currentSub === subName);
             return `
-                <div class="category-sub-item ${isSelected ? 'active' : ''}" onclick="window.selectCategory('${escapeHtml(cat.name)}', '${escapeHtml(subName)}')">
+                <div class="category-sub-item ${isSelected ? 'active' : ''}" onclick="window.selectCategory('${escapeInlineJsString(cat.name)}', '${escapeInlineJsString(subName)}')">
                     <div style="display: flex; align-items: center; gap: 0.65rem;">
                         <i class="${subIcon}" style="color: ${subColor}; font-size: 0.95rem; width: 18px; text-align: center;"></i>
                         <span>${escapeHtml(subName)}</span>
@@ -800,9 +895,17 @@ if (imageFileInput) {
             ((window._editingPostAttachments && Array.isArray(window._editingPostAttachments)) ? window._editingPostAttachments.length : 0);
         if (existingCount + selectedImages.length + files.length > MAX_IMAGES) {
             alert(`첨부파일은 최대 ${MAX_IMAGES}개까지만 추가할 수 있습니다.`);
+            imageFileInput.value = '';
             return;
         }
-        files.forEach(file => {
+
+        const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE_BYTES);
+        if (oversizedFiles.length > 0) {
+            const names = oversizedFiles.map(file => `• ${file.name}`).join('\n');
+            alert(`다음 파일은 100MB를 초과해 첨부하지 않았습니다.\n${names}`);
+        }
+
+        files.filter(file => file.size <= MAX_FILE_SIZE_BYTES).forEach(file => {
             selectedImages.push(file);
         });
         updateImagePreview();
@@ -819,7 +922,7 @@ function isImageFile(file) {
 
 function getFileIconInfo(file) {
     const name = typeof file === 'object' && file ? (file.name || '') : String(file || '');
-    const type = typeof file === 'object' && file ? (file.type || '') : '';
+    const type = typeof file === 'object' && file ? String(file.type || '') : '';
 
     if (type.includes('pdf') || /\.pdf$/i.test(name)) {
         return { icon: 'fa-solid fa-file-pdf', color: '#ea580c', label: 'PDF' };
@@ -882,10 +985,12 @@ window.updateImagePreview = function updateImagePreview() {
 
     // 1. 기존 이미지 목록 렌더링
     existingImages.forEach((url, index) => {
+        const safeUrl = getSafeImageUrl(typeof url === 'object' && url ? url.url : url);
+        if (!safeUrl) return;
         const div = document.createElement('div');
         div.className = 'image-preview-item';
         div.innerHTML = `
-            <img src="${url}" alt="기존 이미지" style="cursor: pointer;" onclick="openLightbox('${url}')">
+            <img src="${escapeHtml(safeUrl)}" alt="기존 이미지" style="cursor: pointer;" onclick="openLightbox('${escapeInlineJsString(safeUrl)}')">
             <button type="button" class="image-preview-remove" onclick="removeExistingImage(${index})" title="삭제"><i class="fa-solid fa-xmark"></i></button>
         `;
         imagePreviewContainer.appendChild(div);
@@ -930,8 +1035,9 @@ window.updateImagePreview = function updateImagePreview() {
         if (isImageFile(file)) {
             const reader = new FileReader();
             reader.onload = (e) => {
+                const safeUrl = getSafeImageUrl(e.target.result);
                 div.innerHTML = `
-                    <img src="${e.target.result}" alt="미리보기" style="cursor: pointer;" onclick="openLightbox('${e.target.result}')">
+                    <img src="${escapeHtml(safeUrl)}" alt="미리보기" style="cursor: pointer;" onclick="openLightbox('${escapeInlineJsString(safeUrl)}')">
                     <button type="button" class="image-preview-remove" onclick="removeImage(${index})" title="삭제"><i class="fa-solid fa-xmark"></i></button>
                 `;
             };
@@ -977,7 +1083,7 @@ if (submitPostBtn) {
             return;
         }
         const title = document.getElementById('postTitle').value.trim();
-        const author = isAdmin(currentUser.email) ? getAdminName(currentUser.email) : (currentUserRole || currentUser.displayName);
+        const author = isAdmin(currentUser.email) ? getAdminName(currentUser.email) : (currentUserRole || currentUser.displayName || '회원');
         const body = document.getElementById('postBody').value.trim();
         const catMain = document.getElementById('postCategoryMain')?.value?.trim() || '';
         const catSub = document.getElementById('postCategorySub')?.value?.trim() || '';
@@ -1003,6 +1109,9 @@ if (submitPostBtn) {
             if (selectedImages.length > 0) {
                 submitPostBtn.innerText = '파일 업로드 중...';
                 for (const file of selectedImages) {
+                    if (file.size > MAX_FILE_SIZE_BYTES) {
+                        throw new Error(`'${file.name}' 파일이 100MB 제한을 초과합니다.`);
+                    }
                     if (isImageFile(file)) {
                         // 이미지 파일: 기존 ImgBB API 전송
                         const formData = new FormData();
@@ -1019,39 +1128,19 @@ if (submitPostBtn) {
                         }
                     } else {
                         // 비이미지 파일 (HTML, PDF, 음성 등): 댓글 업로드와 동일한 uploadCommunityMedia 방식 적용
-                        try {
-                            let fileUrl = '';
-                            if (typeof window.uploadCommunityMedia === 'function') {
-                                fileUrl = await window.uploadCommunityMedia(file);
-                            } else {
-                                fileUrl = await new Promise((res, rej) => {
-                                    const r = new FileReader();
-                                    r.onload = e => res(e.target.result);
-                                    r.onerror = e => rej(e);
-                                    r.readAsDataURL(file);
-                                });
-                            }
-                            attachments.push({
-                                name: file.name,
-                                url: fileUrl,
-                                type: file.type || file.name.split('.').pop(),
-                                size: file.size
-                            });
-                        } catch (mediaErr) {
-                            console.warn("Media upload failed:", mediaErr);
-                            const dataUrl = await new Promise((res, rej) => {
-                                const r = new FileReader();
-                                r.onload = e => res(e.target.result);
-                                r.onerror = e => rej(e);
-                                r.readAsDataURL(file);
-                            });
-                            attachments.push({
-                                name: file.name,
-                                url: dataUrl,
-                                type: file.type || file.name.split('.').pop(),
-                                size: file.size
-                            });
+                        if (typeof window.uploadCommunityMedia !== 'function') {
+                            throw new Error('공용 파일 저장소를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.');
                         }
+                        const fileUrl = await window.uploadCommunityMedia(file);
+                        if (!fileUrl || !/^https:\/\//i.test(fileUrl)) {
+                            throw new Error(`'${file.name}' 파일을 공용 저장소에 올리지 못했습니다.`);
+                        }
+                        attachments.push({
+                            name: file.name,
+                            url: fileUrl,
+                            type: file.type || file.name.split('.').pop(),
+                            size: file.size
+                        });
                     }
                 }
             }
@@ -1072,12 +1161,11 @@ if (submitPostBtn) {
                 };
                 await db.collection('posts').doc(window._editingPostId).update(updateData);
             } else {
-                await db.collection('posts').add({
+                const postData = {
                     title: title,
                     author: author,
                     uid: currentUser.uid,
                     userPhoto: currentUser.photoURL || '',
-                    email: currentUser.email,
                     categoryMain: catMain,
                     categorySub: catSub,
                     body: body,
@@ -1085,8 +1173,18 @@ if (submitPostBtn) {
                     attachments: attachments,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     views: 0,
-                    likes: 0
-                });
+                    viewedBy: [],
+                    likes: 0,
+                    likedUsers: []
+                };
+                try {
+                    await db.collection('posts').add(postData);
+                } catch (createError) {
+                    // 이전 Firestore 규칙은 email 필드를 필수로 요구합니다. 규칙 배포 전
+                    // GitHub 사이트가 먼저 갱신되어도 글쓰기가 끊기지 않도록 한 번만 호환 재시도합니다.
+                    if (createError?.code !== 'permission-denied') throw createError;
+                    await db.collection('posts').add({ ...postData, email: currentUser.email });
+                }
             }
             selectedImages = [];
             window._editingPostImages = [];
@@ -1132,7 +1230,7 @@ function formatDate(timestamp) {
     } catch (e) {
         console.error(e);
     }
-    return String(timestamp);
+    return escapeHtml(String(timestamp));
 }
 
 // window.currentPostId 공유 사용
@@ -1140,6 +1238,20 @@ function formatDate(timestamp) {
 function loadPosts(sortBy = 'latest') {
     if (postsUnsubscribe) {
         postsUnsubscribe();
+        postsUnsubscribe = null;
+    }
+    clearPostCommentCountSubscriptions();
+
+    if (!auth.currentUser) {
+        if (boardContainer) {
+            boardContainer.replaceChildren();
+            const loginNotice = document.createElement('div');
+            loginNotice.className = 'empty-board-message';
+            loginNotice.textContent = '게시글을 보려면 Google 로그인을 해주세요.';
+            boardContainer.appendChild(loginNotice);
+        }
+        updatePostCountUI(0);
+        return;
     }
 
     let query = db.collection('posts').orderBy('createdAt', 'desc');
@@ -1188,6 +1300,7 @@ function loadPosts(sortBy = 'latest') {
 
         // 3. 필터링된 ID 목록에 없는 카드 DOM에서 부드러운 애니메이션 후 제거 (FLIP 공간 즉시 양보)
         const filteredIds = new Set(docs.map(doc => doc.id));
+        clearPostCommentCountSubscriptions(filteredIds);
         const containerRect = boardContainer.getBoundingClientRect();
         boardContainer.querySelectorAll('.board-card:not(.deleting)').forEach(card => {
             const id = card.getAttribute('data-id');
@@ -1212,12 +1325,12 @@ function loadPosts(sortBy = 'latest') {
         docs.sort((a, b) => {
             const dataA = a.data();
             const dataB = b.data();
-            const pinA = dataA.pinned ? 1 : 0;
-            const pinB = dataB.pinned ? 1 : 0;
+            const pinA = dataA.pinned === true ? 1 : 0;
+            const pinB = dataB.pinned === true ? 1 : 0;
             if (pinB !== pinA) return pinB - pinA;
             if (sortBy === 'popular') {
-                const viewsA = dataA.views || 0;
-                const viewsB = dataB.views || 0;
+                const viewsA = safeNonNegativeInteger(dataA.views);
+                const viewsB = safeNonNegativeInteger(dataB.views);
                 if (viewsB !== viewsA) return viewsB - viewsA;
             }
             const timeA = (dataA.createdAt && typeof dataA.createdAt.toMillis === 'function') ? dataA.createdAt.toMillis() : (dataA.createdAt instanceof Date ? dataA.createdAt.getTime() : 0);
@@ -1233,20 +1346,26 @@ function loadPosts(sortBy = 'latest') {
             const isPresident = currentUser && isAdmin(currentUser.email);
             const isAuthor = currentUser && (post.uid === currentUser.uid || isPresident);
             const isLiked = currentUser && Array.isArray(post.likedUsers) && post.likedUsers.includes(currentUser.uid);
+            const isPinned = post.pinned === true;
+            const safeId = escapeInlineJsString(id);
+            const safeViews = safeNonNegativeInteger(post.views);
+            const safeLikes = safeNonNegativeInteger(post.likes);
 
-            let card = boardContainer.querySelector(`.board-card[data-id="${id}"]`);
+            let card = Array.from(boardContainer.querySelectorAll('.board-card')).find(item => item.dataset.id === id) || null;
             const isNew = !card;
 
             const wasPinned = oldData.get(id) ? oldData.get(id).pinned : false;
             const wasLiked = oldData.get(id) ? oldData.get(id).liked : false;
 
-            const avatar = post.author ? post.author.substring(0, 1) : '?';
-            let avatarHtml = post.userPhoto
-                ? `<img class="board-author-avatar" src="${post.userPhoto}" alt="${post.author}" style="object-fit: cover; border: 1px solid var(--glass-border);">`
-                : `<div class="board-author-avatar" style="background: hsl(${(id.charCodeAt(0) * 137) % 360}, 60%, 50%)">${avatar}</div>`;
+            const authorText = String(post.author || '사용자');
+            const avatar = authorText.substring(0, 1) || '?';
+            const safeUserPhoto = getSafeImageUrl(post.userPhoto);
+            let avatarHtml = safeUserPhoto
+                ? `<img class="board-author-avatar" src="${escapeHtml(safeUserPhoto)}" alt="${escapeHtml(authorText)}" style="object-fit: cover; border: 1px solid var(--glass-border);">`
+                : `<div class="board-author-avatar" style="background: hsl(${(id.charCodeAt(0) * 137) % 360}, 60%, 50%)">${escapeHtml(avatar)}</div>`;
 
             const pinBadgeHtml = `
-                        <div class="pin-badge-wrapper ${post.pinned ? 'active' : ''}">
+                        <div class="pin-badge-wrapper ${isPinned ? 'active' : ''}">
                             <span class="pin-badge-ui" style="background: var(--accent-color); color: #fff; font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: bold; display: inline-block;">
                                 <i class="fa-solid fa-thumbtack"></i> 상단 고정
                             </span>
@@ -1259,7 +1378,7 @@ function loadPosts(sortBy = 'latest') {
 
             const postCheckbox = (isAuthor || isPresident) ? `
                         <label class="post-checkbox-wrapper" style="align-items: center; margin-right: 0;" onclick="event.stopPropagation();">
-                            <input type="checkbox" class="post-select-cb" value="${id}" onchange="updatePostMultiDeleteUI()" style="width: 1.1rem; height: 1.1rem; accent-color: var(--accent-color); cursor: pointer;">
+                            <input type="checkbox" class="post-select-cb" value="${escapeHtml(id)}" onchange="updatePostMultiDeleteUI()" style="width: 1.1rem; height: 1.1rem; accent-color: var(--accent-color); cursor: pointer;">
                         </label>
                     ` : '';
 
@@ -1270,25 +1389,25 @@ function loadPosts(sortBy = 'latest') {
                                 ${postCheckbox}
                                 <div class="board-author" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                                     ${avatarHtml}
-                                    <span class="board-author-name">${post.author}</span>
+                                    <span class="board-author-name">${escapeHtml(authorText)}</span>
                                     ${categoryBadgeHtml}
                                 </div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                 ${isPresident ? `
-                                    <button type="button" class="board-action-btn pin-toggle-btn ${post.pinned ? 'active' : ''}"
-                                            onclick="event.stopPropagation(); togglePin('${id}', ${post.pinned || false})"
-                                            title="${post.pinned ? '고정 해제' : '상단 고정'}">
+                                    <button type="button" class="board-action-btn pin-toggle-btn ${isPinned ? 'active' : ''}"
+                                            onclick="event.stopPropagation(); togglePin('${safeId}', ${isPinned})"
+                                            title="${isPinned ? '고정 해제' : '상단 고정'}">
                                         <i class="fa-solid fa-thumbtack"></i>
                                     </button>` : ''}
                                 ${isAuthor ? `
                                     <button type="button" class="board-action-btn delete-btn"
-                                            onclick="event.stopPropagation(); deletePostWithAnim('${id}', this)"
+                                            onclick="event.stopPropagation(); deletePostWithAnim('${safeId}', this)"
                                             title="게시글 삭제">
                                         <i class="fa-solid fa-trash-can"></i>
                                     </button>
                                     <button type="button" class="board-action-btn edit-btn role-edit-btn"
-                                            onclick="event.stopPropagation(); editPost('${id}')"
+                                            onclick="event.stopPropagation(); editPost('${safeId}')"
                                             title="게시글 수정"
                                             style="color: #007bff !important;">
                                         <i class="fa-solid fa-pen-to-square" style="color: #007bff !important;"></i>
@@ -1296,16 +1415,16 @@ function loadPosts(sortBy = 'latest') {
                                 <span class="board-time">${timeStr}</span>
                             </div>
                         </div>
-                        <h3 class="board-title">${post.title}</h3>
-                        <p class="board-preview">${post.body}</p>
+                        <h3 class="board-title">${escapeHtml(post.title || '')}</h3>
+                        <p class="board-preview">${escapeHtml(post.body || '')}</p>
                         <div class="board-footer">
-                            <span>조회 ${post.views}회</span>
+                            <span>조회 ${safeViews}회</span>
                             <div class="board-stats">
                                 <button type="button" class="board-action-btn board-comment-btn" title="댓글 보기">
-                                    <i class="fa-regular fa-comment"></i> <span id="comment-cnt-${id}">0</span>
+                                    <i class="fa-regular fa-comment"></i> <span class="comment-count">0</span>
                                 </button>
-                                <button type="button" class="board-action-btn" onclick="event.stopPropagation(); likePost('${id}', this)">
-                                    <i class="${isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="like-count">${post.likes || 0}</span>
+                                <button type="button" class="board-action-btn" onclick="event.stopPropagation(); likePost('${safeId}', this)">
+                                    <i class="${isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span class="like-count">${safeLikes}</span>
                                 </button>
                             </div>
                         </div>
@@ -1313,7 +1432,7 @@ function loadPosts(sortBy = 'latest') {
 
             if (isNew) {
                 const cardElement = document.createElement('div');
-                cardElement.className = `board-card ${post.pinned ? 'pinned-state' : ''}`;
+                cardElement.className = `board-card ${isPinned ? 'pinned-state' : ''}`;
                 cardElement.setAttribute('data-id', id);
                 cardElement.innerHTML = innerHtml;
                 cardElement.style.order = index; // CSS Order를 사용하여 시각적 순서 제어
@@ -1355,7 +1474,7 @@ function loadPosts(sortBy = 'latest') {
                     card.addEventListener('click', () => openPostDetail(id, card._latestPost || post, avatarHtml, timeStr, 'fullscreen'));
                 }
 
-                if (post.pinned) {
+                if (isPinned) {
                     card.offsetHeight; // 강제 리플로우로 렌더링 타이밍 보장
                     const badge = card.querySelector('.pin-badge-wrapper');
                     const btn = card.querySelector('.pin-toggle-btn');
@@ -1371,10 +1490,6 @@ function loadPosts(sortBy = 'latest') {
                     });
                 }
 
-                db.collection('posts').doc(id).collection('comments').onSnapshot(snap => {
-                    const el = card.querySelector(`#comment-cnt-${id}`);
-                    if (el) el.innerText = snap.docs.filter(doc => !doc.data().deleted).length;
-                });
             } else {
                 // Update latest post for the click listener
                 card._latestPost = post;
@@ -1386,7 +1501,7 @@ function loadPosts(sortBy = 'latest') {
                 if (previewEl && previewEl.textContent !== post.body) previewEl.textContent = post.body;
 
                 const viewsEl = card.querySelector('.board-footer > span');
-                if (viewsEl && !viewsEl.textContent.includes(post.views + '회')) viewsEl.textContent = '조회 ' + post.views + '회';
+                if (viewsEl && !viewsEl.textContent.includes(safeViews + '회')) viewsEl.textContent = '조회 ' + safeViews + '회';
 
                 const likeBtn = card.querySelector('.board-action-btn[onclick*="likePost"]');
                 if (likeBtn) {
@@ -1407,7 +1522,7 @@ function loadPosts(sortBy = 'latest') {
                     }
                     const likeCountEl = likeBtn.querySelector('.like-count');
                     if (likeCountEl) {
-                        likeCountEl.textContent = post.likes || 0;
+                        likeCountEl.textContent = safeLikes;
                     }
                 }
 
@@ -1415,19 +1530,30 @@ function loadPosts(sortBy = 'latest') {
                 if (pinBadge) {
                     // 뱃지 크기 변화가 FLIP 위치 계산에 포함되도록 transition 없이 즉시 적용
                     pinBadge.style.transition = 'none';
-                    pinBadge.className = 'pin-badge-wrapper ' + (post.pinned ? 'active' : '');
+                    pinBadge.className = 'pin-badge-wrapper ' + (isPinned ? 'active' : '');
                     pinBadge.offsetHeight; // 즉시 레이아웃 반영
                 }
 
                 const pinToggleBtn = card.querySelector('.pin-toggle-btn');
                 if (pinToggleBtn) {
-                    pinToggleBtn.classList.toggle('active', !!post.pinned);
-                    pinToggleBtn.setAttribute('onclick', `event.stopPropagation(); togglePin('${id}', ${post.pinned || false})`);
-                    pinToggleBtn.setAttribute('title', post.pinned ? '고정 해제' : '상단 고정');
+                    pinToggleBtn.classList.toggle('active', isPinned);
+                    pinToggleBtn.setAttribute('onclick', `event.stopPropagation(); togglePin('${safeId}', ${isPinned})`);
+                    pinToggleBtn.setAttribute('title', isPinned ? '고정 해제' : '상단 고정');
                 }
 
-                card.classList.toggle('pinned-state', !!post.pinned);
+                card.classList.toggle('pinned-state', isPinned);
                 card.style.order = index;
+            }
+
+            if (!postCommentCountUnsubscribes.has(id)) {
+                const unsubscribe = db.collection('posts').doc(id).collection('comments').onSnapshot(snap => {
+                    const currentCard = Array.from(boardContainer.querySelectorAll('.board-card')).find(item => item.dataset.id === id) || null;
+                    const el = currentCard ? currentCard.querySelector('.comment-count') : null;
+                    if (el) el.innerText = snap.docs.filter(commentDoc => !commentDoc.data().deleted).length;
+                }, (error) => {
+                    console.warn('댓글 수 불러오기 실패:', error);
+                });
+                postCommentCountUnsubscribes.set(id, unsubscribe);
             }
 
         });

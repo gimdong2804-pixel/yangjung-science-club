@@ -29,22 +29,12 @@ const functionsToCheck = [
     'toggleProfileDetails',
     'openLightbox',
     'cancelReplyTarget',
-    'closeHtmlViewerModal',
-    'removeAiAttachedFile',
-    'generateAiSummary',
     'toggleRolePin',
     'deleteRoleWithAnim',
     'openRoleEditModal',
-    'switchAiChatSession',
-    'toggleAiChatSessionMenu',
-    'togglePinAiChatSession',
-    'renameAiChatSession',
-    'deleteAiChatSession',
-    'selectSearchResultSession',
     'removeExistingImage',
     'removeExistingAttachment',
-    'removeImage',
-    'closeAllAiChatSessionMenus'
+    'removeImage'
 ];
 
 console.log('=== Checking Inline Function Definitions ===');

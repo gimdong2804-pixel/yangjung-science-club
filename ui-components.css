@@ -490,10 +490,11 @@ body:has(.modal-overlay.active) {
     color: #fff;
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
-    border-radius: 6px;
+    border-radius: 9999px;
     border: 1px solid rgba(255, 255, 255, 0.15);
     opacity: 0.85;
-    transition: opacity 0.2s, background 0.2s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+    transition: opacity 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     display: flex;
     align-items: center;
     gap: 0.3rem;
@@ -502,6 +503,8 @@ body:has(.modal-overlay.active) {
 .update-photo-card:hover .update-photo-zoom-badge {
     opacity: 1;
     background: var(--accent-color);
+    box-shadow: 0 7px 18px color-mix(in srgb, var(--accent-color) 35%, transparent);
+    transform: translateY(-2px);
 }
 
 .update-photo-info {
@@ -1739,18 +1742,18 @@ body:has(.modal-overlay.active) {
     }
 
     #updateMainView .update-status-copy::before {
-        width: min(80vw, 22rem);
-        height: min(80vw, 22rem);
-        left: 50%;
+        width: min(70vw, 22rem);
+        height: min(70vw, 22rem);
+        left: 62%;
         top: 50%;
         transform: translate(-50%, -50%);
         background: radial-gradient(circle, rgba(102, 208, 230, 0.45), rgba(102, 208, 230, 0) 68%);
     }
 
     #updateMainView .update-status-copy::after {
-        width: min(65vw, 18rem);
-        height: min(65vw, 18rem);
-        left: 50%;
+        width: min(55vw, 18rem);
+        height: min(55vw, 18rem);
+        left: 36%;
         top: 50%;
         transform: translate(-50%, -50%);
         background: radial-gradient(circle, rgba(248, 185, 113, 0.42), rgba(248, 185, 113, 0) 70%);
@@ -2724,4 +2727,419 @@ html[data-theme="dark"] .site-notification-close:hover {
 .notification-status-badge.unsupported {
     background: rgba(156, 163, 175, 0.16);
     color: #9ca3af;
+}
+
+/* 사이트 밖 푸시 알림 기기별 설정 안내 */
+.notification-device-guide {
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--glass-border);
+}
+
+.notification-guide-heading {
+    margin-bottom: 0.85rem;
+}
+
+.notification-guide-heading h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1rem;
+    line-height: 1.35;
+}
+
+.notification-guide-heading p {
+    margin: 0.3rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+    line-height: 1.45;
+}
+
+.notification-platform-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+}
+
+.notification-platform-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-width: 0;
+    min-height: 58px;
+    padding: 0.7rem 0.55rem;
+    color: var(--text-secondary);
+    background: rgba(127, 127, 127, 0.07);
+    border: 1px solid var(--glass-border);
+    border-radius: 15px;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.notification-platform-tab i {
+    font-size: 1.15rem;
+}
+
+.notification-platform-tab.active {
+    color: var(--accent-color);
+    background: color-mix(in srgb, var(--accent-color) 11%, transparent);
+    border-color: color-mix(in srgb, var(--accent-color) 45%, var(--glass-border));
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--accent-color) 12%, transparent);
+}
+
+.notification-platform-tab:not(:disabled) {
+    cursor: pointer;
+}
+
+.notification-platform-tab:not(:disabled):hover {
+    color: var(--accent-color);
+    border-color: color-mix(in srgb, var(--accent-color) 35%, var(--glass-border));
+    transform: translateY(-1px);
+}
+
+.notification-platform-tab:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--accent-color) 45%, transparent);
+    outline-offset: 3px;
+}
+
+.notification-platform-tab:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+}
+
+.notification-platform-coming-soon {
+    padding: 0.12rem 0.34rem;
+    color: var(--text-secondary);
+    background: rgba(127, 127, 127, 0.13);
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.notification-guide-panel {
+    margin-top: 1rem;
+    padding: 1.1rem;
+    background: rgba(127, 127, 127, 0.045);
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+}
+
+.notification-guide-panel[hidden] {
+    display: none !important;
+}
+
+.notification-guide-panel.guide-panel-enter-forward {
+    animation: notification-guide-enter-forward 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.notification-guide-panel.guide-panel-enter-backward {
+    animation: notification-guide-enter-backward 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes notification-guide-enter-forward {
+    from {
+        opacity: 0;
+        transform: translateX(18px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes notification-guide-enter-backward {
+    from {
+        opacity: 0;
+        transform: translateX(-18px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.notification-guide-intro {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.notification-guide-intro-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    color: #fff;
+    background: #34a853;
+    border-radius: 14px;
+    font-size: 1.25rem;
+}
+
+.notification-guide-intro-icon.windows {
+    background: #0078d4;
+}
+
+.notification-guide-intro-icon.iphone {
+    background: #1d1d1f;
+}
+
+.notification-guide-intro h4 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1rem;
+    line-height: 1.35;
+}
+
+.notification-guide-intro p {
+    margin: 0.3rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.notification-guide-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem 0.8rem;
+    color: var(--text-secondary);
+    background: color-mix(in srgb, var(--accent-color) 7%, transparent);
+    border-radius: 13px;
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.notification-guide-note i {
+    margin-top: 0.12rem;
+    color: var(--accent-color);
+}
+
+.notification-guide-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.notification-guide-step {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(155px, 220px);
+    gap: 1rem;
+    align-items: start;
+    padding: 0.9rem;
+    background: rgba(127, 127, 127, 0.055);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+}
+
+.notification-guide-step.text-only {
+    grid-template-columns: 1fr;
+}
+
+.notification-guide-step-copy {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    min-width: 0;
+}
+
+.notification-guide-step-number {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    color: #fff;
+    background: var(--accent-color);
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.notification-guide-step h5 {
+    margin: 0.12rem 0 0;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.notification-guide-step p {
+    margin: 0.38rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    line-height: 1.55;
+    word-break: keep-all;
+}
+
+.notification-guide-photo-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+    min-width: 0;
+}
+
+.notification-guide-photo-grid.two-photos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.notification-guide-photo-button {
+    position: relative;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+    color: #fff;
+    background: #050505;
+    border: 1px solid var(--glass-border);
+    border-radius: 13px;
+    cursor: zoom-in;
+}
+
+.notification-guide-photo-button:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--accent-color) 55%, transparent);
+    outline-offset: 3px;
+}
+
+.notification-guide-photo-button img {
+    display: block;
+    width: 100%;
+    height: 290px;
+    object-fit: contain;
+    background: #050505;
+    transition: transform 0.3s ease;
+}
+
+.notification-guide-photo-button:hover img,
+.notification-guide-photo-button:focus-visible img {
+    transform: scale(1.04);
+}
+
+.notification-guide-photo-grid.two-photos .notification-guide-photo-button img {
+    height: 250px;
+}
+
+.windows-guide .notification-guide-step {
+    grid-template-columns: minmax(0, 0.85fr) minmax(250px, 1.15fr);
+}
+
+.windows-guide .notification-guide-photo-button,
+.windows-guide .notification-guide-photo-button img {
+    background: #f4f7fb;
+}
+
+.windows-guide .notification-guide-photo-button img {
+    height: auto;
+    max-height: 420px;
+    object-fit: contain;
+}
+
+.notification-guide-photo-zoom {
+    position: absolute;
+    right: 0.45rem;
+    bottom: 0.45rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.28rem 0.48rem;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 9999px;
+    font-size: 0.64rem;
+    font-weight: 700;
+    opacity: 0.88;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: opacity 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.notification-guide-photo-button:hover .notification-guide-photo-zoom,
+.notification-guide-photo-button:focus-visible .notification-guide-photo-zoom {
+    opacity: 1;
+    background: var(--accent-color);
+    box-shadow: 0 7px 18px color-mix(in srgb, var(--accent-color) 38%, transparent);
+    transform: translateY(-2px);
+}
+
+.notification-guide-finish {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin-top: 1rem;
+    padding: 0.9rem;
+    color: var(--text-primary);
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.28);
+    border-radius: 15px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+.notification-guide-finish i {
+    margin-top: 0.15rem;
+    color: #10b981;
+    font-size: 1rem;
+}
+
+@media (max-width: 700px) {
+    .notification-guide-step {
+        grid-template-columns: 1fr;
+    }
+
+    .windows-guide .notification-guide-step {
+        grid-template-columns: 1fr;
+    }
+
+    .notification-guide-photo-button img {
+        height: min(430px, 105vw);
+    }
+
+    .notification-guide-photo-grid.two-photos .notification-guide-photo-button img {
+        height: min(330px, 82vw);
+    }
+}
+
+@media (max-width: 430px) {
+    .notification-platform-tabs {
+        gap: 0.45rem;
+    }
+
+    .notification-platform-tab {
+        flex-direction: column;
+        gap: 0.28rem;
+        min-height: 70px;
+        padding-inline: 0.3rem;
+        font-size: 0.8rem;
+    }
+
+    .notification-guide-panel {
+        padding: 0.8rem;
+    }
+
+    .notification-guide-step {
+        padding: 0.75rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .notification-guide-panel.guide-panel-enter-forward,
+    .notification-guide-panel.guide-panel-enter-backward {
+        animation: none;
+    }
+
+    .notification-platform-tab,
+    .notification-guide-photo-button img,
+    .notification-guide-photo-zoom,
+    .update-photo-zoom-badge {
+        transition: none;
+    }
 }

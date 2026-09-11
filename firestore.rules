@@ -8,8 +8,8 @@ service cloud.firestore {
 
     function isAdmin() {
       return signedIn()
-        && request.auth.token.email_verified == true
-        && request.auth.token.email in [
+        && request.auth.token.get('email_verified', false) == true
+        && request.auth.token.get('email', '') in [
           'gimdong2804@gmail.com',
           'sjh20110407@gmail.com'
         ];
@@ -19,7 +19,6 @@ service cloud.firestore {
       return signedIn() && (
         (data.keys().hasAny(['uid']) && data.uid == request.auth.uid)
         || (data.keys().hasAny(['authorUid']) && data.authorUid == request.auth.uid)
-        || (data.keys().hasAny(['email']) && data.email == request.auth.token.email)
       );
     }
 
@@ -31,24 +30,118 @@ service cloud.firestore {
       return owns(get(/databases/$(database)/documents/posts/$(postId)).data);
     }
 
-    function isPostInteractionUpdate() {
-      return (
-        signedIn()
-        && changedOnly(['views', 'viewedBy', 'likes', 'likedUsers'])
-      ) || (
-        !signedIn()
-        && changedOnly(['views'])
-        && request.resource.data.views == resource.data.views + 1
-      );
+    function hasValidAuthor(author) {
+      let email = request.auth.token.get('email', '');
+      let accountName = request.auth.token.get('name', '');
+      return signedIn()
+        && author is string
+        && author.size() > 0
+        && author.size() <= 80
+        && (
+          isAdmin()
+          || author == accountName
+          || (accountName == '' && author == '회원')
+          || (
+            email != ''
+            && exists(/databases/$(database)/documents/userRoles/$(email))
+            && author == get(/databases/$(database)/documents/userRoles/$(email)).data.get('roleName', '')
+          )
+        );
     }
 
-    function isCommentInteractionUpdate() {
-      return signedIn() && changedOnly(['likes', 'likedUsers']);
+    function isLikeToggle() {
+      let oldUsers = resource.data.get('likedUsers', []);
+      let newUsers = request.resource.data.get('likedUsers', []);
+      let oldLikes = resource.data.get('likes', 0);
+      let newLikes = request.resource.data.get('likes', 0);
+      return signedIn()
+        && oldUsers is list
+        && newUsers is list
+        && oldLikes is int
+        && newLikes is int
+        && newLikes >= 0
+        && changedOnly(['likes', 'likedUsers'])
+        && (
+          (
+            !oldUsers.hasAny([request.auth.uid])
+            && newUsers.hasAny([request.auth.uid])
+            && newUsers.hasAll(oldUsers)
+            && newUsers.size() == oldUsers.size() + 1
+            && newLikes == oldLikes + 1
+          )
+          || (
+            oldUsers.hasAny([request.auth.uid])
+            && !newUsers.hasAny([request.auth.uid])
+            && oldUsers.hasAll(newUsers)
+            && newUsers.size() == oldUsers.size() - 1
+            && newLikes == oldLikes - 1
+          )
+        );
+    }
+
+    function isPostViewUpdate() {
+      let oldUsers = resource.data.get('viewedBy', []);
+      let newUsers = request.resource.data.get('viewedBy', []);
+      let oldViews = resource.data.get('views', 0);
+      let newViews = request.resource.data.get('views', 0);
+      return signedIn()
+        && oldUsers is list
+        && newUsers is list
+        && oldViews is int
+        && newViews is int
+        && changedOnly(['views', 'viewedBy'])
+        && !oldUsers.hasAny([request.auth.uid])
+        && newUsers.hasAny([request.auth.uid])
+        && newUsers.hasAll(oldUsers)
+        && newUsers.size() == oldUsers.size() + 1
+        && newViews == oldViews + 1;
+    }
+
+    function isValidPostContentUpdate() {
+      return request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 200
+        && request.resource.data.body is string
+        && request.resource.data.body.size() > 0
+        && request.resource.data.body.size() <= 10000
+        && request.resource.data.categoryMain is string
+        && request.resource.data.categoryMain.size() <= 80
+        && request.resource.data.categorySub is string
+        && request.resource.data.categorySub.size() <= 80
+        && request.resource.data.get('images', []) is list
+        && request.resource.data.get('images', []).size() <= 40
+        && request.resource.data.get('attachments', []) is list
+        && request.resource.data.get('attachments', []).size() <= 40;
+    }
+
+    function isValidCommentContentUpdate() {
+      return request.resource.data.get('body', '') is string
+        && request.resource.data.get('body', '').size() <= 5000
+        && request.resource.data.get('images', []) is list
+        && request.resource.data.get('images', []).size() <= 10
+        && request.resource.data.get('videos', []) is list
+        && request.resource.data.get('videos', []).size() <= 10
+        && request.resource.data.get('audios', []) is list
+        && request.resource.data.get('audios', []).size() <= 10
+        && request.resource.data.get('pdfs', []) is list
+        && request.resource.data.get('pdfs', []).size() <= 10
+        && request.resource.data.get('htmls', []) is list
+        && request.resource.data.get('htmls', []).size() <= 10;
+    }
+
+    function isValidCommentParent(postId, commentId, parentId) {
+      return parentId == null
+        || (
+          parentId is string
+          && parentId.matches('^[A-Za-z0-9_-]{1,128}$')
+          && parentId != commentId
+          && exists(/databases/$(database)/documents/posts/$(postId)/comments/$(parentId))
+        );
     }
 
     match /userRoles/{accountEmail} {
       allow get: if isAdmin()
-        || (signedIn() && request.auth.token.email == accountEmail);
+        || (signedIn() && request.auth.token.get('email', '') == accountEmail);
       allow list, create, update, delete: if isAdmin();
     }
 
@@ -61,13 +154,37 @@ service cloud.firestore {
     }
 
     match /posts/{postId} {
-      allow read: if true;
+      allow read: if signedIn();
 
       allow create: if signedIn()
+        && postId.matches('^[A-Za-z0-9_-]{1,128}$')
+        && request.resource.data.keys().hasOnly([
+          'title', 'author', 'uid', 'userPhoto', 'categoryMain', 'categorySub',
+          'body', 'images', 'attachments', 'createdAt',
+          'views', 'viewedBy', 'likes', 'likedUsers'
+        ])
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.email == request.auth.token.email
+        && hasValidAuthor(request.resource.data.author)
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 200
+        && request.resource.data.body is string
+        && request.resource.data.body.size() > 0
+        && request.resource.data.body.size() <= 10000
+        && request.resource.data.categoryMain is string
+        && request.resource.data.categoryMain.size() <= 80
+        && request.resource.data.categorySub is string
+        && request.resource.data.categorySub.size() <= 80
+        && request.resource.data.userPhoto is string
+        && request.resource.data.images is list
+        && request.resource.data.images.size() <= 40
+        && request.resource.data.attachments is list
+        && request.resource.data.attachments.size() <= 40
+        && request.resource.data.createdAt is timestamp
         && request.resource.data.views == 0
-        && request.resource.data.likes == 0;
+        && request.resource.data.viewedBy == []
+        && request.resource.data.likes == 0
+        && request.resource.data.likedUsers == [];
 
       allow update: if isAdmin()
         || (
@@ -76,19 +193,47 @@ service cloud.firestore {
             'title', 'body', 'categoryMain', 'categorySub',
             'images', 'attachments', 'imageDescriptions'
           ])
+          && isValidPostContentUpdate()
         )
-        || isPostInteractionUpdate();
+        || isPostViewUpdate()
+        || isLikeToggle();
 
       allow delete: if isAdmin() || owns(resource.data);
 
       match /comments/{commentId} {
-        allow read: if true;
+        allow read: if signedIn();
 
         allow create: if signedIn()
+          && commentId.matches('^[A-Za-z0-9_-]{1,128}$')
+          && request.resource.data.keys().hasOnly([
+            'author', 'uid', 'userPhoto', 'body', 'images', 'videos', 'audios',
+            'pdfs', 'htmls', 'imageDescriptions', 'parentId', 'replyToAuthor',
+            'pinned', 'likes', 'likedUsers', 'deleted', 'createdAt', 'official'
+          ])
           && request.resource.data.uid == request.auth.uid
-          && request.resource.data.email == request.auth.token.email
+          && hasValidAuthor(request.resource.data.author)
+          && request.resource.data.official == isAdmin()
+          && request.resource.data.body is string
+          && request.resource.data.body.size() <= 5000
+          && request.resource.data.userPhoto is string
+          && request.resource.data.images is list
+          && request.resource.data.images.size() <= 10
+          && request.resource.data.videos is list
+          && request.resource.data.videos.size() <= 10
+          && request.resource.data.audios is list
+          && request.resource.data.audios.size() <= 10
+          && request.resource.data.pdfs is list
+          && request.resource.data.pdfs.size() <= 10
+          && request.resource.data.htmls is list
+          && request.resource.data.htmls.size() <= 10
+          && request.resource.data.imageDescriptions is map
+          && isValidCommentParent(postId, commentId, request.resource.data.parentId)
+          && request.resource.data.replyToAuthor is string
+          && request.resource.data.replyToAuthor.size() <= 80
+          && request.resource.data.createdAt is timestamp
           && request.resource.data.pinned == false
           && request.resource.data.likes == 0
+          && request.resource.data.likedUsers == []
           && request.resource.data.deleted == false;
 
         allow update: if isAdmin()
@@ -98,9 +243,10 @@ service cloud.firestore {
               'body', 'content', 'images', 'videos', 'audios', 'pdfs', 'htmls',
               'imageDescriptions', 'edited', 'editedAt', 'deleted', 'deletedAt'
             ])
+            && isValidCommentContentUpdate()
           )
           || (isPostOwner(postId) && changedOnly(['pinned']))
-          || isCommentInteractionUpdate();
+          || isLikeToggle();
 
         allow delete: if isAdmin() || owns(resource.data) || isPostOwner(postId);
       }
@@ -116,4 +262,3 @@ service cloud.firestore {
     }
   }
 }
-

@@ -1,10 +1,21 @@
-const CACHE_NAME = 'yangjung-science-club-v38';
+const CACHE_NAME = 'yangjung-science-club-v40';
 const NOTIFICATION_AUTH_CACHE = 'yangjung-notification-auth-v1';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json'
 ];
+const CACHEABLE_DESTINATIONS = new Set(['script', 'style', 'image', 'font', 'manifest']);
+const MAX_STATIC_CACHE_ENTRIES = 120;
+
+async function cacheStaticResponse(request, response) {
+  const cache = await caches.open(CACHE_NAME);
+  await cache.put(request, response);
+  const keys = await cache.keys();
+  if (keys.length > MAX_STATIC_CACHE_ENTRIES) {
+    await Promise.all(keys.slice(0, keys.length - MAX_STATIC_CACHE_ENTRIES).map(key => cache.delete(key)));
+  }
+}
 
 function normalizeNotificationData(data = {}) {
   return {
@@ -150,13 +161,45 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-  event.respondWith(
-    fetch(event.request).then(response => {
-      if (response && response.status === 200) {
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+  const requestUrl = new URL(event.request.url);
+  if (requestUrl.origin !== self.location.origin) return;
+
+  if (event.request.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(event.request);
+        if (response && response.ok) {
+          await cacheStaticResponse(
+            new Request(new URL('index.html', self.registration.scope).href),
+            response.clone()
+          );
+        }
+        return response;
+      } catch (error) {
+        return (await caches.match('./index.html'))
+          || (await caches.match('./'))
+          || new Response('인터넷 연결을 확인한 뒤 다시 시도해 주세요.', {
+            status: 503,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+          });
+      }
+    })());
+    return;
+  }
+
+  if (!CACHEABLE_DESTINATIONS.has(event.request.destination)) return;
+
+  event.respondWith((async () => {
+    try {
+      const response = await fetch(event.request);
+      if (response && response.ok) {
+        await cacheStaticResponse(event.request, response.clone());
       }
       return response;
-    }).catch(() => caches.match(event.request))
-  );
+    } catch (error) {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      throw error;
+    }
+  })());
 });

@@ -35,6 +35,35 @@ var storage = window.storage;
 // 관리자 권한은 Firebase에 실제 로그인된 회장·사장 계정만 인정합니다.
 const ADMIN_EMAILS = Object.freeze(['gimdong2804@gmail.com', 'sjh20110407@gmail.com']);
 
+function escapeTextHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[character]));
+}
+
+function escapeInlineHandlerString(value) {
+    const escapedForJs = String(value ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r/g, '\\r')
+        .replace(/\n/g, '\\n')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
+    return escapeTextHtml(escapedForJs);
+}
+
+function setDialogTitle(element, iconClass, iconColor, title) {
+    if (!element) return;
+    const icon = document.createElement('i');
+    icon.className = iconClass;
+    icon.style.color = iconColor;
+    element.replaceChildren(icon, document.createTextNode(` ${String(title ?? '')}`));
+}
+
 function isAdmin(email) {
     const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
     return ADMIN_EMAILS.includes(normalizedEmail);
@@ -73,7 +102,7 @@ window.customConfirm = function (message, title = '확인') {
             return;
         }
 
-        if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-circle-exclamation" style="color: var(--accent-color);"></i> ${title}`;
+        setDialogTitle(titleEl, 'fa-solid fa-circle-exclamation', 'var(--accent-color)', title);
         if (msgEl) msgEl.textContent = message;
 
         history.pushState({ modal: 'customConfirm' }, '', '');
@@ -126,7 +155,7 @@ window.customAlert = function (message, title = '경고') {
             return;
         }
 
-        if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: #ff6b6b;"></i> ${title}`;
+        setDialogTitle(titleEl, 'fa-solid fa-triangle-exclamation', '#ff6b6b', title);
         if (msgEl) msgEl.textContent = message;
 
         history.pushState({ modal: 'customAlert' }, '', '');
@@ -899,6 +928,37 @@ const DEFAULT_VERSION_CONTROL = {
 };
 
 let currentVersionControl = { ...DEFAULT_VERSION_CONTROL };
+const versionControlRef = (typeof db !== 'undefined' && db)
+    ? db.collection('settings').doc('version_control')
+    : null;
+
+function readCachedVersionControl() {
+    try {
+        const cached = JSON.parse(localStorage.getItem('cached_version_control') || 'null');
+        return cached && typeof cached === 'object'
+            ? { ...DEFAULT_VERSION_CONTROL, ...cached }
+            : null;
+    } catch (error) {
+        return null;
+    }
+}
+
+async function migrateLegacyVersionControl(user) {
+    if (!versionControlRef || !user || !isAdmin(user.email)) return;
+    const current = await versionControlRef.get();
+    if (current.exists) return;
+
+    const legacy = await db.collection('userRoles').doc('system_version_control').get();
+    if (!legacy.exists) return;
+    const legacyData = legacy.data() || {};
+    await versionControlRef.set({
+        president: legacyData.president || DEFAULT_VERSION_CONTROL.president,
+        leader: legacyData.leader || DEFAULT_VERSION_CONTROL.leader,
+        member: legacyData.member || DEFAULT_VERSION_CONTROL.member,
+        timestamp: legacyData.timestamp || Date.now(),
+        migratedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+}
 
 function getUserRoleTier(user = auth.currentUser) {
     if (!user) return 'member';
@@ -1062,15 +1122,15 @@ document.addEventListener('click', (e) => {
     });
 });
 
-if (typeof db !== 'undefined' && db) {
-    db.collection('userRoles').doc('system_version_control').onSnapshot(doc => {
+if (versionControlRef) {
+    versionControlRef.onSnapshot(doc => {
         if (doc.exists) {
             currentVersionControl = { ...DEFAULT_VERSION_CONTROL, ...doc.data() };
             try {
                 localStorage.setItem('cached_version_control', JSON.stringify(currentVersionControl));
             } catch (e) {}
         } else {
-            currentVersionControl = { ...DEFAULT_VERSION_CONTROL };
+            currentVersionControl = readCachedVersionControl() || { ...DEFAULT_VERSION_CONTROL };
         }
         setVersionDropdownValue('president', currentVersionControl.president || '1.5');
         setVersionDropdownValue('leader', currentVersionControl.leader || '1.0');
@@ -1079,10 +1139,7 @@ if (typeof db !== 'undefined' && db) {
         window.applyUserEffectiveVersion();
     }, err => {
         console.warn('버전 설정 실시간 동기화 실패 (기본값 유지):', err);
-        try {
-            const cached = localStorage.getItem('cached_version_control');
-            if (cached) currentVersionControl = JSON.parse(cached);
-        } catch (e) {}
+        currentVersionControl = readCachedVersionControl() || { ...DEFAULT_VERSION_CONTROL };
         window.applyUserEffectiveVersion();
     });
 }
@@ -1114,7 +1171,7 @@ if (versionManageSaveBtn) {
         };
 
         try {
-            await db.collection('userRoles').doc('system_version_control').set(newSettings, { merge: true });
+            await versionControlRef.set(newSettings, { merge: true });
             try {
                 localStorage.setItem('cached_version_control', JSON.stringify(newSettings));
             } catch (e) {}
@@ -1132,6 +1189,9 @@ auth.onAuthStateChanged(user => {
     syncAdminAccessUi(user);
     if (user) {
         window.loadUserAccountData(user);
+        migrateLegacyVersionControl(user).catch((error) => {
+            console.warn('기존 버전 설정 이전 실패:', error);
+        });
     } else {
         window.clearUserAccountData();
     }
@@ -1297,8 +1357,13 @@ function renderRoleList(roles) {
         // 삭제 애니메이션 중인 항목은 건너뜀
         if (deletingEmails.has(role.email)) return;
 
+        const rolePinned = role.pinned === true;
+        const safeRoleEmail = escapeTextHtml(role.email);
+        const safeRoleName = escapeTextHtml(role.roleName);
+        const inlineRoleEmail = escapeInlineHandlerString(role.email);
+        const inlineRoleName = escapeInlineHandlerString(role.roleName);
         const card = document.createElement('div');
-        card.className = `board-card ${role.pinned ? 'pinned-state' : ''}`;
+        card.className = `board-card ${rolePinned ? 'pinned-state' : ''}`;
         card.style.position = 'relative';
         card.setAttribute('data-email', role.email);
 
@@ -1308,7 +1373,7 @@ function renderRoleList(roles) {
 
         const roleCheckbox = `
                     <label class="post-checkbox-wrapper" onclick="event.stopPropagation();">
-                        <input type="checkbox" class="role-select-cb" value="${role.email}" onchange="updateRoleMultiDeleteUI()" style="width: 1.1rem; height: 1.1rem; accent-color: var(--accent-color); cursor: pointer;">
+                        <input type="checkbox" class="role-select-cb" value="${safeRoleEmail}" onchange="updateRoleMultiDeleteUI()" style="width: 1.1rem; height: 1.1rem; accent-color: var(--accent-color); cursor: pointer;">
                     </label>
                 `;
 
@@ -1317,18 +1382,18 @@ function renderRoleList(roles) {
                         <div style="display: flex; align-items: center; gap: 0.8rem;">
                             ${roleCheckbox}
                             <div>
-                                <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary);">${role.roleName}</h3>
-                                <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">${role.email}</p>
+                                <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary);">${safeRoleName}</h3>
+                                <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">${safeRoleEmail}</p>
                             </div>
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <button type="button" class="board-action-btn pin-toggle-btn ${role.pinned ? 'active' : ''}" onclick="event.stopPropagation(); toggleRolePin('${role.email}', ${role.pinned || false})" title="${role.pinned ? '고정 해제' : '상단 고정'}">
+                            <button type="button" class="board-action-btn pin-toggle-btn ${rolePinned ? 'active' : ''}" onclick="event.stopPropagation(); toggleRolePin('${inlineRoleEmail}', ${rolePinned})" title="${rolePinned ? '고정 해제' : '상단 고정'}">
                                 <i class="fa-solid fa-thumbtack"></i>
                             </button>
-                            <button type="button" class="board-action-btn delete-btn" onclick="event.stopPropagation(); deleteRoleWithAnim('${role.email}', this)" title="직책 삭제">
+                            <button type="button" class="board-action-btn delete-btn" onclick="event.stopPropagation(); deleteRoleWithAnim('${inlineRoleEmail}', this)" title="직책 삭제">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
-                            <button class="board-action-btn role-edit-btn" onclick="event.stopPropagation(); openRoleEditModal('${role.email}', '${role.roleName}')" title="직책 수정" style="padding: 0.5rem; display: flex; align-items: center; justify-content: center; color: #007bff !important;">
+                            <button class="board-action-btn role-edit-btn" onclick="event.stopPropagation(); openRoleEditModal('${inlineRoleEmail}', '${inlineRoleName}')" title="직책 수정" style="padding: 0.5rem; display: flex; align-items: center; justify-content: center; color: #007bff !important;">
                                 <i class="fa-solid fa-pen-to-square" style="color: #007bff !important;"></i>
                             </button>
                         </div>
@@ -1435,7 +1500,8 @@ function handleRolePointerDown(e, email) {
         setTimeout(() => { roleJustActivated = false; }, 300);
         if (navigator.vibrate) navigator.vibrate(50);
         document.body.classList.add('multi-select-mode');
-        const card = document.querySelector(`.board-card[data-email="${email}"]`);
+        const card = Array.from(document.querySelectorAll('.board-card[data-email]'))
+            .find(item => item.dataset.email === email);
         if (card) {
             const cb = card.querySelector('.role-select-cb');
             if (cb) {

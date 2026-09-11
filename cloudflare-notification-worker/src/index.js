@@ -168,15 +168,25 @@ async function listPostComments(env, idToken, postId) {
   return comments;
 }
 
-async function deleteFirestorePost(env, idToken, postId) {
-  const response = await firestoreRequest(firestorePathUrl(env, ['posts', postId]), idToken, {
+async function deleteFirestoreDocument(env, idToken, pathParts) {
+  const response = await firestoreRequest(firestorePathUrl(env, pathParts), idToken, {
     method: 'DELETE'
   });
   if (!response.ok) {
+    if (response.status === 404) return;
     if (response.status === 403) throw new HttpError(403, '게시물을 삭제할 권한이 없습니다.');
-    if (response.status === 404) throw new HttpError(404, '게시물이 이미 삭제됐습니다.');
-    throw new HttpError(502, 'Firebase 게시물 삭제에 실패했습니다.');
+    throw new HttpError(502, 'Firebase 데이터를 삭제하지 못했습니다.');
   }
+}
+
+async function deleteFirestorePost(env, idToken, postId) {
+  const comments = await listPostComments(env, idToken, postId);
+  for (let index = 0; index < comments.length; index += 20) {
+    await Promise.all(comments.slice(index, index + 20).map((comment) => (
+      deleteFirestoreDocument(env, idToken, ['posts', postId, 'comments', comment.id])
+    )));
+  }
+  await deleteFirestoreDocument(env, idToken, ['posts', postId]);
 }
 
 async function endpointId(endpoint) {
@@ -453,7 +463,7 @@ async function handleCommentPinEvent(request, env, ctx, origin) {
     getFirestoreDocument(env, user.idToken, ['posts', postId, 'comments', commentId])
   ]);
   if (!post || !comment) throw new HttpError(404, '게시물 또는 댓글을 찾을 수 없습니다.');
-  const ownsPost = post.uid === user.uid || post.authorUid === user.uid || post.email === user.email;
+  const ownsPost = post.uid === user.uid || post.authorUid === user.uid;
   if (!ownsPost && !isAdmin(user, env)) throw new HttpError(403, '댓글을 고정할 권한이 없습니다.');
   if (Boolean(comment.pinned) !== pinned) throw new HttpError(409, 'Firebase의 실제 고정 상태와 일치하지 않습니다.');
 
@@ -501,7 +511,7 @@ async function handleDeletePost(request, env, ctx, origin) {
   const post = await getFirestoreDocument(env, user.idToken, ['posts', postId]);
   if (!post) throw new HttpError(404, '게시물이 이미 삭제됐습니다.');
 
-  const ownsPost = post.uid === user.uid || post.authorUid === user.uid || post.email === user.email;
+  const ownsPost = post.uid === user.uid || post.authorUid === user.uid;
   const moderatorDelete = !ownsPost && isAdmin(user, env);
   if (!ownsPost && !moderatorDelete) throw new HttpError(403, '게시물을 삭제할 권한이 없습니다.');
 

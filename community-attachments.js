@@ -78,7 +78,22 @@ window.setCommentAttachments = function (attachments = {}) {
     }
 };
 
+function revokeAttachmentPreview(item) {
+    const previewUrl = item && (item.dataUrl || item.url);
+    if (typeof previewUrl === 'string' && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+    }
+}
+
 window.clearCommentAttachments = function () {
+    [
+        ...window.commentAttachedImages,
+        ...window.commentAttachedVideos,
+        ...window.commentAttachedAudios,
+        ...window.commentAttachedPdfs,
+        ...window.commentAttachedHtmls
+    ].forEach(revokeAttachmentPreview);
+
     window.commentAttachedImages = [];
     window.commentAttachedVideos = [];
     window.commentAttachedAudios = [];
@@ -179,15 +194,6 @@ if (commentAttachBtn) {
     });
 }
 
-function readFileAsDataURL(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result);
-        reader.onerror = err => reject(err);
-        reader.readAsDataURL(file);
-    });
-}
-
 // 1. 이미지 첨부 (최대 10개)
 if (commentAttachImageBtn && commentImageInput) {
     commentAttachImageBtn.addEventListener('click', () => {
@@ -268,27 +274,6 @@ function openMediaDB() {
     });
 }
 
-async function saveMediaFileLocally(file) {
-    const fileId = 'media_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
-    try {
-        const db = await openMediaDB();
-        await new Promise((resolve, reject) => {
-            const tx = db.transaction(STORE_NAME, 'readwrite');
-            const store = tx.objectStore(STORE_NAME);
-            const req = store.put(file, fileId);
-            req.onsuccess = () => resolve();
-            req.onerror = (e) => reject(e.target.error);
-        });
-        return 'localmedia://' + fileId;
-    } catch (e) {
-        console.warn("로컬 미디어 DB 저장 실패, fallback:", e);
-        if (file.size <= 400 * 1024) {
-            return await readFileAsDataURL(file);
-        }
-        return '';
-    }
-}
-
 function dataURLtoBlob(dataurl) {
     try {
         const arr = dataurl.split(',');
@@ -344,191 +329,6 @@ window.resolveMediaUrl = async function (rawUrl) {
 
     return rawUrl;
 };
-
-function withTimeout(promise, ms = 15000, label = '작업') {
-    let timeoutId;
-    const timeoutPromise = new Promise((_, reject) => {
-        timeoutId = setTimeout(() => {
-            reject(new Error(`[타임아웃] ${label} (${ms / 1000}초 제한 초과)`));
-        }, ms);
-    });
-
-    return Promise.race([
-        promise,
-        timeoutPromise
-    ]).finally(() => {
-        clearTimeout(timeoutId);
-    });
-}
-
-async function uploadFileToTmpFiles(file) {
-    console.log(`[tmpfiles.org] 업로드 시도: ${file.name || '파일'}, 크기: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
-    try {
-        const task = (async () => {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            const res = await fetch('https://tmpfiles.org/api/v1/upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (res.ok) {
-                const json = await res.json();
-                if (json && json.status === 'success' && json.data && json.data.url) {
-                    const rawUrl = json.data.url;
-                    // https://tmpfiles.org/12345/video.mp4 -> https://tmpfiles.org/dl/12345/video.mp4
-                    const directUrl = rawUrl.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
-                    console.log(`[tmpfiles.org] 업로드 성공: ${directUrl}`);
-                    return directUrl;
-                }
-            }
-            return null;
-        })();
-
-        return await withTimeout(task, 30000, 'tmpfiles.org 업로드');
-    } catch (e) {
-        console.warn("[tmpfiles.org] 업로드 예외:", e.message || e);
-        return null;
-    }
-}
-
-async function uploadFileToFirebaseStorage(file, folder = 'comments/videos') {
-    if (typeof firebase !== 'undefined' && firebase.storage) {
-        console.log(`[Firebase Storage] 업로드 시작: ${file.name || '파일'}, 크기: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
-        try {
-            const uploadTask = (async () => {
-                let storageRef;
-                try {
-                    storageRef = firebase.storage().ref();
-                } catch (err) {
-                    storageRef = firebase.app().storage('gs://yangjung-science.appspot.com').ref();
-                }
-                const ext = (file.name || 'video.mp4').split('.').pop() || 'mp4';
-                const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${ext}`;
-                const fileRef = storageRef.child(fileName);
-
-                const snapshot = await fileRef.put(file);
-                const downloadUrl = await snapshot.ref.getDownloadURL();
-                return downloadUrl || null;
-            })();
-
-            const url = await withTimeout(uploadTask, 45000, 'Firebase Storage 업로드');
-            if (url) {
-                console.log(`[Firebase Storage] 업로드 완료: ${url}`);
-                return url;
-            }
-        } catch (e) {
-            console.warn("[Firebase Storage] 업로드 예외/타임아웃:", e.message || e);
-        }
-    }
-    return null;
-}
-
-async function uploadFileToActualCloud(file) {
-    console.log(`[클라우드 파이프라인 시작] 파일: ${file.name || '미상'}, 용량: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
-
-    // 0. Google Cloud CDN 기반 Firebase Storage 0순위 시도 (초고속 CDN 스트리밍 지원, 25초 제한)
-    try {
-        console.log(`[클라우드 파이프라인 0순위] Firebase Storage (Google Cloud CDN) 업로드 시도...`);
-        const fbUrl = await uploadFileToFirebaseStorage(file, 'comments/cloud');
-        if (fbUrl && fbUrl.startsWith('http')) {
-            console.log(`[클라우드 파이프라인 성공] Firebase Storage 완료 -> 초고속 스트리밍 준비 완료`);
-            return fbUrl;
-        }
-    } catch (e) {
-        console.warn("[클라우드 파이프라인] Firebase Storage 건너뜀:", e.message || e);
-    }
-
-    // 1. tmpfiles.org 시도 (15초 제한)
-    try {
-        console.log(`[클라우드 파이프라인 1순위] tmpfiles.org 시도...`);
-        const tmpUrl = await uploadFileToTmpFiles(file);
-        if (tmpUrl && tmpUrl.startsWith('http')) {
-            console.log(`[클라우드 파이프라인 성공] tmpfiles.org 완료`);
-            return tmpUrl;
-        }
-    } catch (e) {
-        console.warn("[클라우드 파이프라인] tmpfiles.org 건너뜀:", e.message || e);
-    }
-
-    // 2. Litterbox Direct API (15초 제한)
-    try {
-        console.log(`[클라우드 파이프라인 2순위] Litterbox 업로드 시도...`);
-        const lbTask = (async () => {
-            const formData = new FormData();
-            formData.append('reqtype', 'fileupload');
-            formData.append('time', '72h');
-            formData.append('fileToUpload', file);
-
-            const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (res.ok) {
-                const url = await res.text();
-                if (url && url.trim().startsWith('http')) {
-                    return url.trim();
-                }
-            }
-            return null;
-        })();
-
-        const lbUrl = await withTimeout(lbTask, 15000, 'Litterbox 업로드');
-        if (lbUrl) {
-            console.log(`[클라우드 파이프라인 성공] Litterbox 완료: ${lbUrl}`);
-            return lbUrl;
-        }
-    } catch (e) {
-        console.warn("[클라우드 파이프라인] Litterbox 실패:", e.message || e);
-    }
-
-    // 3. Catbox Direct API (15초 제한)
-    try {
-        console.log(`[클라우드 파이프라인 3순위] Catbox 업로드 시도...`);
-        const cbTask = (async () => {
-            const formData = new FormData();
-            formData.append('reqtype', 'fileupload');
-            formData.append('fileToUpload', file);
-
-            const res = await fetch('https://catbox.moe/user/api.php', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (res.ok) {
-                const url = await res.text();
-                if (url && url.trim().startsWith('http')) {
-                    return url.trim();
-                }
-            }
-            return null;
-        })();
-
-        const cbUrl = await withTimeout(cbTask, 15000, 'Catbox 업로드');
-        if (cbUrl) {
-            console.log(`[클라우드 파이프라인 성공] Catbox 완료: ${cbUrl}`);
-            return cbUrl;
-        }
-    } catch (e) {
-        console.warn("[클라우드 파이프라인] Catbox 실패:", e.message || e);
-    }
-
-    // 3. 400KB 이하 소형 파일 인라인
-    if (file.size <= 400 * 1024) {
-        try {
-            console.log(`[클라우드 파이프라인] 400KB 이하 소형 파일 DataURL 처리`);
-            return await readFileAsDataURL(file);
-        } catch (e) {
-            console.warn("[클라우드 파이프라인] readFileAsDataURL 실패:", e);
-        }
-    }
-
-    // 4. 로컬 미디어 저장소 (IndexedDB) fallback
-    console.log(`[클라우드 파이프라인] 로컬 저장소(IndexedDB) Fallback 실행`);
-    return await saveMediaFileLocally(file);
-}
 
 // Files recorded in Firestore must always point to shared storage.  The former
 // device-local fallback (localmedia://) can only be opened on the uploader's
@@ -598,34 +398,6 @@ async function uploadFileToActualCloud(file) {
         return window.uploadCommunityMedia(file);
     }
     return uploadFileToFirebaseStorage(file);
-}
-
-function getMediaUploadFailureMessage(error) {
-    const code = error && error.code ? error.code : '';
-    if (code === 'storage/quota-exceeded') {
-        return '동영상 저장소가 현재 무료 요금제 제한으로 비활성화되어 업로드할 수 없습니다. Firebase 프로젝트를 Blaze 요금제로 전환한 뒤 다시 시도해 주세요.';
-    }
-    if (code === 'storage/unauthorized' || code === 'storage/unauthenticated') {
-        return '동영상 저장 권한이 없습니다. Firebase Storage 규칙에서 로그인한 사용자의 comments/videos 업로드를 허용해야 합니다.';
-    }
-    if (code === 'storage/bucket-not-found' || code === 'storage/no-default-bucket') {
-        return 'Firebase Storage가 아직 만들어지지 않았거나 저장소 주소가 잘못되었습니다. Firebase 콘솔에서 Storage를 활성화해 주세요.';
-    }
-    if (code === 'storage/retry-limit-exceeded') {
-        return '네트워크 연결이 끊겨 동영상 업로드가 중단되었습니다. Wi-Fi 또는 안정적인 데이터 연결에서 다시 시도해 주세요.';
-    }
-    if (code === 'cloudinary/upload-failed') {
-        return error.message || '무료 동영상 저장소에 업로드하지 못했습니다. 잠시 후 다시 시도해 주세요.';
-    }
-    return `동영상을 공용 저장소에 업로드하지 못했습니다${code ? ` (${code})` : ''}. 잠시 후 다시 시도해 주세요.`;
-}
-
-async function uploadFileToStorage(file, folder = 'comments') {
-    return await uploadFileToActualCloud(file);
-}
-
-async function uploadFileToStorageWithRollover(file, folder = 'comments') {
-    return await uploadFileToStorage(file, folder);
 }
 
 function isCrossDeviceVideoFile(file) {
@@ -773,10 +545,9 @@ if (commentAttachAudioBtn && commentAudioInput) {
                 continue;
             }
             try {
-                const dataUrl = file.size > 15 * 1024 * 1024 ? '' : await readFileAsDataURL(file);
                 commentAttachedAudios.push({
                     file: file,
-                    dataUrl: dataUrl,
+                    dataUrl: URL.createObjectURL(file),
                     name: file.name
                 });
             } catch (err) {
@@ -818,10 +589,9 @@ if (commentAttachPdfBtn && commentPdfInput) {
                 continue;
             }
             try {
-                const dataUrl = file.size > 15 * 1024 * 1024 ? '' : await readFileAsDataURL(file);
                 commentAttachedPdfs.push({
                     file: file,
-                    dataUrl: dataUrl,
+                    dataUrl: URL.createObjectURL(file),
                     name: file.name
                 });
             } catch (err) {
@@ -863,10 +633,9 @@ if (commentAttachHtmlBtn && commentHtmlInput) {
                 continue;
             }
             try {
-                const dataUrl = file.size > 15 * 1024 * 1024 ? '' : await readFileAsDataURL(file);
                 commentAttachedHtmls.push({
                     file: file,
-                    dataUrl: dataUrl,
+                    dataUrl: URL.createObjectURL(file),
                     name: file.name
                 });
             } catch (err) {
@@ -973,11 +742,13 @@ function renderCommentImagePreview() {
 }
 
 window.removeCommentAttachedItem = function (type, index) {
-    if (type === 'image') commentAttachedImages.splice(index, 1);
-    else if (type === 'video') commentAttachedVideos.splice(index, 1);
-    else if (type === 'audio') commentAttachedAudios.splice(index, 1);
-    else if (type === 'pdf') commentAttachedPdfs.splice(index, 1);
-    else if (type === 'html') commentAttachedHtmls.splice(index, 1);
+    let removed = [];
+    if (type === 'image') removed = commentAttachedImages.splice(index, 1);
+    else if (type === 'video') removed = commentAttachedVideos.splice(index, 1);
+    else if (type === 'audio') removed = commentAttachedAudios.splice(index, 1);
+    else if (type === 'pdf') removed = commentAttachedPdfs.splice(index, 1);
+    else if (type === 'html') removed = commentAttachedHtmls.splice(index, 1);
+    removed.forEach(revokeAttachmentPreview);
     renderCommentAttachmentPreview();
 };
 
@@ -1008,11 +779,9 @@ if (commentSubmitBtn && commentInput) {
             console.log(`[댓글 제출] 이미지 첨부 처리 중... (${commentAttachedImages.length}개)`);
             const commentImageUrls = await Promise.all(commentAttachedImages.map(async img => {
                 if (img.file) {
-                    try {
-                        return await uploadFileToActualCloud(img.file);
-                    } catch (e) {
-                        console.warn("이미지 업로드 예외:", e);
-                    }
+                    const url = await uploadFileToActualCloud(img.file);
+                    if (!url || !/^https:\/\//i.test(url)) throw new Error(`'${img.file.name}' 이미지를 공용 저장소에 올리지 못했습니다.`);
+                    return url;
                 }
                 return img.dataUrl || '';
             }));
@@ -1020,20 +789,12 @@ if (commentSubmitBtn && commentInput) {
             console.log(`[댓글 제출] 동영상 첨부 처리 중... (${commentAttachedVideos.length}개)`);
             const commentVideoItems = await Promise.all(commentAttachedVideos.map(async v => {
                 let url = '';
-                let uploadError = null;
                 if (v.file) {
-                    try {
-                        url = await uploadFileToActualCloud(v.file);
-                    } catch (e) {
-                        uploadError = e;
-                        console.warn("비디오 업로드 예외:", e);
-                    }
+                    url = await uploadFileToActualCloud(v.file);
                 } else if (v.dataUrl && !v.dataUrl.startsWith('blob:')) {
                     url = v.dataUrl;
                 }
-                if (!url) {
-                    throw new Error(getMediaUploadFailureMessage(uploadError));
-                }
+                if (!url || (v.file && !/^https:\/\//i.test(url))) throw new Error(`'${v.name || '동영상'}' 파일을 공용 저장소에 올리지 못했습니다.`);
                 return { url: url || '', name: v.name || '동영상' };
             }));
 
@@ -1041,13 +802,10 @@ if (commentSubmitBtn && commentInput) {
             const commentAudioItems = await Promise.all(commentAttachedAudios.map(async a => {
                 let url = '';
                 if (a.file) {
-                    try {
-                        url = await uploadFileToActualCloud(a.file);
-                    } catch (e) {
-                        console.warn("음성 업로드 예외:", e);
-                    }
+                    url = await uploadFileToActualCloud(a.file);
                 }
-                if (!url) url = a.dataUrl || '';
+                if (!a.file) url = a.dataUrl || '';
+                if (!url || (a.file && !/^https:\/\//i.test(url))) throw new Error(`'${a.name || '음성 파일'}' 파일을 공용 저장소에 올리지 못했습니다.`);
                 return { url: url || '', name: a.name || '음성 파일' };
             }));
 
@@ -1055,13 +813,10 @@ if (commentSubmitBtn && commentInput) {
             const commentPdfItems = await Promise.all(commentAttachedPdfs.map(async p => {
                 let url = '';
                 if (p.file) {
-                    try {
-                        url = await uploadFileToActualCloud(p.file);
-                    } catch (e) {
-                        console.warn("PDF 업로드 예외:", e);
-                    }
+                    url = await uploadFileToActualCloud(p.file);
                 }
-                if (!url) url = p.dataUrl || '';
+                if (!p.file) url = p.dataUrl || '';
+                if (!url || (p.file && !/^https:\/\//i.test(url))) throw new Error(`'${p.name || 'PDF 문서'}' 파일을 공용 저장소에 올리지 못했습니다.`);
                 return { url: url || '', name: p.name || 'PDF 문서' };
             }));
 
@@ -1069,13 +824,10 @@ if (commentSubmitBtn && commentInput) {
             const commentHtmlItems = await Promise.all(commentAttachedHtmls.map(async h => {
                 let url = '';
                 if (h.file) {
-                    try {
-                        url = await uploadFileToActualCloud(h.file);
-                    } catch (e) {
-                        console.warn("HTML 업로드 예외:", e);
-                    }
+                    url = await uploadFileToActualCloud(h.file);
                 }
-                if (!url) url = h.dataUrl || '';
+                if (!h.file) url = h.dataUrl || '';
+                if (!url || (h.file && !/^https:\/\//i.test(url))) throw new Error(`'${h.name || 'HTML 문서'}' 파일을 공용 저장소에 올리지 못했습니다.`);
                 return { url: url || '', name: h.name || 'HTML 문서' };
             }));
 
@@ -1131,11 +883,11 @@ if (commentSubmitBtn && commentInput) {
                     if (img.description) imgDescs[String(idx)] = img.description;
                 });
 
-                const createdCommentRef = await db.collection('posts').doc(currentPostId).collection('comments').add({
-                    author: isAdmin(currentUser.email) ? getAdminName(currentUser.email) : currentUser.displayName,
+                const commentData = {
+                    author: isAdmin(currentUser.email) ? getAdminName(currentUser.email) : (currentUser.displayName || '회원'),
                     uid: currentUser.uid,
                     userPhoto: currentUser.photoURL || '',
-                    email: currentUser.email,
+                    official: isAdmin(currentUser.email),
                     body: body,
                     images: cleanImages,
                     videos: cleanVideos,
@@ -1150,7 +902,18 @@ if (commentSubmitBtn && commentInput) {
                     likedUsers: [],
                     deleted: false,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                };
+                let createdCommentRef;
+                try {
+                    createdCommentRef = await db.collection('posts').doc(currentPostId).collection('comments').add(commentData);
+                } catch (createError) {
+                    // 이전 Firestore 규칙과 새 사이트가 잠시 함께 동작하는 배포 구간을 지원합니다.
+                    if (createError?.code !== 'permission-denied') throw createError;
+                    createdCommentRef = await db.collection('posts').doc(currentPostId).collection('comments').add({
+                        ...commentData,
+                        email: currentUser.email
+                    });
+                }
                 if (parentId) {
                     window.expandCommentLineage(parentId);
                 }
