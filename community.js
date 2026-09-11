@@ -18,6 +18,7 @@ if (!window.hasOwnProperty('_currentPostId')) {
 
 // 로그인 상태 변수
 let currentUser = null;
+let isAuthReady = false;
 
 // Firestore 리스너 구독 해제 변수 (TDZ 방지를 위해 상단 선언)
 var postsUnsubscribe = null;
@@ -70,16 +71,20 @@ function showLoginError(error) {
 }
 
 // 구글 로그인 연동
+window.triggerGoogleLogin = async function () {
+    try {
+        if (googleLoginBtn) googleLoginBtn.disabled = true;
+        await auth.signInWithPopup(googleProvider);
+    } catch (error) {
+        showLoginError(error);
+    } finally {
+        if (googleLoginBtn) googleLoginBtn.disabled = false;
+    }
+};
+
 if (googleLoginBtn) {
-    googleLoginBtn.addEventListener('click', async () => {
-        try {
-            googleLoginBtn.disabled = true;
-            await auth.signInWithPopup(googleProvider);
-            googleLoginBtn.disabled = false;
-        } catch (error) {
-            googleLoginBtn.disabled = false;
-            showLoginError(error);
-        }
+    googleLoginBtn.addEventListener('click', () => {
+        window.triggerGoogleLogin();
     });
 }
 
@@ -99,24 +104,12 @@ if (logoutBtn) {
 
 // Auth 상태 리스너
 let authUITimeout;
-auth.onAuthStateChanged(async (user) => {
+auth.onAuthStateChanged((user) => {
+    isAuthReady = true;
     clearTimeout(authUITimeout);
     const postAuthorInput = document.getElementById('postAuthor');
     if (user) {
         currentUser = user;
-
-        // 직책 정보 조회
-        try {
-            const roleDoc = await db.collection('userRoles').doc(user.email).get();
-            if (roleDoc.exists) {
-                currentUserRole = roleDoc.data().roleName;
-            } else {
-                currentUserRole = null;
-            }
-        } catch (e) {
-            console.error("Failed to fetch user role", e);
-            currentUserRole = null;
-        }
 
         // UI 업데이트 (애니메이션 적용)
         googleLoginBtn.classList.add('fade-out');
@@ -132,19 +125,36 @@ auth.onAuthStateChanged(async (user) => {
         }, 300);
 
         const isPresident = isAdmin(user.email);
-        const displayName = isPresident ? getAdminName(user.email) : (currentUserRole || user.displayName);
-        userName.innerText = displayName;
+        const initialDisplayName = isPresident ? getAdminName(user.email) : (currentUserRole || user.displayName || '회원');
+        userName.innerText = initialDisplayName;
         userEmail.innerText = user.email;
         userAvatar.src = user.photoURL || '';
 
         if (postAuthorInput) {
-            postAuthorInput.value = displayName;
+            postAuthorInput.value = initialDisplayName;
             postAuthorInput.placeholder = "작성자 이름";
         }
 
-        // [추가] 로그인 상태에 따라 게시글 목록 리로드 (고정 버튼 표시/숨김용)
+        // [추가] 로그인 즉시 게시글 목록 로드 (지연 없이 실행)
         const currentSort = document.querySelector('.custom-dropdown-option.active')?.getAttribute('data-value') || 'latest';
         loadPosts(currentSort);
+
+        // 직책 정보 비동기 조회 (게시글 로드를 지연시키지 않음)
+        db.collection('userRoles').doc(user.email).get().then(roleDoc => {
+            if (roleDoc.exists) {
+                currentUserRole = roleDoc.data().roleName;
+            } else {
+                currentUserRole = null;
+            }
+            if (currentUser && currentUser.email === user.email) {
+                const finalDisplayName = isPresident ? getAdminName(user.email) : (currentUserRole || user.displayName || '회원');
+                userName.innerText = finalDisplayName;
+                if (postAuthorInput) postAuthorInput.value = finalDisplayName;
+            }
+        }).catch(e => {
+            console.error("Failed to fetch user role", e);
+            currentUserRole = null;
+        });
 
         if (isAdmin(user.email)) {
             migrateLegacyCommunityIdentityFields().catch((error) => {
@@ -1248,21 +1258,44 @@ function loadPosts(sortBy = 'latest') {
     }
     clearPostCommentCountSubscriptions();
 
-    if (!auth.currentUser) {
+    const loggedInUser = auth.currentUser || currentUser;
+
+    // Firebase Auth 인증 상태 확인 전에는 로그인 요구 문구를 표시하지 않음
+    if (!isAuthReady) {
+        return;
+    }
+
+    if (!loggedInUser) {
         if (boardContainer) {
             boardContainer.replaceChildren();
             const loginNotice = document.createElement('div');
-            loginNotice.className = 'empty-board-message';
-            loginNotice.textContent = '게시글을 보려면 Google 로그인을 해주세요.';
+            loginNotice.className = 'empty-board-message login-required-message';
+            loginNotice.innerHTML = `
+                <div style="margin-bottom: 0.8rem;">게시글을 보려면 Google 로그인을 해주세요.</div>
+                <button type="button" class="board-login-btn" onclick="triggerGoogleLogin()">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;">
+                    Google 계정으로 로그인
+                </button>
+            `;
             boardContainer.appendChild(loginNotice);
         }
         updatePostCountUI(0);
         return;
     }
 
+    // 로그인된 상태라면 기존 로그인 안내 문구 즉시 제거
+    if (boardContainer) {
+        boardContainer.querySelectorAll('.empty-board-message').forEach(el => el.remove());
+    }
+
     let query = db.collection('posts').orderBy('createdAt', 'desc');
 
     postsUnsubscribe = query.onSnapshot((snapshot) => {
+        const currentLoggedInUser = auth.currentUser || currentUser;
+        if (!currentLoggedInUser) {
+            loadPosts(sortBy);
+            return;
+        }
         // 0. 진행 중인 FLIP 애니메이션 즉시 완료 (연속 snapshot 뚝뚝거림 방지)
         boardContainer.querySelectorAll('.board-card.flipping').forEach(card => {
             const tid = card._flipTimerId;
@@ -1326,6 +1359,22 @@ function loadPosts(sortBy = 'latest') {
 
         // 총 글 개수 업데이트 (One UI 페이드 애니메이션)
         updatePostCountUI(docs.length);
+
+        // 로그인 안내 문구 및 이전 빈 화면 메시지 제거
+        boardContainer.querySelectorAll('.empty-board-message').forEach(el => el.remove());
+
+        // 게시글이 0개일 때: 로그인 상태이므로 "로그인해주세요"가 아니라 빈 목록 안내 표시
+        if (docs.length === 0) {
+            const emptyNotice = document.createElement('div');
+            emptyNotice.className = 'empty-board-message';
+            if (currentCategoryFilterValue && currentCategoryFilterValue !== '전체') {
+                emptyNotice.textContent = `'${currentCategoryFilterValue}' 카테고리에 등록된 게시글이 없습니다.`;
+            } else {
+                emptyNotice.textContent = '등록된 게시글이 없습니다. 첫 번째 글을 작성해보세요!';
+            }
+            boardContainer.appendChild(emptyNotice);
+            return;
+        }
 
         // 4. 정렬 로직 (기존과 동일)
         docs.sort((a, b) => {
@@ -1641,8 +1690,11 @@ function loadPosts(sortBy = 'latest') {
     });
 }
 
-// 초기 로드
-loadPosts('latest');
+// 초기 로드: auth.onAuthStateChanged에서 인증 확인 후 호출되며, 이미 인증된 경우에만 즉시 호출
+if (auth.currentUser) {
+    isAuthReady = true;
+    loadPosts('latest');
+}
 
 // 커스텀 드롭다운 로직
 const customDropdownContainer = document.getElementById('customSortDropdown');
