@@ -21,6 +21,39 @@
     color: var(--text-secondary);
     text-align: center;
     font-size: 0.95rem;
+    transition: opacity 0.2s ease, transform 0.2s ease, background 0.3s ease, border-color 0.3s ease;
+}
+
+.empty-notice-text {
+    display: inline-block;
+    transition: opacity 0.15s cubic-bezier(0.2, 0, 0, 1), transform 0.15s cubic-bezier(0.2, 0, 0, 1);
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.empty-notice-text.message-fade-out,
+.empty-board-message.message-fade-out {
+    opacity: 0 !important;
+    transform: translateY(-6px) scale(0.98) !important;
+    pointer-events: none !important;
+}
+
+.empty-notice-text.message-fade-in,
+.empty-board-message.message-fade-in {
+    opacity: 1 !important;
+    transform: translateY(0) scale(1) !important;
+    animation: boxFadeIn 0.3s cubic-bezier(0.2, 0, 0, 1) forwards;
+}
+
+@keyframes boxFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateY(8px) scale(0.97);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .board-login-btn {
@@ -55,6 +88,22 @@
     align-items: center;
     margin-bottom: 1.5rem;
     padding: 0 0.5rem;
+    transition: opacity 0.3s cubic-bezier(0.2, 0, 0, 1), transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.board-header.header-hidden {
+    display: none !important;
+}
+
+.board-header.header-fade-out {
+    opacity: 0 !important;
+    transform: translateY(-8px) !important;
+    pointer-events: none !important;
+}
+
+.board-header.header-fade-in {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
 }
 
 .board-filter-controls {

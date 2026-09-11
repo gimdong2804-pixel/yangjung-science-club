@@ -731,7 +731,11 @@ function initCategoryFilterDropdown() {
             currentCategoryFilterValue = filterVal;
 
             const currentSort = document.querySelector('#customSortOptions .custom-dropdown-option.active')?.getAttribute('data-value') || 'latest';
-            loadPosts(currentSort);
+            if (lastPostsSnapshot && postsUnsubscribe) {
+                renderPosts(lastPostsSnapshot, currentSort);
+            } else {
+                loadPosts(currentSort);
+            }
         });
     });
 
@@ -1251,51 +1255,172 @@ function formatDate(timestamp) {
 
 // window.currentPostId 공유 사용
 
-function loadPosts(sortBy = 'latest') {
-    if (postsUnsubscribe) {
-        postsUnsubscribe();
-        postsUnsubscribe = null;
+// 캐시된 최신 게시글 스냅샷 및 정렬 상태
+let lastPostsSnapshot = null;
+let currentSortOrder = 'latest';
+
+// 게시판 헤더(주제/정렬) 가시성 및 페이드 제어
+function setBoardHeaderVisible(visible, animated = true) {
+    const boardHeader = boardContainer ? boardContainer.querySelector('.board-header') : null;
+    if (!boardHeader) return;
+
+    if (boardHeader._animTimer) clearTimeout(boardHeader._animTimer);
+
+    if (visible) {
+        boardHeader.classList.remove('header-hidden');
+        if (animated) {
+            boardHeader.classList.add('header-fade-out');
+            void boardHeader.offsetWidth; // 리플로우
+            boardHeader.classList.remove('header-fade-out');
+            boardHeader.classList.add('header-fade-in');
+            boardHeader._animTimer = setTimeout(() => {
+                boardHeader.classList.remove('header-fade-in');
+                boardHeader._animTimer = null;
+            }, 300);
+        } else {
+            boardHeader.classList.remove('header-fade-out', 'header-fade-in');
+        }
+    } else {
+        if (animated) {
+            boardHeader.classList.remove('header-fade-in');
+            boardHeader.classList.add('header-fade-out');
+            boardHeader._animTimer = setTimeout(() => {
+                boardHeader.classList.add('header-hidden');
+                boardHeader.classList.remove('header-fade-out');
+                boardHeader._animTimer = null;
+            }, 250);
+        } else {
+            boardHeader.classList.add('header-hidden');
+            boardHeader.classList.remove('header-fade-out', 'header-fade-in');
+        }
     }
-    clearPostCommentCountSubscriptions();
+}
 
-    const loggedInUser = auth.currentUser || currentUser;
+// 비로그인 상태 안내 박스 부드러운 전환 (헤더는 절대 삭제하지 않고 숨김)
+function showLoginRequiredState(animated = true) {
+    if (!boardContainer) return;
 
-    // Firebase Auth 인증 상태 확인 전에는 로그인 요구 문구를 표시하지 않음
-    if (!isAuthReady) {
-        return;
-    }
+    // 헤더(주제 및 정렬 버튼) 부드럽게 숨김
+    setBoardHeaderVisible(false, animated);
 
-    if (!loggedInUser) {
-        if (boardContainer) {
-            boardContainer.replaceChildren();
-            const loginNotice = document.createElement('div');
-            loginNotice.className = 'empty-board-message login-required-message';
-            loginNotice.innerHTML = `
+    // 기존 게시글 카드들 및 일반 빈 메시지 탐색
+    const existingCards = boardContainer.querySelectorAll('.board-card');
+    const existingNotice = boardContainer.querySelector('.empty-board-message:not(.login-required-message)');
+    let currentNotice = boardContainer.querySelector('.login-required-message');
+
+    const renderNotice = () => {
+        // 기존 카드들과 일반 빈 메시지만 안전하게 제거 (헤더는 보존!)
+        existingCards.forEach(card => card.remove());
+        if (existingNotice) existingNotice.remove();
+
+        if (!currentNotice) {
+            currentNotice = document.createElement('div');
+            currentNotice.className = 'empty-board-message login-required-message' + (animated ? ' message-fade-in' : '');
+            currentNotice.innerHTML = `
                 <div style="margin-bottom: 0.8rem;">게시글을 보려면 Google 로그인을 해주세요.</div>
                 <button type="button" class="board-login-btn" onclick="triggerGoogleLogin()">
                     <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style="width: 18px; height: 18px; vertical-align: middle; margin-right: 6px;">
                     Google 계정으로 로그인
                 </button>
             `;
-            boardContainer.appendChild(loginNotice);
+            boardContainer.appendChild(currentNotice);
+        } else {
+            currentNotice.classList.remove('message-fade-out');
+            if (animated) currentNotice.classList.add('message-fade-in');
         }
-        updatePostCountUI(0);
-        return;
+    };
+
+    if (animated && (existingCards.length > 0 || existingNotice)) {
+        // 기존 요소들 페이드 아웃 후 교체
+        existingCards.forEach(card => {
+            card.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(-6px)';
+        });
+        if (existingNotice) {
+            existingNotice.classList.add('message-fade-out');
+        }
+        setTimeout(renderNotice, 180);
+    } else {
+        renderNotice();
     }
 
-    // 로그인된 상태라면 기존 로그인 안내 문구 즉시 제거
-    if (boardContainer) {
-        boardContainer.querySelectorAll('.empty-board-message').forEach(el => el.remove());
-    }
+    updatePostCountUI(0);
+}
 
-    let query = db.collection('posts').orderBy('createdAt', 'desc');
+// 빈 게시판 안내 메시지 부드러운 업데이트 함수 (깜빡임 완전 방지)
+function updateEmptyBoardMessage(text) {
+    if (!boardContainer) return;
 
-    postsUnsubscribe = query.onSnapshot((snapshot) => {
-        const currentLoggedInUser = auth.currentUser || currentUser;
-        if (!currentLoggedInUser) {
-            loadPosts(sortBy);
+    // 로그인 필요 안내 박스가 남아있다면 제거
+    boardContainer.querySelectorAll('.login-required-message').forEach(el => el.remove());
+
+    let notice = boardContainer.querySelector('.empty-board-message:not(.login-required-message)');
+
+    if (notice) {
+        let textEl = notice.querySelector('.empty-notice-text');
+        if (!textEl) {
+            const currentContent = notice.textContent;
+            notice.textContent = '';
+            textEl = document.createElement('span');
+            textEl.className = 'empty-notice-text';
+            textEl.textContent = currentContent;
+            notice.appendChild(textEl);
+        }
+
+        if (textEl.textContent.trim() === text.trim()) {
             return;
         }
+
+        // 텍스트만 부드럽게 페이드 전환
+        textEl.classList.add('message-fade-out');
+        if (notice._fadeTimer) clearTimeout(notice._fadeTimer);
+        notice._fadeTimer = setTimeout(() => {
+            textEl.textContent = text;
+            textEl.classList.remove('message-fade-out');
+            textEl.classList.add('message-fade-in');
+            notice._fadeTimer = setTimeout(() => {
+                textEl.classList.remove('message-fade-in');
+                notice._fadeTimer = null;
+            }, 180);
+        }, 120);
+    } else {
+        notice = document.createElement('div');
+        notice.className = 'empty-board-message message-fade-in';
+        const textEl = document.createElement('span');
+        textEl.className = 'empty-notice-text';
+        textEl.textContent = text;
+        notice.appendChild(textEl);
+        boardContainer.appendChild(notice);
+        setTimeout(() => {
+            notice.classList.remove('message-fade-in');
+        }, 200);
+    }
+}
+
+function clearEmptyBoardMessage() {
+    if (!boardContainer) return;
+    const notice = boardContainer.querySelector('.empty-board-message:not(.login-required-message)');
+    if (notice) {
+        notice.remove();
+    }
+}
+
+function renderPosts(snapshot, sortBy = currentSortOrder) {
+    if (!snapshot || !boardContainer) return;
+    currentSortOrder = sortBy;
+
+    // 로그인 상태이므로 헤더(주제/정렬 드롭다운)를 부드럽게 복원/표시!
+    setBoardHeaderVisible(true, true);
+
+    // 로그인 필요 안내 박스가 남아있다면 부드럽게 페이드 아웃 후 제거
+    const prevLoginNotice = boardContainer.querySelector('.login-required-message');
+    if (prevLoginNotice) {
+        prevLoginNotice.classList.add('message-fade-out');
+        setTimeout(() => {
+            prevLoginNotice.remove();
+        }, 180);
+    }
         // 0. 진행 중인 FLIP 애니메이션 즉시 완료 (연속 snapshot 뚝뚝거림 방지)
         boardContainer.querySelectorAll('.board-card.flipping').forEach(card => {
             const tid = card._flipTimerId;
@@ -1360,21 +1485,18 @@ function loadPosts(sortBy = 'latest') {
         // 총 글 개수 업데이트 (One UI 페이드 애니메이션)
         updatePostCountUI(docs.length);
 
-        // 로그인 안내 문구 및 이전 빈 화면 메시지 제거
-        boardContainer.querySelectorAll('.empty-board-message').forEach(el => el.remove());
-
-        // 게시글이 0개일 때: 로그인 상태이므로 "로그인해주세요"가 아니라 빈 목록 안내 표시
+        // 게시글이 0개일 때: 부드러운 빈 안내 문구 표시 (깜빡임 0)
         if (docs.length === 0) {
-            const emptyNotice = document.createElement('div');
-            emptyNotice.className = 'empty-board-message';
-            if (currentCategoryFilterValue && currentCategoryFilterValue !== '전체') {
-                emptyNotice.textContent = `'${currentCategoryFilterValue}' 카테고리에 등록된 게시글이 없습니다.`;
-            } else {
-                emptyNotice.textContent = '등록된 게시글이 없습니다. 첫 번째 글을 작성해보세요!';
+            let emptyText = '등록된 게시글이 없습니다. 첫 번째 글을 작성해보세요!';
+            if (currentCategoryFilterValue && currentCategoryFilterValue !== '전체' && currentCategoryFilterValue !== 'all') {
+                emptyText = `'${currentCategoryFilterValue}' 카테고리에 등록된 게시글이 없습니다.`;
             }
-            boardContainer.appendChild(emptyNotice);
+            updateEmptyBoardMessage(emptyText);
             return;
         }
+
+        // 게시글이 존재하면 빈 화면 안내 제거
+        clearEmptyBoardMessage();
 
         // 4. 정렬 로직 (기존과 동일)
         docs.sort((a, b) => {
@@ -1684,7 +1806,48 @@ function loadPosts(sortBy = 'latest') {
                 }, 500);
             }
         });
+}
 
+function loadPosts(sortBy = 'latest') {
+    currentSortOrder = sortBy;
+    if (postsUnsubscribe) {
+        postsUnsubscribe();
+        postsUnsubscribe = null;
+    }
+    clearPostCommentCountSubscriptions();
+
+    const loggedInUser = auth.currentUser || currentUser;
+
+    // Firebase Auth 인증 상태 확인 전에는 로그인 요구 문구를 표시하지 않음
+    if (!isAuthReady) {
+        return;
+    }
+
+    if (!loggedInUser) {
+        showLoginRequiredState(true);
+        return;
+    }
+
+    // 로그인된 상태라면 헤더 보이기 및 로그인 안내 박스 제거
+    setBoardHeaderVisible(true, true);
+    const loginNotice = boardContainer ? boardContainer.querySelector('.login-required-message') : null;
+    if (loginNotice) {
+        loginNotice.classList.add('message-fade-out');
+        setTimeout(() => {
+            loginNotice.remove();
+        }, 180);
+    }
+
+    let query = db.collection('posts').orderBy('createdAt', 'desc');
+
+    postsUnsubscribe = query.onSnapshot((snapshot) => {
+        lastPostsSnapshot = snapshot;
+        const currentLoggedInUser = auth.currentUser || currentUser;
+        if (!currentLoggedInUser) {
+            loadPosts(sortBy);
+            return;
+        }
+        renderPosts(snapshot, sortBy);
     }, (error) => {
         console.error("onSnapshot error: ", error);
     });
@@ -1724,7 +1887,11 @@ if (customSortSelected && customSortOptions) {
             customDropdownContainer.classList.remove('open');
 
             // 데이터 새로고침
-            loadPosts(value);
+            if (lastPostsSnapshot && postsUnsubscribe) {
+                renderPosts(lastPostsSnapshot, value);
+            } else {
+                loadPosts(value);
+            }
         });
     });
 
