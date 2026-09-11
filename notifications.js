@@ -460,22 +460,6 @@
         }
     }
 
-    async function publishCurrentSiteUpdate(user) {
-        if (!user || !isWorkerConfigured()) return;
-        const isProductionSite = window.location.protocol === 'https:'
-            && window.location.hostname === 'gimdong2804-pixel.github.io';
-        if (!isProductionSite) return;
-        if (typeof isAdmin !== 'function' || !isAdmin(user.email) || !window.SITE_UPDATE_INFO) return;
-        const info = window.SITE_UPDATE_INFO;
-        await callWorker('/events/site-update', {
-            body: {
-                oneUiVersion: info.oneUiVersion || '',
-                buildNumber: info.buildNumber || '',
-                message: info.message || ''
-            }
-        }).catch((error) => console.error('사이트 업데이트 알림 오류:', error));
-    }
-
     function buildPostAvatar(post, postId) {
         if (post.userPhoto) {
             return `<img class="board-author-avatar" src="${escapeHtml(post.userPhoto)}" alt="${escapeHtml(post.author || '작성자')}" style="object-fit: cover; border: 1px solid var(--glass-border);">`;
@@ -895,10 +879,7 @@
 
         if (!user) return;
 
-        await Promise.all([
-            preparePushForUser(user),
-            publishCurrentSiteUpdate(user)
-        ]);
+        await preparePushForUser(user);
 
         if (pendingNotificationTarget) {
             const target = pendingNotificationTarget;

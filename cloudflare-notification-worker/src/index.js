@@ -38,7 +38,7 @@ function requireAllowedOrigin(request, env) {
 
 function corsHeaders(origin) {
   const headers = {
-    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Deploy-Token',
     'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
     'Cache-Control': 'no-store',
     'Content-Type': 'application/json; charset=utf-8',
@@ -101,6 +101,25 @@ async function verifyFirebaseUser(request, env) {
     displayName: account.displayName || account.email || '회원',
     idToken
   };
+}
+
+async function hasValidDeployToken(request, env) {
+  const supplied = String(request.headers.get('X-Deploy-Token') || '');
+  const expected = String(env.DEPLOY_NOTIFICATION_TOKEN || '');
+  if (!supplied || !expected) return false;
+
+  const encoder = new TextEncoder();
+  const [suppliedHash, expectedHash] = await Promise.all([
+    crypto.subtle.digest('SHA-256', encoder.encode(supplied)),
+    crypto.subtle.digest('SHA-256', encoder.encode(expected))
+  ]);
+  const suppliedBytes = new Uint8Array(suppliedHash);
+  const expectedBytes = new Uint8Array(expectedHash);
+  let difference = 0;
+  for (let index = 0; index < suppliedBytes.length; index += 1) {
+    difference |= suppliedBytes[index] ^ expectedBytes[index];
+  }
+  return difference === 0;
 }
 
 function adminEmails(env) {
@@ -638,8 +657,10 @@ async function handleDeletePost(request, env, ctx, origin) {
 }
 
 async function handleSiteUpdate(request, env, ctx, origin) {
-  const user = await verifyFirebaseUser(request, env);
-  if (!isAdmin(user, env)) throw new HttpError(403, '관리자만 업데이트 알림을 보낼 수 있습니다.');
+  if (!await hasValidDeployToken(request, env)) {
+    const user = await verifyFirebaseUser(request, env);
+    if (!isAdmin(user, env)) throw new HttpError(403, '관리자만 업데이트 알림을 보낼 수 있습니다.');
+  }
   const body = await readJson(request);
   const oneUiVersion = cleanText(body.oneUiVersion, 30) || '사이트';
   const buildNumber = cleanText(body.buildNumber, 30);

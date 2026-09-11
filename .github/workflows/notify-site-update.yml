@@ -1,0 +1,78 @@
+name: 배포 업데이트 알림
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-update-notification
+  cancel-in-progress: false
+
+jobs:
+  notify-after-pages-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 받기
+        uses: actions/checkout@v4
+
+      - name: 빌드 정보 읽기
+        id: metadata
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const source = fs.readFileSync('script.js', 'utf8');
+          const block = source.match(/const SITE_UPDATE_INFO = Object\.freeze\(\{([\s\S]*?)\}\);/);
+          if (!block) throw new Error('SITE_UPDATE_INFO를 찾지 못했습니다.');
+          const readField = (name) => {
+            const match = block[1].match(new RegExp(`${name}:\\s*'([^']*)'`));
+            if (!match) throw new Error(`${name} 값을 찾지 못했습니다.`);
+            return match[1];
+          };
+          const payload = {
+            oneUiVersion: readField('oneUiVersion'),
+            buildNumber: readField('buildNumber'),
+            message: readField('message')
+          };
+          fs.writeFileSync('site-update-payload.json', JSON.stringify(payload));
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `build_number=${payload.buildNumber}\n`);
+          NODE
+
+      - name: GitHub Pages 반영 후 업데이트 알림 발송
+        shell: bash
+        env:
+          BUILD_NUMBER: ${{ steps.metadata.outputs.build_number }}
+          DEPLOY_NOTIFICATION_TOKEN: ${{ secrets.DEPLOY_NOTIFICATION_TOKEN }}
+          SITE_URL: https://gimdong2804-pixel.github.io/yangjung-science-club
+          WORKER_URL: https://yangjung-science-notifications.wowkim77777.workers.dev
+        run: |
+          set -euo pipefail
+          if [[ -z "${DEPLOY_NOTIFICATION_TOKEN}" ]]; then
+            echo "DEPLOY_NOTIFICATION_TOKEN 저장소 Secret이 없습니다."
+            exit 1
+          fi
+
+          pages_ready=0
+          for attempt in {1..60}; do
+            page="$(curl --silent --show-error --location --fail "${SITE_URL}/index.html?deploy=${GITHUB_SHA}-${attempt}" || true)"
+            if grep --fixed-strings --quiet "Build ${BUILD_NUMBER}" <<<"${page}"; then
+              pages_ready=1
+              break
+            fi
+            sleep 5
+          done
+
+          if [[ "${pages_ready}" -ne 1 ]]; then
+            echo "GitHub Pages에서 Build ${BUILD_NUMBER} 반영을 확인하지 못했습니다."
+            exit 1
+          fi
+
+          curl --fail-with-body --retry 3 --retry-all-errors --retry-delay 5 \
+            --request POST "${WORKER_URL}/events/site-update" \
+            --header "Content-Type: application/json" \
+            --header "X-Deploy-Token: ${DEPLOY_NOTIFICATION_TOKEN}" \
+            --data-binary @site-update-payload.json
