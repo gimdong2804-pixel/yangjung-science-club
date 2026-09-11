@@ -1,11 +1,13 @@
 import webpush from 'web-push';
 import {
   cleanText,
-  commentPreview,
   decodeFirestoreDocument,
+  deletionNotificationRecipient,
   findRootCommentId,
   getCommentUid,
+  isRecentTimestamp,
   personName,
+  ownsDocument,
   pushErrorDisposition,
   quotedTitle,
   uniqueUserIds
@@ -451,6 +453,106 @@ async function handleCommentEvent(request, env, ctx, origin) {
   }, 202, origin);
 }
 
+async function handlePostEvent(request, env, origin) {
+  const user = await verifyFirebaseUser(request, env);
+  const body = await readJson(request);
+  const postId = requireId(body.postId, '게시물 ID');
+  const post = await getFirestoreDocument(env, user.idToken, ['posts', postId]);
+  if (!post) throw new HttpError(404, '게시물을 찾을 수 없습니다.');
+  if (!ownsDocument(post, user.uid)) {
+    throw new HttpError(403, '본인이 작성한 게시물만 알림으로 보낼 수 있습니다.');
+  }
+  if (!isRecentTimestamp(post.createdAt)) {
+    throw new HttpError(409, '새로 작성된 게시물만 알림으로 보낼 수 있습니다.');
+  }
+
+  const eventId = `post:${postId}`;
+  if (!await claimEvent(env, eventId, 'new_post')) {
+    return json({ ok: true, duplicate: true }, 200, origin);
+  }
+
+  const rows = await getSubscriptionRows(env, null, user.uid);
+  const payload = notificationPayload({
+    notificationId: eventId,
+    type: 'new_post',
+    title: '새 게시글',
+    body: `${personName(actionDisplayName(user, env))}이 ${quotedTitle(post.title)} 게시글을 올렸어요.`,
+    target: 'post',
+    postId
+  });
+  const delivery = await sendClaimedPushes(
+    env,
+    eventId,
+    rows,
+    payload,
+    '새 게시글 푸시 발송에 실패했습니다. 잠시 후 다시 시도합니다.'
+  );
+  return json({
+    ok: true,
+    recipientDevices: rows.length,
+    deliveredDevices: delivery.sent,
+    removedSubscriptions: delivery.removed
+  }, 202, origin);
+}
+
+async function handleCommentDeleteEvent(request, env, origin) {
+  const user = await verifyFirebaseUser(request, env);
+  const body = await readJson(request);
+  const postId = requireId(body.postId, '게시물 ID');
+  const commentId = requireId(body.commentId, '댓글 ID');
+  const [post, comment] = await Promise.all([
+    getFirestoreDocument(env, user.idToken, ['posts', postId]),
+    getFirestoreDocument(env, user.idToken, ['posts', postId, 'comments', commentId])
+  ]);
+  if (!post || !comment) throw new HttpError(404, '게시물 또는 댓글을 찾을 수 없습니다.');
+
+  const ownsPost = ownsDocument(post, user.uid);
+  if (!ownsPost && !isAdmin(user, env)) {
+    throw new HttpError(403, '다른 사람의 댓글을 삭제한 경우에만 알림을 보낼 수 있습니다.');
+  }
+  if (comment.deleted !== true) {
+    throw new HttpError(409, 'Firebase에서 댓글 삭제가 확인되지 않았습니다.');
+  }
+  if (!isRecentTimestamp(comment.deletedAt)) {
+    throw new HttpError(409, '방금 삭제된 댓글만 알림으로 보낼 수 있습니다.');
+  }
+
+  const recipientUid = deletionNotificationRecipient(comment, user.uid);
+  if (!recipientUid) {
+    return json({ ok: true, notified: false }, 200, origin);
+  }
+
+  const eventId = `comment-delete:${postId}:${commentId}`;
+  if (!await claimEvent(env, eventId, 'comment_deleted')) {
+    return json({ ok: true, duplicate: true }, 200, origin);
+  }
+
+  const rows = await getSubscriptionRows(env, [recipientUid]);
+  const itemLabel = comment.parentId ? '답글' : '댓글';
+  const postTag = cleanText(post.title, 18) || '게시물';
+  const payload = notificationPayload({
+    notificationId: eventId,
+    type: comment.parentId ? 'reply_deleted' : 'comment_deleted',
+    title: `${itemLabel}이 삭제됐어요`,
+    body: `[${postTag}] ${personName(actionDisplayName(user, env))}이 내 ${itemLabel}을 삭제했어요.`,
+    target: 'post',
+    postId
+  });
+  const delivery = await sendClaimedPushes(
+    env,
+    eventId,
+    rows,
+    payload,
+    `${itemLabel} 삭제 푸시 발송에 실패했습니다. 잠시 후 다시 시도합니다.`
+  );
+  return json({
+    ok: true,
+    recipientDevices: rows.length,
+    deliveredDevices: delivery.sent,
+    removedSubscriptions: delivery.removed
+  }, 202, origin);
+}
+
 async function handleCommentPinEvent(request, env, ctx, origin) {
   const user = await verifyFirebaseUser(request, env);
   const body = await readJson(request);
@@ -463,7 +565,7 @@ async function handleCommentPinEvent(request, env, ctx, origin) {
     getFirestoreDocument(env, user.idToken, ['posts', postId, 'comments', commentId])
   ]);
   if (!post || !comment) throw new HttpError(404, '게시물 또는 댓글을 찾을 수 없습니다.');
-  const ownsPost = post.uid === user.uid || post.authorUid === user.uid;
+  const ownsPost = ownsDocument(post, user.uid);
   if (!ownsPost && !isAdmin(user, env)) throw new HttpError(403, '댓글을 고정할 권한이 없습니다.');
   if (Boolean(comment.pinned) !== pinned) throw new HttpError(409, 'Firebase의 실제 고정 상태와 일치하지 않습니다.');
 
@@ -511,7 +613,7 @@ async function handleDeletePost(request, env, ctx, origin) {
   const post = await getFirestoreDocument(env, user.idToken, ['posts', postId]);
   if (!post) throw new HttpError(404, '게시물이 이미 삭제됐습니다.');
 
-  const ownsPost = post.uid === user.uid || post.authorUid === user.uid;
+  const ownsPost = ownsDocument(post, user.uid);
   const moderatorDelete = !ownsPost && isAdmin(user, env);
   if (!ownsPost && !moderatorDelete) throw new HttpError(403, '게시물을 삭제할 권한이 없습니다.');
 
@@ -598,6 +700,12 @@ export default {
       }
       if (request.method === 'POST' && url.pathname === '/events/comment') {
         return await handleCommentEvent(request, env, ctx, origin);
+      }
+      if (request.method === 'POST' && url.pathname === '/events/post') {
+        return await handlePostEvent(request, env, origin);
+      }
+      if (request.method === 'POST' && url.pathname === '/events/comment-delete') {
+        return await handleCommentDeleteEvent(request, env, origin);
       }
       if (request.method === 'POST' && url.pathname === '/events/comment-pin') {
         return await handleCommentPinEvent(request, env, ctx, origin);

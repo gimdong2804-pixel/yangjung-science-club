@@ -60,6 +60,22 @@ export function getCommentUid(comment) {
   return comment?.uid || comment?.authorUid || '';
 }
 
+export function ownsDocument(document, uid) {
+  return Boolean(uid && document && (document.uid === uid || document.authorUid === uid));
+}
+
+export function deletionNotificationRecipient(comment, actorUid) {
+  const recipientUid = getCommentUid(comment);
+  return recipientUid && recipientUid !== actorUid ? recipientUid : '';
+}
+
+export function isRecentTimestamp(value, now = Date.now(), maxAgeMs = 15 * 60 * 1000) {
+  const timestamp = Date.parse(String(value || ''));
+  return Number.isFinite(timestamp)
+    && timestamp <= now + 60 * 1000
+    && timestamp >= now - maxAgeMs;
+}
+
 export function findRootCommentId(commentId, commentsById) {
   let currentId = commentId;
   const visited = new Set();

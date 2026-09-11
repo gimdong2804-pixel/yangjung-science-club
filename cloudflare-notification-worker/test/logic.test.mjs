@@ -2,11 +2,28 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   decodeFirestoreDocument,
+  deletionNotificationRecipient,
   findRootCommentId,
+  isRecentTimestamp,
+  ownsDocument,
   personName,
   pushErrorDisposition,
   uniqueUserIds
 } from '../src/logic.js';
+
+test('문서 작성자와 관리 삭제 알림 수신자를 구분한다', () => {
+  assert.equal(ownsDocument({ uid: 'writer' }, 'writer'), true);
+  assert.equal(ownsDocument({ authorUid: 'writer' }, 'other'), false);
+  assert.equal(deletionNotificationRecipient({ uid: 'commenter' }, 'moderator'), 'commenter');
+  assert.equal(deletionNotificationRecipient({ uid: 'commenter' }, 'commenter'), '');
+});
+
+test('새 게시글과 방금 삭제된 댓글의 시간만 인정한다', () => {
+  const now = Date.parse('2026-09-11T12:00:00.000Z');
+  assert.equal(isRecentTimestamp('2026-09-11T11:59:30.000Z', now), true);
+  assert.equal(isRecentTimestamp('2026-09-11T11:30:00.000Z', now), false);
+  assert.equal(isRecentTimestamp('invalid', now), false);
+});
 
 test('같은 답글 줄의 루트 댓글을 찾는다', () => {
   const comments = new Map([

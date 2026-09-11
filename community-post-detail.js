@@ -986,12 +986,11 @@ async function deleteSelectedComments(postId, selectedIds) {
     const comments = snap.docs.map(normalizeCommentDoc);
     const byId = new Map(comments.map(comment => [comment.id, comment]));
     const childrenMap = buildDeleteChildrenMap(comments);
-    const batch = db.batch();
     let blockedCount = 0;
-    let changedCount = 0;
 
-    const toDelete = new Set();
+    const toHardDelete = new Set();
     const toSoftDelete = new Set();
+    const notificationCommentIds = new Set();
     const postData = window.currentPostData || {};
     const canModerateAllComments = isPresidentUser()
         || postData.uid === currentUser.uid
@@ -999,7 +998,7 @@ async function deleteSelectedComments(postId, selectedIds) {
 
     selectedIds.forEach(commentId => {
         const comment = byId.get(commentId);
-        if (!comment) return;
+        if (!comment || comment.deleted) return;
 
         const isCommentOwner = comment.uid === currentUser.uid || comment.authorUid === currentUser.uid;
         const canDelete = canModerateAllComments || isCommentOwner;
@@ -1016,43 +1015,69 @@ async function deleteSelectedComments(postId, selectedIds) {
         }
 
         if (canModerateAllComments) {
-            // 회장·사장 또는 게시글 작성자는 댓글 묶음 전체를 정리할 수 있습니다.
+            // 관리 삭제는 알림 서버가 결과를 검증할 수 있도록 내용을 비운 삭제 상태로 남깁니다.
             const queue = [commentId];
             while (queue.length > 0) {
                 const currentId = queue.shift();
-                if (!toDelete.has(currentId)) {
-                    toDelete.add(currentId);
-                    const kids = childrenMap.get(currentId) || [];
-                    kids.forEach(k => queue.push(k.id));
+                const currentComment = byId.get(currentId);
+                if (!currentComment) continue;
+                if (!currentComment.deleted) {
+                    toSoftDelete.add(currentId);
+                    const recipientUid = currentComment.uid || currentComment.authorUid || '';
+                    if (recipientUid && recipientUid !== currentUser.uid) {
+                        notificationCommentIds.add(currentId);
+                    }
                 }
+                const kids = childrenMap.get(currentId) || [];
+                kids.forEach(k => queue.push(k.id));
             }
         } else {
-            toDelete.add(commentId);
+            toHardDelete.add(commentId);
         }
     });
 
-    toDelete.forEach(commentId => {
-        batch.delete(commentsRef.doc(commentId));
-        changedCount += 1;
+    const operations = [];
+    toHardDelete.forEach(commentId => {
+        operations.push({ type: 'delete', ref: commentsRef.doc(commentId) });
     });
 
     toSoftDelete.forEach(commentId => {
-        batch.update(commentsRef.doc(commentId), {
-            body: '',
-            content: '',
-            images: [],
-            videos: [],
-            audios: [],
-            pdfs: [],
-            htmls: [],
-            imageDescriptions: {},
-            deleted: true,
-            deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+        operations.push({
+            type: 'update',
+            ref: commentsRef.doc(commentId),
+            data: {
+                body: '',
+                content: '',
+                images: [],
+                videos: [],
+                audios: [],
+                pdfs: [],
+                htmls: [],
+                imageDescriptions: {},
+                deleted: true,
+                deletedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }
         });
-        changedCount += 1;
     });
 
-    if (changedCount > 0) await batch.commit();
+    for (let start = 0; start < operations.length; start += 400) {
+        const batch = db.batch();
+        operations.slice(start, start + 400).forEach(operation => {
+            if (operation.type === 'delete') batch.delete(operation.ref);
+            else batch.update(operation.ref, operation.data);
+        });
+        await batch.commit();
+    }
+
+    if (notificationCommentIds.size > 0 && window.clubNotifications?.isConfigured()) {
+        Promise.allSettled(Array.from(notificationCommentIds).map(commentId =>
+            window.clubNotifications.notifyCommentDeleted(postId, commentId)
+        )).then(results => {
+            results.forEach(result => {
+                if (result.status === 'rejected') console.error('댓글 삭제 알림 전송 오류:', result.reason);
+            });
+        });
+    }
     if (blockedCount > 0) alert('삭제 권한이 없는 댓글은 제외했습니다.');
 }
 

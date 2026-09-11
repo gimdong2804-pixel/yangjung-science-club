@@ -1177,13 +1177,19 @@ if (submitPostBtn) {
                     likes: 0,
                     likedUsers: []
                 };
+                let createdPostRef;
                 try {
-                    await db.collection('posts').add(postData);
+                    createdPostRef = await db.collection('posts').add(postData);
                 } catch (createError) {
                     // 이전 Firestore 규칙은 email 필드를 필수로 요구합니다. 규칙 배포 전
                     // GitHub 사이트가 먼저 갱신되어도 글쓰기가 끊기지 않도록 한 번만 호환 재시도합니다.
                     if (createError?.code !== 'permission-denied') throw createError;
-                    await db.collection('posts').add({ ...postData, email: currentUser.email });
+                    createdPostRef = await db.collection('posts').add({ ...postData, email: currentUser.email });
+                }
+                if (createdPostRef && window.clubNotifications?.isConfigured()) {
+                    window.clubNotifications.notifyPostCreated(createdPostRef.id)
+                        .then((result) => console.log('새 게시글 알림 발송 결과:', result))
+                        .catch((error) => console.error('새 게시글 알림 전송 오류:', error));
                 }
             }
             selectedImages = [];

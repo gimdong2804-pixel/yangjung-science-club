@@ -151,6 +151,16 @@ function buildCommentTree(comments) {
     return { byId, childrenMap, countDescendants, flatDescendants };
 }
 
+function shouldRenderComment(comment, tree, visited = new Set()) {
+    if (!comment) return false;
+    if (!comment.deleted) return true;
+    if (visited.has(comment.id)) return false;
+    const nextVisited = new Set(visited);
+    nextVisited.add(comment.id);
+    return (tree.childrenMap.get(comment.id) || [])
+        .some(child => shouldRenderComment(child, tree, nextVisited));
+}
+
 function getCommentAvatar(comment, isPresidentComment, isDeleted) {
     if (isDeleted) {
         return `<div class="board-author-avatar" style="background: #64748b; width: 32px; height: 32px; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff;"><i class="fa-solid fa-minus"></i></div>`;
@@ -324,7 +334,7 @@ function renderFlatReply(comment, tree, postId, depth = 1) {
     const isPostAuthor = !isDeleted && !!(currentUser && currentPost && (currentPost.uid === currentUser.uid || currentPost.authorUid === currentUser.uid));
 
     // 회장은 모든 권한(수정, 삭제, 고정), 일반인은 본인 댓글 수정/삭제 + 본인 게시물인 경우 댓글 고정 가능
-    const canDelete = isPresident || isCommentAuthor;
+    const canDelete = isPresident || isPostAuthor || isCommentAuthor;
     const canEdit = isPresident || isCommentAuthor;
     const canPin = !isDeleted && (isPresident || isPostAuthor);
     const isLiked = !!(comment.likedUsers && currentUser && comment.likedUsers.includes(currentUser.uid));
@@ -370,7 +380,8 @@ function renderFlatReply(comment, tree, postId, depth = 1) {
                 </button>
             `;
 
-    const kids = tree.childrenMap.get(comment.id) || [];
+    const kids = (tree.childrenMap.get(comment.id) || [])
+        .filter(child => shouldRenderComment(child, tree));
     let childRepliesHtml = '';
     if (isExpanded && kids.length > 0) {
         const sortedKids = [...kids].sort((a, b) => {
@@ -436,7 +447,7 @@ function renderCommentBranch(comment, depth, tree, postId) {
     const isPostAuthor = !isDeleted && !!(currentUser && currentPost && (currentPost.uid === currentUser.uid || currentPost.authorUid === currentUser.uid));
 
     // 회장은 모든 권한(수정, 삭제, 고정), 일반인은 본인 댓글 수정/삭제 + 본인 게시물인 경우 댓글 고정 가능
-    const canDelete = isPresident || isCommentAuthor;
+    const canDelete = isPresident || isPostAuthor || isCommentAuthor;
     const canEdit = isPresident || isCommentAuthor;
     const canPin = !isDeleted && (isPresident || isPostAuthor);
     const isLiked = !!(comment.likedUsers && currentUser && comment.likedUsers.includes(currentUser.uid));
@@ -504,7 +515,8 @@ function renderCommentBranch(comment, depth, tree, postId) {
 
     let repliesHtml = '';
     if (isExpanded) {
-        const immediateReplies = tree.childrenMap.get(comment.id) || [];
+        const immediateReplies = (tree.childrenMap.get(comment.id) || [])
+            .filter(reply => shouldRenderComment(reply, tree));
         if (immediateReplies.length > 0) {
             const sortedReplies = [...immediateReplies].sort((a, b) => {
                 const pinA = a.pinned && !a.deleted ? 1 : 0;
@@ -646,7 +658,8 @@ window.renderCurrentComments = function (postId = currentPostId) {
         updateReplyTargetUI();
     }
 
-    const roots = tree.childrenMap.get(null) || [];
+    const roots = (tree.childrenMap.get(null) || [])
+        .filter(comment => shouldRenderComment(comment, tree));
     if (roots.length === 0) {
         commentList.innerHTML = '<div class="comment-empty-state">아직 댓글이 없습니다.</div>';
         return;

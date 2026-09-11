@@ -980,7 +980,7 @@ window.applyUserEffectiveVersion = function (user = auth.currentUser) {
     window.currentEffectiveOneUiVersion = effectiveVersion;
 
     const versionNumber = effectiveVersion;
-    const buildNumber = effectiveVersion === '1.5' ? '20260830.1' : '20260822.1';
+    const buildNumber = effectiveVersion === '1.5' ? '20260911.1' : '20260822.1';
     const updateMessage = effectiveVersion === '1.5'
         ? '실시간 알림 시스템 도입 및 모바일 사용성 개선 업데이트입니다.'
         : '초기 버전 배포입니다.';
@@ -2268,7 +2268,7 @@ if (settingsNavItems.length > 0) {
 // 사이트 업데이트 정보: 다음 배포 시 이 값만 변경합니다.
 const SITE_UPDATE_INFO = Object.freeze({
     oneUiVersion: 'One UI 1.5',
-    buildNumber: '20260830.1',
+    buildNumber: '20260911.1',
     message: '실시간 알림 시스템 도입 및 모바일 사용성 개선 업데이트입니다.'
 });
 window.SITE_UPDATE_INFO = SITE_UPDATE_INFO;

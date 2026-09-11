@@ -139,6 +139,34 @@ service cloud.firestore {
         );
     }
 
+    function isCommentModerationDelete() {
+      return changedOnly([
+          'body', 'content', 'images', 'videos', 'audios', 'pdfs', 'htmls',
+          'imageDescriptions', 'deleted', 'deletedAt'
+        ])
+        && resource.data.get('deleted', false) == false
+        && request.resource.data.deleted == true
+        && request.resource.data.deletedAt is timestamp
+        && request.resource.data.get('body', '') == ''
+        && request.resource.data.get('content', '') == ''
+        && request.resource.data.get('images', []) == []
+        && request.resource.data.get('videos', []) == []
+        && request.resource.data.get('audios', []) == []
+        && request.resource.data.get('pdfs', []) == []
+        && request.resource.data.get('htmls', []) == []
+        && request.resource.data.get('imageDescriptions', {}) == {};
+    }
+
+    function isCommentOwnerEdit() {
+      return changedOnly([
+          'body', 'content', 'images', 'videos', 'audios', 'pdfs', 'htmls',
+          'imageDescriptions', 'edited', 'editedAt'
+        ])
+        && resource.data.get('deleted', false) == false
+        && request.resource.data.get('deleted', false) == false
+        && isValidCommentContentUpdate();
+    }
+
     match /userRoles/{accountEmail} {
       allow get: if isAdmin()
         || (signedIn() && request.auth.token.get('email', '') == accountEmail);
@@ -239,12 +267,9 @@ service cloud.firestore {
         allow update: if isAdmin()
           || (
             owns(resource.data)
-            && changedOnly([
-              'body', 'content', 'images', 'videos', 'audios', 'pdfs', 'htmls',
-              'imageDescriptions', 'edited', 'editedAt', 'deleted', 'deletedAt'
-            ])
-            && isValidCommentContentUpdate()
+            && (isCommentOwnerEdit() || isCommentModerationDelete())
           )
+          || (isPostOwner(postId) && isCommentModerationDelete())
           || (isPostOwner(postId) && changedOnly(['pinned']))
           || isLikeToggle();
 

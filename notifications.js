@@ -26,10 +26,11 @@
     }
 
     function notificationIcon(type) {
+        if (type === 'new_post') return 'fa-solid fa-file-circle-plus';
         if (type === 'new_comment') return 'fa-solid fa-comment-dots';
         if (type === 'new_reply') return 'fa-solid fa-reply';
         if (type === 'comment_pinned' || type === 'reply_pinned') return 'fa-solid fa-thumbtack';
-        if (type === 'post_deleted') return 'fa-solid fa-trash-can';
+        if (type === 'post_deleted' || type === 'comment_deleted' || type === 'reply_deleted') return 'fa-solid fa-trash-can';
         if (type === 'site_update') return 'fa-solid fa-sparkles';
         if (type === 'permission') return 'fa-solid fa-bell';
         if (type === 'success') return 'fa-solid fa-circle-check';
@@ -424,7 +425,7 @@
             queueNotification({
                 type: 'permission',
                 title: '사이트 밖에서도 알림 받을까?',
-                body: '알림을 켜면 사이트를 닫아도 댓글·답글·고정·삭제·업데이트 소식이 떠요.',
+                body: '알림을 켜면 사이트를 닫아도 새 게시글·댓글·답글·고정·삭제·업데이트 소식이 떠요.',
                 duration: 12000,
                 actionLabel: '알림 켜기',
                 onAction: () => requestPushPermission(user),
@@ -461,6 +462,9 @@
 
     async function publishCurrentSiteUpdate(user) {
         if (!user || !isWorkerConfigured()) return;
+        const isProductionSite = window.location.protocol === 'https:'
+            && window.location.hostname === 'gimdong2804-pixel.github.io';
+        if (!isProductionSite) return;
         if (typeof isAdmin !== 'function' || !isAdmin(user.email) || !window.SITE_UPDATE_INFO) return;
         const info = window.SITE_UPDATE_INFO;
         await callWorker('/events/site-update', {
@@ -816,6 +820,12 @@
     const clubNotifications = {
         isConfigured: isWorkerConfigured,
 
+        notifyPostCreated(postId) {
+            return callWorkerWithRetry('/events/post', {
+                body: { postId }
+            }, [404, 409, 502, 503]);
+        },
+
         notifyCommentCreated(postId, commentId) {
             return callWorkerWithRetry('/events/comment', {
                 body: { postId, commentId }
@@ -825,6 +835,12 @@
         notifyCommentPinChanged(postId, commentId, pinned) {
             return callWorkerWithRetry('/events/comment-pin', {
                 body: { postId, commentId, pinned: Boolean(pinned) }
+            }, [404, 409, 502, 503]);
+        },
+
+        notifyCommentDeleted(postId, commentId) {
+            return callWorkerWithRetry('/events/comment-delete', {
+                body: { postId, commentId }
             }, [404, 409, 502, 503]);
         },
 
