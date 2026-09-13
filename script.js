@@ -2305,40 +2305,76 @@ document.querySelectorAll('[data-current-update-message]').forEach((element) => 
     element.textContent = SITE_UPDATE_INFO.message;
 });
 
-// 현재 버전의 업데이트 내역은 이번 배포에서 수정한 PDF 버그만 표시합니다.
-function applyCurrentUpdateBugFixOnly() {
-    if (!updateSection15) return;
+// 새 업데이트 카드를 위에 추가하고, 기존 One UI 1.5 내역은 그대로 보존합니다.
+function applyCurrentUpdateHistory() {
+    if (!updateSection15 || updateSection15.dataset.historyPrepared === 'true') return;
 
-    const featureList = updateSection15.querySelector('.update-features-list');
-    if (!featureList) return;
+    const legacyCard = updateSection15.querySelector('.update-history-card');
+    if (!legacyCard) return;
 
-    const accordions = Array.from(featureList.children)
-        .filter((element) => element.classList.contains('update-section-accordion'));
-    accordions.slice(0, -1).forEach((section) => {
-        section.hidden = true;
-    });
-    Array.from(featureList.children)
-        .filter((element) => element.classList.contains('update-section-divider'))
-        .forEach((divider) => {
-            divider.hidden = true;
-        });
+    const legacyVersion = legacyCard.querySelector('[data-current-one-ui-version]');
+    const legacyBuild = legacyCard.querySelector('[data-current-build-number]');
+    const legacyMessage = legacyCard.querySelector('[data-current-update-message]');
+    if (legacyVersion) {
+        legacyVersion.removeAttribute('data-current-one-ui-version');
+        legacyVersion.textContent = 'One UI 1.5';
+    }
+    if (legacyBuild) {
+        legacyBuild.removeAttribute('data-current-build-number');
+        legacyBuild.textContent = 'Build 20260911.1';
+    }
+    if (legacyMessage) {
+        legacyMessage.removeAttribute('data-current-update-message');
+        legacyMessage.textContent = '실시간 알림 시스템 도입 및 모바일 사용성 개선 업데이트입니다.';
+    }
+    const legacyTag = legacyCard.querySelector('.version-tag.current');
+    if (legacyTag) {
+        legacyTag.classList.remove('current');
+        legacyTag.textContent = '이전 업데이트';
+        legacyTag.style.background = 'rgba(255, 255, 255, 0.12)';
+        legacyTag.style.color = 'var(--text-secondary)';
+    }
+    legacyCard.classList.remove('current-version-card');
 
-    const bugSection = accordions[accordions.length - 1];
-    const bugContent = bugSection?.querySelector('.update-section-collapse-content');
-    if (bugContent) {
-        bugContent.innerHTML = `
-            <div class="feature-item">
-                <i class="fa-solid fa-check"></i>
-                <div>
-                    <strong>PDF 첨부파일 미리보기 및 다운로드 오류 수정</strong>
-                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">PDF 전달이 차단되어 미리보기가 되지 않거나 빈 파일로 다운로드되던 문제를 수정했습니다.</div>
+    const currentCard = document.createElement('div');
+    currentCard.className = 'update-history-card current-version-card';
+    currentCard.innerHTML = `
+        <div class="update-card-header">
+            <div class="update-version-badge-group">
+                <span class="version-tag current">현재 버전</span>
+                <h4 class="version-title" data-current-one-ui-version>One UI 1.5</h4>
+            </div>
+            <span class="build-number" data-current-build-number>Build 2026913.1</span>
+        </div>
+        <p class="update-description" data-current-update-message>PDF 첨부파일 미리보기 및 다운로드 오류 수정 업데이트입니다.</p>
+        <div class="update-features-list">
+            <div class="update-section-accordion">
+                <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
+                    <div class="update-section-category-title">
+                        <i class="fa-solid fa-wrench" style="color: var(--accent-color);"></i>
+                        <span>버그 수정</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                </button>
+                <div class="update-section-collapse">
+                    <div class="update-section-collapse-content">
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>PDF 첨부파일 미리보기 및 다운로드 오류 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">PDF 전달이 차단되어 미리보기가 되지 않거나 빈 파일로 다운로드되던 문제를 수정했습니다.</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        `;
-    }
+        </div>
+    `;
+    updateSection15.insertBefore(currentCard, legacyCard);
+    updateSection15.dataset.historyPrepared = 'true';
 }
 
-applyCurrentUpdateBugFixOnly();
+applyCurrentUpdateHistory();
 
 // 업데이트 서브 상태 Tracing ('pill' | 'details' | null)
 window.updateSubState = null;
