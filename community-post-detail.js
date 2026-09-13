@@ -1329,8 +1329,9 @@ window.openPdfPreviewModal = function (url, filename = 'PDF 문서') {
         return;
     }
     clearFilePreviewBlobUrl();
-    // Chrome의 내장 PDF 뷰어가 blob URL을 렌더링할 수 있도록 같은 출처 권한을 허용합니다.
-    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-downloads');
+    // Chrome의 내장 PDF 뷰어는 sandbox 안의 blob URL을 차단할 수 있으므로
+    // 검증된 원본 PDF 주소를 iframe에서 직접 엽니다.
+    iframe.removeAttribute('sandbox');
 
     if (titleEl) titleEl.textContent = filename || 'PDF 미리보기';
     if (iconEl) iconEl.className = 'fa-solid fa-file-pdf';
@@ -1374,12 +1375,9 @@ window.openPdfPreviewModal = function (url, filename = 'PDF 문서') {
                 if (!res.ok) throw new Error('PDF fetch error');
                 return res.blob();
             })
-            .then(blob => {
-                const pdfBlob = new Blob([blob], { type: 'application/pdf' });
-                const blobUrl = URL.createObjectURL(pdfBlob);
-                currentFilePreviewBlobUrl = blobUrl;
+            .then(() => {
                 iframe.removeAttribute('srcdoc');
-                iframe.src = blobUrl;
+                iframe.src = safeUrl;
             })
             .catch(err => {
                 console.warn('PDF fetch preview error:', err);
