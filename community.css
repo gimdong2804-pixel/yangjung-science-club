@@ -169,8 +169,8 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-    .board-card:hover {
-        transform: translateY(-6px) !important;
+    .board-card:not(.flipping):hover {
+        transform: translateY(-6px);
         border-color: var(--accent-color);
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
         transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, transform 0.3s ease;
@@ -424,7 +424,7 @@
 
 .board-card.flipping {
     z-index: 10 !important;
-    pointer-events: none;
+    pointer-events: none !important;
 }
 
 .fab {
@@ -1929,6 +1929,49 @@ body.multi-select-active .reply-target-bar {
 .side-detail-container.fullscreen-detail .reply-target-bar {
     max-width: 900px;
     margin: 0 auto;
+}
+
+/* 소형(사이드) 상세창 전용: 이름 짤림 방지 (작성자/버튼은 윗줄, 작성일시는 아랫줄 분리) */
+.side-detail-container:not(.fullscreen-detail) .comment-header,
+.side-detail-container:not(.fullscreen-detail) .flat-reply-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    row-gap: 0.15rem !important;
+    margin-bottom: 0.45rem !important;
+}
+
+.side-detail-container:not(.fullscreen-detail) .comment-header > div:first-child,
+.side-detail-container:not(.fullscreen-detail) .flat-reply-header > div:first-child {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    min-width: 0 !important;
+}
+
+.side-detail-container:not(.fullscreen-detail) .comment-actions,
+.side-detail-container:not(.fullscreen-detail) .flat-reply-header .comment-actions {
+    display: contents !important;
+}
+
+.side-detail-container:not(.fullscreen-detail) .comment-actions .mobile-hide,
+.side-detail-container:not(.fullscreen-detail) .flat-reply-header .comment-actions .mobile-hide {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+    justify-content: flex-end !important;
+}
+
+.side-detail-container:not(.fullscreen-detail) .comment-actions .board-time,
+.side-detail-container:not(.fullscreen-detail) .flat-reply-header .comment-actions .board-time {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    font-size: 0.78rem !important;
+    color: var(--text-secondary) !important;
+    line-height: 1.2 !important;
+    margin-top: 0.05rem !important;
+    margin-bottom: 0.2rem !important;
 }
 
 /* 댓글 목록 하단 여백: 고정된 입력창에 가려지지 않도록 */

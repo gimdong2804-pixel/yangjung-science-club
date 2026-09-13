@@ -648,6 +648,9 @@ window.deletePostWithAnim = async function (id, btn) {
         setTimeout(async () => {
             try {
                 await window.deletePostDocumentWithNotification(id);
+                if (card && card.parentNode) {
+                    card.remove();
+                }
             } catch (error) {
                 console.error("Error deleting post: ", error);
                 card.classList.remove('deleting');

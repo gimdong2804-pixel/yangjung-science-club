@@ -118,7 +118,6 @@ const commentAttachVideoBtn = document.getElementById('commentAttachVideoBtn');
 const commentAttachAudioBtn = document.getElementById('commentAttachAudioBtn');
 const commentAttachPdfBtn = document.getElementById('commentAttachPdfBtn');
 const commentAttachHtmlBtn = document.getElementById('commentAttachHtmlBtn');
-
 const commentImageInput = document.getElementById('commentImageInput');
 const commentVideoInput = document.getElementById('commentVideoInput');
 const commentAudioInput = document.getElementById('commentAudioInput');
@@ -334,21 +333,32 @@ window.resolveMediaUrl = async function (rawUrl) {
 // device-local fallback (localmedia://) can only be opened on the uploader's
 // browser, which is why videos were unavailable on other phones and laptops.
 function getUploadContentType(file) {
-    if (file.type) return file.type;
     const extension = (file.name || '').split('.').pop().toLowerCase();
     const types = {
         mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime',
         m4v: 'video/x-m4v', ogv: 'video/ogg', mp3: 'audio/mpeg',
         m4a: 'audio/mp4', wav: 'audio/wav', pdf: 'application/pdf'
     };
-    return types[extension] || 'application/octet-stream';
+    if (types[extension]) return types[extension];
+    if (file.type) return file.type;
+    return 'application/octet-stream';
 }
 
 function getMediaFolder(file) {
-    if (file.type.startsWith('video/')) return 'comments/videos';
-    if (file.type.startsWith('audio/')) return 'comments/audios';
-    if (file.type.startsWith('image/')) return 'comments/images';
+    const type = file?.type || '';
+    const extension = (file?.name || '').split('.').pop().toLowerCase();
+    if (extension === 'pdf' || type === 'application/pdf') return 'comments/pdfs';
+    if (type.startsWith('video/')) return 'comments/videos';
+    if (type.startsWith('audio/')) return 'comments/audios';
+    if (type.startsWith('image/')) return 'comments/images';
     return 'comments/files';
+}
+
+function isPdfAttachmentFile(file) {
+    return Boolean(file && (
+        file.type === 'application/pdf'
+        || /\.pdf$/i.test(file.name || '')
+    ));
 }
 
 function updateCommentUploadProgress(file, transferred, total) {
@@ -394,6 +404,12 @@ async function uploadFileToFirebaseStorage(file, folder = getMediaFolder(file)) 
 }
 
 async function uploadFileToActualCloud(file) {
+    // Cloudinary free delivery blocks original PDF files with HTTP 401 unless
+    // the account-level PDF delivery switch is enabled. Store PDFs in
+    // Firebase Storage instead so new attachments have a stable shared URL.
+    if (isPdfAttachmentFile(file)) {
+        return uploadFileToFirebaseStorage(file, 'comments/pdfs');
+    }
     if (file && typeof window.uploadCommunityMedia === 'function') {
         return window.uploadCommunityMedia(file);
     }

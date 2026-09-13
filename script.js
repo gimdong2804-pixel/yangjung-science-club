@@ -980,9 +980,9 @@ window.applyUserEffectiveVersion = function (user = auth.currentUser) {
     window.currentEffectiveOneUiVersion = effectiveVersion;
 
     const versionNumber = effectiveVersion;
-    const buildNumber = effectiveVersion === '1.5' ? '2026913.1' : '20260822.1';
+    const buildNumber = effectiveVersion === '1.5' ? '2026913.2' : '20260822.1';
     const updateMessage = effectiveVersion === '1.5'
-        ? 'PDF 첨부파일 미리보기 및 다운로드 오류 수정 업데이트입니다.'
+        ? '게시판 카드 이동 및 글 삭제, 댓글 작성자 이름 표시 관련 버그 수정 업데이트입니다.'
         : '초기 버전 배포입니다.';
 
     // 1. 버전 텍스트 및 빌드 번호 갱신
@@ -2268,8 +2268,8 @@ if (settingsNavItems.length > 0) {
 // 사이트 업데이트 정보: 다음 배포 시 이 값만 변경합니다.
 const SITE_UPDATE_INFO = Object.freeze({
     oneUiVersion: 'One UI 1.5',
-    buildNumber: '2026913.1',
-    message: 'PDF 첨부파일 미리보기 및 다운로드 오류 수정 업데이트입니다.'
+    buildNumber: '2026913.2',
+    message: '게시판 카드 이동 및 글 삭제, 댓글 작성자 이름 표시 관련 버그 수정 업데이트입니다.'
 });
 window.SITE_UPDATE_INFO = SITE_UPDATE_INFO;
 
@@ -2336,17 +2336,18 @@ function applyCurrentUpdateHistory() {
     }
     legacyCard.classList.remove('current-version-card');
 
-    const currentCard = document.createElement('div');
-    currentCard.className = 'update-history-card current-version-card';
-    currentCard.innerHTML = `
+    // 1) 이전 업데이트 카드: Build 2026913.1 (PDF 오류 수정)
+    const prevCard = document.createElement('div');
+    prevCard.className = 'update-history-card';
+    prevCard.innerHTML = `
         <div class="update-card-header">
             <div class="update-version-badge-group">
-                <span class="version-tag current">현재 버전</span>
-                <h4 class="version-title" data-current-one-ui-version>One UI 1.5</h4>
+                <span class="version-tag" style="background: rgba(255, 255, 255, 0.12); color: var(--text-secondary);">이전 업데이트</span>
+                <h4 class="version-title">One UI 1.5</h4>
             </div>
-            <span class="build-number" data-current-build-number>Build 2026913.1</span>
+            <span class="build-number">Build 2026913.1</span>
         </div>
-        <p class="update-description" data-current-update-message>PDF 첨부파일 미리보기 및 다운로드 오류 수정 업데이트입니다.</p>
+        <p class="update-description">PDF 첨부파일 미리보기 및 다운로드 오류 수정 업데이트입니다.</p>
         <div class="update-features-list">
             <div class="update-section-accordion">
                 <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
@@ -2370,7 +2371,59 @@ function applyCurrentUpdateHistory() {
             </div>
         </div>
     `;
-    updateSection15.insertBefore(currentCard, legacyCard);
+
+    // 2) 최신 버전 카드: Build 2026913.2 (이번 버그 수정)
+    const currentCard = document.createElement('div');
+    currentCard.className = 'update-history-card current-version-card';
+    currentCard.innerHTML = `
+        <div class="update-card-header">
+            <div class="update-version-badge-group">
+                <span class="version-tag current">현재 버전</span>
+                <h4 class="version-title" data-current-one-ui-version>One UI 1.5</h4>
+            </div>
+            <span class="build-number" data-current-build-number>Build 2026913.2</span>
+        </div>
+        <p class="update-description" data-current-update-message>게시판 카드 이동 및 글 삭제, 댓글 작성자 이름 표시 관련 버그 수정 업데이트입니다.</p>
+        <div class="update-features-list">
+            <div class="update-section-accordion">
+                <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
+                    <div class="update-section-category-title">
+                        <i class="fa-solid fa-wrench" style="color: var(--accent-color);"></i>
+                        <span>버그 수정</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                </button>
+                <div class="update-section-collapse">
+                    <div class="update-section-collapse-content">
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>게시글 상단 고정 이동 오류 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">게시글을 상단에 고정하거나 해제할 때 카드가 부드럽게 이동하지 않고 위로 툭 튀며 순간이동하던 문제를 수정했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>게시글 삭제 후 새 글 작성 시 빈 공간 발생 오류 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">게시글을 삭제한 직후 새 글을 작성했을 때 게시글 사이에 불필요하게 넓은 빈 공간이 생기던 현상을 수정했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>작은 댓글창에서 작성자 이름 잘림 현상 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">화면 오른쪽 작은 댓글창에서 긴 작성자 이름(예: 회장 김동현)이 한 글자만 남고 잘려서 보이던 현상을 정리하여 온전히 다 보이도록 수정했습니다.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    updateSection15.insertBefore(prevCard, legacyCard);
+    updateSection15.insertBefore(currentCard, prevCard);
     updateSection15.dataset.historyPrepared = 'true';
 }
 

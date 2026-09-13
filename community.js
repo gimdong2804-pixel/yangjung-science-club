@@ -1466,21 +1466,26 @@ function renderPosts(snapshot, sortBy = currentSortOrder) {
         const filteredIds = new Set(docs.map(doc => doc.id));
         clearPostCommentCountSubscriptions(filteredIds);
         const containerRect = boardContainer.getBoundingClientRect();
-        let hasOutgoingCards = boardContainer.querySelector('.board-card.deleting') !== null;
-        boardContainer.querySelectorAll('.board-card:not(.deleting)').forEach(card => {
+        let hasOutgoingCards = false;
+        boardContainer.querySelectorAll('.board-card').forEach(card => {
             const id = card.getAttribute('data-id');
             if (!filteredIds.has(id)) {
                 hasOutgoingCards = true;
-                const oldPos = oldPositions.get(id) || card.getBoundingClientRect();
-                card.style.position = 'absolute';
-                card.style.top = (oldPos.top - containerRect.top) + 'px';
-                card.style.left = (oldPos.left - containerRect.left) + 'px';
-                card.style.width = oldPos.width + 'px';
-                card.style.zIndex = '11';
-                card.classList.add('deleting');
-                setTimeout(() => {
+                if (card.classList.contains('deleting')) {
+                    // 이미 삭제 중이던 카드는 새 데이터 도착 시 즉시 DOM에서 완전 제거
                     card.remove();
-                }, 300);
+                } else {
+                    const oldPos = oldPositions.get(id) || card.getBoundingClientRect();
+                    card.style.position = 'absolute';
+                    card.style.top = (oldPos.top - containerRect.top) + 'px';
+                    card.style.left = (oldPos.left - containerRect.left) + 'px';
+                    card.style.width = oldPos.width + 'px';
+                    card.style.zIndex = '11';
+                    card.classList.add('deleting');
+                    setTimeout(() => {
+                        if (card.parentNode) card.remove();
+                    }, 300);
+                }
             }
         });
 
@@ -1765,32 +1770,35 @@ function renderPosts(snapshot, sortBy = currentSortOrder) {
                     card.offsetHeight; // 리플로우
 
                     requestAnimationFrame(() => {
-                        card.classList.add('flipping');
-                        card.style.transform = '';
+                        requestAnimationFrame(() => {
+                            card.classList.add('flipping');
 
-                        if (pinnedChanged) {
-                            card.style.zIndex = '20'; // 고정/해제된 카드는 무조건 최상단 위로 비행
-                            card.classList.toggle('pinned-state', isPinnedNow);
-                            const pb = card.querySelector('.pin-badge-wrapper');
-                            if (pb) {
-                                pb.classList.toggle('active', isPinnedNow);
-                                pb.style.transition = '';
+                            if (pinnedChanged) {
+                                card.style.zIndex = '20'; // 고정/해제된 카드는 무조건 최상단 위로 비행
+                                card.classList.toggle('pinned-state', isPinnedNow);
+                                const pb = card.querySelector('.pin-badge-wrapper');
+                                if (pb) {
+                                    pb.classList.toggle('active', isPinnedNow);
+                                    pb.style.transition = '';
+                                }
                             }
-                        }
 
-                        card.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease, padding-left 0.3s ease, background 0.3s ease, border-color 0.3s ease';
-
-                        card._flipTimerId = setTimeout(() => {
-                            card._flipTimerId = null;
-                            card.classList.remove('flipping');
-                            card.style.transition = '';
+                            // transition을 먼저 활성화한 후 transform을 원래대로 복구하여 부드럽게 비행
+                            card.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease, padding-left 0.3s ease, background 0.3s ease, border-color 0.3s ease';
                             card.style.transform = '';
-                            card.style.zIndex = '';
 
-                            // 뱃지의 transition 복원
-                            const pb = card.querySelector('.pin-badge-wrapper');
-                            if (pb) pb.style.transition = '';
-                        }, 500);
+                            card._flipTimerId = setTimeout(() => {
+                                card._flipTimerId = null;
+                                card.classList.remove('flipping');
+                                card.style.transition = '';
+                                card.style.transform = '';
+                                card.style.zIndex = '';
+
+                                // 뱃지의 transition 복원
+                                const pb = card.querySelector('.pin-badge-wrapper');
+                                if (pb) pb.style.transition = '';
+                            }, 500);
+                        });
                     });
                 }
             } else {
