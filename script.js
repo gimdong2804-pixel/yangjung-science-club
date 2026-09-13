@@ -980,9 +980,9 @@ window.applyUserEffectiveVersion = function (user = auth.currentUser) {
     window.currentEffectiveOneUiVersion = effectiveVersion;
 
     const versionNumber = effectiveVersion;
-    const buildNumber = effectiveVersion === '1.5' ? '20260911.1' : '20260822.1';
+    const buildNumber = effectiveVersion === '1.5' ? '2026913.1' : '20260822.1';
     const updateMessage = effectiveVersion === '1.5'
-        ? '실시간 알림 시스템 도입 및 모바일 사용성 개선 업데이트입니다.'
+        ? 'PDF 첨부파일 미리보기 및 다운로드 오류 수정 업데이트입니다.'
         : '초기 버전 배포입니다.';
 
     // 1. 버전 텍스트 및 빌드 번호 갱신
@@ -2268,8 +2268,8 @@ if (settingsNavItems.length > 0) {
 // 사이트 업데이트 정보: 다음 배포 시 이 값만 변경합니다.
 const SITE_UPDATE_INFO = Object.freeze({
     oneUiVersion: 'One UI 1.5',
-    buildNumber: '20260911.1',
-    message: '실시간 알림 시스템 도입 및 모바일 사용성 개선 업데이트입니다.'
+    buildNumber: '2026913.1',
+    message: 'PDF 첨부파일 미리보기 및 다운로드 오류 수정 업데이트입니다.'
 });
 window.SITE_UPDATE_INFO = SITE_UPDATE_INFO;
 
@@ -2304,6 +2304,41 @@ document.querySelectorAll('[data-current-build-number]').forEach((element) => {
 document.querySelectorAll('[data-current-update-message]').forEach((element) => {
     element.textContent = SITE_UPDATE_INFO.message;
 });
+
+// 현재 버전의 업데이트 내역은 이번 배포에서 수정한 PDF 버그만 표시합니다.
+function applyCurrentUpdateBugFixOnly() {
+    if (!updateSection15) return;
+
+    const featureList = updateSection15.querySelector('.update-features-list');
+    if (!featureList) return;
+
+    const accordions = Array.from(featureList.children)
+        .filter((element) => element.classList.contains('update-section-accordion'));
+    accordions.slice(0, -1).forEach((section) => {
+        section.hidden = true;
+    });
+    Array.from(featureList.children)
+        .filter((element) => element.classList.contains('update-section-divider'))
+        .forEach((divider) => {
+            divider.hidden = true;
+        });
+
+    const bugSection = accordions[accordions.length - 1];
+    const bugContent = bugSection?.querySelector('.update-section-collapse-content');
+    if (bugContent) {
+        bugContent.innerHTML = `
+            <div class="feature-item">
+                <i class="fa-solid fa-check"></i>
+                <div>
+                    <strong>PDF 첨부파일 미리보기 및 다운로드 오류 수정</strong>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">PDF 전달이 차단되어 미리보기가 되지 않거나 빈 파일로 다운로드되던 문제를 수정했습니다.</div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+applyCurrentUpdateBugFixOnly();
 
 // 업데이트 서브 상태 Tracing ('pill' | 'details' | null)
 window.updateSubState = null;

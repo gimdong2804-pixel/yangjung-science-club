@@ -1207,8 +1207,16 @@ window.downloadFileAttachment = function (url, filename = 'download') {
             document.body.removeChild(a);
         } else if (safeUrl.startsWith('http')) {
             fetch(safeUrl)
-                .then(res => res.blob())
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error(`Attachment request failed: HTTP ${res.status}`);
+                    }
+                    return res.blob();
+                })
                 .then(blob => {
+                    if (!blob || blob.size === 0) {
+                        throw new Error('Attachment response was empty');
+                    }
                     const blobUrl = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = blobUrl;
