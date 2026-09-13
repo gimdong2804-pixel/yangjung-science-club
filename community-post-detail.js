@@ -1329,7 +1329,8 @@ window.openPdfPreviewModal = function (url, filename = 'PDF 문서') {
         return;
     }
     clearFilePreviewBlobUrl();
-    iframe.setAttribute('sandbox', 'allow-scripts allow-forms allow-popups allow-downloads');
+    // Chrome의 내장 PDF 뷰어가 blob URL을 렌더링할 수 있도록 같은 출처 권한을 허용합니다.
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-downloads');
 
     if (titleEl) titleEl.textContent = filename || 'PDF 미리보기';
     if (iconEl) iconEl.className = 'fa-solid fa-file-pdf';
