@@ -113,6 +113,13 @@
 }
 
 /* 정렬 드롭다운 (최신순/인기순) - 노트북 & 모바일 공통 고정 폭 적용 */
+#customSortOptions,
+#commentSortOptions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
 #customSortDropdown .custom-dropdown-selected,
 #customSortSelected {
     width: 108px !important;
@@ -215,6 +222,7 @@
     color: var(--text-primary);
     font-weight: 500;
     white-space: nowrap;
+    transition: color 0.5s ease;
 }
 
 .board-time {
@@ -222,6 +230,7 @@
     color: var(--text-secondary);
     white-space: nowrap;
     user-select: none;
+    transition: color 0.5s ease;
 }
 
 .board-title {
@@ -235,6 +244,7 @@
     gap: 0.5rem;
     word-break: break-word;
     overflow-wrap: break-word;
+    transition: color 0.5s ease;
 }
 
 .pin-icon {
@@ -255,6 +265,7 @@
     line-height: 1.5;
     word-break: break-word;
     overflow-wrap: break-word;
+    transition: color 0.5s ease;
 }
 
 .board-footer {
@@ -263,6 +274,7 @@
     align-items: center;
     font-size: 0.85rem;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
 }
 
 .board-stats {
@@ -463,6 +475,7 @@
     padding: 1rem;
     padding-bottom: 80px;
     /* space for input */
+    transition: background 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
 }
 
 .post-content-area {
@@ -472,6 +485,7 @@
     padding: 1.5rem;
     margin-bottom: 1.5rem;
     overflow: hidden;
+    transition: background 0.5s ease, border-color 0.5s ease;
 }
 
 .post-body {
@@ -481,6 +495,7 @@
     color: var(--text-primary);
     word-break: break-word;
     overflow-wrap: break-word;
+    transition: color 0.5s ease;
 }
 
 .post-body-title {
@@ -491,6 +506,7 @@
     line-height: 1.4;
     word-break: break-word;
     overflow-wrap: anywhere;
+    transition: color 0.5s ease;
 }
 
 .divider {
@@ -505,6 +521,7 @@
     color: var(--text-primary);
     margin-bottom: 1rem;
     padding-left: 0.5rem;
+    transition: color 0.5s ease;
 }
 
 .comment-item {
@@ -513,7 +530,7 @@
     border-radius: 12px;
     padding: 1rem;
     margin-bottom: 0.8rem;
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, padding-left 0.3s ease, border-left-width 0.3s ease, border-radius 0.3s ease;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, background 0.5s ease, border-color 0.5s ease, box-shadow 0.3s ease, padding-left 0.3s ease, border-left-width 0.3s ease, border-radius 0.3s ease;
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
@@ -535,6 +552,7 @@
 
 .comment-deleted-text {
     color: var(--text-secondary) !important;
+    transition: color 0.5s ease;
     font-style: italic;
 }
 
@@ -586,6 +604,7 @@
     color: var(--text-primary);
     word-break: break-all;
     margin-bottom: 0.4rem;
+    transition: color 0.5s ease;
 }
 
 .comment-flat-reply .flat-reply-footer {
@@ -679,6 +698,7 @@
     font-weight: 600;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
     animation: replyTargetIn 0.25s ease;
+    transition: background 0.5s ease, border-color 0.5s ease, color 0.5s ease;
     box-sizing: border-box;
 }
 
@@ -717,6 +737,7 @@ body.multi-select-active .reply-target-bar {
 
 .comment-empty-state {
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     font-size: 0.95rem;
     padding: 1.2rem 0.5rem;
     text-align: center;
@@ -776,6 +797,7 @@ body.multi-select-active .reply-target-bar {
     color: var(--text-primary);
     line-height: 1.5;
     padding-left: 0.5rem;
+    transition: color 0.5s ease;
 }
 
 .comment-content {
@@ -794,6 +816,7 @@ body.multi-select-active .reply-target-bar {
     font-size: 0.75rem;
     color: var(--text-secondary);
     margin-left: auto;
+    transition: color 0.5s ease;
 }
 
 .comment-input-area {
@@ -837,7 +860,7 @@ body.multi-select-active .reply-target-bar {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: color 0.5s ease, background 0.3s ease, transform 0.3s ease;
     flex-shrink: 0;
 }
 
@@ -880,7 +903,7 @@ body.multi-select-active .reply-target-bar {
     opacity: 0;
     transform: translateY(10px) scale(0.95);
     pointer-events: none;
-    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), background 0.5s ease, border-color 0.5s ease;
     transform-origin: bottom left;
     z-index: 99999 !important;
 }
@@ -1009,9 +1032,9 @@ body.multi-select-active .reply-target-bar {
     z-index: 10;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
-        box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
-        border-color 0.3s ease,
-        background 0.3s ease;
+        box-shadow 0.5s ease,
+        border-color 0.5s ease,
+        background 0.5s ease;
 }
 
 .comment-input-container.has-images {
@@ -1060,7 +1083,7 @@ body.multi-select-active .reply-target-bar {
     outline: none;
     font-weight: 500;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    transition: opacity 0.3s ease;
+    transition: opacity 0.3s ease, color 0.5s ease, text-shadow 0.5s ease;
     padding-left: 0.25rem;
     margin: 0;
 }
@@ -1068,7 +1091,7 @@ body.multi-select-active .reply-target-bar {
 .comment-input::placeholder {
     color: var(--text-secondary);
     opacity: 0.8;
-    transition: color 0.3s ease, opacity 0.3s ease;
+    transition: color 0.5s ease, opacity 0.3s ease;
 }
 
 .comment-input.text-fade {
@@ -1076,12 +1099,14 @@ body.multi-select-active .reply-target-bar {
 }
 
 [data-theme="light"] .comment-input {
-    color: #111827;
-    text-shadow: 0 1px 4px rgba(255, 255, 255, 0.9), 0 0 1px rgba(255, 255, 255, 1);
+    color: var(--text-primary);
+    text-shadow: none;
 }
 
 [data-theme="light"] .comment-input::placeholder {
-    color: #4b5563;
+    color: var(--text-secondary);
+    opacity: 0.8;
+    transition: color 0.5s ease, opacity 0.3s ease;
 }
 
 .cancel-reply-btn {
@@ -1232,6 +1257,7 @@ body.multi-select-active .reply-target-bar {
         font-size: 0.95rem;
         line-height: 1.7;
         color: var(--text-primary);
+        transition: color 0.5s ease;
         opacity: 0.9;
         word-break: keep-all;
         word-wrap: break-word;
@@ -1340,6 +1366,7 @@ body.multi-select-active .reply-target-bar {
 
 .image-upload-label {
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     font-size: 0.95rem;
     display: flex;
     flex-direction: column;
@@ -1426,6 +1453,7 @@ body.multi-select-active .reply-target-bar {
 .image-count-info {
     font-size: 0.8rem;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     margin-top: 0.5rem;
     text-align: right;
 }
@@ -1579,7 +1607,7 @@ body.multi-select-active .reply-target-bar {
     box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5);
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease, background 0.5s ease, border-color 0.5s ease;
     pointer-events: none;
 }
 
@@ -1601,6 +1629,7 @@ body.multi-select-active .reply-target-bar {
     font-size: 1.05rem;
     font-weight: 700;
     color: var(--text-primary, #fff);
+    transition: color 0.5s ease;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -1612,6 +1641,7 @@ body.multi-select-active .reply-target-bar {
 
 .lightbox-desc-text {
     color: var(--text-primary, #e2e8f0);
+    transition: color 0.5s ease;
     font-size: 0.95rem;
     line-height: 1.7;
     margin: 0;
@@ -1622,6 +1652,7 @@ body.multi-select-active .reply-target-bar {
 
 .lightbox-desc-text.empty {
     color: var(--text-secondary, rgba(255, 255, 255, 0.4));
+    transition: color 0.5s ease;
     font-style: italic;
 }
 
@@ -1661,6 +1692,7 @@ body.multi-select-active .reply-target-bar {
     border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));
     border-radius: 10px;
     color: var(--text-primary, #f1f5f9);
+    transition: background 0.5s ease, border-color 0.5s ease, color 0.5s ease;
     padding: 0.75rem 1rem;
     font-size: 0.95rem;
     resize: none;
@@ -1711,11 +1743,23 @@ body.multi-select-active .reply-target-bar {
 .lightbox-desc-cancel {
     background: var(--glass-border);
     color: var(--text-primary);
+    transition: background 0.5s ease, color 0.5s ease;
     border: none;
 }
 
 .lightbox-desc-cancel:hover {
     filter: brightness(0.9);
+}
+
+[data-theme="light"] .lightbox-desc-edit-area textarea {
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: var(--text-primary, #0f172a);
+}
+
+[data-theme="light"] .lightbox-desc-cancel {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-primary, #0f172a);
 }
 
 /* ========================================== */
@@ -1758,7 +1802,9 @@ body.multi-select-active .reply-target-bar {
         visibility 0.4s,
         width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
         margin 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-        padding 0.4s ease;
+        padding 0.4s ease,
+        background 0.5s ease,
+        border-color 0.5s ease;
     display: flex;
     flex-direction: column;
     z-index: 100;
@@ -1775,11 +1821,30 @@ body.multi-select-active .reply-target-bar {
     /* 75px(좁음)과 95px(넓음)의 정확한 중간값 85px로 설정 */
 }
 
+/* 상세 화면 내 모든 텍스트 및 UI 요소 0.5초 부드러운 전환 보정 */
+.side-detail-title,
+.detail-category-badge,
+.post-detail-meta,
+.board-stats,
+.board-stats span,
+.board-stats button,
+#detailLikeCnt,
+#detailTopCommentCount,
+#detailCommentArea h3,
+#detailCommentCount,
+#commentSortSelected,
+#commentSortSelected span,
+#commentSortSelected i {
+    transition: color 0.5s ease, background 0.5s ease, border-color 0.5s ease !important;
+}
+
 /* 전체화면일 때는 아래에서 위로 올라오는 애니메이션 적용 */
 .side-detail-container.fullscreen-detail {
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.4s ease,
-        visibility 0.4s;
+        visibility 0.4s,
+        background 0.5s ease,
+        border-color 0.5s ease;
     width: 100vw !important;
     margin: 0 !important;
     transform: translateY(0);
@@ -2146,7 +2211,7 @@ body.multi-select-active .comment-header .board-time {
     opacity: 0;
     visibility: hidden;
     transform: translateY(12px) scale(0.97);
-    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s;
+    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s, background 0.5s ease, border-color 0.5s ease;
     min-width: 280px;
 }
 
@@ -2210,6 +2275,7 @@ body.multi-select-active .comment-header .board-time {
     max-width: 200px;
     font-size: 0.82rem;
     color: var(--text-primary);
+    transition: color 0.5s ease, border-color 0.5s ease, background 0.5s ease;
     margin-top: 5px;
     margin-right: 5px;
 }
@@ -2299,6 +2365,7 @@ body.multi-select-active .comment-header .board-time {
     font-weight: 600;
     font-size: 0.88rem;
     color: var(--text-primary);
+    transition: color 0.5s ease;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2307,6 +2374,7 @@ body.multi-select-active .comment-header .board-time {
 .file-card-info .file-sub {
     font-size: 0.75rem;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
 }
 
 .file-card-btn {
@@ -2346,7 +2414,7 @@ body.multi-select-active .comment-header .board-time {
     border: 1px solid var(--glass-border);
     border-radius: 12px;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background 0.5s ease, border-color 0.5s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     user-select: none;
 }
 
@@ -2369,11 +2437,13 @@ body.multi-select-active .comment-header .board-time {
 
 .category-select-placeholder {
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     font-weight: 500;
 }
 
 .category-select-placeholder.selected {
     color: var(--text-primary);
+    transition: color 0.5s ease;
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -2386,11 +2456,13 @@ body.multi-select-active .comment-header .board-time {
 
 .category-select-placeholder.selected .cat-sep {
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     font-size: 0.85rem;
 }
 
 .category-select-placeholder.selected .cat-sub {
     color: var(--text-primary);
+    transition: color 0.5s ease;
 }
 
 .category-select-icon {
@@ -2434,6 +2506,7 @@ body.multi-select-active .comment-header .board-time {
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--text-primary);
+    transition: color 0.5s ease;
     margin: 0;
 }
 
@@ -2492,6 +2565,7 @@ body.multi-select-active .comment-header .board-time {
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     margin-bottom: 0.6rem;
     display: flex;
     align-items: center;
@@ -2725,30 +2799,60 @@ body.multi-select-active .comment-header .board-time {
     pointer-events: auto !important;
 }
 
-.dropdown-category-group-header {
-    padding: 0.55rem 0.75rem 0.55rem 0.85rem !important;
-    font-size: 0.84rem !important;
+/* 카테고리 드롭다운 상단 4대 메인 선택지 (모든 게시글 + 대주제 3개) 박스 크기 및 스타일 완벽 통일 */
+.category-dropdown-options .custom-dropdown-option[data-type="all"],
+.category-dropdown-options .dropdown-category-group-header {
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    box-sizing: border-box !important;
+    padding: 0 0.75rem 0 0.85rem !important;
+    margin-bottom: 0.25rem !important;
+    border-radius: 8px !important;
+    font-size: 0.86rem !important;
     font-weight: 700 !important;
     color: var(--accent-color) !important;
-    letter-spacing: -0.2px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.45rem;
-    user-select: none;
-    margin-bottom: 0.25rem !important;
+    letter-spacing: -0.2px !important;
+    display: flex !important;
+    align-items: center !important;
+    user-select: none !important;
     cursor: pointer !important;
-    border-radius: 8px;
-    transition: background 0.2s, color 0.2s;
+    white-space: nowrap !important;
+    transition: background 0.2s, color 0.2s !important;
 }
 
-.dropdown-category-group-header:hover {
+.category-dropdown-options .custom-dropdown-option[data-type="all"] {
+    justify-content: flex-start !important;
+    gap: 0.45rem !important;
+}
+
+.category-dropdown-options .dropdown-category-group-header {
+    justify-content: space-between !important;
+    gap: 0.45rem !important;
+}
+
+/* 4대 메인 선택지 호버 및 활성(선택) 배경 및 색상 완벽 통일 */
+.category-dropdown-options .custom-dropdown-option[data-type="all"]:hover,
+.category-dropdown-options .dropdown-category-group-header:hover {
     background: rgba(59, 130, 246, 0.1) !important;
+    color: var(--accent-color) !important;
 }
 
-.dropdown-category-group-header.active {
+.category-dropdown-options .custom-dropdown-option[data-type="all"].active,
+.category-dropdown-options .dropdown-category-group-header.active {
     background: rgba(59, 130, 246, 0.16) !important;
     color: var(--accent-color) !important;
+}
+
+/* 좌측 대표 아이콘 고정 너비 및 중앙 정렬 (글자 시작 위치 1px 오차 없이 일치) */
+.category-dropdown-options .custom-dropdown-option[data-type="all"] > i,
+.category-dropdown-options .dropdown-category-group-header .group-main-label > i {
+    width: 1.25rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    font-size: 0.92rem !important;
 }
 
 .dropdown-category-group-header .group-main-label {
@@ -2756,18 +2860,22 @@ body.multi-select-active .comment-header .board-time {
     align-items: center;
     gap: 0.45rem;
     flex: 1;
+    min-width: 0;
 }
 
 .group-toggle-btn {
     background: transparent;
     border: none;
-    padding: 0.25rem 0.45rem;
+    width: 26px;
+    height: 26px;
+    padding: 0;
     cursor: pointer;
     color: var(--text-secondary);
     border-radius: 6px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     transition: background 0.2s, color 0.2s;
 }
 

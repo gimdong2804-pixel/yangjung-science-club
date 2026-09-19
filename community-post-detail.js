@@ -113,12 +113,19 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
     sideDetailContainer.classList.toggle('fullscreen-detail', isFullscreen);
     document.body.classList.toggle('detail-open', isFullscreen || isMobile);
 
-    // 모바일 진입 시 잔여 스크롤 타이머 해제 및 상단 헤더 버튼 강제 숨김
-    if (typeof _scrollStopTimer !== 'undefined' && _scrollStopTimer) {
-        clearTimeout(_scrollStopTimer);
-    }
-    if (typeof _hideTopButtons === 'function') {
-        _hideTopButtons();
+    // 모바일 또는 전체화면 진입 시에만 잔여 스크롤 타이머 해제 및 상단 헤더 버튼 강제 숨김
+    if (isFullscreen || isMobile) {
+        if (typeof _scrollStopTimer !== 'undefined' && _scrollStopTimer) {
+            clearTimeout(_scrollStopTimer);
+        }
+        if (typeof _hideTopButtons === 'function') {
+            _hideTopButtons();
+        }
+    } else {
+        // 데스크탑 2분할 뷰(반만 뜨는 화면)에서는 상단 헤더 버튼(로고, 다크모드, 메뉴) 유지
+        if (typeof _showTopButtons === 'function') {
+            _showTopButtons();
+        }
     }
 
     const detailTitle = sideDetailContainer.querySelector('.side-detail-title');
@@ -322,20 +329,20 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                                 ${editBtnHtml}
                             </div>
                         </div>
-                        <h2 class="post-body-title" style="margin-bottom: 0.5rem; font-size: 1.6rem; color: var(--text-primary); word-break: break-word; overflow-wrap: anywhere;">${escapeHtml(currentPost.title || '')}</h2>
-                        <div style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem;">
+                        <h2 class="post-body-title" style="margin-bottom: 0.5rem; font-size: 1.6rem; color: var(--text-primary); word-break: break-word; overflow-wrap: anywhere; transition: color 0.5s ease;">${escapeHtml(currentPost.title || '')}</h2>
+                        <div class="post-detail-meta" style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.5rem; transition: color 0.5s ease;">
                             ${timeStr} &nbsp;|&nbsp; 조회 ${typeof safeDisplayCount === 'function' ? safeDisplayCount(currentPost.views) : 0}회
                         </div>
                         
-                        <div class="board-card-header" style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+                        <div class="board-card-header" style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem; transition: border-color 0.5s ease;">
                             <div class="board-author" style="flex: 1;">
                                 ${avatar}
-                                <span class="board-author-name" style="font-weight: 600; font-size: 1rem;">${escapeHtml(currentPost.author || '사용자')}</span>
+                                <span class="board-author-name" style="font-weight: 600; font-size: 1rem; transition: color 0.5s ease;">${escapeHtml(currentPost.author || '사용자')}</span>
                             </div>
-                            <div class="board-stats" style="font-size: 0.95rem;">
-                                <span style="cursor: default; user-select: none; margin-right: 0.8rem;"><i class="fa-regular fa-comment"></i> <span id="detailTopCommentCount">${currentTopCount}</span></span>
-                                <button type="button" class="board-action-btn" onclick="likePost('${safePostId}', this)" id="detailLikeBtn" title="좋아요">
-                                    <i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''}"></i> <span id="detailLikeCnt" class="like-count">${typeof safeDisplayCount === 'function' ? safeDisplayCount(currentPost.likes) : 0}</span>
+                            <div class="board-stats" style="font-size: 0.95rem; color: var(--text-secondary); transition: color 0.5s ease;">
+                                <span style="cursor: default; user-select: none; margin-right: 0.8rem; transition: color 0.5s ease;"><i class="fa-regular fa-comment" style="transition: color 0.5s ease;"></i> <span id="detailTopCommentCount" style="transition: color 0.5s ease;">${currentTopCount}</span></span>
+                                <button type="button" class="board-action-btn" onclick="likePost('${safePostId}', this)" id="detailLikeBtn" title="좋아요" style="transition: color 0.5s ease;">
+                                    <i class="${heartClass}" style="${isLiked ? 'color: #ff6b6b;' : ''} transition: color 0.5s ease;"></i> <span id="detailLikeCnt" class="like-count" style="transition: color 0.5s ease;">${typeof safeDisplayCount === 'function' ? safeDisplayCount(currentPost.likes) : 0}</span>
                                 </button>
                             </div>
                         </div>

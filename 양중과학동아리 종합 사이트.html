@@ -13,8 +13,8 @@
     <link rel="stylesheet" as="style" crossorigin
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=block" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600&display=block" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -376,9 +376,9 @@
         <h3 id="updateDetailsTitle"><i class="fa-solid fa-sparkles"></i> 업데이트 내용</h3>
         <div class="update-details-version">
             <strong data-current-one-ui-version>One UI 1.5</strong>
-            <span data-current-build-number>Build 2026913.2</span>
+            <span data-current-build-number>Build 2026919.1</span>
         </div>
-        <p class="update-details-message" data-current-update-message>PDF 첨부파일 미리보기 및 다운로드 오류 수정 업데이트입니다.</p>
+        <p class="update-details-message" data-current-update-message>다크·라이트 모드 화면 전환 효과 및 게시글 상세창 표시 관련 버그 수정 업데이트입니다.</p>
         <button id="updateDetailsConfirmBtn" class="update-details-confirm" type="button">확인</button>
     </div>
 
@@ -1156,9 +1156,9 @@
                                                     <span class="version-tag current">현재 버전</span>
                                                     <h4 class="version-title" data-current-one-ui-version>One UI 1.5</h4>
                                                 </div>
-                                                <span class="build-number" data-current-build-number>Build 2026913.1</span>
+                                                <span class="build-number" data-current-build-number>Build 2026919.1</span>
                                             </div>
-                                            <p class="update-description" data-current-update-message>PDF 첨부파일 미리보기 및 다운로드 오류 수정 업데이트입니다.</p>
+                                            <p class="update-description" data-current-update-message>다크·라이트 모드 화면 전환 효과 및 게시글 상세창 표시 관련 버그 수정 업데이트입니다.</p>
                                             <div class="update-features-list">
                                                 <!-- 1. 새로운 기능 아코디언 -->
                                                 <div class="update-section-accordion">
@@ -2159,7 +2159,7 @@
                 <div class="side-detail-scroll-area">
                     <div class="side-detail-header">
                         <span class="side-detail-title"
-                            style="color: var(--accent-color); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><i
+                            style="color: var(--accent-color); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; transition: color 0.5s ease;"><i
                                 class="fa-solid fa-file-lines"></i> 게시글 상세</span>
                     </div>
 
@@ -2171,12 +2171,11 @@
                     <div class="comment-section" id="detailCommentArea">
                         <div
                             style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
-                            <h3 style="margin: 0; color: var(--text-primary); font-size: 1.1rem;">댓글 <span
-                                    style="color: var(--accent-color);" id="detailCommentCount">0</span></h3>
+                            <h3 style="margin: 0; color: var(--text-primary); font-size: 1.1rem; transition: color 0.5s ease;">댓글 <span style="color: var(--accent-color); transition: color 0.5s ease;" id="detailCommentCount">0</span></h3>
 
                             <div class="custom-dropdown-container" id="commentSortDropdown" style="margin-bottom: 0;">
                                 <div class="custom-dropdown-selected" id="commentSortSelected"
-                                    style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">
+                                    style="padding: 0.4rem 0.8rem; font-size: 0.85rem; transition: color 0.5s ease, background 0.5s ease, border-color 0.5s ease;">
                                     <span><i class="fa-solid fa-arrow-down-short-wide"></i> 최신순</span>
                                     <i class="fa-solid fa-chevron-down arrow-icon"></i>
                                 </div>
@@ -2259,7 +2258,7 @@
         <h1 class="greeting-title">게시글 올리기</h1>
 
         <div class="post-detail-container"
-            style="background: var(--bg-color); border: 1px solid var(--glass-border); border-radius: 16px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+            style="background: var(--bg-color); border: 1px solid var(--glass-border); border-radius: 16px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: background 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;">
             <div style="display: flex; flex-direction: column; gap: 1.2rem;">
                 <!-- 삼성 멤버스 스타일 게시판/주제 선택 바 -->
                 <div class="post-category-select-bar" id="openCategorySelectBtn" role="button" tabindex="0" title="게시판 선택">
@@ -2439,7 +2438,7 @@
         </div>
         <div class="youtube-modal-body" style="padding: 1.2rem 1.5rem 1.6rem 1.5rem;">
             <div
-                style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.75rem;">
+                style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.75rem; transition: background 0.5s ease, border-color 0.5s ease;">
                 <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.8rem; color: var(--accent-color);"></i>
                 <div>
                     <div style="font-weight: 700; font-size: 1rem; color: var(--text-primary);">개별 파일 최대 용량: 100MB</div>
@@ -2455,8 +2454,7 @@
             </div>
 
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 1.2rem;">
-                <div
-                    style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 0.9rem; display: flex; align-items: center; gap: 0.7rem;">
+                <div class="attach-guide-card">
                     <i class="fa-solid fa-image" style="font-size: 1.4rem; color: #4dadf7;"></i>
                     <div>
                         <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">이미지/사진</div>
@@ -2464,8 +2462,7 @@
                     </div>
                 </div>
 
-                <div
-                    style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 0.9rem; display: flex; align-items: center; gap: 0.7rem;">
+                <div class="attach-guide-card">
                     <i class="fa-solid fa-file-pdf" style="font-size: 1.4rem; color: #ff922b;"></i>
                     <div>
                         <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">PDF 문서</div>
@@ -2473,8 +2470,7 @@
                     </div>
                 </div>
 
-                <div
-                    style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 0.9rem; display: flex; align-items: center; gap: 0.7rem;">
+                <div class="attach-guide-card">
                     <i class="fa-solid fa-file-code" style="font-size: 1.4rem; color: #cc5de8;"></i>
                     <div>
                         <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">HTML 파일</div>
@@ -2482,8 +2478,7 @@
                     </div>
                 </div>
 
-                <div
-                    style="background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 12px; padding: 0.9rem; display: flex; align-items: center; gap: 0.7rem;">
+                <div class="attach-guide-card">
                     <i class="fa-solid fa-microphone" style="font-size: 1.4rem; color: #51cf66;"></i>
                     <div>
                         <div style="font-weight: 600; font-size: 0.88rem; color: var(--text-primary);">음성/오디오</div>
@@ -2493,7 +2488,7 @@
             </div>
 
             <div
-                style="background: rgba(255, 0, 0, 0.06); border: 1px solid rgba(255, 0, 0, 0.15); border-radius: 10px; padding: 0.85rem; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5;">
+                style="background: rgba(255, 0, 0, 0.06); border: 1px solid rgba(255, 0, 0, 0.15); border-radius: 10px; padding: 0.85rem; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; transition: background 0.5s ease, border-color 0.5s ease, color 0.5s ease;">
                 <i class="fa-brands fa-youtube" style="color: #ff0000; margin-right: 0.3rem;"></i> <strong>동영상
                     안내</strong>: 동영상은 유튜브 업로드 후 공유 링크 첨부를 권장합니다.
             </div>
@@ -2509,9 +2504,9 @@
     <!-- 첨부파일 미리보기 (HTML/PDF 등) 모달 -->
     <div id="filePreviewModalOverlay" class="modal-overlay"></div>
     <div id="filePreviewModal" class="modal-container"
-        style="max-width: 950px; width: 95vw; height: 88vh; display: flex; flex-direction: column; padding: 1.2rem; gap: 0.8rem; z-index: 10005; border-radius: 20px; background: var(--glass-bg, #1e293b); color: var(--text-primary, #f8fafc); border: 1px solid var(--glass-border);">
+        style="max-width: 950px; width: 95vw; height: 88vh; display: flex; flex-direction: column; padding: 1.2rem; gap: 0.8rem; z-index: 10005; border-radius: 20px; background: var(--glass-bg, #1e293b); color: var(--text-primary, #f8fafc); border: 1px solid var(--glass-border); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, background 0.5s ease, border-color 0.5s ease, color 0.5s ease;">
         <div
-            style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.8rem;">
+            style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.8rem; transition: border-color 0.5s ease;">
             <div style="display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0; margin-right: 0.5rem;">
                 <i id="filePreviewIcon" class="fa-solid fa-file-code"
                     style="font-size: 1.4rem; color: #7c3aed; flex-shrink: 0;"></i>
@@ -2530,11 +2525,10 @@
             </div>
         </div>
         <div id="filePreviewContainer"
-            style="flex: 1; width: 100%; position: relative; border-radius: 12px; overflow: hidden; background: var(--bg-color, #0f172a); border: 1px solid var(--glass-border);">
+            style="flex: 1; width: 100%; position: relative; border-radius: 12px; overflow: hidden; background: var(--bg-color, #0f172a); border: 1px solid var(--glass-border); transition: background 0.5s ease, border-color 0.5s ease;">
             <iframe id="filePreviewIframe" sandbox="" title="첨부파일 미리보기"
                 style="width: 100%; height: 100%; border: none;"></iframe>
         </div>
-    </div>
     </div>
 
     <!-- Firebase SDK -->

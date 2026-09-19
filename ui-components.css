@@ -199,6 +199,7 @@ body:has(.modal-overlay.active) {
     gap: 2rem;
     padding: 0.5rem 0;
     color: var(--text-primary);
+    transition: color 0.5s ease;
     box-sizing: border-box;
 }
 
@@ -518,6 +519,7 @@ body:has(.modal-overlay.active) {
     font-size: 0.88rem;
     font-weight: 700;
     color: var(--text-primary);
+    transition: color 0.5s ease;
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -547,6 +549,7 @@ body:has(.modal-overlay.active) {
     margin: 0;
     font-size: 0.82rem;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     line-height: 1.5;
     word-break: keep-all;
     overflow-wrap: break-word;
@@ -579,6 +582,7 @@ body:has(.modal-overlay.active) {
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--text-primary);
+    transition: color 0.5s ease;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -668,11 +672,13 @@ body:has(.modal-overlay.active) {
     font-size: 1.3rem;
     font-weight: 700;
     color: var(--text-primary);
+    transition: color 0.5s ease;
 }
 
 .build-number {
     font-size: 0.85rem;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     font-family: monospace;
 }
 
@@ -680,6 +686,7 @@ body:has(.modal-overlay.active) {
     margin: 0;
     font-size: 0.95rem;
     color: var(--text-primary);
+    transition: color 0.5s ease;
     line-height: 1.5;
     word-break: keep-all;
     overflow-wrap: break-word;
@@ -708,7 +715,7 @@ body:has(.modal-overlay.active) {
     font-weight: 700;
     color: var(--text-primary);
     user-select: none;
-    transition: opacity 0.15s ease;
+    transition: opacity 0.15s ease, color 0.5s ease;
 }
 
 .update-section-toggle-btn:hover {
@@ -852,6 +859,7 @@ body:has(.modal-overlay.active) {
     gap: 0.65rem;
     font-size: 0.88rem;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     line-height: 1.4;
     word-break: keep-all;
     overflow-wrap: break-word;
@@ -872,6 +880,7 @@ body:has(.modal-overlay.active) {
     border-radius: 14px;
     border: 1px dashed var(--glass-border);
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     font-size: 0.85rem;
     text-align: center;
     background: rgba(255, 255, 255, 0.01);
@@ -881,6 +890,7 @@ body:has(.modal-overlay.active) {
     width: clamp(240px, 38vw, 380px);
     height: auto;
     color: var(--text-primary);
+    transition: color 0.5s ease;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
 }
@@ -1061,6 +1071,7 @@ body:has(.modal-overlay.active) {
     gap: 0;
     background: var(--bg-color);
     z-index: 2201;
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease, background 0.5s ease, border-color 0.5s ease, color 0.5s ease;
 }
 
 #updateDetailsModalOverlay {
@@ -1074,6 +1085,7 @@ body:has(.modal-overlay.active) {
 .update-details-eyebrow {
     margin: 0 0 0.45rem;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     font-size: 0.83rem;
     font-weight: 600;
 }
@@ -1081,6 +1093,7 @@ body:has(.modal-overlay.active) {
 .update-details-modal h3 {
     margin: 0;
     color: var(--text-primary);
+    transition: color 0.5s ease;
     font-size: 1.3rem;
 }
 
@@ -1101,17 +1114,20 @@ body:has(.modal-overlay.active) {
 
 .update-details-version strong {
     color: var(--text-primary);
+    transition: color 0.5s ease;
     font-size: 1.04rem;
 }
 
 .update-details-version span {
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     font-size: 0.83rem;
 }
 
 .update-details-message {
     margin: 0;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     font-size: 0.95rem;
     line-height: 1.6;
     word-break: keep-all;
@@ -1157,7 +1173,7 @@ body:has(.modal-overlay.active) {
 .settings-card-title,
 .settings-card-desc,
 .settings-sub-title {
-    transition: background-color 0.24s ease, border-color 0.24s ease, color 0.24s ease;
+    transition: background-color 0.5s ease, border-color 0.5s ease, color 0.5s ease;
 }
 
 .settings-nav-item {
@@ -1879,7 +1895,7 @@ body:has(.modal-overlay.active) {
     padding: 2rem;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
     transform: translateY(0);
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.5s ease, border-color 0.5s ease, color 0.5s ease;
 }
 
 .modal-overlay.fade-out .modal-content {
@@ -1888,6 +1904,7 @@ body:has(.modal-overlay.active) {
 
 .modal-title {
     color: var(--text-primary);
+    transition: color 0.5s ease;
     margin-bottom: 1.5rem;
     font-size: 1.4rem;
 }
@@ -1903,7 +1920,7 @@ body:has(.modal-overlay.active) {
     font-size: 1rem;
     margin-bottom: 1rem;
     outline: none;
-    transition: border-color 0.3s;
+    transition: border-color 0.3s, background 0.5s ease, color 0.5s ease;
 }
 
 .modal-textarea {
@@ -2067,7 +2084,7 @@ body:has(.modal-overlay.active) {
     transform: translateX(-50%) translateY(-10px);
     transition: opacity 0.25s cubic-bezier(0.22, 1, 0.36, 1),
                 visibility 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-                transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+                transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), background 0.5s ease, border-color 0.5s ease;
     background: #1e293b !important;
 }
 
@@ -2227,6 +2244,7 @@ body:has(.modal-overlay.active) {
     font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-primary);
+    transition: color 0.5s ease;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2275,6 +2293,7 @@ body:has(.modal-overlay.active) {
 .user-email {
     font-size: 0.75rem;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     word-break: break-all;
     white-space: normal;
     margin-bottom: 0.5rem;
@@ -2312,10 +2331,12 @@ body:has(.modal-overlay.active) {
     border-radius: 12px;
     text-align: center;
     margin-top: 1rem;
+    transition: background 0.5s ease, border-color 0.5s ease;
 }
 
 .login-required-notice p {
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     margin-bottom: 1rem;
     font-size: 0.95rem;
 }
@@ -2460,6 +2481,7 @@ body:has(.modal-overlay.active) {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    transition: background 0.5s ease, border-color 0.5s ease;
 }
 
 .settings-card-group .settings-card-item {
@@ -2507,7 +2529,7 @@ body.no-text-select *:not(input):not(textarea):not([contenteditable="true"]) {
     -webkit-backdrop-filter: blur(22px) saturate(145%);
     opacity: 0;
     transform: translateY(calc(-100% - 1.5rem)) scale(0.96);
-    transition: opacity 0.24s ease, transform 0.3s cubic-bezier(0.2, 0.85, 0.25, 1.08);
+    transition: opacity 0.24s ease, transform 0.3s cubic-bezier(0.2, 0.85, 0.25, 1.08), background 0.5s ease, border-color 0.5s ease, color 0.5s ease;
     pointer-events: auto;
     overflow: hidden;
 }
@@ -2562,6 +2584,7 @@ body.no-text-select *:not(input):not(textarea):not([contenteditable="true"]) {
     margin-bottom: 0.18rem;
     overflow: hidden;
     color: var(--text-primary);
+    transition: color 0.5s ease;
     font-size: 0.95rem;
     line-height: 1.25;
     text-overflow: ellipsis;
@@ -2574,6 +2597,7 @@ body.no-text-select *:not(input):not(textarea):not([contenteditable="true"]) {
     margin: 0;
     overflow: hidden;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     font-size: 0.82rem;
     line-height: 1.35;
     word-break: keep-all;
@@ -2589,6 +2613,7 @@ body.no-text-select *:not(input):not(textarea):not([contenteditable="true"]) {
     padding: 0;
     margin-top: 0.5rem;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     border: 0;
     background: transparent;
     font-size: 0.72rem;
@@ -2705,6 +2730,7 @@ html[data-theme="dark"] .site-notification-close:hover {
     border-radius: 999px;
     background: rgba(125, 125, 125, 0.15);
     color: var(--text-secondary);
+    transition: color 0.5s ease, background-color 0.5s ease;
     letter-spacing: -0.01em;
     line-height: 1.2;
 }
@@ -2742,6 +2768,7 @@ html[data-theme="dark"] .site-notification-close:hover {
 .notification-guide-heading h3 {
     margin: 0;
     color: var(--text-primary);
+    transition: color 0.5s ease;
     font-size: 1rem;
     line-height: 1.35;
 }
@@ -2749,6 +2776,7 @@ html[data-theme="dark"] .site-notification-close:hover {
 .notification-guide-heading p {
     margin: 0.3rem 0 0;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     font-size: 0.84rem;
     line-height: 1.45;
 }
@@ -2811,6 +2839,7 @@ html[data-theme="dark"] .site-notification-close:hover {
 .notification-platform-coming-soon {
     padding: 0.12rem 0.34rem;
     color: var(--text-secondary);
+    transition: color 0.5s ease, background-color 0.5s ease;
     background: rgba(127, 127, 127, 0.13);
     border-radius: 999px;
     font-size: 0.62rem;
@@ -2890,6 +2919,7 @@ html[data-theme="dark"] .site-notification-close:hover {
 .notification-guide-intro h4 {
     margin: 0;
     color: var(--text-primary);
+    transition: color 0.5s ease;
     font-size: 1rem;
     line-height: 1.35;
 }
@@ -2897,6 +2927,7 @@ html[data-theme="dark"] .site-notification-close:hover {
 .notification-guide-intro p {
     margin: 0.3rem 0 0;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     font-size: 0.82rem;
     line-height: 1.45;
 }
@@ -2908,6 +2939,7 @@ html[data-theme="dark"] .site-notification-close:hover {
     margin-bottom: 1rem;
     padding: 0.75rem 0.8rem;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     background: color-mix(in srgb, var(--accent-color) 7%, transparent);
     border-radius: 13px;
     font-size: 0.78rem;
@@ -2966,6 +2998,7 @@ html[data-theme="dark"] .site-notification-close:hover {
 .notification-guide-step h5 {
     margin: 0.12rem 0 0;
     color: var(--text-primary);
+    transition: color 0.5s ease;
     font-size: 0.9rem;
     line-height: 1.4;
 }
@@ -2973,6 +3006,7 @@ html[data-theme="dark"] .site-notification-close:hover {
 .notification-guide-step p {
     margin: 0.38rem 0 0;
     color: var(--text-secondary);
+    transition: color 0.5s ease;
     font-size: 0.8rem;
     line-height: 1.55;
     word-break: keep-all;
@@ -3077,6 +3111,7 @@ html[data-theme="dark"] .site-notification-close:hover {
     margin-top: 1rem;
     padding: 0.9rem;
     color: var(--text-primary);
+    transition: color 0.5s ease;
     background: rgba(16, 185, 129, 0.1);
     border: 1px solid rgba(16, 185, 129, 0.28);
     border-radius: 15px;

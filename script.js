@@ -960,18 +960,31 @@ async function migrateLegacyVersionControl(user) {
     }, { merge: true });
 }
 
+let isGlobalAuthResolved = false;
+
 function getUserRoleTier(user = auth.currentUser) {
-    if (!user) return 'member';
-    const email = (user.email || '').toLowerCase();
-    if (typeof ADMIN_EMAILS !== 'undefined' && ADMIN_EMAILS.includes(email)) {
-        return 'president';
+    if (!user) {
+        if (!isGlobalAuthResolved) {
+            try {
+                const cachedTier = localStorage.getItem('cached_user_role_tier');
+                if (cachedTier) return cachedTier;
+            } catch (e) {}
+        }
+        return 'member';
     }
-    if (typeof window.currentUserRoleName === 'string') {
+    const email = (user.email || '').toLowerCase();
+    let tier = 'member';
+    if (typeof ADMIN_EMAILS !== 'undefined' && ADMIN_EMAILS.includes(email)) {
+        tier = 'president';
+    } else if (typeof window.currentUserRoleName === 'string') {
         const role = window.currentUserRoleName.trim();
         if (role.includes('회장') && !role.includes('부회장')) return 'president';
         if (role.includes('사장') || role.includes('부회장') || role.includes('운영진')) return 'leader';
     }
-    return 'member';
+    try {
+        localStorage.setItem('cached_user_role_tier', tier);
+    } catch (e) {}
+    return tier;
 }
 
 window.applyUserEffectiveVersion = function (user = auth.currentUser) {
@@ -980,30 +993,43 @@ window.applyUserEffectiveVersion = function (user = auth.currentUser) {
     window.currentEffectiveOneUiVersion = effectiveVersion;
 
     const versionNumber = effectiveVersion;
-    const buildNumber = effectiveVersion === '1.5' ? '2026913.2' : '20260822.1';
+    const buildNumber = effectiveVersion === '1.5' ? '2026919.1' : '20260822.1';
     const updateMessage = effectiveVersion === '1.5'
-        ? '게시판 카드 이동 및 글 삭제, 댓글 작성자 이름 표시 관련 버그 수정 업데이트입니다.'
+        ? '다크·라이트 모드 화면 전환 효과 및 게시글 상세창 표시 관련 버그 수정 업데이트입니다.'
         : '초기 버전 배포입니다.';
 
-    // 1. 버전 텍스트 및 빌드 번호 갱신
+    // 1. 버전 텍스트 및 빌드 번호 갱신 (불필요한 DOM 재할당 방지)
     document.querySelectorAll('[data-current-one-ui-version]').forEach((element) => {
         if (element.tagName === 'svg' || element.tagName === 'SVG') {
-            element.setAttribute('aria-label', `One UI ${versionNumber}`);
+            const currentAria = element.getAttribute('aria-label');
+            const targetAria = `One UI ${versionNumber}`;
+            if (currentAria !== targetAria) {
+                element.setAttribute('aria-label', targetAria);
+            }
             const textEl = element.querySelector('.one-ui-version-number');
-            if (textEl) textEl.textContent = versionNumber;
+            if (textEl && textEl.textContent !== versionNumber) {
+                textEl.textContent = versionNumber;
+            }
         } else {
-            element.textContent = `One UI ${versionNumber}`;
+            const targetText = `One UI ${versionNumber}`;
+            if (element.textContent !== targetText) {
+                element.textContent = targetText;
+            }
         }
     });
 
     document.querySelectorAll('[data-current-build-number]').forEach((element) => {
-        element.textContent = `Build ${buildNumber}`;
+        const targetBuild = `Build ${buildNumber}`;
+        if (element.textContent !== targetBuild) {
+            element.textContent = targetBuild;
+        }
     });
 
     document.querySelectorAll('[data-current-update-message]').forEach((element) => {
-        element.textContent = updateMessage;
+        if (element.textContent !== updateMessage) {
+            element.textContent = updateMessage;
+        }
     });
-
     // 2. 설정창 [알림] 탭 제어 (1.5 전용 기능)
     const notiTabNav = document.querySelector('.settings-nav-item[data-tab="notification"]');
     const notiMobileItem = document.querySelector('.settings-mobile-menu-item[data-tab="notification"]');
@@ -1186,6 +1212,8 @@ if (versionManageSaveBtn) {
 
 // Auth 변경에 맞춘 관리자 메뉴 표시 및 설정 동기화 리스너
 auth.onAuthStateChanged(user => {
+    isGlobalAuthResolved = true;
+    if (!user) { try { localStorage.removeItem('cached_user_role_tier'); } catch (e) {} }
     syncAdminAccessUi(user);
     if (user) {
         window.loadUserAccountData(user);
@@ -2268,8 +2296,8 @@ if (settingsNavItems.length > 0) {
 // 사이트 업데이트 정보: 다음 배포 시 이 값만 변경합니다.
 const SITE_UPDATE_INFO = Object.freeze({
     oneUiVersion: 'One UI 1.5',
-    buildNumber: '2026913.2',
-    message: '게시판 카드 이동 및 글 삭제, 댓글 작성자 이름 표시 관련 버그 수정 업데이트입니다.'
+    buildNumber: '2026919.1',
+    message: '다크·라이트 모드 화면 전환 효과 및 게시글 상세창 표시 관련 버그 수정 업데이트입니다.'
 });
 window.SITE_UPDATE_INFO = SITE_UPDATE_INFO;
 
@@ -2372,18 +2400,18 @@ function applyCurrentUpdateHistory() {
         </div>
     `;
 
-    // 2) 최신 버전 카드: Build 2026913.2 (이번 버그 수정)
-    const currentCard = document.createElement('div');
-    currentCard.className = 'update-history-card current-version-card';
-    currentCard.innerHTML = `
+    // 2) 이전 업데이트 카드: Build 2026913.2 (이전 버그 수정)
+    const prevCard2 = document.createElement('div');
+    prevCard2.className = 'update-history-card';
+    prevCard2.innerHTML = `
         <div class="update-card-header">
             <div class="update-version-badge-group">
-                <span class="version-tag current">현재 버전</span>
-                <h4 class="version-title" data-current-one-ui-version>One UI 1.5</h4>
+                <span class="version-tag" style="background: rgba(255, 255, 255, 0.12); color: var(--text-secondary);">이전 업데이트</span>
+                <h4 class="version-title">One UI 1.5</h4>
             </div>
-            <span class="build-number" data-current-build-number>Build 2026913.2</span>
+            <span class="build-number">Build 2026913.2</span>
         </div>
-        <p class="update-description" data-current-update-message>게시판 카드 이동 및 글 삭제, 댓글 작성자 이름 표시 관련 버그 수정 업데이트입니다.</p>
+        <p class="update-description">게시판 카드 이동 및 글 삭제, 댓글 작성자 이름 표시 관련 버그 수정 업데이트입니다.</p>
         <div class="update-features-list">
             <div class="update-section-accordion">
                 <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
@@ -2422,8 +2450,91 @@ function applyCurrentUpdateHistory() {
         </div>
     `;
 
+    // 3) 최신 버전 카드: Build 2026919.1 (이번 화면 전환 및 상세창 버그 수정)
+    const currentCard = document.createElement('div');
+    currentCard.className = 'update-history-card current-version-card';
+    currentCard.innerHTML = `
+        <div class="update-card-header">
+            <div class="update-version-badge-group">
+                <span class="version-tag current">현재 버전</span>
+                <h4 class="version-title" data-current-one-ui-version>One UI 1.5</h4>
+            </div>
+            <span class="build-number" data-current-build-number>Build 2026919.1</span>
+        </div>
+        <p class="update-description" data-current-update-message>다크·라이트 모드 화면 전환 효과 및 게시글 상세창 표시 관련 버그 수정 업데이트입니다.</p>
+        <div class="update-features-list">
+            <!-- 1. 사용성 및 기능 개선 -->
+            <div class="update-section-accordion">
+                <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
+                    <div class="update-section-category-title">
+                        <i class="fa-solid fa-lightbulb" style="color: var(--accent-color);"></i>
+                        <span>사용성 및 기능 개선</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                </button>
+                <div class="update-section-collapse">
+                    <div class="update-section-collapse-content">
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>테마 전환 효과 0.5초 통일</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">다크 모드와 라이트 모드를 바꿀 때 상세창의 모든 글자, 댓글 입력창, 그림자, 버튼들이 0.5초 동안 부드럽게 바뀌도록 개선했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>라이트 모드 화면 스타일 및 가독성 다듬기</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">첨부파일 기준 안내창, 유튜브 이동 창, 사진 설명 수정창의 라이트 모드 색상과 가독성을 자연스럽게 보완했습니다.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="update-section-divider"></div>
+
+            <!-- 2. 버그 수정 -->
+            <div class="update-section-accordion">
+                <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
+                    <div class="update-section-category-title">
+                        <i class="fa-solid fa-wrench" style="color: var(--accent-color);"></i>
+                        <span>버그 수정</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                </button>
+                <div class="update-section-collapse">
+                    <div class="update-section-collapse-content">
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>상세창 상단 버튼 유지 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">컴퓨터에서 반쪽 상세창을 열었을 때 위쪽 버튼(로고, 다크모드, 메뉴)이 사라지던 현상을 수정했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>댓글 입력창 전환 꺼짐 현상 해결</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">댓글을 스크롤한 뒤 테마를 바꿀 때 부드러운 전환이 풀려 즉시 바뀌던 문제를 해결했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>파일 미리보기 창 코드 안정화</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">미리보기 창의 불필요한 내부 코드를 정리하여 화면 오류를 예방했습니다.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
     updateSection15.insertBefore(prevCard, legacyCard);
-    updateSection15.insertBefore(currentCard, prevCard);
+    updateSection15.insertBefore(prevCard2, prevCard);
+    updateSection15.insertBefore(currentCard, prevCard2);
     updateSection15.dataset.historyPrepared = 'true';
 }
 
@@ -2848,32 +2959,32 @@ document.addEventListener('change', (e) => {
 function setCommentInputScrollHideEnabled(enabled, save = true) {
     _isCommentInputScrollHideEnabled = Boolean(enabled);
     updateCommentInputToggleUI();
+    const container = document.getElementById('commentInputContainer');
+    if (container && container.style.transition) container.style.transition = '';
     if (!_isCommentInputScrollHideEnabled) _showCommentInput();
     if (save) saveAccountSettings({ commentInputScrollHide: _isCommentInputScrollHideEnabled });
 }
 
 function _hideCommentInput() {
-    const container = document.getElementById('commentInputContainer');
     const area = document.querySelector('.comment-input-area');
-    const targetEl = container || area;
-
-    if (targetEl && !_isCommentInputHidden) {
-        targetEl.style.transition = 'opacity 0.35s ease';
-        targetEl.style.opacity = '0';
-        targetEl.style.pointerEvents = 'none';
+    if (area && !_isCommentInputHidden) {
+        area.style.transition = 'opacity 0.35s ease';
+        area.style.opacity = '0';
+        area.style.pointerEvents = 'none';
         _isCommentInputHidden = true;
     }
 }
 
 function _showCommentInput() {
-    const container = document.getElementById('commentInputContainer');
     const area = document.querySelector('.comment-input-area');
-    const targetEl = container || area;
-
-    if (targetEl && _isCommentInputHidden) {
-        targetEl.style.transition = 'opacity 0.35s ease';
-        targetEl.style.opacity = '';
-        targetEl.style.pointerEvents = '';
+    const container = document.getElementById('commentInputContainer');
+    if (container && container.style.transition) {
+        container.style.transition = '';
+    }
+    if (area && _isCommentInputHidden) {
+        area.style.transition = 'opacity 0.35s ease';
+        area.style.opacity = '';
+        area.style.pointerEvents = '';
         _isCommentInputHidden = false;
     }
 }

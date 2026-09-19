@@ -404,14 +404,15 @@ async function uploadFileToFirebaseStorage(file, folder = getMediaFolder(file)) 
 }
 
 async function uploadFileToActualCloud(file) {
-    // Cloudinary free delivery blocks original PDF files with HTTP 401 unless
-    // the account-level PDF delivery switch is enabled. Store PDFs in
-    // Firebase Storage instead so new attachments have a stable shared URL.
+    if (file && typeof window.uploadCommunityMedia === 'function') {
+        try {
+            return await window.uploadCommunityMedia(file);
+        } catch (mediaError) {
+            console.warn('uploadCommunityMedia 업로드 실패, 보조 저장소 시도:', mediaError);
+        }
+    }
     if (isPdfAttachmentFile(file)) {
         return uploadFileToFirebaseStorage(file, 'comments/pdfs');
-    }
-    if (file && typeof window.uploadCommunityMedia === 'function') {
-        return window.uploadCommunityMedia(file);
     }
     return uploadFileToFirebaseStorage(file);
 }
@@ -469,13 +470,6 @@ if (commentVideoInput) {
 
         if (commentAttachedVideos.length + files.length > MAX_COMMENT_ATTACHMENTS) {
             showAttachmentCountAlert('동영상');
-            commentVideoInput.value = '';
-            return;
-            if (typeof window.customAlert === 'function') {
-                await window.customAlert('동영상은 최대 5개까지만 첨부할 수 있습니다.', '첨부 제한 초과');
-            } else {
-                alert('동영상은 최대 5개까지만 첨부할 수 있습니다.');
-            }
             commentVideoInput.value = '';
             return;
         }
@@ -537,8 +531,6 @@ if (commentAttachAudioBtn && commentAudioInput) {
         if (commentAttachedAudios.length >= MAX_COMMENT_ATTACHMENTS) {
             showAttachmentCountAlert('음성/오디오 파일');
             return;
-            alert('음성 파일은 최대 5개까지만 첨부할 수 있습니다.');
-            return;
         }
         commentAudioInput.click();
         if (commentAttachMenu) commentAttachMenu.classList.remove('active');
@@ -581,8 +573,6 @@ if (commentAttachPdfBtn && commentPdfInput) {
         if (commentAttachedPdfs.length >= MAX_COMMENT_ATTACHMENTS) {
             showAttachmentCountAlert('PDF 파일');
             return;
-            alert('PDF 파일은 최대 5개까지만 첨부할 수 있습니다.');
-            return;
         }
         commentPdfInput.click();
         if (commentAttachMenu) commentAttachMenu.classList.remove('active');
@@ -624,8 +614,6 @@ if (commentAttachHtmlBtn && commentHtmlInput) {
     commentAttachHtmlBtn.addEventListener('click', () => {
         if (commentAttachedHtmls.length >= MAX_COMMENT_ATTACHMENTS) {
             showAttachmentCountAlert('HTML 파일');
-            return;
-            alert('HTML 파일은 최대 5개까지만 첨부할 수 있습니다.');
             return;
         }
         commentHtmlInput.click();
