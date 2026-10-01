@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>동아리 사이트 · 개발 버전</title>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
+    <style>
+        * { box-sizing: border-box; } body { margin:0; min-height:100dvh; display:grid; place-items:center; padding:24px; background:#f8fafc; color:#0f172a; font-family:system-ui,sans-serif; }
+        main { width:min(100%,420px); padding:32px; border:1px solid #e2e8f0; border-radius:24px; background:white; }
+        h1 { margin-top:0; font-size:24px; } p { line-height:1.6; color:#475569; }
+        button { width:100%; padding:14px; border:0; border-radius:14px; background:#2563eb; color:white; font:inherit; cursor:pointer; }
+        button:disabled { opacity:.6; cursor:wait; } a { display:block; margin-top:20px; color:#2563eb; text-align:center; }
+    </style>
+</head>
+<body>
+    <main><h1>동아리 사이트 개발 버전</h1><p>동현 계정으로 로그인하면 개발 중인 버전을 열 수 있어.</p>
+        <p id="previewStatus" role="status">로그인 상태를 확인하고 있어…</p>
+        <button id="previewLogin" type="button" disabled>Google 계정으로 로그인</button>
+        <a href="../">기존 사용자용 사이트로 돌아가기</a>
+    </main>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="preview-firebase-config.js"></script>
+    <script src="preview-access.js?v=20261001.1"></script>
+</body>
+</html>

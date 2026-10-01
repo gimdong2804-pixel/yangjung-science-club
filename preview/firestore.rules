@@ -1,0 +1,519 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.get('email_verified', false) == true
+        && request.auth.token.get('email', '') in [
+          'gimdong2804@gmail.com',
+          'sjh20110407@gmail.com'
+        ];
+    }
+
+    function owns(data) {
+      return signedIn() && (
+        (data.keys().hasAny(['uid']) && data.uid == request.auth.uid)
+        || (data.keys().hasAny(['authorUid']) && data.authorUid == request.auth.uid)
+      );
+    }
+
+    function changedOnly(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    function validPollOption(options, index) {
+      return options.size() <= index || (
+        options[index] is string
+        && options[index].size() > 0
+        && options[index].trim().size() > 0
+        && options[index].size() <= 50
+        && options[index].matches('^[^\\n\\r]*$')
+      );
+    }
+
+    function validPollOptionsCaseUnique(options) {
+      return options.join('\n').lower().split('\\n').toSet().size() == options.size();
+    }
+
+
+    function validPollFile(file) {
+      return file is map
+        && file.keys().hasOnly(['kind', 'name', 'url', 'size'])
+        && file.kind in ['image', 'audio', 'pdf', 'html']
+        && file.name.matches('^[^\\n\\r]{1,255}$')
+        && file.url.matches('^https://[^\\s]+$') && file.url.size() <= 2048
+        && file.size is int && file.size >= 0 && file.size <= 104857600;
+    }
+
+    function validPollFileAt(files, index) {
+      return files.size() <= index || validPollFile(files[index]);
+    }
+
+    function validPollFileList(files) {
+      return files is list && files.size() <= 10
+        && validPollFileAt(files, 0)
+        && validPollFileAt(files, 1)
+        && validPollFileAt(files, 2)
+        && validPollFileAt(files, 3)
+        && validPollFileAt(files, 4)
+        && validPollFileAt(files, 5)
+        && validPollFileAt(files, 6)
+        && validPollFileAt(files, 7)
+        && validPollFileAt(files, 8)
+        && validPollFileAt(files, 9);
+    }
+
+    function validPollFileSlot(poll, key, index) {
+      return !poll.optionAttachments.keys().hasAny([key]) || (
+        index < poll.options.size()
+        && poll.optionAttachments[key] is list
+        && poll.optionAttachments[key].size() <= 10
+      );
+    }
+
+    // Validate each option in a separate write; the immutable parent copies the
+    // validated records. This keeps 100 files below the per-request rule budget.
+    function validPollProofSlot(attachments, optionCount, postId, commentId, key) {
+      return !attachments.keys().hasAny([key]) || (
+        int(key) < optionCount && (
+          commentId == ''
+            ? get(/databases/$(database)/documents/posts/$(postId)/pollFiles/$(key)).data
+                == {'uid': request.auth.uid, 'files': attachments[key]}
+            : get(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)/pollFiles/$(key)).data
+                == {'uid': request.auth.uid, 'files': attachments[key]}
+        )
+      );
+    }
+
+    function validAllPollProofs(attachments, optionCount, postId, commentId) {
+      return validPollProofSlot(attachments, optionCount, postId, commentId, '0')
+        && validPollProofSlot(attachments, optionCount, postId, commentId, '1')
+        && validPollProofSlot(attachments, optionCount, postId, commentId, '2')
+        && validPollProofSlot(attachments, optionCount, postId, commentId, '3')
+        && validPollProofSlot(attachments, optionCount, postId, commentId, '4')
+        && validPollProofSlot(attachments, optionCount, postId, commentId, '5')
+        && validPollProofSlot(attachments, optionCount, postId, commentId, '6')
+        && validPollProofSlot(attachments, optionCount, postId, commentId, '7')
+        && validPollProofSlot(attachments, optionCount, postId, commentId, '8')
+        && validPollProofSlot(attachments, optionCount, postId, commentId, '9');
+    }
+
+    function validPollAttachmentProofs(data, postId, commentId) {
+      return !data.keys().hasAny(['poll']) || !data.poll.keys().hasAny(['optionAttachments'])
+        || validAllPollProofs(data.poll.optionAttachments, data.poll.options.size(), postId, commentId);
+    }
+
+    function validPollFileProof(data, optionIndex) {
+      return signedIn() && optionIndex.matches('^[0-9]$')
+        && data.keys().hasOnly(['uid', 'files']) && data.uid == request.auth.uid
+        && validPollFileList(data.files);
+    }
+
+    function validPollAttachments(poll) {
+      // File list/type/URL/size validation happens on the immutable proof writes.
+      // The create rule checks that every list exactly matches its owner proof.
+      return !poll.keys().hasAny(['optionAttachments']) || (
+        poll.optionAttachments is map
+        && poll.optionAttachments.keys().hasOnly(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])
+      );
+    }
+
+    function validPoll(poll) {
+      return poll is map
+        && poll.keys().hasOnly(['question', 'options', 'multiple', 'optionAttachments'])
+        && poll.question is string
+        && poll.question.size() > 0
+        && poll.question.trim().size() > 0
+        && poll.question.size() <= 100
+        && poll.multiple is bool
+        && poll.options is list && poll.options.size() >= 2 && poll.options.size() <= 10
+        && poll.options.toSet().size() == poll.options.size()
+        && validPollOption(poll.options, 0) && validPollOption(poll.options, 1)
+        && validPollOption(poll.options, 2) && validPollOption(poll.options, 3)
+        && validPollOption(poll.options, 4) && validPollOption(poll.options, 5)
+        && validPollOption(poll.options, 6) && validPollOption(poll.options, 7)
+        && validPollOption(poll.options, 8) && validPollOption(poll.options, 9)
+        && validPollOptionsCaseUnique(poll.options)
+        && validPollAttachments(poll);
+    }
+
+    function validOptionalPoll(data) {
+      return !data.keys().hasAny(['poll']) || validPoll(data.poll);
+    }
+
+    function pollUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['poll']);
+    }
+
+    function voteActorAllowed(parent, voterId) {
+      return signedIn() && voterId == request.auth.uid
+        && parent.get('deleted', false) == false
+        && validPoll(parent.get('poll', null));
+    }
+
+    function validVoteChoices(parent, choices) {
+      return choices is list && choices.size() >= 1
+        && choices.size() <= parent.poll.options.size()
+        && choices.toSet().size() == choices.size()
+        && choices.hasOnly(parent.poll.options)
+        && (parent.poll.multiple || choices.size() == 1);
+    }
+
+    function validVoteRequestFields(vote) {
+      return vote.keys().hasOnly(['choices', 'cancelCount', 'votedAt', 'updatedAt'])
+        && vote.cancelCount is int && vote.cancelCount >= 0 && vote.cancelCount <= 2
+        && vote.votedAt is timestamp
+        && vote.updatedAt == request.time;
+    }
+
+    function validVoteCreate(parent, voterId) {
+      let vote = request.resource.data;
+      return voteActorAllowed(parent, voterId)
+        && validVoteRequestFields(vote)
+        && validVoteChoices(parent, vote.choices)
+        && vote.cancelCount == 0
+        && vote.votedAt == request.time;
+    }
+
+    function validVoteUpdate(parent, voterId) {
+      let old = resource.data;
+      let vote = request.resource.data;
+      let oldChoices = old.get('choices', []);
+      let oldCancelCount = old.get('cancelCount', 0);
+      let oldVotedAt = old.get('votedAt', old.get('updatedAt', request.time));
+      return voteActorAllowed(parent, voterId)
+        && oldChoices is list
+        && oldCancelCount is int && oldCancelCount >= 0 && oldCancelCount <= 2
+        && oldVotedAt is timestamp
+        && validVoteRequestFields(vote)
+        && (
+          (validVoteChoices(parent, vote.choices)
+            && vote.cancelCount == oldCancelCount
+            && (
+              (oldChoices.size() == 0 && vote.votedAt == request.time)
+              || (oldChoices.size() > 0
+                && vote.choices.toSet() != oldChoices.toSet()
+                && vote.votedAt == request.time)
+              || (oldChoices.size() > 0
+                && vote.choices.toSet() == oldChoices.toSet()
+                && vote.votedAt == oldVotedAt)
+            ))
+          || (vote.choices is list && vote.choices == []
+            && oldChoices.size() > 0
+            && oldCancelCount < 2
+            && request.time < oldVotedAt + duration.value(5, 'm')
+            && vote.cancelCount == oldCancelCount + 1
+            && vote.votedAt == oldVotedAt)
+        );
+    }
+
+    function isPostOwner(postId) {
+      return owns(get(/databases/$(database)/documents/posts/$(postId)).data);
+    }
+
+    function hasValidAuthor(author) {
+      let email = request.auth.token.get('email', '');
+      let accountName = request.auth.token.get('name', '');
+      return signedIn()
+        && author is string
+        && author.size() > 0
+        && author.size() <= 80
+        && (
+          isAdmin()
+          || author == accountName
+          || (accountName == '' && author == '회원')
+          || (
+            email != ''
+            && exists(/databases/$(database)/documents/userRoles/$(email))
+            && author == get(/databases/$(database)/documents/userRoles/$(email)).data.get('roleName', '')
+          )
+        );
+    }
+
+    function isLikeToggle() {
+      let oldUsers = resource.data.get('likedUsers', []);
+      let newUsers = request.resource.data.get('likedUsers', []);
+      let oldLikes = resource.data.get('likes', 0);
+      let newLikes = request.resource.data.get('likes', 0);
+      return signedIn()
+        && oldUsers is list
+        && newUsers is list
+        && oldLikes is int
+        && newLikes is int
+        && newLikes >= 0
+        && changedOnly(['likes', 'likedUsers'])
+        && (
+          (
+            !oldUsers.hasAny([request.auth.uid])
+            && newUsers.hasAny([request.auth.uid])
+            && newUsers.hasAll(oldUsers)
+            && newUsers.size() == oldUsers.size() + 1
+            && newLikes == oldLikes + 1
+          )
+          || (
+            oldUsers.hasAny([request.auth.uid])
+            && !newUsers.hasAny([request.auth.uid])
+            && oldUsers.hasAll(newUsers)
+            && newUsers.size() == oldUsers.size() - 1
+            && newLikes == oldLikes - 1
+          )
+        );
+    }
+
+    function isPostViewUpdate() {
+      let oldUsers = resource.data.get('viewedBy', []);
+      let newUsers = request.resource.data.get('viewedBy', []);
+      let oldViews = resource.data.get('views', 0);
+      let newViews = request.resource.data.get('views', 0);
+      return signedIn()
+        && oldUsers is list
+        && newUsers is list
+        && oldViews is int
+        && newViews is int
+        && changedOnly(['views', 'viewedBy'])
+        && !oldUsers.hasAny([request.auth.uid])
+        && newUsers.hasAny([request.auth.uid])
+        && newUsers.hasAll(oldUsers)
+        && newUsers.size() == oldUsers.size() + 1
+        && newViews == oldViews + 1;
+    }
+
+    function isValidPostContentUpdate() {
+      return request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 200
+        && request.resource.data.body is string
+        && request.resource.data.body.size() > 0
+        && request.resource.data.body.size() <= 10000
+        && request.resource.data.categoryMain is string
+        && request.resource.data.categoryMain.size() <= 80
+        && request.resource.data.categorySub is string
+        && request.resource.data.categorySub.size() <= 80
+        && request.resource.data.get('images', []) is list
+        && request.resource.data.get('images', []).size() <= 40
+        && request.resource.data.get('attachments', []) is list
+        && request.resource.data.get('attachments', []).size() <= 40;
+    }
+
+    function isValidCommentContentUpdate() {
+      return request.resource.data.get('body', '') is string
+        && request.resource.data.get('body', '').size() <= 5000
+        && request.resource.data.get('images', []) is list
+        && request.resource.data.get('images', []).size() <= 10
+        && request.resource.data.get('videos', []) is list
+        && request.resource.data.get('videos', []).size() <= 10
+        && request.resource.data.get('audios', []) is list
+        && request.resource.data.get('audios', []).size() <= 10
+        && request.resource.data.get('pdfs', []) is list
+        && request.resource.data.get('pdfs', []).size() <= 10
+        && request.resource.data.get('htmls', []) is list
+        && request.resource.data.get('htmls', []).size() <= 10;
+    }
+
+    function isValidCommentParent(postId, commentId, parentId) {
+      return parentId == null
+        || (
+          parentId is string
+          && parentId.matches('^[A-Za-z0-9_-]{1,128}$')
+          && parentId != commentId
+          && exists(/databases/$(database)/documents/posts/$(postId)/comments/$(parentId))
+        );
+    }
+
+    function isCommentModerationDelete() {
+      return changedOnly([
+          'body', 'content', 'images', 'videos', 'audios', 'pdfs', 'htmls',
+          'imageDescriptions', 'deleted', 'deletedAt'
+        ])
+        && resource.data.get('deleted', false) == false
+        && request.resource.data.deleted == true
+        && request.resource.data.deletedAt is timestamp
+        && request.resource.data.get('body', '') == ''
+        && request.resource.data.get('content', '') == ''
+        && request.resource.data.get('images', []) == []
+        && request.resource.data.get('videos', []) == []
+        && request.resource.data.get('audios', []) == []
+        && request.resource.data.get('pdfs', []) == []
+        && request.resource.data.get('htmls', []) == []
+        && request.resource.data.get('imageDescriptions', {}) == {};
+    }
+
+    function isCommentOwnerEdit() {
+      return changedOnly([
+          'body', 'content', 'images', 'videos', 'audios', 'pdfs', 'htmls',
+          'imageDescriptions', 'edited', 'editedAt'
+        ])
+        && resource.data.get('deleted', false) == false
+        && request.resource.data.get('deleted', false) == false
+        && isValidCommentContentUpdate();
+    }
+
+    match /userRoles/{accountEmail} {
+      allow get: if isAdmin()
+        || (signedIn() && request.auth.token.get('email', '') == accountEmail);
+      allow list, create, update, delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+
+      match /{privateDocument=**} {
+        allow read, write: if signedIn() && request.auth.uid == userId;
+      }
+    }
+
+    match /posts/{postId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && postId.matches('^[A-Za-z0-9_-]{1,128}$')
+        && validPollAttachmentProofs(request.resource.data, postId, '')
+        && request.resource.data.keys().hasOnly([
+          'title', 'author', 'uid', 'userPhoto', 'categoryMain', 'categorySub',
+          'body', 'images', 'attachments', 'createdAt',
+          'views', 'viewedBy', 'likes', 'likedUsers', 'poll'
+        ])
+        && validOptionalPoll(request.resource.data)
+        && request.resource.data.uid == request.auth.uid
+        && hasValidAuthor(request.resource.data.author)
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 200
+        && request.resource.data.body is string
+        && request.resource.data.body.size() > 0
+        && request.resource.data.body.size() <= 10000
+        && request.resource.data.categoryMain is string
+        && request.resource.data.categoryMain.size() <= 80
+        && request.resource.data.categorySub is string
+        && request.resource.data.categorySub.size() <= 80
+        && request.resource.data.userPhoto is string
+        && request.resource.data.images is list
+        && request.resource.data.images.size() <= 40
+        && request.resource.data.attachments is list
+        && request.resource.data.attachments.size() <= 40
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.views == 0
+        && request.resource.data.viewedBy == []
+        && request.resource.data.likes == 0
+        && request.resource.data.likedUsers == [];
+
+      allow update: if (isAdmin() && pollUnchanged())
+        || (
+          owns(resource.data)
+          && changedOnly([
+            'title', 'body', 'categoryMain', 'categorySub',
+            'images', 'attachments', 'imageDescriptions'
+          ])
+          && isValidPostContentUpdate()
+        )
+        || isPostViewUpdate()
+        || isLikeToggle();
+
+      allow delete: if isAdmin() || owns(resource.data);
+
+      match /pollFiles/{optionIndex} {
+        allow read: if signedIn() && exists(/databases/$(database)/documents/posts/$(postId));
+        allow create: if !exists(/databases/$(database)/documents/posts/$(postId))
+          && validPollFileProof(request.resource.data, optionIndex);
+        allow update: if signedIn() && resource.data.uid == request.auth.uid
+          && request.resource.data == resource.data
+          && !exists(/databases/$(database)/documents/posts/$(postId));
+        allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      }
+
+      match /votes/{voterId} {
+        allow read: if signedIn();
+        allow create: if validVoteCreate(
+          get(/databases/$(database)/documents/posts/$(postId)).data, voterId
+        );
+        allow update: if validVoteUpdate(
+          get(/databases/$(database)/documents/posts/$(postId)).data, voterId
+        );
+        allow delete: if false;
+      }
+
+      match /comments/{commentId} {
+        allow read: if signedIn();
+
+        allow create: if signedIn()
+          && commentId.matches('^[A-Za-z0-9_-]{1,128}$')
+          && validPollAttachmentProofs(request.resource.data, postId, commentId)
+          && request.resource.data.keys().hasOnly([
+            'author', 'uid', 'userPhoto', 'body', 'images', 'videos', 'audios',
+            'pdfs', 'htmls', 'imageDescriptions', 'parentId', 'replyToAuthor',
+            'pinned', 'likes', 'likedUsers', 'deleted', 'createdAt', 'official', 'poll'
+          ])
+          && validOptionalPoll(request.resource.data)
+          && request.resource.data.uid == request.auth.uid
+          && hasValidAuthor(request.resource.data.author)
+          && request.resource.data.official == isAdmin()
+          && request.resource.data.body is string
+          && request.resource.data.body.size() <= 5000
+          && request.resource.data.userPhoto is string
+          && request.resource.data.images is list
+          && request.resource.data.images.size() <= 10
+          && request.resource.data.videos is list
+          && request.resource.data.videos.size() <= 10
+          && request.resource.data.audios is list
+          && request.resource.data.audios.size() <= 10
+          && request.resource.data.pdfs is list
+          && request.resource.data.pdfs.size() <= 10
+          && request.resource.data.htmls is list
+          && request.resource.data.htmls.size() <= 10
+          && request.resource.data.imageDescriptions is map
+          && isValidCommentParent(postId, commentId, request.resource.data.parentId)
+          && request.resource.data.replyToAuthor is string
+          && request.resource.data.replyToAuthor.size() <= 80
+          && request.resource.data.createdAt is timestamp
+          && request.resource.data.pinned == false
+          && request.resource.data.likes == 0
+          && request.resource.data.likedUsers == []
+          && request.resource.data.deleted == false;
+
+        allow update: if (isAdmin() && pollUnchanged())
+          || (
+            owns(resource.data)
+            && (isCommentOwnerEdit() || isCommentModerationDelete())
+          )
+          || (isPostOwner(postId) && isCommentModerationDelete())
+          || (isPostOwner(postId) && changedOnly(['pinned']))
+          || isLikeToggle();
+
+        allow delete: if isAdmin() || owns(resource.data) || isPostOwner(postId);
+
+        match /pollFiles/{optionIndex} {
+          allow read: if signedIn() && exists(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId));
+          allow create: if !exists(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId))
+            && validPollFileProof(request.resource.data, optionIndex);
+          allow update: if signedIn() && resource.data.uid == request.auth.uid
+            && request.resource.data == resource.data
+            && !exists(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId));
+          allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+        }
+
+        match /votes/{voterId} {
+          allow read: if signedIn();
+          allow create: if exists(/databases/$(database)/documents/posts/$(postId))
+            && validVoteCreate(get(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)).data, voterId);
+          allow update: if exists(/databases/$(database)/documents/posts/$(postId))
+            && validVoteUpdate(get(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)).data, voterId);
+          allow delete: if false;
+        }
+      }
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

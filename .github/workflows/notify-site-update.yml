@@ -3,6 +3,8 @@ name: 배포 업데이트 알림
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'preview/**'
   workflow_dispatch:
 
 permissions:
@@ -14,6 +16,7 @@ concurrency:
 
 jobs:
   notify-after-pages-update:
+    if: github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip update notification]')
     runs-on: ubuntu-latest
     steps:
       - name: 저장소 받기

@@ -1,0 +1,3424 @@
+// Firebase 공통 초기화 및 전역 설정
+// 전역 공유 변수 설정
+if (!window.hasOwnProperty('_currentPostId')) {
+    window._currentPostId = null;
+    try {
+        Object.defineProperty(window, 'currentPostId', {
+            get() { return window._currentPostId; },
+            set(val) { window._currentPostId = val; },
+            configurable: true,
+            enumerable: true
+        });
+    } catch (e) {
+        console.warn(e);
+    }
+}
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAjYVdkxXL8Z0eaFGGtiwn3qIXUreD8_lc",
+    authDomain: "yangjung-science.firebaseapp.com",
+    projectId: "yangjung-science",
+    storageBucket: "yangjung-science.firebasestorage.app",
+    messagingSenderId: "949394294466",
+    appId: "1:949394294466:web:663583e43bba46f9e05d5b"
+};
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+window.db = firebase.firestore();
+window.auth = firebase.auth();
+window.storage = firebase.storage();
+var db = window.db;
+var auth = window.auth;
+var storage = window.storage;
+
+// 관리자 권한은 Firebase에 실제 로그인된 회장·사장 계정만 인정합니다.
+const ADMIN_EMAILS = Object.freeze(['gimdong2804@gmail.com', 'sjh20110407@gmail.com']);
+
+function escapeTextHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (character) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[character]));
+}
+
+function escapeInlineHandlerString(value) {
+    const escapedForJs = String(value ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r/g, '\\r')
+        .replace(/\n/g, '\\n')
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
+    return escapeTextHtml(escapedForJs);
+}
+
+function setDialogTitle(element, iconClass, iconColor, title) {
+    if (!element) return;
+    const icon = document.createElement('i');
+    icon.className = iconClass;
+    icon.style.color = iconColor;
+    element.replaceChildren(icon, document.createTextNode(` ${String(title ?? '')}`));
+}
+
+function isAdmin(email) {
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+    return ADMIN_EMAILS.includes(normalizedEmail);
+}
+
+function hasAdminAccess(user = auth.currentUser) {
+    return Boolean(user && isAdmin(user.email));
+}
+
+function showAdminAccessDenied() {
+    if (typeof window.customAlert === 'function') {
+        window.customAlert('접근 권한이 없습니다.', '관리자 모드');
+    } else {
+        alert('접근 권한이 없습니다.');
+    }
+}
+
+function requireAdminAccess(showMessage = true) {
+    if (hasAdminAccess()) return true;
+    if (showMessage) showAdminAccessDenied();
+    return false;
+}
+
+// 전역 커스텀 Confirm 모달 함수 (취소: 왼쪽, 확인: 오른쪽)
+window.customConfirm = function (message, title = '확인') {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('customConfirmModalOverlay');
+        const modal = document.getElementById('customConfirmModal');
+        const titleEl = document.getElementById('customConfirmTitle');
+        const msgEl = document.getElementById('customConfirmMessage');
+        const cancelBtn = document.getElementById('customConfirmCancel');
+        const okBtn = document.getElementById('customConfirmOk');
+
+        if (!overlay || !modal || !cancelBtn || !okBtn) {
+            resolve(window.confirm(message));
+            return;
+        }
+
+        setDialogTitle(titleEl, 'fa-solid fa-circle-exclamation', 'var(--accent-color)', title);
+        if (msgEl) msgEl.textContent = message;
+
+        history.pushState({ modal: 'customConfirm' }, '', '');
+        overlay.classList.add('active');
+        modal.classList.add('active');
+
+        const cleanup = (result, fromPopState) => {
+            overlay.classList.remove('active');
+            modal.classList.remove('active');
+            cancelBtn.removeEventListener('click', onCancel);
+            okBtn.removeEventListener('click', onOk);
+            overlay.removeEventListener('click', onCancel);
+            if (window._customConfirmPopHandler) {
+                window.removeEventListener('popstate', window._customConfirmPopHandler);
+                window._customConfirmPopHandler = null;
+            }
+            if (!fromPopState && history.state && history.state.modal === 'customConfirm') {
+                window._isProgrammaticBack = true;
+                history.back();
+            }
+            resolve(result);
+        };
+
+        const onCancel = () => cleanup(false, false);
+        const onOk = () => cleanup(true, false);
+
+        window._customConfirmPopHandler = () => {
+            cleanup(false, true);
+        };
+        window.addEventListener('popstate', window._customConfirmPopHandler);
+
+        cancelBtn.addEventListener('click', onCancel);
+        okBtn.addEventListener('click', onOk);
+        overlay.addEventListener('click', onCancel);
+    });
+};
+
+// 전역 커스텀 Alert 경고 모달 함수 (독립 100% 경고 전용 모달 - 취소 버튼 물리적 존재 0%)
+window.customAlert = function (message, title = '경고') {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('customAlertModalOverlay');
+        const modal = document.getElementById('customAlertModal');
+        const titleEl = document.getElementById('customAlertTitle');
+        const msgEl = document.getElementById('customAlertMessage');
+        const okBtn = document.getElementById('customAlertOk');
+
+        if (!overlay || !modal || !okBtn) {
+            alert(message);
+            resolve();
+            return;
+        }
+
+        setDialogTitle(titleEl, 'fa-solid fa-triangle-exclamation', '#ff6b6b', title);
+        if (msgEl) msgEl.textContent = message;
+
+        history.pushState({ modal: 'customAlert' }, '', '');
+        overlay.classList.add('active');
+        modal.classList.add('active');
+
+        const cleanup = (fromPopState) => {
+            overlay.classList.remove('active');
+            modal.classList.remove('active');
+            okBtn.removeEventListener('click', onOk);
+            overlay.removeEventListener('click', onOk);
+            if (window._customAlertPopHandler) {
+                window.removeEventListener('popstate', window._customAlertPopHandler);
+                window._customAlertPopHandler = null;
+            }
+            if (!fromPopState && history.state && history.state.modal === 'customAlert') {
+                window._isProgrammaticBack = true;
+                history.back();
+            }
+            resolve();
+        };
+
+        const onOk = () => cleanup(false);
+
+        okBtn.addEventListener('click', onOk);
+        overlay.addEventListener('click', onOk);
+
+        window._customAlertPopHandler = () => cleanup(true);
+        window.addEventListener('popstate', window._customAlertPopHandler, { once: true });
+    });
+};
+
+// 테마 토글 로직
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const rootElement = document.documentElement;
+
+const ACCOUNT_SETTINGS_DEFAULTS = Object.freeze({
+    theme: 'light',
+    logoDisplayStyle: 'default',
+    scrollHide: true,
+    commentInputScrollHide: true,
+    textSelectPrevent: true,
+    doubleTapLike: true,
+    inSiteNotification: true,
+    pushNotification: true,
+    settingsSyncEnabled: true
+});
+
+let activeAccountUserId = null;
+let accountSettings = { ...ACCOUNT_SETTINGS_DEFAULTS };
+let isLoadingAccountSettings = false;
+let unsubscribeAccountSettings = null;
+
+function getDeviceSettingsStorageKey(userId) {
+    return `account_settings_${userId}`;
+}
+
+function getDeviceAccountSettings(userId) {
+    try {
+        const rawSettings = localStorage.getItem(getDeviceSettingsStorageKey(userId));
+        return rawSettings ? JSON.parse(rawSettings) : null;
+    } catch (error) {
+        console.error('기기 설정 불러오기 오류:', error);
+        return null;
+    }
+}
+
+function saveDeviceAccountSettings(userId, settings) {
+    if (!userId) return;
+    try {
+        localStorage.setItem(getDeviceSettingsStorageKey(userId), JSON.stringify(settings));
+    } catch (error) {
+        console.error('기기 설정 저장 오류:', error);
+    }
+}
+
+function saveAccountSettings(changes) {
+    accountSettings = { ...accountSettings, ...changes };
+    const userId = activeAccountUserId;
+    if (!userId || isLoadingAccountSettings) return;
+
+    saveDeviceAccountSettings(userId, accountSettings);
+
+    const syncStateChanged = Object.prototype.hasOwnProperty.call(changes, 'settingsSyncEnabled');
+    if (!accountSettings.settingsSyncEnabled && !syncStateChanged) return;
+
+    const settingsToSave = syncStateChanged && accountSettings.settingsSyncEnabled
+        ? { ...accountSettings, settingsSyncEnabled: true }
+        : syncStateChanged
+            ? { settingsSyncEnabled: false }
+            : { ...changes, settingsSyncEnabled: true };
+
+    db.collection('users').doc(userId).collection('private').doc('settings').set({
+        ...settingsToSave,
+        updatedAt: Date.now()
+    }, { merge: true }).catch((error) => {
+        console.error('계정 설정 저장 오류:', error);
+    });
+}
+
+window.saveAccountSettings = saveAccountSettings;
+
+function getSiteTheme() {
+    return rootElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+}
+
+function setSiteTheme(theme, save = true) {
+    const normalizedTheme = theme === 'dark' ? 'dark' : 'light';
+    if (normalizedTheme === 'dark') {
+        rootElement.removeAttribute('data-theme');
+    } else {
+        rootElement.setAttribute('data-theme', 'light');
+    }
+
+    const darkModeSettingToggle = document.getElementById('darkModeSettingToggle');
+    if (darkModeSettingToggle) {
+        darkModeSettingToggle.checked = normalizedTheme === 'dark';
+    }
+
+    if (save) saveAccountSettings({ theme: normalizedTheme });
+}
+
+function setSettingsSyncEnabled(enabled, save = true) {
+    const normalizedEnabled = Boolean(enabled);
+    accountSettings = { ...accountSettings, settingsSyncEnabled: normalizedEnabled };
+
+    const settingsSyncToggle = document.getElementById('settingsSyncToggle');
+    if (settingsSyncToggle) settingsSyncToggle.checked = normalizedEnabled;
+
+    if (save) saveAccountSettings({ settingsSyncEnabled: normalizedEnabled });
+}
+
+setSiteTheme(ACCOUNT_SETTINGS_DEFAULTS.theme, false);
+window.setSiteTheme = setSiteTheme;
+window.setSettingsSyncEnabled = setSettingsSyncEnabled;
+
+function normalizeAccountSettings(savedSettings = {}) {
+    const validLogoDisplayStyles = ['default', 'icon-only', 'hidden'];
+    return {
+        theme: savedSettings.theme === 'dark' ? 'dark' : 'light',
+        logoDisplayStyle: validLogoDisplayStyles.includes(savedSettings.logoDisplayStyle)
+            ? savedSettings.logoDisplayStyle
+            : ACCOUNT_SETTINGS_DEFAULTS.logoDisplayStyle,
+        scrollHide: savedSettings.scrollHide !== false,
+        commentInputScrollHide: savedSettings.commentInputScrollHide !== false,
+        textSelectPrevent: savedSettings.textSelectPrevent !== false,
+        doubleTapLike: savedSettings.doubleTapLike !== false,
+        inSiteNotification: savedSettings.inSiteNotification !== false,
+        pushNotification: savedSettings.pushNotification !== false,
+        settingsSyncEnabled: savedSettings.settingsSyncEnabled !== false
+    };
+}
+
+function applyAccountSettings() {
+    setSiteTheme(accountSettings.theme, false);
+    if (typeof applyLogoDisplaySettings === 'function') applyLogoDisplaySettings(accountSettings.logoDisplayStyle);
+    if (typeof setScrollHideEnabled === 'function') setScrollHideEnabled(accountSettings.scrollHide, false);
+    if (typeof setCommentInputScrollHideEnabled === 'function') setCommentInputScrollHideEnabled(accountSettings.commentInputScrollHide, false);
+    if (typeof setTextSelectPreventEnabled === 'function') setTextSelectPreventEnabled(accountSettings.textSelectPrevent, false);
+    if (typeof setDoubleTapLikeEnabled === 'function') setDoubleTapLikeEnabled(accountSettings.doubleTapLike, false);
+    if (window.clubNotifications) {
+        if (typeof window.clubNotifications.setInSiteNotificationEnabled === 'function') {
+            window.clubNotifications.setInSiteNotificationEnabled(accountSettings.inSiteNotification, false);
+        }
+        if (typeof window.clubNotifications.syncPushNotificationState === 'function') {
+            window.clubNotifications.syncPushNotificationState(accountSettings.pushNotification);
+        }
+    }
+    setSettingsSyncEnabled(accountSettings.settingsSyncEnabled, false);
+}
+
+window.loadUserAccountData = function (user) {
+    const userId = user?.uid;
+    if (!userId) {
+        window.clearUserAccountData();
+        return;
+    }
+
+    if (unsubscribeAccountSettings) {
+        unsubscribeAccountSettings();
+        unsubscribeAccountSettings = null;
+    }
+
+    activeAccountUserId = userId;
+    isLoadingAccountSettings = true;
+    accountSettings = normalizeAccountSettings(getDeviceAccountSettings(userId) || ACCOUNT_SETTINGS_DEFAULTS);
+    applyAccountSettings();
+
+    const settingsRef = db.collection('users').doc(userId).collection('private').doc('settings');
+    unsubscribeAccountSettings = settingsRef.onSnapshot((settingsSnapshot) => {
+        if (activeAccountUserId !== userId) return;
+
+        const remoteSettings = normalizeAccountSettings(settingsSnapshot.exists
+            ? settingsSnapshot.data()
+            : ACCOUNT_SETTINGS_DEFAULTS);
+
+        if (!settingsSnapshot.exists) {
+            settingsRef.set({
+                ...ACCOUNT_SETTINGS_DEFAULTS,
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+            }).catch((error) => console.error('기본 계정 설정 생성 오류:', error));
+        }
+
+        if (remoteSettings.settingsSyncEnabled) {
+            accountSettings = remoteSettings;
+        } else {
+            const deviceSettings = getDeviceAccountSettings(userId);
+            accountSettings = normalizeAccountSettings({
+                ...remoteSettings,
+                ...(deviceSettings || {}),
+                settingsSyncEnabled: false
+            });
+        }
+
+        saveDeviceAccountSettings(userId, accountSettings);
+        applyAccountSettings();
+        isLoadingAccountSettings = false;
+    }, (error) => {
+        isLoadingAccountSettings = false;
+        console.error('계정 설정 동기화 오류:', error);
+    });
+};
+
+window.clearUserAccountData = function () {
+    if (unsubscribeAccountSettings) {
+        unsubscribeAccountSettings();
+        unsubscribeAccountSettings = null;
+    }
+    activeAccountUserId = null;
+    isLoadingAccountSettings = false;
+    accountSettings = { ...ACCOUNT_SETTINGS_DEFAULTS };
+    applyAccountSettings();
+};
+
+
+if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+        setSiteTheme(getSiteTheme() === 'light' ? 'dark' : 'light');
+    });
+}
+
+function toggleProfileDetails() {
+    const profileInfo = document.getElementById('userProfileInfo');
+    if (profileInfo) {
+        profileInfo.classList.toggle('expanded');
+    }
+}
+
+// 사이드 드로어 제어 로직
+const menuBtn = document.getElementById('menuBtn');
+const sideDrawer = document.getElementById('sideDrawer');
+const drawerOverlay = document.getElementById('drawerOverlay');
+const drawerCloseBtn = document.getElementById('drawerCloseBtn');
+
+function openDrawer() {
+    history.pushState({ modal: 'drawer' }, '', '#drawer');
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+        sideDrawer.classList.add('active');
+        drawerOverlay.classList.add('active');
+    });
+}
+
+function closeDrawer(e) {
+    const fromPopState = (e === true);
+    sideDrawer.classList.remove('active');
+    drawerOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+    if (fromPopState !== true && history.state && history.state.modal === 'drawer') {
+        window._isProgrammaticBack = true;
+        history.back();
+    }
+}
+
+menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openDrawer();
+});
+
+drawerCloseBtn.addEventListener('click', closeDrawer);
+drawerOverlay.addEventListener('click', closeDrawer);
+
+// ESC 키 입력 시 사이드 드로어 닫기
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeDrawer();
+    }
+});
+
+// 아코디언 메뉴 개별 토글 (다중 열기 허용 및 부드러운 애니메이션 연동)
+const categories = document.querySelectorAll('.menu-category');
+categories.forEach(category => {
+    category.querySelector('.category-header').addEventListener('click', () => {
+        category.classList.toggle('active');
+    });
+});
+
+// 페이지 전환 로직
+const mainPage = document.getElementById('mainPage');
+const greetingPage = document.getElementById('greetingPage');
+const goalPage = document.getElementById('goalPage');
+const greetingLink = document.getElementById('greetingLink');
+const goalLink = document.getElementById('goalLink');
+const backBtn = document.getElementById('backBtn');
+const goalBackBtn = document.getElementById('goalBackBtn');
+const siteFooter = document.querySelector('footer');
+let currentPage = mainPage;
+
+// 커스텀 스크롤바 제어 변수 및 함수
+const customScrollbar = document.getElementById('customScrollbar');
+const customScrollbarThumb = document.getElementById('customScrollbarThumb');
+let scrollTimeout;
+let isHoveringScrollbar = false;
+let isDragging = false;
+let startY = 0;
+let startScrollTop = 0;
+
+function updateScrollbar() {
+    const scrollHeight = document.documentElement.scrollHeight;
+    const clientHeight = document.documentElement.clientHeight;
+    const scrollTop = document.documentElement.scrollTop;
+
+    // 스크롤바가 필요 없는 경우 또는 greetingPage가 비활성화 상태일 때는 숨김
+    const isGreetingActive = !greetingPage.classList.contains('hidden') && greetingPage.classList.contains('fade-in');
+    if (scrollHeight <= clientHeight || !isGreetingActive) {
+        customScrollbar.classList.remove('visible');
+        return;
+    }
+
+    // 헤더 높이를 구해 스크롤바 시작 지점을 헤더 바로 아래로 설정
+    const header = document.querySelector('header');
+    const headerHeight = header ? header.offsetHeight : 70;
+    customScrollbar.style.top = `${headerHeight + 6}px`;
+
+    // 스크롤바 트랙 여백(top/bottom 각 6px) 및 헤더 높이를 고려한 트랙 크기 계산
+    const trackHeight = clientHeight - headerHeight - 12;
+
+    // 썸 최소 높이 30px 설정
+    const thumbHeight = Math.max(30, (clientHeight / scrollHeight) * trackHeight);
+    const maxScrollTop = scrollHeight - clientHeight;
+    const maxThumbTop = trackHeight - thumbHeight;
+
+    const thumbTop = maxScrollTop > 0 ? (scrollTop / maxScrollTop) * maxThumbTop : 0;
+
+    customScrollbarThumb.style.height = `${thumbHeight}px`;
+    customScrollbarThumb.style.transform = `translateY(${thumbTop}px)`;
+
+    // 스크롤 시 스크롤바를 보이게 함
+    customScrollbar.classList.add('visible');
+
+    // 타이머 재설정 (사용 중이 아닐 때 1.5초 후 페이드 아웃)
+    clearTimeout(scrollTimeout);
+    if (!isDragging && !isHoveringScrollbar) {
+        scrollTimeout = setTimeout(() => {
+            customScrollbar.classList.remove('visible');
+        }, 1500);
+    }
+}
+
+function showScrollbar() {
+    // 레이아웃이 완전히 반영된 후 높이 체크 및 표시
+    setTimeout(() => {
+        const scrollHeight = document.documentElement.scrollHeight;
+        const clientHeight = document.documentElement.clientHeight;
+        if (scrollHeight > clientHeight) {
+            updateScrollbar();
+            customScrollbar.classList.add('visible');
+        }
+    }, 50);
+}
+
+function hideScrollbar() {
+    customScrollbar.classList.remove('visible');
+    clearTimeout(scrollTimeout);
+}
+
+// 스크롤 및 창 크기 변경 감지
+window.addEventListener('scroll', updateScrollbar, { passive: true });
+window.addEventListener('resize', () => {
+    updateScrollbar();
+
+    // 상세화면이 열려있을 때 화면 크기에 따라 DOM 위치를 보정합니다.
+    if (currentPostId) {
+        const sideDetailContainer = document.getElementById('sideDetailContainer');
+        if (sideDetailContainer) {
+            const isFullscreen = currentDetailMode === 'fullscreen';
+            const isMobile = window.innerWidth <= 1023;
+            if (isFullscreen || isMobile) {
+                if (sideDetailContainer.parentElement !== document.body) {
+                    document.body.appendChild(sideDetailContainer);
+                }
+                document.body.classList.add('detail-open');
+            } else {
+                const communityLayout = document.querySelector('.community-layout');
+                if (communityLayout && sideDetailContainer.parentElement !== communityLayout) {
+                    communityLayout.appendChild(sideDetailContainer);
+                }
+                document.body.classList.remove('detail-open');
+            }
+        }
+    }
+});
+
+// 스크롤바 영역 마우스 호버 감지 (호버 시 계속 표시되도록 함)
+customScrollbar.addEventListener('mouseenter', () => {
+    isHoveringScrollbar = true;
+    clearTimeout(scrollTimeout);
+    customScrollbar.classList.add('visible');
+});
+
+customScrollbar.addEventListener('mouseleave', () => {
+    isHoveringScrollbar = false;
+    if (!isDragging) {
+        scrollTimeout = setTimeout(() => {
+            customScrollbar.classList.remove('visible');
+        }, 1000); // 마우스가 벗어난 후 1초 뒤 숨김
+    }
+});
+
+// 스크롤바 마우스 드래그 기능
+customScrollbarThumb.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    startY = e.clientY;
+    startScrollTop = document.documentElement.scrollTop;
+    document.body.style.userSelect = 'none';
+    customScrollbarThumb.classList.add('dragging');
+    clearTimeout(scrollTimeout);
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const deltaY = e.clientY - startY;
+    const scrollHeight = document.documentElement.scrollHeight;
+    const clientHeight = document.documentElement.clientHeight;
+    const thumbHeight = parseFloat(customScrollbarThumb.style.height);
+
+    const header = document.querySelector('header');
+    const headerHeight = header ? header.offsetHeight : 70;
+    const trackHeight = clientHeight - headerHeight - 12;
+    const maxScrollTop = scrollHeight - clientHeight;
+    const maxThumbTop = trackHeight - thumbHeight;
+
+    if (maxThumbTop > 0) {
+        const scrollDelta = (deltaY / maxThumbTop) * maxScrollTop;
+        document.documentElement.scrollTop = startScrollTop + scrollDelta;
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    if (isDragging) {
+        isDragging = false;
+        document.body.style.userSelect = '';
+        customScrollbarThumb.classList.remove('dragging');
+
+        // 마우스 드래그가 끝났을 때 호버 중이 아니라면 일정 시간 후 사라짐
+        if (!isHoveringScrollbar) {
+            scrollTimeout = setTimeout(() => {
+                customScrollbar.classList.remove('visible');
+            }, 1000);
+        }
+    }
+});
+
+function handlePageBack() {
+    history.replaceState({ page: 'mainPage' }, '', '#/mainPage');
+    switchPage(currentPage, mainPage, true);
+}
+
+const ADMIN_PAGE_IDS = new Set(['roleManagePage', 'updateRulesPage', 'versionManagePage']);
+
+function switchPage(fromPage, toPage, skipHistory = false, replaceState = false) {
+    if (typeof fromPage === 'string') fromPage = document.getElementById(fromPage) || currentPage;
+    if (typeof toPage === 'string') toPage = document.getElementById(toPage);
+    if (!fromPage || !toPage) return;
+    if (ADMIN_PAGE_IDS.has(toPage.id) && !requireAdminAccess()) return;
+    if (fromPage === toPage) return; // 동일한 페이지로의 전환은 무시
+
+    // 페이지 전환 시 다중선택 모드 해제
+    if (window.isPostMultiSelectMode && typeof window.cancelPostMultiDelete === 'function') {
+        window.cancelPostMultiDelete(true);
+    }
+    if (window.isMultiSelectMode && typeof window.cancelMultiDelete === 'function') {
+        window.cancelMultiDelete(true);
+    }
+
+    // 페이지 전환 시 댓글 첨부 메뉴 닫기
+    if (typeof window.closeCommentAttachMenu === 'function') {
+        window.closeCommentAttachMenu();
+    }
+
+    if (toPage !== mainPage) {
+        document.body.classList.remove('home-active');
+    }
+
+    if (!skipHistory) {
+        const pageId = toPage.id || 'mainPage';
+        if (replaceState) {
+            history.replaceState({ page: pageId }, '', '#/' + pageId);
+        } else {
+            history.pushState({ page: pageId }, '', '#/' + pageId);
+        }
+    }
+
+    // 현재 페이지 fade out (opacity만 사용하여 스크롤 위치 무관하게 동작)
+    fromPage.classList.add('fade-out');
+    fromPage.classList.remove('fade-in');
+
+    // 메인 페이지에서 서브 페이지로 이동할 때 푸터 페이드 아웃 시작
+    if (fromPage === mainPage && siteFooter) {
+        siteFooter.classList.remove('fade-in');
+        siteFooter.classList.add('fade-out');
+    }
+
+    // 페이지가 바뀔 때 우선 스크롤바 숨기기
+    hideScrollbar();
+
+    setTimeout(() => {
+        // 보여줄 페이지의 hidden을 먼저 해제하여 높이를 확보
+        toPage.classList.remove('hidden');
+
+        // 스크롤 리셋 (높이가 확보되었으므로 스크롤 리셋이 원활히 수행됨)
+        window.scrollTo(0, 0);
+
+        // 사라질 페이지를 hidden 처리
+        fromPage.classList.add('hidden');
+
+        // 메인 페이지로 완전히 전환되었을 때 비로소 overflow: hidden을 적용하여 스크롤 차단
+        if (toPage === mainPage) {
+            document.body.classList.add('home-active');
+        }
+
+        // 강제 리플로우를 발생시켜 display 상태의 변화를 인지하도록 처리
+        toPage.offsetHeight;
+
+        // 새 페이지 fade in
+        requestAnimationFrame(() => {
+            toPage.classList.remove('fade-out');
+            toPage.classList.add('fade-in');
+
+            if (toPage === mainPage && siteFooter) {
+                // 메인 페이지로 돌아올 때는 푸터 display를 복원하고 투명(fade-out) 상태에서 페이드 인 적용
+                siteFooter.style.display = '';
+                siteFooter.classList.add('fade-out');
+                siteFooter.classList.remove('fade-in');
+                siteFooter.offsetHeight; // 리플로우
+                requestAnimationFrame(() => {
+                    siteFooter.classList.remove('fade-out');
+                    siteFooter.classList.add('fade-in');
+                });
+            } else if (siteFooter) {
+                // 서브 페이지로 전환 완료 시점에는 푸터를 완전히 숨김
+                siteFooter.style.display = 'none';
+            }
+
+            // 인사말 페이지로 왔을 때만 페이드 인으로 스크롤바 노출
+            if (toPage === greetingPage) {
+                showScrollbar();
+            }
+
+            // 현재 활성화된 페이지 상태 업데이트
+            currentPage = toPage;
+
+            // [수정] 작성 버튼 가시성 업데이트 (통합 함수 호출)
+            if (typeof updateWriteButtonVisibility === 'function') {
+                updateWriteButtonVisibility(toPage);
+            }
+        });
+    }, 400);
+}
+
+// [추가] 작성 버튼 가시성 통합 제어 함수
+function updateWriteButtonVisibility(page) {
+    const btn = document.getElementById('writePostBtn');
+    if (!btn) return;
+    const targetPage = page || currentPage;
+    const sideDetail = document.getElementById('sideDetailContainer');
+    const isDetailHidden = !sideDetail || sideDetail.classList.contains('detail-hidden');
+    const shouldShow = (targetPage === suggestionPage) && isDetailHidden;
+    if (shouldShow) {
+        btn.classList.remove('fab-hidden');
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+        btn.style.visibility = 'visible';
+        btn.style.transform = 'scale(1)';
+    } else {
+        btn.classList.add('fab-hidden');
+        btn.style.opacity = '0';
+        btn.style.pointerEvents = 'none';
+        btn.style.visibility = 'hidden';
+        btn.style.transform = 'scale(0.6)';
+    }
+}
+
+greetingLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeDrawer(true);
+    switchPage(currentPage, greetingPage, false, true);
+});
+
+const logoHomeBtn = document.getElementById('logoHomeBtn');
+logoHomeBtn.addEventListener('click', () => {
+    logoHomeBtn.classList.add('clicked');
+    setTimeout(() => {
+        logoHomeBtn.classList.remove('clicked');
+    }, 200);
+
+    if (currentPage !== mainPage) {
+        switchPage(currentPage, mainPage);
+    }
+});
+
+backBtn.addEventListener('click', handlePageBack);
+
+goalLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeDrawer(true);
+    switchPage(currentPage, goalPage, false, true);
+});
+
+goalBackBtn.addEventListener('click', handlePageBack);
+
+// 커뮤니티 라우팅
+const suggestionLink = document.getElementById('suggestionLink');
+const suggestionPage = document.getElementById('suggestionPage');
+const suggestionBackBtn = document.getElementById('suggestionBackBtn');
+suggestionLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeDrawer(true);
+    switchPage(currentPage, suggestionPage, false, true);
+});
+
+suggestionBackBtn.addEventListener('click', () => {
+    closeSideDetail();
+    handlePageBack();
+});
+
+// ==========================================
+// 관리자 메뉴: 실제 로그인 계정에만 연결된 6회 터치 확인 동작
+// ==========================================
+const adminTriggerIcon = document.getElementById('adminTriggerIcon');
+const adminCategory = document.getElementById('adminCategory');
+
+// 예전 비밀번호 방식으로 남은 값은 더 이상 권한으로 사용하지 않습니다.
+localStorage.removeItem('isAdminUnlocked');
+
+function setAdminCategoryVisible(visible) {
+    if (!adminCategory) return;
+    adminCategory.style.display = visible ? 'block' : 'none';
+    adminCategory.classList.remove('category-fade-in', 'category-fade-out');
+}
+
+function revokeAdminUi() {
+    setAdminCategoryVisible(false);
+
+    if (typeof stopRoleList === 'function') stopRoleList();
+    if (window.isRoleMultiSelectMode && typeof window.cancelRoleMultiDelete === 'function') {
+        window.cancelRoleMultiDelete();
+    }
+
+    const roleList = document.getElementById('roleListContainer');
+    if (roleList) roleList.replaceChildren();
+
+    const roleEditModalOverlay = document.getElementById('roleEditModalOverlay');
+    const roleEditModal = document.getElementById('roleEditModal');
+    if (roleEditModalOverlay) roleEditModalOverlay.classList.remove('active');
+    if (roleEditModal) roleEditModal.classList.remove('active');
+
+    const isAdminPageOpen = currentPage && ['roleManagePage', 'updateRulesPage', 'versionManagePage'].includes(currentPage.id);
+    if (isAdminPageOpen) {
+        history.replaceState({ page: 'mainPage' }, '', '#/mainPage');
+        switchPage(currentPage, mainPage, true);
+    }
+}
+
+function syncAdminAccessUi(user = auth.currentUser) {
+    if (hasAdminAccess(user)) {
+        setAdminCategoryVisible(true);
+    } else {
+        revokeAdminUi();
+    }
+}
+
+let adminClickCount = 0;
+let adminLastClickTime = 0;
+
+if (adminTriggerIcon) {
+    adminTriggerIcon.addEventListener('click', () => {
+        const currentTime = Date.now();
+        if (currentTime - adminLastClickTime > 5000) adminClickCount = 0;
+
+        adminClickCount += 1;
+        adminLastClickTime = currentTime;
+
+        if (adminClickCount < 6) return;
+        adminClickCount = 0;
+
+        if (!hasAdminAccess()) {
+            showAdminAccessDenied();
+            return;
+        }
+
+        setAdminCategoryVisible(true);
+        const drawer = document.getElementById('sideDrawer');
+        if (drawer) {
+            drawer.scrollTo({ top: drawer.scrollHeight, behavior: 'smooth' });
+        }
+    });
+}
+
+// ==========================================
+// 직책 관리 페이지 로직 (모달에서 변경)
+// ==========================================
+const roleManageMenuBtn = document.getElementById('roleManageMenuBtn');
+const roleManagePage = document.getElementById('roleManagePage');
+const roleTargetEmail = document.getElementById('roleTargetEmail');
+const roleNameInput = document.getElementById('roleNameInput');
+const roleManageBackBtn = document.getElementById('roleManageBackBtn');
+const roleManageConfirmBtn = document.getElementById('roleManageConfirmBtn');
+
+if (roleManageMenuBtn) {
+    roleManageMenuBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!requireAdminAccess()) return;
+        roleTargetEmail.value = '';
+        roleNameInput.value = '';
+        loadRoleList();
+        closeDrawer(true);
+        switchPage(currentPage, roleManagePage, false, true);
+    });
+}
+
+if (roleManageBackBtn) {
+    roleManageBackBtn.addEventListener('click', handlePageBack);
+}
+
+// ==========================================
+// 업데이트 규칙 페이지 로직
+// ==========================================
+const updateRulesMenuBtn = document.getElementById('updateRulesMenuBtn');
+const updateRulesPage = document.getElementById('updateRulesPage');
+const updateRulesBackBtn = document.getElementById('updateRulesBackBtn');
+
+if (updateRulesMenuBtn) {
+    updateRulesMenuBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!requireAdminAccess()) return;
+        closeDrawer(true);
+        switchPage(currentPage, updateRulesPage, false, true);
+    });
+}
+
+if (updateRulesBackBtn) {
+    updateRulesBackBtn.addEventListener('click', handlePageBack);
+}
+
+// ==========================================
+// 버전 관리 페이지 로직 (회장, 사장 전용)
+// ==========================================
+const versionManageMenuBtn = document.getElementById('versionManageMenuBtn');
+const versionManagePage = document.getElementById('versionManagePage');
+const versionManageBackBtn = document.getElementById('versionManageBackBtn');
+const versionManageSaveBtn = document.getElementById('versionManageSaveBtn');
+
+const presidentVersionSelect = document.getElementById('presidentVersionSelect');
+const leaderVersionSelect = document.getElementById('leaderVersionSelect');
+const memberVersionSelect = document.getElementById('memberVersionSelect');
+
+const DEFAULT_VERSION_CONTROL = {
+    president: '1.5',
+    leader: '1.0',
+    member: '1.0'
+};
+
+let currentVersionControl = { ...DEFAULT_VERSION_CONTROL };
+const versionControlRef = (typeof db !== 'undefined' && db)
+    ? db.collection('settings').doc('version_control')
+    : null;
+
+function readCachedVersionControl() {
+    try {
+        const cached = JSON.parse(localStorage.getItem('cached_version_control') || 'null');
+        return cached && typeof cached === 'object'
+            ? { ...DEFAULT_VERSION_CONTROL, ...cached }
+            : null;
+    } catch (error) {
+        return null;
+    }
+}
+
+async function migrateLegacyVersionControl(user) {
+    if (!versionControlRef || !user || !isAdmin(user.email)) return;
+    const current = await versionControlRef.get();
+    if (current.exists) return;
+
+    const legacy = await db.collection('userRoles').doc('system_version_control').get();
+    if (!legacy.exists) return;
+    const legacyData = legacy.data() || {};
+    await versionControlRef.set({
+        president: legacyData.president || DEFAULT_VERSION_CONTROL.president,
+        leader: legacyData.leader || DEFAULT_VERSION_CONTROL.leader,
+        member: legacyData.member || DEFAULT_VERSION_CONTROL.member,
+        timestamp: legacyData.timestamp || Date.now(),
+        migratedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+}
+
+let isGlobalAuthResolved = false;
+
+function getUserRoleTier(user = auth.currentUser) {
+    if (!user) {
+        if (!isGlobalAuthResolved) {
+            try {
+                const cachedTier = localStorage.getItem('cached_user_role_tier');
+                if (cachedTier) return cachedTier;
+            } catch (e) {}
+        }
+        return 'member';
+    }
+    const email = (user.email || '').toLowerCase();
+    let tier = 'member';
+    if (typeof ADMIN_EMAILS !== 'undefined' && ADMIN_EMAILS.includes(email)) {
+        tier = 'president';
+    } else if (typeof window.currentUserRoleName === 'string') {
+        const role = window.currentUserRoleName.trim();
+        if (role.includes('회장') && !role.includes('부회장')) return 'president';
+        if (role.includes('사장') || role.includes('부회장') || role.includes('운영진')) return 'leader';
+    }
+    try {
+        localStorage.setItem('cached_user_role_tier', tier);
+    } catch (e) {}
+    return tier;
+}
+
+window.applyUserEffectiveVersion = function (user = auth.currentUser) {
+    const roleTier = getUserRoleTier(user);
+    const effectiveVersion = currentVersionControl[roleTier] || '1.0';
+    window.currentEffectiveOneUiVersion = effectiveVersion;
+
+    const versionNumber = effectiveVersion;
+    const buildNumber = effectiveVersion === '1.5' ? '2026919.1' : '20260822.1';
+    const updateMessage = effectiveVersion === '1.5'
+        ? '다크·라이트 모드 화면 전환 효과 및 게시글 상세창 표시 관련 버그 수정 업데이트입니다.'
+        : '초기 버전 배포입니다.';
+
+    // 1. 버전 텍스트 및 빌드 번호 갱신 (불필요한 DOM 재할당 방지)
+    document.querySelectorAll('[data-current-one-ui-version]').forEach((element) => {
+        if (element.tagName === 'svg' || element.tagName === 'SVG') {
+            const currentAria = element.getAttribute('aria-label');
+            const targetAria = `One UI ${versionNumber}`;
+            if (currentAria !== targetAria) {
+                element.setAttribute('aria-label', targetAria);
+            }
+            const textEl = element.querySelector('.one-ui-version-number');
+            if (textEl && textEl.textContent !== versionNumber) {
+                textEl.textContent = versionNumber;
+            }
+        } else {
+            const targetText = `One UI ${versionNumber}`;
+            if (element.textContent !== targetText) {
+                element.textContent = targetText;
+            }
+        }
+    });
+
+    document.querySelectorAll('[data-current-build-number]').forEach((element) => {
+        const targetBuild = `Build ${buildNumber}`;
+        if (element.textContent !== targetBuild) {
+            element.textContent = targetBuild;
+        }
+    });
+
+    document.querySelectorAll('[data-current-update-message]').forEach((element) => {
+        if (element.textContent !== updateMessage) {
+            element.textContent = updateMessage;
+        }
+    });
+    // 2. 설정창 [알림] 탭 제어 (1.5 전용 기능)
+    const notiTabNav = document.querySelector('.settings-nav-item[data-tab="notification"]');
+    const notiMobileItem = document.querySelector('.settings-mobile-menu-item[data-tab="notification"]');
+    if (notiTabNav) {
+        notiTabNav.style.display = effectiveVersion === '1.5' ? '' : 'none';
+    }
+    if (notiMobileItem) {
+        notiMobileItem.style.display = effectiveVersion === '1.5' ? '' : 'none';
+    }
+    if (effectiveVersion !== '1.5' && notiTabNav && notiTabNav.classList.contains('active')) {
+        const displayNav = document.querySelector('.settings-nav-item[data-tab="display"]');
+        if (displayNav && typeof displayNav.click === 'function') {
+            displayNav.click();
+        }
+    }
+
+    // 3. 업데이트 화면 알약 버튼 제어
+    const pill15 = document.getElementById('openUpdateDetailsBtn');
+    const pill10 = document.getElementById('openUpdateDetails10Btn');
+    if (pill15) {
+        pill15.style.display = effectiveVersion === '1.5' ? 'flex' : 'none';
+        const tag15 = pill15.querySelector('.version-tag');
+        if (tag15) {
+            tag15.className = 'version-tag current';
+            tag15.textContent = '현재 버전';
+            tag15.style.background = '';
+            tag15.style.color = '';
+        }
+    }
+    if (pill10) {
+        pill10.style.display = 'flex';
+        const tag10 = pill10.querySelector('.version-tag');
+        if (tag10) {
+            if (effectiveVersion === '1.5') {
+                tag10.className = 'version-tag';
+                tag10.textContent = '이전 버전';
+                tag10.style.background = 'rgba(255, 255, 255, 0.12)';
+                tag10.style.color = 'var(--text-secondary)';
+            } else {
+                tag10.className = 'version-tag current';
+                tag10.textContent = '현재 버전';
+                tag10.style.background = '';
+                tag10.style.color = '';
+            }
+        }
+    }
+
+    // 4. 업데이트 상세 화면 기본 표시 제어
+    const sec15 = document.getElementById('updateSection15');
+    const sec10 = document.getElementById('updateSection10');
+    if (sec15 && sec10) {
+        if (effectiveVersion === '1.5') {
+            sec15.style.display = 'flex';
+            sec10.style.display = 'none';
+        } else {
+            sec15.style.display = 'none';
+            sec10.style.display = 'flex';
+        }
+    }
+
+    // 5. 게시판 카테고리 [알림 관련 버그] 표시 제어 (1.5 전용)
+    document.querySelectorAll('[data-value="알림 관련 버그"]').forEach(el => {
+        el.style.display = effectiveVersion === '1.5' ? '' : 'none';
+    });
+};
+
+// 버전 관리 커스텀 드롭다운 동기화 헬퍼 함수
+function setVersionDropdownValue(role, val) {
+    const hiddenInput = document.getElementById(`${role}VersionSelect`);
+    const textEl = document.getElementById(`${role}VersionSelectedText`);
+    const dropdown = document.getElementById(`${role}VersionDropdown`);
+    const targetVal = String(val || (role === 'president' ? '1.5' : '1.0'));
+    if (hiddenInput) hiddenInput.value = targetVal;
+    if (textEl) {
+        textEl.textContent = targetVal === '1.5' ? 'One UI 1.5 (최신)' : 'One UI 1.0';
+    }
+    if (dropdown) {
+        dropdown.querySelectorAll('.custom-dropdown-option').forEach(opt => {
+            if (opt.getAttribute('data-value') === targetVal) {
+                opt.classList.add('active');
+            } else {
+                opt.classList.remove('active');
+            }
+        });
+    }
+}
+
+function setupVersionDropdown(role) {
+    const dropdown = document.getElementById(`${role}VersionDropdown`);
+    const selectedBtn = document.getElementById(`${role}VersionSelected`);
+    if (!dropdown || !selectedBtn) return;
+
+    selectedBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.version-dropdown-container').forEach(d => {
+            if (d !== dropdown) d.classList.remove('open');
+        });
+        dropdown.classList.toggle('open');
+    });
+
+    dropdown.querySelectorAll('.custom-dropdown-option').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const val = opt.getAttribute('data-value');
+            setVersionDropdownValue(role, val);
+            dropdown.classList.remove('open');
+        });
+    });
+}
+
+['president', 'leader', 'member'].forEach(setupVersionDropdown);
+
+document.addEventListener('click', (e) => {
+    document.querySelectorAll('.version-dropdown-container').forEach(d => {
+        if (!d.contains(e.target)) d.classList.remove('open');
+    });
+});
+
+if (versionControlRef) {
+    versionControlRef.onSnapshot(doc => {
+        if (doc.exists) {
+            currentVersionControl = { ...DEFAULT_VERSION_CONTROL, ...doc.data() };
+            try {
+                localStorage.setItem('cached_version_control', JSON.stringify(currentVersionControl));
+            } catch (e) {}
+        } else {
+            currentVersionControl = readCachedVersionControl() || { ...DEFAULT_VERSION_CONTROL };
+        }
+        setVersionDropdownValue('president', currentVersionControl.president || '1.5');
+        setVersionDropdownValue('leader', currentVersionControl.leader || '1.0');
+        setVersionDropdownValue('member', currentVersionControl.member || '1.0');
+
+        window.applyUserEffectiveVersion();
+    }, err => {
+        console.warn('버전 설정 실시간 동기화 실패 (기본값 유지):', err);
+        currentVersionControl = readCachedVersionControl() || { ...DEFAULT_VERSION_CONTROL };
+        window.applyUserEffectiveVersion();
+    });
+}
+
+if (versionManageMenuBtn) {
+    versionManageMenuBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!requireAdminAccess()) return;
+        setVersionDropdownValue('president', currentVersionControl.president || '1.5');
+        setVersionDropdownValue('leader', currentVersionControl.leader || '1.0');
+        setVersionDropdownValue('member', currentVersionControl.member || '1.0');
+        closeDrawer(true);
+        switchPage(currentPage, versionManagePage, false, true);
+    });
+}
+
+if (versionManageBackBtn) {
+    versionManageBackBtn.addEventListener('click', handlePageBack);
+}
+
+if (versionManageSaveBtn) {
+    versionManageSaveBtn.addEventListener('click', async () => {
+        if (!requireAdminAccess()) return;
+        const newSettings = {
+            president: presidentVersionSelect ? presidentVersionSelect.value : '1.5',
+            leader: leaderVersionSelect ? leaderVersionSelect.value : '1.0',
+            member: memberVersionSelect ? memberVersionSelect.value : '1.0',
+            timestamp: Date.now()
+        };
+
+        try {
+            await versionControlRef.set(newSettings, { merge: true });
+            try {
+                localStorage.setItem('cached_version_control', JSON.stringify(newSettings));
+            } catch (e) {}
+            alert('버전 설정이 성공적으로 저장되었습니다.');
+            handlePageBack();
+        } catch (e) {
+            console.error('버전 설정 저장 실패:', e);
+            alert('버전 설정 저장 중 오류가 발생했습니다.');
+        }
+    });
+}
+
+// Auth 변경에 맞춘 관리자 메뉴 표시 및 설정 동기화 리스너
+auth.onAuthStateChanged(user => {
+    isGlobalAuthResolved = true;
+    if (!user) { try { localStorage.removeItem('cached_user_role_tier'); } catch (e) {} }
+    syncAdminAccessUi(user);
+    if (user) {
+        window.loadUserAccountData(user);
+        // Preview reads existing version settings without migrating production data.
+    } else {
+        window.clearUserAccountData();
+    }
+    window.applyUserEffectiveVersion(user);
+});
+
+if (roleManageConfirmBtn) {
+    roleManageConfirmBtn.addEventListener('click', async () => {
+        if (!requireAdminAccess()) return;
+
+        const targetEmail = roleTargetEmail.value.trim();
+        const roleName = roleNameInput.value.trim();
+
+        if (!targetEmail || !roleName) {
+            alert('이메일과 직책명을 모두 입력해주세요.');
+            return;
+        }
+
+        roleTargetEmail.value = '';
+        roleNameInput.value = '';
+        roleTargetEmail.focus();
+
+        try {
+            await db.collection('userRoles').doc(targetEmail).set({
+                roleName: roleName,
+                timestamp: Date.now()
+            });
+        } catch (e) {
+            console.error("Role setting error", e);
+            alert('직책 부여 중 오류가 발생했습니다.');
+        }
+    });
+}
+
+// 엔터 키로 빠른 직책 부여 기능
+const handleRoleEnterPress = (e) => {
+    if (e.key === 'Enter') {
+        const targetEmail = roleTargetEmail.value.trim();
+        const roleName = roleNameInput.value.trim();
+        if (targetEmail && roleName) {
+            roleManageConfirmBtn.click();
+        }
+    }
+};
+if (roleTargetEmail) roleTargetEmail.addEventListener('keypress', handleRoleEnterPress);
+if (roleNameInput) roleNameInput.addEventListener('keypress', handleRoleEnterPress);
+
+// ==========================================
+// 직책 관리 목록 및 다중 삭제/수정 로직
+// ==========================================
+let unsubscribeRoles = null;
+const roleListContainer = document.getElementById('roleListContainer');
+window.isRoleMultiSelectMode = false;
+let roleMultiTimer;
+
+let seenRoleEmails = new Set();
+let isRoleInitialLoad = true;
+let roleJustActivated = false;
+
+function stopRoleList() {
+    if (unsubscribeRoles) {
+        unsubscribeRoles();
+        unsubscribeRoles = null;
+    }
+}
+
+function loadRoleList() {
+    if (!requireAdminAccess(false)) {
+        stopRoleList();
+        if (roleListContainer) roleListContainer.replaceChildren();
+        return;
+    }
+
+    stopRoleList();
+    unsubscribeRoles = db.collection('userRoles').onSnapshot(snapshot => {
+        if (!hasAdminAccess()) {
+            stopRoleList();
+            if (roleListContainer) roleListContainer.replaceChildren();
+            return;
+        }
+
+        const roles = [];
+        snapshot.forEach(doc => {
+            if (doc.id === 'system_version_control') return;
+            const data = doc.data();
+            if (!data || !data.roleName) return;
+            roles.push({
+                email: doc.id,
+                roleName: data.roleName,
+                timestamp: data.timestamp || 0,
+                pinned: data.pinned || false
+            });
+        });
+
+        // 고정된 항목 먼저, 그 다음 최신 부여 순으로 정렬
+        roles.sort((a, b) => {
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+            return b.timestamp - a.timestamp;
+        });
+
+        renderRoleList(roles);
+    });
+}
+
+function renderRoleList(roles) {
+    if (!roleListContainer) return;
+
+    // 수동 삭제 직후에는 DOM이 이미 올바르므로 재구성 건너뜀
+    if (window._skipNextRoleRender) {
+        window._skipNextRoleRender = false;
+        isRoleInitialLoad = false;
+        return;
+    }
+
+    // 0. 진행 중인 FLIP 애니메이션 즉시 완료
+    roleListContainer.querySelectorAll('.board-card.flipping').forEach(card => {
+        const tid = card._flipTimerId;
+        if (tid) { clearTimeout(tid); card._flipTimerId = null; }
+        card.classList.remove('flipping');
+        card.style.transition = 'none';
+        card.style.transform = '';
+        card.style.zIndex = '';
+        card.offsetHeight;
+        card.style.transition = '';
+    });
+
+    // 1. 이전 위치 저장 (FLIP의 First)
+    const oldPositions = new Map();
+    const oldData = new Map();
+    roleListContainer.querySelectorAll('.board-card').forEach(card => {
+        const email = card.getAttribute('data-email');
+        if (!card.classList.contains('deleting')) {
+            oldPositions.set(email, card.getBoundingClientRect());
+            oldData.set(email, {
+                pinned: card.classList.contains('pinned-state')
+            });
+        }
+    });
+
+    // 다중 선택 모드 중이면 체크된 이메일 목록을 저장
+    const checkedEmails = new Set();
+    if (window.isRoleMultiSelectMode) {
+        document.querySelectorAll('.role-select-cb:checked').forEach(cb => {
+            checkedEmails.add(cb.value);
+        });
+    }
+
+    // 삭제 애니메이션 중인 이메일 목록
+    const deletingEmails = new Set();
+    roleListContainer.querySelectorAll('.board-card.deleting').forEach(card => {
+        deletingEmails.add(card.getAttribute('data-email'));
+    });
+
+
+
+    roleListContainer.innerHTML = '';
+
+    // 현재 roles에 포함된 이메일 목록
+    const currentRoleEmails = new Set(roles.map(r => r.email));
+
+    roles.forEach((role) => {
+        // 삭제 애니메이션 중인 항목은 건너뜀
+        if (deletingEmails.has(role.email)) return;
+
+        const rolePinned = role.pinned === true;
+        const safeRoleEmail = escapeTextHtml(role.email);
+        const safeRoleName = escapeTextHtml(role.roleName);
+        const inlineRoleEmail = escapeInlineHandlerString(role.email);
+        const inlineRoleName = escapeInlineHandlerString(role.roleName);
+        const card = document.createElement('div');
+        card.className = `board-card ${rolePinned ? 'pinned-state' : ''}`;
+        card.style.position = 'relative';
+        card.setAttribute('data-email', role.email);
+
+        // 로딩 이후 새로운 요소에만 등장 애니메이션 적용
+        const isNew = !isRoleInitialLoad && !seenRoleEmails.has(role.email);
+        seenRoleEmails.add(role.email);
+
+        const roleCheckbox = `
+                    <label class="post-checkbox-wrapper" onclick="event.stopPropagation();">
+                        <input type="checkbox" class="role-select-cb" value="${safeRoleEmail}" onchange="updateRoleMultiDeleteUI()" style="width: 1.1rem; height: 1.1rem; accent-color: var(--accent-color); cursor: pointer;">
+                    </label>
+                `;
+
+        card.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 0.8rem;">
+                            ${roleCheckbox}
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary);">${safeRoleName}</h3>
+                                <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">${safeRoleEmail}</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <button type="button" class="board-action-btn pin-toggle-btn ${rolePinned ? 'active' : ''}" onclick="event.stopPropagation(); toggleRolePin('${inlineRoleEmail}', ${rolePinned})" title="${rolePinned ? '고정 해제' : '상단 고정'}">
+                                <i class="fa-solid fa-thumbtack"></i>
+                            </button>
+                            <button type="button" class="board-action-btn delete-btn" onclick="event.stopPropagation(); deleteRoleWithAnim('${inlineRoleEmail}', this)" title="직책 삭제">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                            <button class="board-action-btn role-edit-btn" onclick="event.stopPropagation(); openRoleEditModal('${inlineRoleEmail}', '${inlineRoleName}')" title="직책 수정" style="padding: 0.5rem; display: flex; align-items: center; justify-content: center; color: #007bff !important;">
+                                <i class="fa-solid fa-pen-to-square" style="color: #007bff !important;"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+        // 롱클릭(다중 선택) 이벤트
+        card.addEventListener('pointerdown', (e) => handleRolePointerDown(e, role.email));
+        card.addEventListener('pointerup', () => handleRolePointerUp());
+        card.addEventListener('pointercancel', () => handleRolePointerUp());
+        card.addEventListener('pointermove', handleRolePointerMove);
+        card.addEventListener('contextmenu', (e) => {
+            if (window.isRoleMultiSelectMode) { e.preventDefault(); }
+        });
+
+        card.addEventListener('click', (e) => {
+            if (roleJustActivated) return;
+            if (window.isRoleMultiSelectMode) {
+                if (e.target.classList.contains('role-select-cb') || e.target.closest('label')) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const cb = card.querySelector('.role-select-cb');
+                if (cb) {
+                    cb.checked = !cb.checked;
+                    updateRoleMultiDeleteUI();
+                }
+            }
+        });
+
+        roleListContainer.appendChild(card);
+    });
+
+    // 다중 선택 모드 중이었으면 체크 상태 복원
+    if (checkedEmails.size > 0) {
+        document.querySelectorAll('.role-select-cb').forEach(cb => {
+            if (checkedEmails.has(cb.value)) {
+                cb.checked = true;
+            }
+        });
+        updateRoleMultiDeleteUI();
+    }
+
+    // 2. FLIP 애니메이션 실행 (Last → Invert → Play)
+    const finalCards = roleListContainer.querySelectorAll('.board-card');
+    finalCards.forEach(card => {
+        const email = card.getAttribute('data-email');
+        const oldPos = oldPositions.get(email);
+        const isNew = !isRoleInitialLoad && !oldPos;
+
+        if (oldPos) {
+            const newPos = card.getBoundingClientRect();
+            const dy = oldPos.top - newPos.top;
+            const dx = oldPos.left - newPos.left;
+            if (dx !== 0 || dy !== 0) {
+                card.style.transition = 'none';
+                card.style.transform = `translate(${dx}px, ${dy}px)`;
+                card.classList.add('flipping');
+
+                const oldState = oldData.get(email);
+                if (oldState && oldState.pinned !== card.classList.contains('pinned-state')) {
+                    card.style.zIndex = '20';
+                }
+
+                card.offsetHeight; // 리플로우
+                card.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease';
+                card.style.transform = 'translate(0, 0)';
+                card._flipTimerId = setTimeout(() => {
+                    card._flipTimerId = null;
+                    card.classList.remove('flipping');
+                    card.style.transition = '';
+                    card.style.transform = '';
+                    card.style.zIndex = '';
+                }, 500);
+            }
+        } else if (isNew) {
+            // 새 카드 등장 애니메이션
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(15px)';
+            card.offsetHeight;
+            card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+            setTimeout(() => {
+                card.style.transition = '';
+                card.style.opacity = '';
+                card.style.transform = '';
+            }, 400);
+        }
+    });
+
+
+
+    isRoleInitialLoad = false;
+}
+
+function handleRolePointerDown(e, email) {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    if (window.isRoleMultiSelectMode) return;
+    window.roleStartX = e.clientX;
+    window.roleStartY = e.clientY;
+    roleMultiTimer = setTimeout(() => {
+        window.isRoleMultiSelectMode = true;
+        roleJustActivated = true;
+        setTimeout(() => { roleJustActivated = false; }, 300);
+        if (navigator.vibrate) navigator.vibrate(50);
+        document.body.classList.add('multi-select-mode');
+        const card = Array.from(document.querySelectorAll('.board-card[data-email]'))
+            .find(item => item.dataset.email === email);
+        if (card) {
+            const cb = card.querySelector('.role-select-cb');
+            if (cb) {
+                cb.checked = true;
+                updateRoleMultiDeleteUI();
+            }
+        }
+    }, 600);
+}
+function handleRolePointerUp() { clearTimeout(roleMultiTimer); }
+function handleRolePointerMove(e) {
+    if (window.roleStartY !== undefined) {
+        const dy = Math.abs(e.clientY - window.roleStartY);
+        const dx = Math.abs(e.clientX - window.roleStartX);
+        if (dy > 10 || dx > 10) clearTimeout(roleMultiTimer);
+    } else {
+        clearTimeout(roleMultiTimer);
+    }
+}
+
+window.updateRoleMultiDeleteUI = function () {
+    const bar = document.getElementById('roleMultiDeleteBar');
+    const cntSpan = document.getElementById('roleMultiDeleteCount');
+    const cbs = document.querySelectorAll('.role-select-cb:checked');
+    if (cbs.length > 0) {
+        window.isRoleMultiSelectMode = true;
+        document.body.classList.add('multi-select-mode');
+        cntSpan.innerText = cbs.length + '개 선택됨';
+        bar.style.bottom = '20px';
+    } else {
+        if (window.isRoleMultiSelectMode) {
+            cancelRoleMultiDelete();
+        }
+    }
+};
+
+window.cancelRoleMultiDelete = function () {
+    window.isRoleMultiSelectMode = false;
+    document.body.classList.remove('multi-select-mode');
+    const bar = document.getElementById('roleMultiDeleteBar');
+    if (bar) bar.style.bottom = '-250px';
+    document.querySelectorAll('.role-select-cb').forEach(cb => cb.checked = false);
+};
+
+window.executeRoleMultiDelete = async function () {
+    if (!requireAdminAccess()) return;
+    const cbs = document.querySelectorAll('.role-select-cb:checked');
+    if (cbs.length === 0) return;
+    if (!await window.customConfirm(`선택한 ${cbs.length}명의 직책을 회수하시겠습니까?`, '직책 회수')) return;
+
+    try {
+        const batch = db.batch();
+        cbs.forEach(cb => {
+            const docRef = db.collection('userRoles').doc(cb.value);
+            batch.delete(docRef);
+        });
+        await batch.commit();
+        cancelRoleMultiDelete();
+    } catch (e) {
+        console.error(e);
+        alert('직책 해제 중 오류가 발생했습니다.');
+    }
+};
+
+// --- 직책 수정 모달 로직 ---
+const roleEditModalOverlay = document.getElementById('roleEditModalOverlay');
+const roleEditModal = document.getElementById('roleEditModal');
+const roleEditTargetEmailText = document.getElementById('roleEditTargetEmailText');
+const roleEditNameInput = document.getElementById('roleEditNameInput');
+const roleEditModalCancel = document.getElementById('roleEditModalCancel');
+const roleEditModalConfirm = document.getElementById('roleEditModalConfirm');
+let currentEditRoleEmail = '';
+
+window.openRoleEditModal = function (email, currentRoleName) {
+    if (!requireAdminAccess()) return;
+    currentEditRoleEmail = email;
+    roleEditTargetEmailText.innerText = email;
+    roleEditNameInput.value = currentRoleName;
+    roleEditModalOverlay.classList.add('active');
+    roleEditModal.classList.add('active');
+};
+
+if (roleEditModalCancel) {
+    roleEditModalCancel.addEventListener('click', () => {
+        roleEditModalOverlay.classList.remove('active');
+        roleEditModal.classList.remove('active');
+    });
+}
+
+if (roleEditModalConfirm) {
+    roleEditModalConfirm.addEventListener('click', async () => {
+        if (!requireAdminAccess()) return;
+
+        const newRoleName = roleEditNameInput.value.trim();
+        if (!newRoleName) {
+            alert('새로운 직책명을 입력해주세요.');
+            return;
+        }
+        try {
+            await db.collection('userRoles').doc(currentEditRoleEmail).update({
+                roleName: newRoleName
+            });
+            roleEditModalOverlay.classList.remove('active');
+            roleEditModal.classList.remove('active');
+        } catch (e) {
+            console.error(e);
+            alert('직책 수정 중 오류가 발생했습니다.');
+        }
+    });
+}
+
+// 직책 개별 삭제 (페이드 → 공간 접기 → Firestore 삭제)
+window.deleteRoleWithAnim = async function (email, btnEl) {
+    if (!requireAdminAccess()) return;
+    if (!confirm(`'${email}'의 직책을 회수하시겠습니까?`)) return;
+
+    const card = btnEl.closest('.board-card');
+    if (card) {
+        // 1단계: 페이드 아웃 (0.3초)
+        card.classList.add('deleting');
+        await new Promise(r => setTimeout(r, 300));
+
+        // 2단계: 공간 부드럽게 접기 (0.3초)
+        const cardHeight = card.offsetHeight;
+        const parent = card.parentElement;
+        let gapVal = 0;
+        if (parent) {
+            const gapStyle = window.getComputedStyle(parent).gap;
+            if (gapStyle && gapStyle !== 'normal') {
+                gapVal = parseFloat(gapStyle);
+            }
+        }
+        card.style.height = cardHeight + 'px';
+        card.style.overflow = 'hidden';
+        card.offsetHeight; // 리플로우
+        card.style.transition = 'height 0.3s ease, padding 0.3s ease, margin 0.3s ease, opacity 0s';
+        card.style.height = '0';
+        card.style.paddingTop = '0';
+        card.style.paddingBottom = '0';
+        card.style.border = 'none';
+        card.style.marginBottom = gapVal > 0 ? `-${gapVal}px` : '0';
+        await new Promise(r => setTimeout(r, 300));
+
+        // 2.5단계: DOM에서 제거 (gap도 사라짐)
+        card.remove();
+
+        // onSnapshot 재구성 방지 (이미 DOM이 올바른 상태)
+        window._skipNextRoleRender = true;
+
+        // 3단계: Firestore 삭제
+        try {
+            await db.collection('userRoles').doc(email).delete();
+            seenRoleEmails.delete(email);
+        } catch (e) {
+            console.error(e);
+            alert('직책 삭제 중 오류가 발생했습니다.');
+        }
+    } else {
+        try {
+            await db.collection('userRoles').doc(email).delete();
+            seenRoleEmails.delete(email);
+        } catch (e) {
+            console.error(e);
+            alert('직책 삭제 중 오류가 발생했습니다.');
+        }
+    }
+};
+
+// 직책 개별 고정/해제 (커뮤니티와 동일한 애니메이션)
+window.toggleRolePin = async function (email, currentPinned) {
+    if (!requireAdminAccess()) return;
+    const btn = window.event ? (window.event.currentTarget || window.event.target.closest('.pin-toggle-btn')) : null;
+    let isPinned = currentPinned;
+    if (btn) {
+        isPinned = btn.classList.contains('active');
+        btn.classList.toggle('active', !isPinned);
+        btn.classList.remove('animate-pin-action');
+        void btn.offsetWidth;
+        btn.classList.add('animate-pin-action');
+        btn.title = !isPinned ? '고정 해제' : '상단 고정';
+    }
+    try {
+        await db.collection('userRoles').doc(email).update({ pinned: !isPinned });
+    } catch (e) {
+        console.error(e);
+        if (btn) btn.classList.toggle('active', isPinned);
+    }
+};
+
+// --- 모바일 기기 및 화면 판별 로직 ---
+function isMobileView() {
+    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    const isMobileUA = /Android|iPhone|iPad|iPod|Windows Phone|webOS|BlackBerry/i.test(navigator.userAgent);
+    const isNarrow = window.innerWidth < 768;
+    const isMobileLandscape = isTouch && window.innerHeight <= 550;
+    return isNarrow || (isTouch && isMobileUA) || isMobileLandscape;
+}
+
+function updateDeviceClass() {
+    const isMobile = isMobileView();
+    document.body.classList.toggle('is-mobile-device', isMobile);
+}
+
+window.addEventListener('resize', updateDeviceClass, { passive: true });
+window.addEventListener('orientationchange', updateDeviceClass, { passive: true });
+updateDeviceClass();
+
+const SETTINGS_TAB_TITLES = Object.freeze({
+    notification: '알림',
+    display: '디스플레이',
+    useful: '유용한 기능',
+    update: '소프트웨어 업데이트',
+    reset: '설정 초기화'
+});
+
+window.activeSettingsMobileTab = null;
+
+// 모바일 전용: 특정 탭 상세 화면으로 진입
+window.openSettingsTabOnMobile = function (tabName, fromPopState = false) {
+    if (!tabName) return;
+    window.activeSettingsMobileTab = tabName;
+    document.body.classList.add('settings-sub-active');
+
+    const mobileBackBtn = document.getElementById('settingsMobileBackBtn');
+    const mobileTitle = document.getElementById('settingsMobileHeaderTitle');
+    const mobileMainList = document.getElementById('settingsMobileMainList');
+    const contentEl = document.querySelector('.settings-content');
+    if (contentEl) contentEl.scrollTop = 0;
+
+    if (mobileBackBtn) mobileBackBtn.classList.add('active');
+    if (mobileTitle) {
+        const titleText = SETTINGS_TAB_TITLES[tabName] || '설정';
+        mobileTitle.style.opacity = '0';
+        setTimeout(() => {
+            mobileTitle.innerHTML = `<span>${titleText}</span>`;
+            mobileTitle.style.opacity = '1';
+        }, 80);
+    }
+
+    // 메인 목록 즉시 숨김 (동시 표시로 인한 레이아웃 점프 방지)
+    if (mobileMainList) {
+        mobileMainList.style.display = 'none';
+        mobileMainList.classList.remove('mobile-main-enter');
+    }
+
+    const settingsTabContents = document.querySelectorAll('.settings-tab-content');
+    settingsTabContents.forEach(content => {
+        if (content.id === `settingsTab-${tabName}`) {
+            content.style.display = 'flex';
+            content.classList.remove('mobile-tab-enter');
+            void content.offsetWidth; // 리플로우
+            content.classList.add('mobile-tab-enter', 'mobile-active');
+        } else {
+            content.classList.remove('mobile-tab-enter', 'mobile-active');
+            content.style.display = 'none';
+        }
+    });
+
+    if (settingsModal) {
+        settingsModal.classList.toggle('update-tab-active', tabName === 'update');
+    }
+
+    const settingsNavItems = document.querySelectorAll('.settings-nav-item');
+    settingsNavItems.forEach(nav => {
+        nav.classList.toggle('active', nav.getAttribute('data-tab') === tabName);
+    });
+
+    resetUsefulSettingsSubPage();
+    resetDisplaySettingsSubPage();
+    if (typeof resetNotificationSettingsSubPage === 'function') resetNotificationSettingsSubPage();
+    if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
+    if (window.clubNotifications && typeof window.clubNotifications.updateSettingsUI === 'function') {
+        window.clubNotifications.updateSettingsUI();
+    }
+
+    if (!fromPopState) {
+        history.pushState({ modal: 'settings', mobileTab: tabName }, '');
+    }
+};
+
+// 모바일 전용: 상세 화면에서 설정 메인 메뉴 목록으로 복귀
+window.backToSettingsMainOnMobile = function (fromPopState = false) {
+    window.activeSettingsMobileTab = null;
+    document.body.classList.remove('settings-sub-active');
+
+    const mobileBackBtn = document.getElementById('settingsMobileBackBtn');
+    const mobileTitle = document.getElementById('settingsMobileHeaderTitle');
+    const mobileMainList = document.getElementById('settingsMobileMainList');
+    const contentEl = document.querySelector('.settings-content');
+    if (contentEl) contentEl.scrollTop = 0;
+
+    if (mobileBackBtn) mobileBackBtn.classList.remove('active');
+    if (mobileTitle) {
+        mobileTitle.style.opacity = '0';
+        setTimeout(() => {
+            mobileTitle.innerHTML = `<i class="fa-solid fa-gear" style="margin-left: 2px; margin-right: calc(0.5rem + 2px);"></i><span>설정</span>`;
+            mobileTitle.style.opacity = '1';
+        }, 80);
+    }
+
+    const settingsTabContents = document.querySelectorAll('.settings-tab-content');
+    settingsTabContents.forEach(content => {
+        content.classList.remove('mobile-tab-enter', 'mobile-active');
+        content.style.display = 'none';
+    });
+
+    if (mobileMainList) {
+        mobileMainList.style.display = 'flex';
+        mobileMainList.classList.remove('mobile-main-enter');
+        void mobileMainList.offsetWidth; // 리플로우
+        mobileMainList.classList.add('mobile-main-enter');
+    }
+
+    if (settingsModal) {
+        settingsModal.classList.remove('update-tab-active');
+    }
+
+    resetUsefulSettingsSubPage();
+    resetDisplaySettingsSubPage();
+    if (typeof resetNotificationSettingsSubPage === 'function') resetNotificationSettingsSubPage();
+    if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
+
+    if (!fromPopState && history.state && history.state.mobileTab) {
+        window._isProgrammaticBack = true;
+        history.back();
+        setTimeout(() => { window._isProgrammaticBack = false; }, 50);
+    }
+};
+
+// --- 설정 창 열기/닫기 로직 ---
+window.openSettingsModal = function (tabName = null) {
+    const hadDrawer = (history.state && history.state.modal === 'drawer') || (sideDrawer && sideDrawer.classList.contains('active'));
+    
+    // 드로어에서 설정창으로 바로 진입할 때는 오버레이 블러를 끊김 없이 유지하기 위해 closeDrawer()로 오버레이를 끄지 않음
+    if (sideDrawer) {
+        sideDrawer.classList.add('drawer-hidden-by-settings');
+        sideDrawer.classList.remove('active');
+    }
+    
+    resetUsefulSettingsSubPage();
+    resetDisplaySettingsSubPage();
+    if (typeof resetNotificationSettingsSubPage === 'function') resetNotificationSettingsSubPage();
+    if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
+
+    if (settingsModalOverlay && settingsModal) {
+        settingsModalOverlay.classList.add('active');
+        settingsModal.classList.add('active');
+        document.body.classList.add('settings-open');
+
+        const isMobile = isMobileView();
+
+        if (isMobile) {
+            if (tabName) {
+                window.openSettingsTabOnMobile(tabName, true);
+            } else {
+                window.backToSettingsMainOnMobile(true);
+            }
+        } else {
+            const targetTab = tabName || 'display';
+            const navTab = document.querySelector(`.settings-nav-item[data-tab="${targetTab}"]`);
+            if (navTab) navTab.click();
+        }
+
+        if (hadDrawer) {
+            history.replaceState({ modal: 'settings' }, '', '#settings');
+        } else {
+            history.pushState({ modal: 'settings' }, '', '#settings');
+        }
+    }
+};
+
+window.closeSettingsModal = function (fromPopState = false) {
+    if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
+    resetDisplaySettingsSubPage();
+    resetUsefulSettingsSubPage();
+    if (typeof resetNotificationSettingsSubPage === 'function') resetNotificationSettingsSubPage();
+    window.backToSettingsMainOnMobile(true);
+
+    if (settingsModalOverlay && settingsModal) {
+        settingsModalOverlay.classList.remove('active');
+        settingsModal.classList.remove('active');
+        settingsModal.classList.remove('update-tab-active');
+        document.body.classList.remove('settings-open');
+    }
+    if (drawerOverlay) {
+        drawerOverlay.classList.remove('active');
+    }
+    const sideDrawer = document.getElementById('sideDrawer');
+    if (sideDrawer) {
+        sideDrawer.classList.remove('drawer-hidden-by-settings');
+        sideDrawer.classList.remove('active');
+    }
+    document.body.style.overflow = '';
+    if (!fromPopState) {
+        window._isProgrammaticBack = true;
+        if (history.state && (history.state.modal === 'settings' || history.state.modal === 'drawer')) {
+            history.back();
+        }
+        setTimeout(() => { window._isProgrammaticBack = false; }, 300);
+    }
+};
+
+if (drawerSettingsBtn) {
+    drawerSettingsBtn.addEventListener('click', () => window.openSettingsModal());
+}
+if (settingsModalCloseBtn) {
+    settingsModalCloseBtn.addEventListener('click', () => window.closeSettingsModal());
+}
+if (settingsModalOverlay) {
+    settingsModalOverlay.addEventListener('click', () => window.closeSettingsModal());
+}
+
+// --- 설정 창 탭 및 설정 관리 로직 ---
+const settingsNavItems = document.querySelectorAll('.settings-nav-item');
+const settingsTabContents = document.querySelectorAll('.settings-tab-content');
+
+// 설정 서브 카테고리 (굿락 스타일) 전환 로직
+const openTopButtonSettings = document.getElementById('openTopButtonSettings');
+const backToUsefulCategoriesBtn = document.getElementById('backToUsefulCategoriesBtn');
+const openCommentInputSettings = document.getElementById('openCommentInputSettings');
+const backFromCommentInputBtn = document.getElementById('backFromCommentInputBtn');
+const openTextSelectSettings = document.getElementById('openTextSelectSettings');
+const backFromTextSelectBtn = document.getElementById('backFromTextSelectBtn');
+const openDoubleTapLikeSettings = document.getElementById('openDoubleTapLikeSettings');
+const backFromDoubleTapLikeBtn = document.getElementById('backFromDoubleTapLikeBtn');
+const openDarkModeSettings = document.getElementById('openDarkModeSettings');
+const backToDisplayCategoriesBtn = document.getElementById('backToDisplayCategoriesBtn');
+const darkModeSettingToggle = document.getElementById('darkModeSettingToggle');
+const openPushNotificationSettings = document.getElementById('openPushNotificationSettings');
+const backToNotificationCategoriesBtn = document.getElementById('backToNotificationCategoriesBtn');
+const openSettingsSync = document.getElementById('openSettingsSync');
+const backFromSettingsSyncBtn = document.getElementById('backFromSettingsSyncBtn');
+const settingsSyncToggle = document.getElementById('settingsSyncToggle');
+const resetAllSettingsBtn = document.getElementById('resetAllSettingsBtn');
+
+const usefulCategoryList = document.getElementById('usefulCategoryList');
+const topButtonSettingsSubPage = document.getElementById('topButtonSettingsSubPage');
+const commentInputSettingsSubPage = document.getElementById('commentInputSettingsSubPage');
+const textSelectSettingsSubPage = document.getElementById('textSelectSettingsSubPage');
+const displayCategoryList = document.getElementById('displayCategoryList');
+const darkModeSettingsSubPage = document.getElementById('darkModeSettingsSubPage');
+const notificationCategoryList = document.getElementById('notificationCategoryList');
+const pushNotificationSettingsSubPage = document.getElementById('pushNotificationSettingsSubPage');
+const settingsSyncSubPage = document.getElementById('settingsSyncSubPage');
+const doubleTapLikeSettingsSubPage = document.getElementById('doubleTapLikeSettingsSubPage');
+
+window.isUsefulSubPageOpen = false;
+window.currentSubPageId = null;
+
+window.openUsefulSubPage = function (subPageId) {
+    if (!usefulCategoryList) return;
+    window.isUsefulSubPageOpen = true;
+    window.currentSubPageId = subPageId;
+
+    usefulCategoryList.style.display = 'none';
+    const targetSubPage = document.getElementById(subPageId);
+    if (targetSubPage) {
+        targetSubPage.style.display = 'block';
+        targetSubPage.classList.remove('sub-page-exit');
+        targetSubPage.classList.add('sub-page-enter');
+    }
+    if (typeof updateCommentInputToggleUI === 'function') {
+        updateCommentInputToggleUI();
+    }
+
+    // 히스토리에 서브페이지 상태 추가 (뒤로가기 지원)
+    history.pushState({ modal: 'settings', subPage: subPageId }, '');
+};
+
+window.closeUsefulSubPage = function (fromPopState = false) {
+    if (!usefulCategoryList || !window.isUsefulSubPageOpen) return;
+    const activeSubPage = window.currentSubPageId ? document.getElementById(window.currentSubPageId) : null;
+    window.isUsefulSubPageOpen = false;
+    const closedSubPageId = window.currentSubPageId;
+    window.currentSubPageId = null;
+
+    if (activeSubPage) {
+        activeSubPage.classList.remove('sub-page-enter');
+        activeSubPage.classList.add('sub-page-exit');
+    }
+
+    setTimeout(() => {
+        if (activeSubPage) {
+            activeSubPage.style.display = 'none';
+            activeSubPage.classList.remove('sub-page-exit');
+        }
+
+        usefulCategoryList.style.display = 'flex';
+        usefulCategoryList.classList.remove('category-list-enter');
+        void usefulCategoryList.offsetWidth; // 강제 리플로우
+        usefulCategoryList.classList.add('category-list-enter');
+    }, 200);
+
+    if (!fromPopState && history.state && history.state.subPage === closedSubPageId) {
+        window._isProgrammaticBack = true;
+        history.back();
+        setTimeout(() => { window._isProgrammaticBack = false; }, 50);
+    }
+};
+
+window.resetUsefulSettingsSubPage = function () {
+    window.isUsefulSubPageOpen = false;
+    window.currentSubPageId = null;
+    if (usefulCategoryList) {
+        usefulCategoryList.style.display = 'flex';
+        usefulCategoryList.classList.remove('category-list-enter');
+    }
+    if (topButtonSettingsSubPage) {
+        topButtonSettingsSubPage.style.display = 'none';
+        topButtonSettingsSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
+    }
+    if (commentInputSettingsSubPage) {
+        commentInputSettingsSubPage.style.display = 'none';
+        commentInputSettingsSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
+    }
+    if (textSelectSettingsSubPage) {
+        textSelectSettingsSubPage.style.display = 'none';
+        textSelectSettingsSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
+    }
+    if (settingsSyncSubPage) {
+        settingsSyncSubPage.style.display = 'none';
+        settingsSyncSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
+    }
+    if (doubleTapLikeSettingsSubPage) {
+        doubleTapLikeSettingsSubPage.style.display = 'none';
+        doubleTapLikeSettingsSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
+    }
+    document.querySelectorAll('#settingsTab-useful .settings-sub-page').forEach((page) => {
+        page.style.display = 'none';
+        page.classList.remove('sub-page-enter', 'sub-page-exit');
+    });
+};
+
+window.isDisplaySubPageOpen = false;
+window.currentDisplaySubPage = null;
+
+window.openDisplaySubPage = function (subPage, subPageId = 'darkModeSettingsSubPage') {
+    if (!displayCategoryList || !subPage) return;
+    window.isDisplaySubPageOpen = true;
+    window.currentDisplaySubPage = subPage;
+
+    displayCategoryList.style.display = 'none';
+    subPage.style.display = 'block';
+    subPage.classList.remove('sub-page-exit');
+    subPage.classList.add('sub-page-enter');
+
+    history.pushState({ modal: 'settings', subPage: subPageId }, '');
+};
+
+window.closeDisplaySubPage = function (subPage, fromPopState = false) {
+    const targetSubPage = subPage || window.currentDisplaySubPage;
+    if (!displayCategoryList || !targetSubPage || !window.isDisplaySubPageOpen) return;
+    window.isDisplaySubPageOpen = false;
+    window.currentDisplaySubPage = null;
+
+    targetSubPage.classList.remove('sub-page-enter');
+    targetSubPage.classList.add('sub-page-exit');
+
+    setTimeout(() => {
+        targetSubPage.style.display = 'none';
+        targetSubPage.classList.remove('sub-page-exit');
+        displayCategoryList.style.display = 'flex';
+        displayCategoryList.classList.remove('category-list-enter');
+        void displayCategoryList.offsetWidth;
+        displayCategoryList.classList.add('category-list-enter');
+    }, 200);
+
+    if (!fromPopState && history.state && history.state.subPage) {
+        window._isProgrammaticBack = true;
+        history.back();
+        setTimeout(() => { window._isProgrammaticBack = false; }, 50);
+    }
+};
+
+window.resetDisplaySettingsSubPage = function () {
+    window.isDisplaySubPageOpen = false;
+    window.currentDisplaySubPage = null;
+    if (displayCategoryList) {
+        displayCategoryList.style.display = 'flex';
+        displayCategoryList.classList.remove('category-list-enter');
+    }
+    if (darkModeSettingsSubPage) {
+        darkModeSettingsSubPage.style.display = 'none';
+        darkModeSettingsSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
+    }
+};
+
+window.isNotificationSubPageOpen = false;
+window.currentNotificationSubPage = null;
+
+window.openNotificationSubPage = function (subPage, subPageId = 'pushNotificationSettingsSubPage') {
+    if (!notificationCategoryList || !subPage) return;
+    window.isNotificationSubPageOpen = true;
+    window.currentNotificationSubPage = subPage;
+
+    notificationCategoryList.style.display = 'none';
+    subPage.style.display = 'block';
+    subPage.classList.remove('sub-page-exit');
+    subPage.classList.add('sub-page-enter');
+
+    history.pushState({ modal: 'settings', subPage: subPageId }, '');
+};
+
+window.closeNotificationSubPage = function (subPage, fromPopState = false) {
+    const targetSubPage = subPage || window.currentNotificationSubPage;
+    if (!notificationCategoryList || !targetSubPage || !window.isNotificationSubPageOpen) return;
+    window.isNotificationSubPageOpen = false;
+    window.currentNotificationSubPage = null;
+
+    targetSubPage.classList.remove('sub-page-enter');
+    targetSubPage.classList.add('sub-page-exit');
+
+    setTimeout(() => {
+        targetSubPage.style.display = 'none';
+        targetSubPage.classList.remove('sub-page-exit');
+        notificationCategoryList.style.display = 'flex';
+        notificationCategoryList.classList.remove('category-list-enter');
+        void notificationCategoryList.offsetWidth;
+        notificationCategoryList.classList.add('category-list-enter');
+    }, 200);
+
+    if (!fromPopState && history.state && history.state.subPage) {
+        window._isProgrammaticBack = true;
+        history.back();
+        setTimeout(() => { window._isProgrammaticBack = false; }, 50);
+    }
+};
+
+window.resetNotificationSettingsSubPage = function () {
+    window.isNotificationSubPageOpen = false;
+    window.currentNotificationSubPage = null;
+    if (notificationCategoryList) {
+        notificationCategoryList.style.display = 'flex';
+        notificationCategoryList.classList.remove('category-list-enter');
+    }
+    if (pushNotificationSettingsSubPage) {
+        pushNotificationSettingsSubPage.style.display = 'none';
+        pushNotificationSettingsSubPage.classList.remove('sub-page-enter', 'sub-page-exit');
+    }
+};
+
+if (openPushNotificationSettings) {
+    openPushNotificationSettings.addEventListener('click', () => window.openNotificationSubPage(pushNotificationSettingsSubPage));
+}
+if (backToNotificationCategoriesBtn) {
+    backToNotificationCategoriesBtn.addEventListener('click', () => window.closeNotificationSubPage(pushNotificationSettingsSubPage, false));
+}
+
+if (openTopButtonSettings) {
+    openTopButtonSettings.addEventListener('click', () => window.openUsefulSubPage('topButtonSettingsSubPage'));
+}
+if (backToUsefulCategoriesBtn) {
+    backToUsefulCategoriesBtn.addEventListener('click', () => window.closeUsefulSubPage(false));
+}
+if (openCommentInputSettings) {
+    openCommentInputSettings.addEventListener('click', () => window.openUsefulSubPage('commentInputSettingsSubPage'));
+}
+if (backFromCommentInputBtn) {
+    backFromCommentInputBtn.addEventListener('click', () => window.closeUsefulSubPage(false));
+}
+if (openTextSelectSettings) {
+    openTextSelectSettings.addEventListener('click', () => window.openUsefulSubPage('textSelectSettingsSubPage'));
+}
+if (backFromTextSelectBtn) {
+    backFromTextSelectBtn.addEventListener('click', () => window.closeUsefulSubPage(false));
+}
+if (openDoubleTapLikeSettings) {
+    openDoubleTapLikeSettings.addEventListener('click', () => window.openUsefulSubPage('doubleTapLikeSettingsSubPage'));
+}
+if (backFromDoubleTapLikeBtn) {
+    backFromDoubleTapLikeBtn.addEventListener('click', () => window.closeUsefulSubPage(false));
+}
+if (openDarkModeSettings) {
+    openDarkModeSettings.addEventListener('click', () => window.openDisplaySubPage(darkModeSettingsSubPage));
+}
+if (backToDisplayCategoriesBtn) {
+    backToDisplayCategoriesBtn.addEventListener('click', () => window.closeDisplaySubPage(darkModeSettingsSubPage, false));
+}
+if (darkModeSettingToggle) {
+    darkModeSettingToggle.checked = getSiteTheme() === 'dark';
+    darkModeSettingToggle.addEventListener('change', (event) => {
+        setSiteTheme(event.target.checked ? 'dark' : 'light');
+    });
+}
+if (openSettingsSync) {
+    openSettingsSync.addEventListener('click', () => window.openUsefulSubPage('settingsSyncSubPage'));
+}
+if (backFromSettingsSyncBtn) {
+    backFromSettingsSyncBtn.addEventListener('click', () => window.closeUsefulSubPage(false));
+}
+if (settingsSyncToggle) {
+    settingsSyncToggle.checked = ACCOUNT_SETTINGS_DEFAULTS.settingsSyncEnabled;
+    settingsSyncToggle.addEventListener('change', (event) => {
+        setSettingsSyncEnabled(event.target.checked);
+    });
+}
+
+// 모바일 설정 메인 메뉴 아이템 클릭 이벤트
+const mobileMenuItems = document.querySelectorAll('.settings-mobile-menu-item');
+if (mobileMenuItems.length > 0) {
+    mobileMenuItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const targetTab = item.getAttribute('data-tab');
+            window.openSettingsTabOnMobile(targetTab);
+        });
+    });
+}
+
+// 브라우저 뒤로가기 제스처 / 백버튼 통합 처리
+window.addEventListener('popstate', () => {
+    if (window._isProgrammaticBack) return;
+
+    if (window.isUsefulSubPageOpen) {
+        window.closeUsefulSubPage(true);
+        return;
+    }
+    if (window.isDisplaySubPageOpen) {
+        window.closeDisplaySubPage(null, true);
+        return;
+    }
+    if (window.isNotificationSubPageOpen) {
+        window.closeNotificationSubPage(null, true);
+        return;
+    }
+    if (window.updateSubState === 'details') {
+        window.hideInPageUpdateDetails(true);
+        return;
+    }
+    if (window.updateSubState === 'pill') {
+        window.resetUpdateCheckState(true);
+        return;
+    }
+    
+    // 모바일 설정창 하위 탭 상세 화면에 진입한 상태라면 -> 상위 메인 목록으로 복귀
+    if (window.activeSettingsMobileTab || document.body.classList.contains('settings-sub-active')) {
+        window.backToSettingsMainOnMobile(true);
+        return;
+    }
+
+    if (settingsModal && settingsModal.classList.contains('active')) {
+        window.closeSettingsModal(true);
+        return;
+    }
+    if (sideDrawer && sideDrawer.classList.contains('active')) {
+        closeDrawer(true);
+        return;
+    }
+});
+
+if (settingsNavItems.length > 0) {
+    settingsNavItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const targetTab = item.getAttribute('data-tab');
+
+            settingsNavItems.forEach(nav => nav.classList.remove('active'));
+            item.classList.add('active');
+            if (settingsModal) {
+                settingsModal.classList.toggle('update-tab-active', targetTab === 'update');
+            }
+
+            settingsTabContents.forEach(content => {
+                if (content.id === `settingsTab-${targetTab}`) {
+                    content.style.display = 'flex';
+                } else {
+                    content.style.display = 'none';
+                }
+            });
+
+            // 탭을 전환할 때 서브페이지를 메인 카드 목록으로 초기화
+            resetUsefulSettingsSubPage();
+            resetDisplaySettingsSubPage();
+            if (typeof resetNotificationSettingsSubPage === 'function') resetNotificationSettingsSubPage();
+            if (typeof resetUpdateTabViews === 'function') resetUpdateTabViews();
+            if (window.clubNotifications && typeof window.clubNotifications.updateSettingsUI === 'function') {
+                window.clubNotifications.updateSettingsUI();
+            }
+        });
+    });
+}
+
+// 사이트 업데이트 정보: 다음 배포 시 이 값만 변경합니다.
+const SITE_UPDATE_INFO = Object.freeze({
+    oneUiVersion: 'One UI 1.5',
+    buildNumber: '2026919.1',
+    message: '다크·라이트 모드 화면 전환 효과 및 게시글 상세창 표시 관련 버그 수정 업데이트입니다.'
+});
+window.SITE_UPDATE_INFO = SITE_UPDATE_INFO;
+
+const checkUpdateBtn = document.getElementById('checkUpdateBtn');
+const openUpdateDetailsBtn = document.getElementById('openUpdateDetailsBtn');
+const openUpdateDetails10Btn = document.getElementById('openUpdateDetails10Btn');
+const updatePillsGroup = document.getElementById('updatePillsGroup');
+const updateMainBackBtn = document.getElementById('updateMainBackBtn');
+const updateMainView = document.getElementById('updateMainView');
+const updateDetailsView = document.getElementById('updateDetailsView');
+const updateDetailsPageTitle = document.getElementById('updateDetailsPageTitle');
+const updateSection15 = document.getElementById('updateSection15');
+const updateSection10 = document.getElementById('updateSection10');
+const closeUpdateDetailsInPageBtn = document.getElementById('closeUpdateDetailsInPageBtn');
+const closeUpdateDetailsTopBtn = document.getElementById('closeUpdateDetailsTopBtn');
+
+document.querySelectorAll('[data-current-one-ui-version]').forEach((element) => {
+    if (element.tagName === 'svg' || element.tagName === 'SVG') {
+        const versionNum = SITE_UPDATE_INFO.oneUiVersion.replace('One UI ', '');
+        element.setAttribute('aria-label', SITE_UPDATE_INFO.oneUiVersion);
+        const textEl = element.querySelector('.one-ui-version-number');
+        if (textEl) textEl.textContent = versionNum;
+    } else {
+        element.textContent = SITE_UPDATE_INFO.oneUiVersion;
+    }
+});
+
+document.querySelectorAll('[data-current-build-number]').forEach((element) => {
+    element.textContent = `Build ${SITE_UPDATE_INFO.buildNumber}`;
+});
+
+document.querySelectorAll('[data-current-update-message]').forEach((element) => {
+    element.textContent = SITE_UPDATE_INFO.message;
+});
+
+// 새 업데이트 카드를 위에 추가하고, 기존 One UI 1.5 내역은 그대로 보존합니다.
+function applyCurrentUpdateHistory() {
+    if (!updateSection15 || updateSection15.dataset.historyPrepared === 'true') return;
+
+    const legacyCard = updateSection15.querySelector('.update-history-card');
+    if (!legacyCard) return;
+
+    const legacyVersion = legacyCard.querySelector('[data-current-one-ui-version]');
+    const legacyBuild = legacyCard.querySelector('[data-current-build-number]');
+    const legacyMessage = legacyCard.querySelector('[data-current-update-message]');
+    if (legacyVersion) {
+        legacyVersion.removeAttribute('data-current-one-ui-version');
+        legacyVersion.textContent = 'One UI 1.5';
+    }
+    if (legacyBuild) {
+        legacyBuild.removeAttribute('data-current-build-number');
+        legacyBuild.textContent = 'Build 20260911.1';
+    }
+    if (legacyMessage) {
+        legacyMessage.removeAttribute('data-current-update-message');
+        legacyMessage.textContent = '실시간 알림 시스템 도입 및 모바일 사용성 개선 업데이트입니다.';
+    }
+    const legacyTag = legacyCard.querySelector('.version-tag.current');
+    if (legacyTag) {
+        legacyTag.classList.remove('current');
+        legacyTag.textContent = '이전 업데이트';
+        legacyTag.style.background = '';
+        legacyTag.style.color = '';
+    }
+    legacyCard.classList.remove('current-version-card');
+
+    // 1) 이전 업데이트 카드: Build 2026913.1 (PDF 오류 수정)
+    const prevCard = document.createElement('div');
+    prevCard.className = 'update-history-card';
+    prevCard.innerHTML = `
+        <div class="update-card-header">
+            <div class="update-version-badge-group">
+                <span class="version-tag">이전 업데이트</span>
+                <h4 class="version-title">One UI 1.5</h4>
+            </div>
+            <span class="build-number">Build 2026913.1</span>
+        </div>
+        <p class="update-description">PDF 첨부파일 미리보기 및 다운로드 오류 수정 업데이트입니다.</p>
+        <div class="update-features-list">
+            <div class="update-section-accordion">
+                <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
+                    <div class="update-section-category-title">
+                        <i class="fa-solid fa-wrench" style="color: var(--accent-color);"></i>
+                        <span>버그 수정</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                </button>
+                <div class="update-section-collapse">
+                    <div class="update-section-collapse-content">
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>PDF 첨부파일 미리보기 및 다운로드 오류 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">PDF 전달이 차단되어 미리보기가 되지 않거나 빈 파일로 다운로드되던 문제를 수정했습니다.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 2) 이전 업데이트 카드: Build 2026913.2 (이전 버그 수정)
+    const prevCard2 = document.createElement('div');
+    prevCard2.className = 'update-history-card';
+    prevCard2.innerHTML = `
+        <div class="update-card-header">
+            <div class="update-version-badge-group">
+                <span class="version-tag">이전 업데이트</span>
+                <h4 class="version-title">One UI 1.5</h4>
+            </div>
+            <span class="build-number">Build 2026913.2</span>
+        </div>
+        <p class="update-description">게시판 카드 이동 및 글 삭제, 댓글 작성자 이름 표시 관련 버그 수정 업데이트입니다.</p>
+        <div class="update-features-list">
+            <div class="update-section-accordion">
+                <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
+                    <div class="update-section-category-title">
+                        <i class="fa-solid fa-wrench" style="color: var(--accent-color);"></i>
+                        <span>버그 수정</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                </button>
+                <div class="update-section-collapse">
+                    <div class="update-section-collapse-content">
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>게시글 상단 고정 이동 오류 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">게시글을 상단에 고정하거나 해제할 때 카드가 부드럽게 이동하지 않고 위로 툭 튀며 순간이동하던 문제를 수정했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>게시글 삭제 후 새 글 작성 시 빈 공간 발생 오류 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">게시글을 삭제한 직후 새 글을 작성했을 때 게시글 사이에 불필요하게 넓은 빈 공간이 생기던 현상을 수정했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>작은 댓글창에서 작성자 이름 잘림 현상 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">화면 오른쪽 작은 댓글창에서 긴 작성자 이름(예: 회장 김동현)이 한 글자만 남고 잘려서 보이던 현상을 정리하여 온전히 다 보이도록 수정했습니다.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 3) 이전 업데이트 카드: Build 2026919.1 (화면 전환 및 상세창 버그 수정)
+    const prevCard3 = document.createElement('div');
+    prevCard3.className = 'update-history-card';
+    prevCard3.innerHTML = `
+        <div class="update-card-header">
+            <div class="update-version-badge-group">
+                <span class="version-tag">이전 업데이트</span>
+                <h4 class="version-title">One UI 1.5</h4>
+            </div>
+            <span class="build-number">Build 2026919.1</span>
+        </div>
+        <p class="update-description">다크·라이트 모드 화면 전환 효과 및 게시글 상세창 표시 관련 버그 수정 업데이트입니다.</p>
+        <div class="update-features-list">
+            <!-- 1. 사용성 및 기능 개선 -->
+            <div class="update-section-accordion">
+                <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
+                    <div class="update-section-category-title">
+                        <i class="fa-solid fa-lightbulb" style="color: var(--accent-color);"></i>
+                        <span>사용성 및 기능 개선</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                </button>
+                <div class="update-section-collapse">
+                    <div class="update-section-collapse-content">
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>테마 전환 효과 0.5초 통일</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">다크 모드와 라이트 모드를 바꿀 때 상세창의 모든 글자, 댓글 입력창, 그림자, 버튼들이 0.5초 동안 부드럽게 바뀌도록 개선했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>라이트 모드 화면 스타일 및 가독성 다듬기</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">첨부파일 기준 안내창, 유튜브 이동 창, 사진 설명 수정창의 라이트 모드 색상과 가독성을 자연스럽게 보완했습니다.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="update-section-divider"></div>
+
+            <!-- 2. 버그 수정 -->
+            <div class="update-section-accordion">
+                <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
+                    <div class="update-section-category-title">
+                        <i class="fa-solid fa-wrench" style="color: var(--accent-color);"></i>
+                        <span>버그 수정</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                </button>
+                <div class="update-section-collapse">
+                    <div class="update-section-collapse-content">
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>상세창 상단 버튼 유지 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">컴퓨터에서 반쪽 상세창을 열었을 때 위쪽 버튼(로고, 다크모드, 메뉴)이 사라지던 현상을 수정했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>댓글 입력창 전환 꺼짐 현상 해결</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">댓글을 스크롤한 뒤 테마를 바꿀 때 부드러운 전환이 풀려 즉시 바뀌던 문제를 해결했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>파일 미리보기 창 코드 안정화</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">미리보기 창의 불필요한 내부 코드를 정리하여 화면 오류를 예방했습니다.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // 4) 최신 버전 카드 (게시글 삭제 개선 및 디자인 수정 - 배포 전이므로 빌드 번호 생략)
+    const currentCard = document.createElement('div');
+    currentCard.className = 'update-history-card current-version-card';
+    currentCard.innerHTML = `
+        <div class="update-card-header">
+            <div class="update-version-badge-group">
+                <span class="version-tag current">현재 버전</span>
+                <h4 class="version-title">One UI 1.5</h4>
+            </div>
+            <span class="build-number"></span>
+        </div>
+        <p class="update-description">두 번 눌러 좋아요와 커뮤니티 파일 끌어놓기 첨부 기능을 추가하고, 답글 열기·닫기 반응성, 게시판 글 삭제 동작, 버전 알약 배지 디자인을 개선했습니다.</p>
+        <div class="update-features-list">
+            <!-- 1. 새로운 기능 -->
+            <div class="update-section-accordion">
+                <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
+                    <div class="update-section-category-title">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="color: var(--accent-color);"></i>
+                        <span>새로운 기능</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                </button>
+                <div class="update-section-collapse">
+                    <div class="update-section-collapse-content">
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>파일을 끌어놓아 게시글·댓글·답글에 첨부</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">파일 탐색기의 사진·PDF·음성·HTML 파일을 게시글 작성·수정 화면이나 게시글 상세 화면에 끌어놓으면 첨부 목록에 추가됩니다. 놓을 위치를 알려주는 화면과 파일 카드 등장 효과가 나타나며, 파일은 게시글 등록 또는 댓글 전송 버튼을 누를 때 업로드됩니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>복사한 사진·파일을 붙여넣어 첨부</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">게시글 내용 칸이나 댓글 입력창에 복사한 사진·파일을 붙여넣으면 첨부 목록에 추가됩니다. PC에서는 Ctrl+V, 폰에서는 입력창을 길게 눌러 붙여넣을 수 있습니다. 폰 브라우저가 파일 내용을 전달하지 않는 경우에는 기존 파일 선택 기능을 이용할 수 있습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>게시글·댓글·답글 두 번 눌러 좋아요 누르기</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">게시판 글, 상세 본문, 댓글, 답글을 마우스로 두 번 클릭하거나 손가락으로 두 번 톡톡 터치하면 누른 위치에 하트가 나타나며 바로 좋아요를 누를 수 있습니다.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="update-section-divider"></div>
+
+            <!-- 2. 사용성 및 기능 개선 -->
+            <div class="update-section-accordion">
+                <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
+                    <div class="update-section-category-title">
+                        <i class="fa-solid fa-lightbulb" style="color: var(--accent-color);"></i>
+                        <span>사용성 및 기능 개선</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                </button>
+                <div class="update-section-collapse">
+                    <div class="update-section-collapse-content">
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>버전 표시 알약 배지 디자인 다듬기</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">버전 알약 배지의 위아래 두께를 늘려 볼륨감을 높이고, 라이트 모드와 다크 모드 모두에서 배경이 또렷하게 보이도록 수직 정렬과 색상을 개선했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>답글 열기·닫기 연속 클릭 반응성 개선</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">답글 버튼이나 댓글 배경을 마우스로 빠르게 연속해서 누를 때 씹히거나 먹통 되지 않고 누르는 즉시 열림과 닫힘이 부드럽게 이어지도록 반응성을 개선하고, 닫힐 때 생기던 깜빡임 현상을 해결했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>모바일 댓글·답글 배치와 여백 개선</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">휴대폰 화면 너비에 맞춰 작성자 정보와 댓글·답글 내용, 하단 버튼의 줄 배치와 간격을 정리해 읽고 조작하기 편하도록 개선했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>모바일 댓글 첨부 메뉴 가로 폭 확대</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">휴대폰에서 댓글 첨부 메뉴를 넓혀 긴 항목명도 한 줄로 보기 쉽게 했습니다. 화면이 좁을 때는 문구가 자동으로 줄바꿈됩니다.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="update-section-divider"></div>
+
+            <!-- 2. 버그 수정 -->
+            <div class="update-section-accordion">
+                <button type="button" class="update-section-toggle-btn" onclick="toggleUpdateSection(this)" aria-expanded="false">
+                    <div class="update-section-category-title">
+                        <i class="fa-solid fa-wrench" style="color: var(--accent-color);"></i>
+                        <span>버그 수정</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+                </button>
+                <div class="update-section-collapse">
+                    <div class="update-section-collapse-content">
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>답글 다중 선택(삭제·고정) 및 모바일 여백 정렬 개선</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">답글을 길게 눌러도 여러 개 선택(삭제 및 고정)이 되지 않던 오류를 수정하고, 모바일 선택 모드에서 답글 날짜가 알맞게 축소되어 여백이 깔끔하게 유지되도록 개선했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>게시글 삭제 시 아래 글 이동 지연 해결</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">게시판에서 글을 지웠을 때 1~2초 동안 멈춰있다가 올라오던 현상을 없애고, 삭제 직후 아래 게시글들이 바로 부드럽게 올라오도록 개선했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>화면 맨 아래에서 글 삭제 시 흔들림 방지</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">스크롤을 맨 밑까지 내린 상태에서 위쪽 글을 삭제할 때 화면 전체가 쿵 하고 튕기며 흔들리던 현상을 부드럽게 보정했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>게시글 댓글 정렬 화살표 회전 오류 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">게시글 안에서 댓글 정렬 메뉴를 열었을 때, 오른쪽 아래 화살표(∨)가 위쪽으로 180도 회전하지 않고 그대로 멈춰있던 현상을 수정했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>답글 고정·해제 애니메이션 누락 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">답글을 고정하거나 해제할 때 핀 버튼 반응과 답글의 강조·이동 애니메이션이 나타나지 않거나 끊기던 문제를 수정했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>다크 모드 첨부파일 카드 표시 오류 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">다크 모드에서 글 작성 화면 및 댓글의 첨부파일(PDF·HTML) 상자가 흰색으로 나타나 글씨가 잘 보이지 않던 문제를 수정했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>첨부파일 미리보기 글자 겹침 오류 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">글 작성 화면에서 이름이 긴 파일(PDF·HTML)을 첨부했을 때 파일명과 용량 글자가 서로 겹쳐서 보이던 문제를 수정했습니다.</div>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>설정 초기화 확인 창 안내 문구 정리</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">설정을 기본값으로 되돌릴 때 나타나는 확인 창에서 이전 AI 채팅 관련 불필요한 문구를 제거했습니다.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    updateSection15.insertBefore(prevCard, legacyCard);
+    updateSection15.insertBefore(prevCard2, prevCard);
+    updateSection15.insertBefore(prevCard3, prevCard2);
+    updateSection15.insertBefore(currentCard, prevCard3);
+    updateSection15.dataset.historyPrepared = 'true';
+}
+
+applyCurrentUpdateHistory();
+
+// 업데이트 서브 상태 Tracing ('pill' | 'details' | null)
+window.updateSubState = null;
+
+// "업데이트 내용 확인" 버튼 클릭 시 -> 알약 목록과 메인 상단 "← 돌아가기" 버튼 표시
+if (checkUpdateBtn && updatePillsGroup) {
+    checkUpdateBtn.addEventListener('click', function () {
+        if (checkUpdateBtn.classList.contains('hiding')) return;
+
+        const copyEl = document.querySelector('.update-status-copy');
+        const firstRect = copyEl ? copyEl.getBoundingClientRect() : null;
+
+        window.updateSubState = 'pill';
+        history.pushState({ modal: 'settings', updateSubState: 'pill' }, '');
+
+        // 즉각 전환
+        checkUpdateBtn.style.display = 'none';
+        checkUpdateBtn.classList.remove('hiding', 'showing');
+
+        updatePillsGroup.style.display = 'flex';
+        updatePillsGroup.classList.remove('hiding');
+        updatePillsGroup.classList.add('showing');
+
+        if (!isMobileView() && copyEl && firstRect) {
+            const lastRect = copyEl.getBoundingClientRect();
+            const deltaY = firstRect.top - lastRect.top;
+            if (Math.abs(deltaY) > 1) {
+                copyEl.style.transition = 'none';
+                copyEl.style.transform = `translateY(${deltaY}px)`;
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        copyEl.style.transition = 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)';
+                        copyEl.style.transform = 'translateY(0)';
+                    });
+                });
+            }
+        } else if (copyEl) {
+            copyEl.style.transform = '';
+            copyEl.style.transition = '';
+        }
+
+        if (updateMainBackBtn) {
+            updateMainBackBtn.style.display = 'inline-flex';
+            updateMainBackBtn.classList.remove('hiding');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    updateMainBackBtn.classList.add('showing');
+                });
+            });
+        }
+    });
+}
+
+// 알약 상태에서 "← 돌아가기" 버튼 클릭 또는 뒤로가기 조작시 -> 다시 "업데이트 내용 확인" 버튼 상태로 복귀
+window.resetUpdateCheckState = function (fromPopState = false) {
+    window.updateSubState = null;
+
+    const copyEl = document.querySelector('.update-status-copy');
+    const firstRect = copyEl ? copyEl.getBoundingClientRect() : null;
+
+    if (updateMainBackBtn) {
+        updateMainBackBtn.classList.remove('showing');
+        updateMainBackBtn.classList.add('hiding');
+        setTimeout(() => {
+            if (updateMainBackBtn) {
+                updateMainBackBtn.style.display = 'none';
+                updateMainBackBtn.classList.remove('hiding');
+            }
+        }, 150);
+    }
+
+    // 딜레이 없이 즉시 전환하여 숫자가 바로 내려오도록 실행
+    if (updatePillsGroup) {
+        updatePillsGroup.style.display = 'none';
+        updatePillsGroup.classList.remove('showing', 'hiding');
+    }
+    if (checkUpdateBtn) {
+        checkUpdateBtn.style.display = '';
+        checkUpdateBtn.classList.remove('hiding');
+        checkUpdateBtn.classList.add('showing');
+        setTimeout(() => {
+            checkUpdateBtn.classList.remove('showing');
+        }, 300);
+    }
+
+    if (!isMobileView() && copyEl && firstRect) {
+        const lastRect = copyEl.getBoundingClientRect();
+        const deltaY = firstRect.top - lastRect.top;
+        if (Math.abs(deltaY) > 1) {
+            copyEl.style.transition = 'none';
+            copyEl.style.transform = `translateY(${deltaY}px)`;
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    copyEl.style.transition = 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)';
+                    copyEl.style.transform = 'translateY(0)';
+                });
+            });
+        }
+    } else if (copyEl) {
+        copyEl.style.transform = '';
+        copyEl.style.transition = '';
+    }
+
+    if (!fromPopState && history.state && history.state.updateSubState === 'pill') {
+        window._isProgrammaticBack = true;
+        history.back();
+        setTimeout(() => { window._isProgrammaticBack = false; }, 50);
+    }
+};
+
+if (updateMainBackBtn) {
+    updateMainBackBtn.addEventListener('click', function () {
+        window.resetUpdateCheckState(false);
+    });
+}
+
+// 알약 버튼 클릭 시 버전별 상세 업데이트 내역 화면으로 진입
+window.showInPageUpdateDetails = function (targetVersion = '1.5') {
+    if (typeof targetVersion !== 'string') {
+        targetVersion = '1.5';
+    }
+    window.updateSubState = 'details';
+    history.pushState({ modal: 'settings', updateSubState: 'details', updateVersion: targetVersion }, '');
+
+    if (!updateMainView || !updateDetailsView) return;
+
+    if (updateSection15 && updateSection10) {
+        if (targetVersion === '1.0') {
+            updateSection15.style.display = 'none';
+            updateSection10.style.display = 'flex';
+            if (updateDetailsPageTitle) {
+                updateDetailsPageTitle.innerHTML = '<i class="fa-solid fa-sparkles" style="color: var(--accent-color);"></i> One UI 1.0 업데이트 정보';
+            }
+        } else {
+            updateSection15.style.display = 'flex';
+            updateSection10.style.display = 'none';
+            if (updateDetailsPageTitle) {
+                updateDetailsPageTitle.innerHTML = '<i class="fa-solid fa-sparkles" style="color: var(--accent-color);"></i> One UI 1.5 업데이트 정보';
+            }
+        }
+    }
+
+    updateMainView.classList.remove('active');
+    updateMainView.classList.add('leaving');
+
+    setTimeout(() => {
+        updateMainView.classList.remove('leaving');
+        updateMainView.style.display = 'none';
+
+        updateDetailsView.style.display = 'flex';
+        updateDetailsView.classList.remove('leaving');
+        void updateDetailsView.offsetWidth;
+        updateDetailsView.classList.add('active');
+
+        // 진입 시 활성화된 카드의 slideUpFade 애니메이션을 자연스럽게 동일 재생
+        const activeCards = updateDetailsView.querySelectorAll('.update-version-section:not([style*="display: none"]) .update-history-card');
+        activeCards.forEach((card, idx) => {
+            card.style.animation = 'none';
+            void card.offsetHeight;
+            card.style.animation = `slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${0.06 + idx * 0.05}s both`;
+        });
+    }, 180);
+};
+
+// 상세 화면에서 "← 돌아가기" 버튼 클릭 시 -> 알약 상태가 보이는 메인 화면으로 복귀
+window.hideInPageUpdateDetails = function (fromPopState = false) {
+    window.updateSubState = 'pill';
+
+    if (!updateDetailsView || !updateMainView) return;
+
+    updateDetailsView.classList.remove('active');
+    updateDetailsView.classList.add('leaving');
+
+    setTimeout(() => {
+        updateDetailsView.classList.remove('leaving');
+        updateDetailsView.style.display = 'none';
+
+        updateMainView.style.display = 'flex';
+        updateMainView.classList.remove('leaving');
+        void updateMainView.offsetWidth;
+        updateMainView.classList.add('active');
+
+        if (updatePillsGroup) {
+            updatePillsGroup.style.display = 'flex';
+            updatePillsGroup.classList.remove('hiding');
+        }
+        if (updateMainBackBtn) {
+            updateMainBackBtn.style.display = 'inline-flex';
+            updateMainBackBtn.classList.remove('hiding', 'showing');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    updateMainBackBtn.classList.add('showing');
+                });
+            });
+        }
+        if (checkUpdateBtn) {
+            checkUpdateBtn.style.display = 'none';
+        }
+    }, 180);
+
+    if (!fromPopState && history.state && history.state.updateSubState === 'details') {
+        window._isProgrammaticBack = true;
+        history.back();
+        setTimeout(() => { window._isProgrammaticBack = false; }, 50);
+    }
+};
+
+window.resetUpdateTabViews = function () {
+    window.updateSubState = null;
+    if (updateDetailsView) {
+        updateDetailsView.classList.remove('active', 'leaving');
+        updateDetailsView.style.display = 'none';
+    }
+    if (updateMainView) {
+        updateMainView.style.display = 'flex';
+        updateMainView.classList.remove('leaving');
+        updateMainView.classList.add('active');
+    }
+    if (checkUpdateBtn) {
+        checkUpdateBtn.style.display = '';
+        checkUpdateBtn.classList.remove('hiding', 'showing');
+    }
+    if (updatePillsGroup) {
+        updatePillsGroup.style.display = 'none';
+        updatePillsGroup.classList.remove('showing', 'hiding');
+    }
+    if (updateMainBackBtn) {
+        updateMainBackBtn.style.display = 'none';
+        updateMainBackBtn.classList.remove('showing', 'hiding');
+    }
+};
+
+if (openUpdateDetailsBtn) {
+    openUpdateDetailsBtn.addEventListener('click', () => window.showInPageUpdateDetails('1.5'));
+}
+
+if (openUpdateDetails10Btn) {
+    openUpdateDetails10Btn.addEventListener('click', () => window.showInPageUpdateDetails('1.0'));
+}
+
+if (closeUpdateDetailsInPageBtn) {
+    closeUpdateDetailsInPageBtn.addEventListener('click', () => window.hideInPageUpdateDetails(false));
+}
+
+if (closeUpdateDetailsTopBtn) {
+    closeUpdateDetailsTopBtn.addEventListener('click', () => window.hideInPageUpdateDetails(false));
+}
+
+const logoDisplayDropdown = document.getElementById('logoDisplayDropdown');
+const logoDisplaySelected = document.getElementById('logoDisplaySelected');
+const logoDisplayOptions = document.getElementById('logoDisplayOptions');
+const logoDisplayOptionItems = document.querySelectorAll('#logoDisplayOptions .custom-dropdown-option');
+const logoPreview = document.getElementById('logoPreview');
+
+function applyLogoDisplaySettings(settingValue) {
+    const applyToElement = (el) => {
+        if (!el) return;
+        const wasHidden = el.classList.contains('hidden');
+
+        if (settingValue === 'hidden') {
+            // 완전히 숨기기: 현재 모양을 유지한 채로 투명도만 0이 되도록 hidden만 추가
+            el.classList.add('hidden');
+        } else {
+            if (wasHidden) {
+                // 숨기기에서 돌아올 때: 페이드 인 되기 전에 모양(너비 등)을 즉시 변경
+                el.classList.add('no-transition');
+                if (settingValue === 'icon-only') el.classList.add('icon-only');
+                else el.classList.remove('icon-only');
+
+                // 강제 리플로우 (트랜지션 없이 즉시 적용되도록)
+                void el.offsetWidth;
+
+                el.classList.remove('no-transition');
+                el.classList.remove('hidden'); // 이제 페이드 인
+            } else {
+                // 기본 <-> 아이콘 간의 전환: 정상적으로 트랜지션 됨
+                el.classList.remove('hidden');
+                if (settingValue === 'icon-only') el.classList.add('icon-only');
+                else el.classList.remove('icon-only');
+            }
+        }
+    };
+
+    applyToElement(logoHomeBtn);
+    applyToElement(logoPreview);
+    // Update custom dropdown UI
+    if (logoDisplaySelected && logoDisplayOptions) {
+        const optionToSelect = document.querySelector(`#logoDisplayOptions .custom-dropdown-option[data-value="${settingValue}"]`);
+        if (optionToSelect) {
+            const textHTML = optionToSelect.innerHTML;
+            document.querySelectorAll('#logoDisplayOptions .custom-dropdown-option').forEach(opt => opt.classList.remove('active'));
+            optionToSelect.classList.add('active');
+            logoDisplaySelected.innerHTML = `<span>${textHTML}</span> <i class="fa-solid fa-chevron-down arrow-icon"></i>`;
+        }
+    }
+}
+
+applyLogoDisplaySettings(ACCOUNT_SETTINGS_DEFAULTS.logoDisplayStyle);
+
+if (logoDisplaySelected && logoDisplayOptions) {
+    logoDisplaySelected.addEventListener('click', (e) => {
+        e.stopPropagation();
+        logoDisplayDropdown.classList.toggle('open');
+    });
+
+    logoDisplayOptionItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const value = item.getAttribute('data-value');
+            applyLogoDisplaySettings(value);
+            saveAccountSettings({ logoDisplayStyle: value });
+            logoDisplayDropdown.classList.remove('open');
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (logoDisplayDropdown && !logoDisplayDropdown.contains(e.target)) {
+            logoDisplayDropdown.classList.remove('open');
+        }
+    });
+}
+
+// 스크롤 시 상단 버튼 숨김/표시 (One UI 스타일)
+let _lastScrollY = window.scrollY;
+let _isScrollingDown = false;
+let _isTopButtonsHidden = false;
+let _scrollStopTimer = null;
+let _isScrollHideEnabled = ACCOUNT_SETTINGS_DEFAULTS.scrollHide;
+
+const _logoHomeBtn = document.getElementById('logoHomeBtn');
+const _headerActions = document.querySelector('.header-actions');
+const _writePostBtnGlob = document.getElementById('writePostBtn');
+
+const scrollHideToggle = document.getElementById('scrollHideToggle');
+if (scrollHideToggle) {
+    scrollHideToggle.checked = _isScrollHideEnabled;
+    scrollHideToggle.addEventListener('change', (e) => {
+        setScrollHideEnabled(e.target.checked);
+    });
+}
+
+function setScrollHideEnabled(enabled, save = true) {
+    _isScrollHideEnabled = Boolean(enabled);
+    if (scrollHideToggle) scrollHideToggle.checked = _isScrollHideEnabled;
+    if (!_isScrollHideEnabled) _showTopButtons();
+    if (save) saveAccountSettings({ scrollHide: _isScrollHideEnabled });
+}
+
+function _hideTopButtons() {
+    if (!_isTopButtonsHidden) {
+        if (_logoHomeBtn) {
+            _logoHomeBtn.style.opacity = '0';
+            _logoHomeBtn.style.pointerEvents = 'none';
+        }
+        if (_headerActions) {
+            _headerActions.style.opacity = '0';
+            _headerActions.style.pointerEvents = 'none';
+        }
+        if (_writePostBtnGlob) {
+            _writePostBtnGlob.style.opacity = '0';
+            _writePostBtnGlob.style.pointerEvents = 'none';
+        }
+                _isTopButtonsHidden = true;
+    }
+}
+
+function _showTopButtons() {
+    const sideDetail = document.getElementById('sideDetailContainer');
+    const isDetailOpen = document.body.classList.contains('detail-open') ||
+        (sideDetail && !sideDetail.classList.contains('detail-hidden'));
+
+    // 모바일 게시물 상세 페이지 내부에서는 상단 로고/헤더 액션 버튼을 절대로 표시하지 않음
+    if (isDetailOpen && window.innerWidth <= 1023) return;
+
+    if (_logoHomeBtn) {
+        _logoHomeBtn.style.opacity = '1';
+        _logoHomeBtn.style.pointerEvents = 'auto';
+        _logoHomeBtn.style.visibility = 'visible';
+    }
+    if (_headerActions) {
+        _headerActions.style.opacity = '1';
+        _headerActions.style.pointerEvents = 'auto';
+        _headerActions.style.visibility = 'visible';
+    }
+    if (_writePostBtnGlob) {
+        if (typeof updateWriteButtonVisibility === 'function') {
+            updateWriteButtonVisibility(currentPage);
+        } else {
+            _writePostBtnGlob.style.opacity = '1';
+            _writePostBtnGlob.style.pointerEvents = 'auto';
+            _writePostBtnGlob.style.visibility = 'visible';
+            _writePostBtnGlob.classList.remove('fab-hidden');
+        }
+    }
+        _isTopButtonsHidden = false;
+}
+
+// --- 댓글 스크롤 시 입력창 자동 숨김 로직 (기본값: true / on) ---
+let _isCommentInputScrollHideEnabled = ACCOUNT_SETTINGS_DEFAULTS.commentInputScrollHide;
+let _isCommentInputHidden = false;
+let _commentScrollStopTimer = null;
+let _lastCommentScrollY = 0;
+
+function updateCommentInputToggleUI() {
+    const toggle = document.getElementById('commentInputScrollHideToggle');
+    if (toggle) {
+        toggle.checked = _isCommentInputScrollHideEnabled;
+    }
+}
+
+// 이벤트 위임을 통해 토글 상태 변경 즉시 반영
+document.addEventListener('change', (e) => {
+    if (e.target && e.target.id === 'commentInputScrollHideToggle') {
+        setCommentInputScrollHideEnabled(e.target.checked);
+    }
+});
+
+function setCommentInputScrollHideEnabled(enabled, save = true) {
+    _isCommentInputScrollHideEnabled = Boolean(enabled);
+    updateCommentInputToggleUI();
+    const container = document.getElementById('commentInputContainer');
+    if (container && container.style.transition) container.style.transition = '';
+    if (!_isCommentInputScrollHideEnabled) _showCommentInput();
+    if (save) saveAccountSettings({ commentInputScrollHide: _isCommentInputScrollHideEnabled });
+}
+
+function _hideCommentInput() {
+    const area = document.querySelector('.comment-input-area');
+    if (area && !_isCommentInputHidden) {
+        area.style.transition = 'opacity 0.35s ease';
+        area.style.opacity = '0';
+        area.style.pointerEvents = 'none';
+        _isCommentInputHidden = true;
+    }
+}
+
+function _showCommentInput() {
+    const area = document.querySelector('.comment-input-area');
+    const container = document.getElementById('commentInputContainer');
+    if (container && container.style.transition) {
+        container.style.transition = '';
+    }
+    if (area && _isCommentInputHidden) {
+        area.style.transition = 'opacity 0.35s ease';
+        area.style.opacity = '';
+        area.style.pointerEvents = '';
+        _isCommentInputHidden = false;
+    }
+}
+
+window.addEventListener('scroll', (e) => {
+    const target = e.target === document ? document.documentElement : e.target;
+
+    // 상세 보기 모달 창이 열려 있는 상태에서의 댓글 스크롤 감지 (상단 버튼 스크롤과 동일 형식)
+    const sideDetailContainer = document.getElementById('sideDetailContainer');
+    const isDetailOpen = document.body.classList.contains('detail-open') ||
+        (sideDetailContainer && !sideDetailContainer.classList.contains('detail-hidden'));
+
+    if (isDetailOpen && _isCommentInputScrollHideEnabled) {
+        const currentCommentScrollY = target.scrollTop || 0;
+        const deltaCommentY = currentCommentScrollY - _lastCommentScrollY;
+
+        if (currentCommentScrollY <= 30) {
+            _showCommentInput();
+        } else if (deltaCommentY > 5) {
+            _hideCommentInput();
+        } else if (deltaCommentY < -5) {
+            _showCommentInput();
+        }
+
+        _lastCommentScrollY = currentCommentScrollY;
+
+        if (_commentScrollStopTimer) clearTimeout(_commentScrollStopTimer);
+        _commentScrollStopTimer = setTimeout(() => {
+            _showCommentInput();
+        }, 300);
+    }
+
+    // 페이지 스크롤이 아니면 무시 (드롭다운 등 다른 내부 스크롤 방지)
+    if (target !== document.documentElement && (!target.classList || !target.classList.contains('page'))) {
+        return;
+    }
+
+    if (!_isScrollHideEnabled) return;
+    const currentScrollY = target.scrollTop || window.scrollY;
+    const deltaY = currentScrollY - _lastScrollY;
+
+    if (currentScrollY <= 50) {
+        _showTopButtons();
+    } else if (deltaY > 5) {
+        _hideTopButtons();
+    } else if (deltaY < -5) {
+        _showTopButtons();
+    }
+
+    _lastScrollY = currentScrollY;
+
+    if (_scrollStopTimer) clearTimeout(_scrollStopTimer);
+    _scrollStopTimer = setTimeout(() => {
+        _showTopButtons();
+    }, 300);
+}, { capture: true, passive: true });
+
+
+
+// --- 텍스트 선택 방지 로직 (기본값: true / 켜짐) ---
+let _isTextSelectPreventEnabled = ACCOUNT_SETTINGS_DEFAULTS.textSelectPrevent;
+
+function updateTextSelectToggleUI() {
+    const quickToggle = document.getElementById('textSelectPreventQuickToggle');
+    const subToggle = document.getElementById('textSelectPreventToggle');
+    if (quickToggle) quickToggle.checked = _isTextSelectPreventEnabled;
+    if (subToggle) subToggle.checked = _isTextSelectPreventEnabled;
+
+    if (_isTextSelectPreventEnabled) {
+        document.body.classList.add('no-text-select');
+    } else {
+        document.body.classList.remove('no-text-select');
+    }
+}
+
+// 초기 반영
+updateTextSelectToggleUI();
+
+document.addEventListener('change', (e) => {
+    if (e.target && (e.target.id === 'textSelectPreventQuickToggle' || e.target.id === 'textSelectPreventToggle')) {
+        setTextSelectPreventEnabled(e.target.checked);
+    }
+});
+
+function setTextSelectPreventEnabled(enabled, save = true) {
+    _isTextSelectPreventEnabled = Boolean(enabled);
+    updateTextSelectToggleUI();
+    if (save) saveAccountSettings({ textSelectPrevent: _isTextSelectPreventEnabled });
+}
+
+// --- 두 번 눌러 좋아요 로직 (기본값: true / 켜짐) ---
+let _isDoubleTapLikeEnabled = ACCOUNT_SETTINGS_DEFAULTS.doubleTapLike;
+window.isDoubleTapLikeEnabled = () => _isDoubleTapLikeEnabled;
+
+function updateDoubleTapLikeToggleUI() {
+    const quickToggle = document.getElementById('doubleTapLikeQuickToggle');
+    const subToggle = document.getElementById('doubleTapLikeToggle');
+    if (quickToggle) quickToggle.checked = _isDoubleTapLikeEnabled;
+    if (subToggle) subToggle.checked = _isDoubleTapLikeEnabled;
+}
+
+// 초기 반영
+updateDoubleTapLikeToggleUI();
+
+document.addEventListener('change', (e) => {
+    if (e.target && (e.target.id === 'doubleTapLikeQuickToggle' || e.target.id === 'doubleTapLikeToggle')) {
+        setDoubleTapLikeEnabled(e.target.checked);
+    }
+});
+
+function setDoubleTapLikeEnabled(enabled, save = true) {
+    _isDoubleTapLikeEnabled = Boolean(enabled);
+    updateDoubleTapLikeToggleUI();
+    if (save) saveAccountSettings({ doubleTapLike: _isDoubleTapLikeEnabled });
+}
+window.setDoubleTapLikeEnabled = setDoubleTapLikeEnabled;
+
+async function resetAllAccountSettings() {
+    const confirmed = typeof window.customConfirm === 'function'
+        ? await window.customConfirm('모든 설정을 기본값으로 되돌릴까요?', '설정 초기화')
+        : window.confirm('모든 설정을 기본값으로 되돌릴까요?');
+    if (!confirmed) return;
+
+    const userId = activeAccountUserId;
+    isLoadingAccountSettings = true;
+    accountSettings = { ...ACCOUNT_SETTINGS_DEFAULTS };
+    applyAccountSettings();
+    if (userId) {
+        saveDeviceAccountSettings(userId, accountSettings);
+        try {
+            localStorage.removeItem(`yangjung_push_prompt_hidden_${userId}`);
+            localStorage.removeItem('yangjung_in_site_notification_enabled');
+            if (window.clubNotifications && typeof window.clubNotifications.updateSettingsUI === 'function') {
+                window.clubNotifications.updateSettingsUI();
+            }
+        } catch (storageError) {
+            console.warn('알림 설정 로컬 초기화 오류:', storageError);
+        }
+    }
+
+    try {
+        if (userId) {
+            await db.collection('users').doc(userId).collection('private').doc('settings').set({
+                ...ACCOUNT_SETTINGS_DEFAULTS,
+                updatedAt: Date.now()
+            }, { merge: true });
+        }
+    } catch (error) {
+        console.error('설정 초기화 오류:', error);
+        if (typeof window.customAlert === 'function') {
+            await window.customAlert('설정을 초기화하지 못했습니다. 잠시 후 다시 시도해 주세요.', '설정 초기화');
+        } else {
+            alert('설정을 초기화하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        }
+    } finally {
+        isLoadingAccountSettings = false;
+    }
+}
+
+if (resetAllSettingsBtn) {
+    resetAllSettingsBtn.addEventListener('click', () => {
+        void resetAllAccountSettings();
+    });
+}
+
+// '기본 설정 보기' details 부드러운 Fade In / Fade Out 애니메이션
+document.addEventListener('click', (e) => {
+    const summary = e.target.closest('.settings-defaults-details summary');
+    if (!summary) return;
+    const details = summary.closest('details');
+    if (!details) return;
+
+    if (details.open) {
+        e.preventDefault();
+        if (details.classList.contains('closing')) return;
+        details.classList.add('closing');
+        setTimeout(() => {
+            details.removeAttribute('open');
+            details.classList.remove('closing');
+        }, 190);
+    }
+});
+
+window.toggleUpdatePhotos = function (btn) {
+    const collapse = btn.nextElementSibling;
+    if (!collapse) return;
+    const isExpanded = btn.classList.contains('active');
+    btn.classList.toggle('active', !isExpanded);
+    collapse.classList.toggle('active', !isExpanded);
+    btn.setAttribute('aria-expanded', !isExpanded);
+};
+
+window.toggleUpdateSection = function (btn) {
+    const collapse = btn.nextElementSibling;
+    if (!collapse) return;
+    const isExpanded = btn.classList.contains('active');
+    btn.classList.toggle('active', !isExpanded);
+    collapse.classList.toggle('active', !isExpanded);
+    btn.setAttribute('aria-expanded', !isExpanded);
+};
+
+window.switchUpdateSubTab = function (tabId, btn) {
+    const parent = btn.closest('.update-section-collapse-content');
+    if (!parent) return;
+
+    const container = parent.querySelector('.update-sub-tab-container');
+    const targetPanel = parent.querySelector(`#subTab-${tabId}`);
+    const currentPanel = parent.querySelector('.update-sub-tab-panel.active');
+
+    if (!targetPanel || targetPanel === currentPanel) return;
+
+    parent.querySelectorAll('.update-pill-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    if (container && currentPanel) {
+        const startHeight = currentPanel.offsetHeight;
+        container.style.height = `${startHeight}px`;
+
+        // 탭 패널 교체
+        currentPanel.style.display = 'none';
+        currentPanel.classList.remove('active');
+
+        targetPanel.style.display = 'flex';
+        targetPanel.classList.add('active');
+
+        const targetHeight = targetPanel.offsetHeight;
+
+        // 다음 프레임에서 목표 높이로 부드럽게 트랜지션
+        requestAnimationFrame(() => {
+            container.style.height = `${targetHeight}px`;
+        });
+
+        const resetHeight = () => {
+            container.style.height = 'auto';
+            container.removeEventListener('transitionend', resetHeight);
+        };
+        container.addEventListener('transitionend', resetHeight);
+    } else {
+        parent.querySelectorAll('.update-sub-tab-panel').forEach(panel => {
+            if (panel.id === `subTab-${tabId}`) {
+                panel.style.display = 'flex';
+                panel.classList.add('active');
+            } else {
+                panel.style.display = 'none';
+                panel.classList.remove('active');
+            }
+        });
+    }
+};

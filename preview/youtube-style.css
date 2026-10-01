@@ -1,0 +1,487 @@
+/* 유튜브 썸네일 및 하이퍼링크 스타일 */
+
+.youtube-link-text {
+    color: #ff4e4e !important;
+    text-decoration: underline !important;
+    font-weight: 500;
+    word-break: break-all;
+    transition: opacity 0.2s;
+}
+
+.youtube-link-text:hover {
+    opacity: 0.85;
+}
+
+.custom-link-text {
+    color: #4dadf7 !important;
+    text-decoration: underline !important;
+    word-break: break-all;
+}
+
+.youtube-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+    margin-bottom: 12px;
+    padding: 8px 12px 12px 14px !important;
+    overflow: visible !important;
+    box-sizing: border-box;
+}
+
+.youtube-card {
+    width: calc(100% - 20px);
+    max-width: 350px;
+    margin-left: 6px !important;
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+    backdrop-filter: blur(8px);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.5s ease, background 0.5s ease;
+    will-change: transform, box-shadow;
+    box-sizing: border-box;
+}
+
+/* 하단 바 (기본 다크 모드) */
+.youtube-card-footer {
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    color: var(--text-secondary, #a0aec0);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.04);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    transition: background 0.25s ease, color 0.25s ease;
+}
+
+#detailPostArea,
+.post-content-area,
+.post-body {
+    overflow: visible !important;
+}
+
+.youtube-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+    border-color: rgba(255, 0, 0, 0.4);
+}
+
+/* 라이트 모드 ([data-theme="light"]) 적용 시 완전 하얀색 (#ffffff) */
+html[data-theme="light"] .youtube-card {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+}
+
+html[data-theme="light"] .youtube-card-footer {
+    background: #ffffff !important;
+    color: #475569 !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+html[data-theme="light"] .youtube-card:hover {
+    background: #ffffff !important;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12) !important;
+    border-color: rgba(255, 0, 0, 0.4) !important;
+}
+
+.youtube-card a {
+    text-decoration: none;
+    display: block;
+}
+
+.youtube-card img {
+    transition: transform 0.3s ease;
+}
+
+.youtube-card:hover img {
+    transform: scale(1.03);
+}
+
+/* 유튜브 이동 선택 모달 (R값 16px 통일) */
+.youtube-select-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.youtube-select-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.youtube-select-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -45%) scale(0.95);
+    width: 90%;
+    max-width: 440px;
+    background: var(--bg-color, #1e293b);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12));
+    border-radius: 16px;
+    /* 설정창 및 모달 R값 16px 통일 */
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    z-index: 10001;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease, visibility 0.25s ease, background 0.5s ease, border-color 0.5s ease;
+    overflow: hidden;
+}
+
+.youtube-select-modal.active {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.youtube-select-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+    transition: border-color 0.5s ease;
+}
+
+.youtube-select-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary, #ffffff);
+    transition: color 0.5s ease;
+}
+
+.youtube-select-close {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary, #94a3b8);
+    font-size: 1.2rem;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+}
+
+.youtube-select-close:hover {
+    color: var(--accent-color, #3b82f6);
+}
+
+.youtube-select-body {
+    padding: 1.5rem;
+}
+
+.youtube-select-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary, #94a3b8);
+    transition: color 0.5s ease;
+    margin-bottom: 1.2rem;
+}
+
+.youtube-option-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.youtube-option-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+    border-radius: 16px;
+    /* 설정 카드의 border-radius 16px 통일 */
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), background 0.5s ease, border-color 0.5s ease;
+    text-align: left;
+    width: 100%;
+    color: inherit;
+}
+
+.youtube-option-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 0, 0, 0.4);
+}
+
+html[data-theme="light"] .youtube-option-card {
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+html[data-theme="light"] .youtube-option-card:hover {
+    background: rgba(0, 0, 0, 0.06);
+    border-color: rgba(255, 0, 0, 0.4);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.youtube-option-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.youtube-option-info {
+    flex: 1;
+}
+
+.youtube-option-title {
+    font-weight: 700;
+    font-size: 1.02rem;
+    color: var(--text-primary, #ffffff);
+    transition: color 0.5s ease;
+    margin-bottom: 0.2rem;
+}
+
+.youtube-option-sub {
+    font-size: 0.82rem;
+    color: var(--text-secondary, #94a3b8);
+    transition: color 0.5s ease;
+}
+
+.youtube-option-arrow {
+    color: var(--text-secondary, #94a3b8);
+    font-size: 0.9rem;
+    transition: transform 0.2s, color 0.2s;
+}
+
+.youtube-option-card:hover .youtube-option-arrow {
+    transform: translateX(3px);
+    color: var(--text-primary, #ffffff);
+}
+
+/* 글쓰기 페이지 고급화 입력창 & 우하단 알약 버튼 */
+.upgraded-input {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.12)) !important;
+    border-radius: 12px !important;
+    padding: 0.9rem 1.1rem !important;
+    color: var(--text-primary, #f8fafc) !important;
+    transition: border-color 0.5s ease, box-shadow 0.25s ease, background 0.5s ease, color 0.5s ease !important;
+}
+
+.upgraded-input:focus {
+    border-color: var(--accent-color, #3b82f6) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+    background: rgba(255, 255, 255, 0.07) !important;
+}
+
+.write-submit-pill {
+    width: auto !important;
+    border-radius: 50px !important;
+    padding: 0.75rem 1.8rem !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
+}
+
+.write-submit-pill:hover {
+    transform: translateY(-2px) scale(1.02) !important;
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.45) !important;
+}
+
+/* 건의글 상세 상단 헤더: 닫기 버튼과 제목이 같은 고정 줄에 놓입니다. */
+.side-detail-topbar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding-bottom: 1rem !important;
+    margin-bottom: 0 !important;
+    border-bottom: 1px solid var(--glass-border) !important;
+    transition: border-color 0.5s ease !important;
+    min-height: 42px !important;
+}
+
+/* 게시글 상세 헤더의 닫기 버튼과 파일 미리보기 닫기 버튼 */
+/* 기본값: 다크 모드 (html 태그에 data-theme 속성이 없는 기본 상태) */
+#closeSideDetailBtn {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    z-index: 1000 !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    background: rgba(30, 41, 59, 0.9) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    color: #f8fafc !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.15rem !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+    cursor: pointer !important;
+    transition: right 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+        top 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+        color 0.2s ease,
+        background 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease !important;
+}
+
+.file-preview-close-btn {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    background: rgba(30, 41, 59, 0.9) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    color: #f8fafc !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.15rem !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+    cursor: pointer !important;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+/* 스크롤 시 다크 모드 X 버튼 (One UI 8.5/9 스타일: 오른쪽으로 슬라이드 및 블러/그림자 강화) */
+.side-detail-container.has-scrolled-detail #closeSideDetailBtn,
+.side-detail-scroll-area.has-scrolled #closeSideDetailBtn,
+.side-detail-container .side-detail-scroll-area.has-scrolled~#closeSideDetailBtn {
+    background: rgba(15, 23, 42, 0.94) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45) !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+/* 모바일 반응형: 헤더 구분선과 X 버튼 겹침 완벽 방지 */
+@media (max-width: 1023px) {
+    .side-detail-topbar {
+        padding-bottom: 1rem !important;
+        margin-bottom: 0 !important;
+        min-height: 44px !important;
+    }
+}
+
+/* 다크 모드 호버 시 (X 아이콘 파란색) */
+#closeSideDetailBtn:hover,
+#closeSideDetailBtn:hover i,
+.file-preview-close-btn:hover,
+.file-preview-close-btn:hover i {
+    color: #3b82f6 !important;
+}
+
+/* --- 라이트 모드 (html[data-theme="light"]) 스타일 --- */
+html[data-theme="light"] #closeSideDetailBtn {
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: #1e293b !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+html[data-theme="light"] .file-preview-close-btn {
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: #1e293b !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+html[data-theme="light"] .side-detail-container.has-scrolled-detail #closeSideDetailBtn,
+html[data-theme="light"] .side-detail-scroll-area.has-scrolled #closeSideDetailBtn,
+html[data-theme="light"] .side-detail-container .side-detail-scroll-area.has-scrolled~#closeSideDetailBtn {
+    background: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+}
+
+html[data-theme="light"] #closeSideDetailBtn:hover,
+html[data-theme="light"] #closeSideDetailBtn:hover i,
+html[data-theme="light"] .file-preview-close-btn:hover,
+html[data-theme="light"] .file-preview-close-btn:hover i {
+    color: #2563eb !important;
+}
+
+/* 모달 헤더 및 닫기 버튼 정렬 */
+.youtube-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+    transition: border-color 0.5s ease;
+}
+
+.youtube-modal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--text-primary, #ffffff);
+    transition: color 0.5s ease;
+}
+
+.youtube-modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary, #94a3b8);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    transition: color 0.2s, background 0.2s;
+}
+
+.youtube-modal-close:hover {
+    color: var(--accent-color, #3b82f6) !important;
+    background: transparent !important;
+}
+
+/* 첨부파일 안내 모달 카테고리 카드 */
+.attach-guide-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    transition: background 0.5s ease, border-color 0.5s ease;
+}
+
+html[data-theme="light"] .attach-guide-card {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.08);
+}
