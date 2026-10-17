@@ -123,12 +123,6 @@
         };
     }
 
-    function sameChoices(left, right) {
-        return Array.isArray(left) && Array.isArray(right)
-            && left.length === right.length
-            && left.every(choice => right.includes(choice));
-    }
-
     function getCancelDisabledReason(state) {
         if (state.saving || state.closing) return '투표 처리 중에는 취소할 수 없어요.';
         if (state.closed) return '투표가 마감됐어요.';
@@ -449,7 +443,7 @@
     function updateVoteActionRow(actions, state, own, disabled, animate) {
         const saveButton = actions.querySelector('[data-vote="save"]');
         const label = saveButton?.querySelector('.poll-vote-label');
-        const nextLabel = state.showSaving ? '저장 중…' : own ? '투표 변경' : '투표하기';
+        const nextLabel = state.showSaving ? '저장 중…' : '투표하기';
         if (label && label.textContent.trim() !== nextLabel) {
             label.textContent = nextLabel;
             if (animate && !prefersReducedMotion()) {
@@ -459,8 +453,7 @@
                 label.classList.remove('poll-vote-label-changing');
             }
         }
-        if (saveButton) saveButton.disabled = disabled || !state.selection.length
-            || (own && sameChoices(state.selection, own.choices));
+        if (saveButton) saveButton.disabled = disabled || Boolean(own) || !state.selection.length;
         const cancelButton = actions.querySelector('[data-vote="cancel"]');
         const cancelWrapper = actions.querySelector('.poll-vote-cancel-wrap');
         const cancelReason = own ? getCancelDisabledReason(state) : '';
@@ -486,7 +479,7 @@
     }
     function animateVoteActions(host, previous, enabled) {
         if (!enabled || prefersReducedMotion() || !previous) return;
-        const saveButton = host.querySelector('[data-vote="save"]');
+        const saveButton = host.querySelector('[data-vote="save"]') || host.querySelector('[data-vote="cancel"]');
         if (!saveButton) return;
 
         const label = saveButton.querySelector('.poll-vote-label');
@@ -552,8 +545,8 @@
         const disabled = state.saving || state.closing || state.closed || !user() || !state.ownVoteLoaded;
         const visibleError = state.error || state.ownVoteError || state.resultsError;
         const canRetry = Boolean(state.ownVoteError || state.resultsError);
-        const saveDisabled = disabled || !state.selection.length
-            || (own && sameChoices(state.selection, own.choices));
+        const saveDisabled = disabled || Boolean(own) || !state.selection.length;
+        const choicesDisabled = disabled || Boolean(own);
         const cancelDisabledReason = own ? getCancelDisabledReason(state) : '';
         const cancelDisabled = disabled || Boolean(cancelDisabledReason);
         const cancelTooltip = cancelDisabledReason || (disabled ? '투표 처리 중에는 취소할 수 없어요.' : '');
@@ -608,16 +601,16 @@
             const previousActions = host.querySelector('.poll-vote-actions');
             const previousSaveButton = host.querySelector('[data-vote="save"]');
             const previousCancelButton = host.querySelector('[data-vote="cancel"]');
-            const previousActionState = previousSaveButton ? {
-                label: previousSaveButton.textContent.trim(),
-                saveRect: measureElementRect(previousSaveButton),
+            const previousActionState = previousActions ? {
+                label: previousSaveButton?.textContent.trim() || '',
+                saveRect: measureElementRect(previousSaveButton || previousCancelButton),
                 cancelButton: previousCancelButton,
                 cancelRect: measureElementRect(previousCancelButton),
                 hadCancel: Boolean(previousCancelButton),
                 hadClose: Boolean(host.querySelector('[data-vote="close"]'))
             } : null;
             host.innerHTML = `<h4>${escape(poll.question)}</h4>${window.pollAttachments?.renderPublishedQuestion?.(publishedPoll) || ''}<div class="poll-help">
-    <p class="poll-help-summary">${poll.multiple ? '복수 선택 가능' : '한 항목 선택'}${!user() ? ' · 로그인 후 투표 가능' : state.closed ? ' · 투표 마감' : ' · 변경 가능 · 취소 5분 안에 최대 2회'}</p>
+    <p class="poll-help-summary">${poll.multiple ? '복수 선택 가능' : '한 항목 선택'}${!user() ? ' · 로그인 후 투표 가능' : state.closed ? ' · 투표 마감' : ' · 취소 후 재투표로 변경 최대 2회 · 취소는 5분 안에'}</p>
     <button type="button" class="poll-help-toggle" data-vote="help" aria-expanded="${state.helpOpen ? 'true' : 'false'}" aria-label="${state.helpOpen ? '투표 안내 접기' : '투표 안내 더 보기'}">
         <span class="poll-help-toggle-label">${state.helpOpen ? '간단히 접기' : '자세히'}</span>
         <i class="fa-solid fa-chevron-down poll-help-toggle-caret" aria-hidden="true"></i>
@@ -626,14 +619,14 @@
         <div class="poll-help-details-inner">
             <p>내 투표 기록은 내 계정에서만 확인할 수 있어요.</p>
             <p>다른 회원은 누가 어떤 선택을 했는지 연결할 수 없어요. Firebase 운영자는 데이터 접근 권한으로 연결할 수 있어요.</p>
-            <p>${state.closed ? '이 투표는 마감되어 새 투표와 변경을 할 수 없어요.' : '투표는 언제든 변경할 수 있고, 취소는 투표 후 5분 안에 최대 2회 가능해요.'}</p>
+            <p>${state.closed ? '이 투표는 마감되어 새 투표와 변경을 할 수 없어요.' : '투표를 바꾸려면 먼저 취소한 뒤 다시 투표해주세요. 변경은 최대 2회이고, 취소는 각 투표 후 5분 안에 가능해요.'}</p>
             ${canClose ? '<p>작성자는 투표를 마감할 수 있어요.</p>' : ''}
         </div>
     </div>
 </div><div class="poll-choices">${poll.options.map((option, index) => {
                 const percent = total ? Math.round(counts[index] / total * 100) : 0;
-                return `<div class="poll-choice-group"><label class="poll-choice ${selected.includes(option) ? 'is-selected' : ''}"><span class="poll-result-fill" style="width:${percent}%"></span><input type="${poll.multiple ? 'checkbox' : 'radio'}" name="poll-${escape(state.path)}" value="${index}" ${selected.includes(option) ? 'checked' : ''} ${disabled ? 'disabled' : ''}><span class="poll-choice-text">${escape(option)}</span><span class="poll-result-count">${state.loaded ? `${counts[index]}표 · ${percent}%` : '—'}</span></label>${window.pollAttachments?.renderPublished(publishedPoll, index) || ''}</div>`;
-            }).join('')}</div><div class="poll-vote-footer"><span>${!user() ? '로그인하면 결과를 확인할 수 있어요.' : state.loaded ? `${total}명 참여` : state.resultsError ? '결과를 표시할 수 없어요.' : '결과 불러오는 중…'}${poll.multiple ? ' · 참여자 기준 비율' : ''}</span><div class="poll-vote-actions"><button type="button" data-vote="save" ${saveDisabled ? 'disabled' : ''}><span class="poll-vote-label">${state.showSaving ? '저장 중…' : own ? '투표 변경' : '투표하기'}</span></button>${cancelButtonHtml}${canClose ? `<button type="button" data-vote="close" ${state.closing || state.saving ? 'disabled' : ''}>${state.closing ? '마감 중…' : '투표 마감'}</button>` : ''}</div></div><p class="poll-status" role="status" tabindex="-1">${escape(statusMessage)}</p>${user() && canRetry ? '<button type="button" data-vote="retry">다시 불러오기</button>' : ''}`;
+                return `<div class="poll-choice-group"><label class="poll-choice ${selected.includes(option) ? 'is-selected' : ''}"><span class="poll-result-fill" style="width:${percent}%"></span><input type="${poll.multiple ? 'checkbox' : 'radio'}" name="poll-${escape(state.path)}" value="${index}" ${selected.includes(option) ? 'checked' : ''} ${choicesDisabled ? 'disabled' : ''}><span class="poll-choice-text">${escape(option)}</span><span class="poll-result-count">${state.loaded ? `${counts[index]}표 · ${percent}%` : '—'}</span></label>${window.pollAttachments?.renderPublished(publishedPoll, index) || ''}</div>`;
+            }).join('')}</div><div class="poll-vote-footer"><span>${!user() ? '로그인하면 결과를 확인할 수 있어요.' : state.loaded ? `${total}명 참여` : state.resultsError ? '결과를 표시할 수 없어요.' : '결과 불러오는 중…'}${poll.multiple ? ' · 참여자 기준 비율' : ''}</span><div class="poll-vote-actions">${own ? '' : `<button type="button" data-vote="save" ${saveDisabled ? 'disabled' : ''}><span class="poll-vote-label">${state.showSaving ? '저장 중…' : '투표하기'}</span></button>`}${cancelButtonHtml}${canClose ? `<button type="button" data-vote="close" ${state.closing || state.saving ? 'disabled' : ''}>${state.closing ? '마감 중…' : '투표 마감'}</button>` : ''}</div></div><p class="poll-status" role="status" tabindex="-1">${escape(statusMessage)}</p>${user() && canRetry ? '<button type="button" data-vote="retry">다시 불러오기</button>' : ''}`;
 
             host.querySelectorAll('.poll-published-question-files, [data-poll-option-files]').forEach(node => {
                 const key = node.classList.contains('poll-published-question-files') ? 'question' : node.dataset.pollOptionFiles;
@@ -899,7 +892,7 @@
         const choices = [...state.selection];
         if (action === 'save' && (!choices.length || (!state.poll.multiple && choices.length !== 1))) return;
         const previousOwnVote = state.ownVote ? { ...state.ownVote, choices: [...state.ownVote.choices] } : null;
-        if (action === 'save' && previousOwnVote?.choices.length && sameChoices(choices, previousOwnVote.choices)) return;
+        if (action === 'save' && previousOwnVote?.choices.length) return;
         state.saving = true;
         state.showSaving = false;
         state.error = '';
@@ -995,7 +988,7 @@
         const host = event.target.closest('.community-poll');
         if (!host || !event.target.matches('.poll-choice input')) return;
         const state = states.get(host.dataset.pollPath);
-        if (!state || state.saving) return;
+        if (!state || state.saving || state.closing || state.closed || !state.ownVoteLoaded || state.ownVote?.choices?.length) return;
         state.selection = Array.from(host.querySelectorAll('.poll-choice input:checked')).map(input => state.poll.options[Number(input.value)]);
         state.dirty = true;
         // 입력 DOM을 유지해 키보드 포커스가 사라지지 않도록 한다.
@@ -1009,9 +1002,8 @@
                 label.classList.add('poll-checking');
             }
         });
-        const own = state.ownVote?.choices?.length ? state.ownVote : null;
-        host.querySelector('[data-vote="save"]').disabled = !state.selection.length
-            || (own && sameChoices(state.selection, own.choices));
+        const saveButton = host.querySelector('[data-vote="save"]');
+        if (saveButton) saveButton.disabled = !state.selection.length;
     });
     document.addEventListener('click', event => {
         const edit = event.target.closest('[data-draft-edit]');

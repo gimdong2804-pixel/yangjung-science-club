@@ -423,15 +423,8 @@ service cloud.firestore {
         && (
           (validVoteChoices(parent, vote.choices)
             && vote.cancelCount == oldCancelCount
-            && (
-              (oldChoices.size() == 0 && vote.votedAt == request.time)
-              || (oldChoices.size() > 0
-                && vote.choices.toSet() != oldChoices.toSet()
-                && vote.votedAt == request.time)
-              || (oldChoices.size() > 0
-                && vote.choices.toSet() == oldChoices.toSet()
-                && vote.votedAt == oldVotedAt)
-            ))
+            && oldChoices.size() == 0
+            && vote.votedAt == request.time)
           || (vote.choices is list && vote.choices == []
             && oldChoices.size() > 0
             && oldCancelCount < 2
