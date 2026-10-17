@@ -105,7 +105,8 @@ body.poll-modal-open {
 }
 
 /* X 닫기 버튼 (배경 투명, 호버 시 기존 버튼들과 동일한 파란색) */
-.poll-modal-close-btn {
+.poll-modal-close-btn,
+.poll-youtube-close-btn {
     background: transparent;
     border: none;
     color: var(--text-secondary, #94a3b8);
@@ -121,7 +122,9 @@ body.poll-modal-open {
 }
 
 .poll-modal-close-btn:hover,
-.poll-modal-close-btn:hover i {
+.poll-modal-close-btn:hover i,
+.poll-youtube-close-btn:hover,
+.poll-youtube-close-btn:hover i {
     background: transparent !important;
     color: #3b82f6 !important;
 }
@@ -129,7 +132,11 @@ body.poll-modal-open {
 [data-theme="light"] .poll-modal-close-btn:hover,
 [data-theme="light"] .poll-modal-close-btn:hover i,
 html[data-theme="light"] .poll-modal-close-btn:hover,
-html[data-theme="light"] .poll-modal-close-btn:hover i {
+html[data-theme="light"] .poll-modal-close-btn:hover i,
+[data-theme="light"] .poll-youtube-close-btn:hover,
+[data-theme="light"] .poll-youtube-close-btn:hover i,
+html[data-theme="light"] .poll-youtube-close-btn:hover,
+html[data-theme="light"] .poll-youtube-close-btn:hover i {
     background: transparent !important;
     color: #2563eb !important;
 }
@@ -227,23 +234,83 @@ html[data-theme="light"] .poll-modal-close-btn:hover i {
 }
 .poll-option-attach-btn:focus-visible, .poll-file-card button:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
 .poll-option-file-list { flex: 0 0 100%; min-width: 0; overflow: hidden; }
+@keyframes pollOptionAttachMenuEnter {
+    0% {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes pollOptionAttachMenuExit {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.95);
+    }
+}
+
 .poll-option-attach-menu.comment-attach-menu {
     z-index: 10016 !important; bottom: auto; right: auto;
     overflow-y: auto; overscroll-behavior: contain;
     min-width: 0; max-width: calc(100vw - 1rem); box-sizing: border-box;
+    transform-origin: top right !important;
+    transform: translateY(-8px) scale(0.95);
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
 }
-.poll-option-attach-menu[hidden] { display: none; }
+.poll-option-attach-menu.comment-attach-menu.active {
+    animation: pollOptionAttachMenuEnter 0.22s cubic-bezier(0.25, 0.8, 0.25, 1) forwards !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+.poll-option-attach-menu.comment-attach-menu.closing {
+    animation: pollOptionAttachMenuExit 0.18s cubic-bezier(0.25, 0.8, 0.25, 1) forwards !important;
+    visibility: visible !important;
+    pointer-events: none !important;
+}
 .poll-option-attach-menu .comment-attach-option:focus-visible { outline: 2px solid var(--accent-color); outline-offset: -2px; }
 .poll-file-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 8px; min-width: 0; }
+/* YouTube 카드는 사용 가능한 폭에 맞춰 줄바꿈하되 화면 너비만큼 늘어나지 않습니다. */
+.poll-file-grid:has(.poll-file-youtube-card) { display: flex; flex-wrap: wrap; align-items: flex-start; }
+.poll-file-grid:has(.poll-file-youtube-card) > .poll-file-card {
+    flex: 0 1 var(--poll-video-card-width, 350px);
+    width: var(--poll-video-card-width, 350px);
+    max-width: 100%;
+    box-sizing: border-box;
+}
+.poll-modal-body { --poll-video-card-width: 220px; }
+.poll-draft { --poll-video-card-width: 180px; }
 .poll-file-card { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 7px; padding: 10px; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--glass-bg); color: var(--text-primary); }
+.poll-file-card.youtube-card { display: block; padding: 0; gap: 0; margin-left: 0 !important; }
 .poll-file-name { overflow-wrap: anywhere; font-size: .78rem; line-height: 1.4; padding-right: 14px; }
 .poll-file-icon { font-size: 1.2rem; color: var(--accent-color); }
 .poll-file-image { width: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 8px; background: var(--bg-color); cursor: zoom-in; }
 .poll-file-image img { display: block; width: 100%; max-height: 144px; aspect-ratio: 16/10; object-fit: cover; }
 .poll-file-card audio { width: 100%; min-width: 0; height: 36px; }
 .poll-file-actions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: auto; }
-.poll-file-actions button { padding: 5px 7px; border: 1px solid var(--glass-border); border-radius: 7px; background: transparent; color: var(--accent-color); cursor: pointer; font: inherit; font-size: .72rem; }
+.poll-file-actions button, .poll-file-action-link { padding: 5px 7px; border: 1px solid var(--glass-border); border-radius: 7px; background: transparent; color: var(--accent-color); cursor: pointer; font: inherit; font-size: .72rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+.poll-file-actions button:hover, .poll-file-action-link:hover { background: rgba(59, 130, 246, 0.1); }
 .poll-file-remove { position: absolute; top: 3px; right: 3px; width: 28px; height: 28px; border: 0; border-radius: 50%; background: var(--glass-bg); color: var(--text-secondary); cursor: pointer; font-size: 1.1rem; }
+.poll-file-youtube-thumb { position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; background: #000; display: block; }
+.poll-file-youtube-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.poll-file-youtube-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 46px; height: 46px; background: rgba(255, 0, 0, 0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; box-shadow: 0 4px 14px rgba(0,0,0,0.5); pointer-events: none; }
+.poll-file-youtube-play i { margin-left: 2px; }
+.poll-modal-body .poll-file-youtube-play, .poll-draft .poll-file-youtube-play { width: 34px; height: 34px; font-size: .9rem; }
+.poll-draft .youtube-card-footer { padding: 6px 8px; font-size: .72rem; gap: 4px; }
+.poll-question-input-wrap { position: relative; display: flex; align-items: center; width: 100%; }
+.poll-question-input-wrap .poll-input { padding-right: 48px; }
+.poll-question-attach-btn { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); width: 36px; height: 36px; display: grid; place-items: center; }
+.poll-question-file-list { margin-top: 4px; min-width: 0; }
+.poll-draft-question-attachments { margin-top: 8px; margin-bottom: 8px; }
+.poll-published-question-files { margin: 8px 0 12px; }
 .poll-draft-option { margin-top: 10px; font-size: .82rem; min-width: 0; }
 .poll-choice-group { min-width: 0; }
 .poll-published-files { padding: 0 4px 6px; }
@@ -364,7 +431,95 @@ html[data-theme="light"] .poll-option-remove-btn:hover i {
 .community-poll.poll-resizing { overflow: hidden; }
 .community-poll h4 { margin: 0 0 .35rem; font-size: 1rem; }
 .poll-help, .poll-draft p, .poll-draft small, .poll-vote-footer, .poll-status { color: var(--text-secondary); font-size: .8rem; }
-.poll-help { margin: 0 0 .75rem; }
+.poll-help {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .25rem .5rem;
+    margin: 0 0 .75rem;
+    word-break: keep-all;
+    overflow-wrap: normal;
+}
+.poll-help-summary { flex: 1 1 14rem; margin: 0; }
+.poll-help-toggle {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .3rem;
+    min-width: 0;
+    width: auto;
+    margin-left: auto;
+    padding: .22rem .62rem;
+    border: 1px solid var(--glass-border, rgba(148, 163, 184, .25));
+    border-radius: 9999px;
+    background: rgba(148, 163, 184, .08);
+    color: var(--text-secondary, #64748b);
+    font: inherit;
+    font-size: .75rem;
+    font-weight: 500;
+    line-height: 1.2;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    box-sizing: border-box;
+    transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .16s ease;
+}
+.poll-help-toggle:hover {
+    background: rgba(44, 82, 237, .08);
+    border-color: var(--accent-color, #2c52ed);
+    color: var(--accent-color, #2c52ed);
+    transform: translateY(-1px);
+}
+.poll-help-toggle:focus-visible {
+    outline: 2px solid var(--accent-color, #2c52ed);
+    outline-offset: 2px;
+}
+.poll-help-toggle:active {
+    transform: scale(.96);
+}
+.poll-help-toggle[aria-expanded="true"] {
+    background: rgba(44, 82, 237, .12);
+    border-color: var(--accent-color, #2c52ed);
+    color: var(--accent-color, #2c52ed);
+    font-weight: 600;
+}
+.poll-help-toggle-caret {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .72rem;
+    line-height: 1;
+    color: inherit;
+    transform-origin: center center;
+    transition: transform .24s cubic-bezier(.2, .8, .2, 1);
+}
+.poll-help-toggle[aria-expanded="true"] .poll-help-toggle-caret { transform: rotate(180deg); }
+.poll-help-details {
+    flex: 1 1 100%;
+    height: 0;
+    overflow: hidden;
+    margin-top: 0;
+    opacity: 0;
+}
+.poll-help-details.is-open {
+    height: auto;
+    margin-top: .2rem;
+    opacity: 1;
+}
+.poll-help-details-inner {
+    padding: 0 .65rem;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+}
+.poll-help-details.is-open .poll-help-details-inner {
+    padding: .55rem .65rem;
+    border-color: var(--glass-border, rgba(148, 163, 184, .2));
+    background: rgba(148, 163, 184, .06);
+}
+.poll-help-details p { margin: 0; }
+.poll-help-details p + p { margin-top: .35rem; }
 .poll-draft p { margin: .35rem 0; }
 .poll-draft-heading, .poll-vote-footer { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
 .poll-draft-badge { display: inline-flex; align-items: center; gap: .4rem; color: var(--accent-color); font-size: .78rem; font-weight: 700; }
@@ -375,10 +530,8 @@ html[data-theme="light"] .poll-option-remove-btn:hover i {
 .poll-vote-cancel-wrap.is-disabled { cursor: not-allowed; }
 .poll-vote-cancel-wrap.is-disabled button { pointer-events: none; cursor: not-allowed; }
 .poll-vote-cancel-ghost { position: absolute !important; z-index: 2; margin: 0 !important; pointer-events: none !important; }
-
-.poll-vote-cancel-ghost { position: absolute !important; z-index: 2; margin: 0 !important; pointer-events: none !important; }
-.poll-draft button, .community-poll button { border: 1px solid var(--glass-border); border-radius: 20px; padding: .4rem .75rem; background: var(--glass-bg); color: var(--text-primary); font: inherit; font-size: .8rem; cursor: pointer; transition: transform .16s ease, background-color .16s ease, color .16s ease, opacity .16s ease; }
-.poll-draft button:not(:disabled):active, .community-poll button:not(:disabled):active { transform: scale(.97); }
+.poll-draft button, .community-poll button:not(.poll-help-toggle) { border: 1px solid var(--glass-border); border-radius: 20px; padding: .4rem .75rem; background: var(--glass-bg); color: var(--text-primary); font: inherit; font-size: .8rem; cursor: pointer; transition: transform .16s ease, background-color .16s ease, color .16s ease, opacity .16s ease; }
+.poll-draft button:not(:disabled):active, .community-poll button:not(.poll-help-toggle):not(:disabled):active { transform: scale(.97); }
 .community-poll button[data-vote="save"] { background: var(--accent-color, #2c52ed); border-color: transparent; color: white; }
 .community-poll button:disabled { opacity: .5; cursor: default; }
 .poll-choices { display: flex; flex-direction: column; gap: .5rem; }
@@ -465,8 +618,9 @@ html[data-theme="light"] .poll-option-remove-btn:hover i {
 #commentPollPreview {
     width: 100%;
     max-width: 900px;
-    max-height: min(28vh, 180px);
+    max-height: min(48dvh, 320px);
     overflow-y: auto;
+    overscroll-behavior: contain;
     margin: 0 auto;
     padding: .65rem .8rem;
     flex: 0 0 auto;
@@ -494,6 +648,23 @@ html[data-theme="light"] .poll-option-remove-btn:hover i {
     font-size: 0.78rem;
     color: var(--text-secondary, #94a3b8);
     margin-top: 0.15rem;
+}
+
+.poll-setting-copy {
+    margin-top: 0.25rem;
+    color: var(--text-secondary, #94a3b8);
+    font-size: 0.78rem;
+    line-height: 1.5;
+    word-break: keep-all;
+    overflow-wrap: normal;
+}
+
+.poll-setting-copy p {
+    margin: 0;
+}
+
+.poll-setting-copy p + p {
+    margin-top: 0.45rem;
 }
 
 /* 7. 모달 푸터 및 둥근 알약 버튼 */
@@ -573,4 +744,188 @@ html[data-theme="light"] .poll-option-remove-btn:hover i {
         -webkit-appearance: auto;
         appearance: auto;
     }
+}
+
+/* 유튜브 첨부 관리: 입력과 완료 버튼은 유지하고 영상 목록을 스크롤합니다. */
+#pollYoutubeModal {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    box-sizing: border-box;
+    width: calc(100vw - 2rem);
+    max-height: calc(100dvh - 2rem);
+    padding: 1.25rem;
+    overflow: hidden;
+}
+.poll-youtube-manager-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex: 0 0 auto; }
+.poll-youtube-manager-header h3 { margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: .5rem; }
+.poll-youtube-manager-header h3 > i { color: #ff0000; }
+#pollYoutubeModal .poll-youtube-close-btn { position: static; flex-shrink: 0; }
+.poll-youtube-manager-body { display: flex; flex-direction: column; gap: .75rem; flex: 1; min-height: 0; overflow: visible; }
+.poll-youtube-help { margin: 0; color: var(--text-secondary); font-size: .85rem; line-height: 1.5; }
+.poll-youtube-entry { display: flex; align-items: stretch; gap: .65rem; flex: 0 0 auto; padding: 4px; box-sizing: border-box; }
+.poll-youtube-entry .poll-input { flex: 1; min-width: 0; width: 100%; min-height: 74px; resize: none; line-height: 1.5; }
+.poll-youtube-entry .poll-input:focus { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25) !important; }
+.poll-youtube-add-btn, .poll-youtube-done-btn, .poll-youtube-cancel-btn {
+    border: 0; border-radius: 999px; padding: .65rem 1.2rem; font: inherit; font-size: .9rem; font-weight: 600; cursor: pointer;
+    display: inline-flex; justify-content: center; align-items: center; gap: .4rem;
+}
+.poll-youtube-add-btn, .poll-youtube-done-btn { background: #e52d27; color: #fff; }
+.poll-youtube-add-btn { align-self: center; flex-shrink: 0; }
+.poll-youtube-cancel-btn { background: var(--glass-border); color: var(--text-primary); }
+.poll-youtube-add-btn:hover, .poll-youtube-done-btn:hover { filter: brightness(1.08); }
+.poll-youtube-warning {
+    margin: 0;
+    padding: 0 .8rem;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-6px);
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: .85rem;
+    line-height: 1.5;
+    flex: 0 0 auto;
+    overflow: hidden;
+    box-sizing: border-box;
+    pointer-events: none;
+    transition: max-height 0.32s cubic-bezier(0.2, 0, 0, 1),
+                padding 0.32s cubic-bezier(0.2, 0, 0, 1),
+                opacity 0.26s ease,
+                transform 0.26s cubic-bezier(0.2, 0, 0, 1),
+                border-color 0.26s ease,
+                background-color 0.26s ease;
+}
+.poll-youtube-warning.active {
+    max-height: 120px;
+    padding: .6rem .8rem;
+    opacity: 1;
+    transform: translateY(0);
+    border-color: rgba(229, 72, 72, .4);
+    background: rgba(229, 72, 72, .08);
+    pointer-events: auto;
+}
+.poll-youtube-warning[hidden] {
+    display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+    .poll-youtube-warning { transition: none !important; }
+}
+.poll-youtube-list-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .4rem; font-size: .85rem; flex: 0 0 auto; }
+#pollYoutubeCount { color: var(--text-secondary); font-size: .78rem; }
+.poll-youtube-video-list { position: relative; flex: 1; min-height: 96px; max-height: 40dvh; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; overscroll-behavior: contain; overflow-anchor: none; padding: 4px; }
+.poll-youtube-video-list.poll-youtube-transition-clipped { overflow: hidden; }
+.poll-youtube-video-list .poll-file-grid { --poll-video-card-width: 180px; margin-top: 0; gap: 12px; }
+.poll-youtube-video-list .poll-file-grid[hidden], .poll-youtube-empty[hidden] { display: none; }
+.poll-youtube-video-list .poll-file-youtube-card { transition: box-shadow .2s ease, border-color .2s ease; }
+.poll-youtube-video-list .poll-file-youtube-card:hover { transform: none; }
+.poll-youtube-video-list .poll-youtube-leaving { position: absolute; box-sizing: border-box; margin: 0 !important; pointer-events: none; z-index: 1; }
+.poll-youtube-video-list .youtube-card-footer { padding: 6px 8px; font-size: .72rem; gap: 4px; }
+.poll-youtube-video-list .poll-file-youtube-play { width: 34px; height: 34px; font-size: .9rem; }
+.poll-youtube-remove { position: absolute; top: 5px; right: 5px; width: 28px; height: 28px; border: 1px solid var(--glass-border); border-radius: 50%; background: var(--bg-color); color: var(--text-primary); cursor: pointer; font-size: 1.2rem; display: grid; place-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+.poll-youtube-empty { min-height: 96px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .4rem; border: 1px dashed var(--glass-border); border-radius: 12px; padding: 1rem; color: var(--text-secondary); text-align: center; }
+.poll-youtube-empty > i { font-size: 1.8rem; color: #e52d27; }
+.poll-youtube-empty p { margin: 0; font-weight: 600; }
+.poll-youtube-empty span { font-size: .82rem; }
+.poll-youtube-manager-footer { display: flex; justify-content: flex-end; gap: .6rem; flex: 0 0 auto; }
+#pollYoutubeModal button:focus-visible, #pollYoutubeModal a:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 3px; }
+@media (max-width: 479px) {
+    .poll-youtube-entry { flex-direction: column; }
+    .poll-youtube-add-btn { align-self: flex-end; padding: .55rem 1rem; }
+}
+@media (min-width: 768px) {
+    .poll-youtube-video-list { max-height: none; }
+}
+
+/* ==========================================================================
+   노트북/데스크톱 전용: 유튜브 모달 창 사이즈 및 애니메이션 (설정창과 동일 규격)
+   ========================================================================== */
+@media (min-width: 768px) {
+    #pollYoutubeModal {
+        top: 50%;
+        left: 50%;
+        width: 95%;
+        height: 85%;
+        max-width: 1100px;
+        max-height: 700px;
+        border-radius: 16px;
+        box-shadow: 0 15px 45px rgba(0, 0, 0, 0.3);
+        padding: 3rem;
+        transform: translate(-50%, -50%) scale(0.95);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease, visibility 0.3s ease, background-color 0.24s ease, color 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
+    }
+
+    #pollYoutubeModal.active {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+}
+
+/* 휴대폰 가로모드에서도 전체화면과 두 줄 목록을 유지합니다. */
+@media (max-width: 767px), (orientation: landscape) and (max-height: 550px) and (hover: none) {
+    body:has(#pollYoutubeModal.active) { overflow: hidden !important; }
+    #pollYoutubeModal {
+        top: var(--poll-youtube-top, 0px);
+        left: 0;
+        width: 100%;
+        height: var(--poll-youtube-height, 100dvh);
+        max-width: none;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+        gap: .75rem;
+        background: var(--bg-color);
+        transform: translateX(100%);
+        transition: transform .35s cubic-bezier(.2,.8,.2,1), opacity .35s ease, visibility .35s ease;
+    }
+    #pollYoutubeModal.active { transform: translateX(0); }
+    #pollYoutubeModal .poll-youtube-manager-body {
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        gap: .65rem;
+        padding: 4px;
+    }
+    #pollYoutubeModal .poll-youtube-help { flex: 0 0 auto; }
+    #pollYoutubeModal .poll-youtube-video-list {
+        flex: 0 0 auto;
+        max-height: none;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        overscroll-behavior-y: auto;
+        scrollbar-gutter: auto;
+        scrollbar-width: thin;
+    }
+    #pollYoutubeModal .poll-youtube-video-list .poll-file-grid {
+        display: grid;
+        grid-auto-flow: column;
+        grid-template-columns: none;
+        grid-template-rows: repeat(2, max-content);
+        grid-auto-columns: 180px;
+        align-items: start;
+        align-content: start;
+        width: max-content;
+        min-width: 100%;
+    }
+    #pollYoutubeModal .poll-youtube-video-list .poll-file-grid[hidden] { display: none; }
+    #pollYoutubeModal .poll-file-grid > .poll-file-youtube-card { width: 100%; }
+    #pollYoutubeModal .poll-youtube-close-btn { min-width: 44px; min-height: 44px; }
+    #pollYoutubeModal .poll-youtube-remove { width: 36px; height: 36px; }
+    #pollYoutubeModal .poll-youtube-manager-footer button { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #pollYoutubeModal { transition: none; }
+    .poll-help-details,
+    .poll-help-details-inner,
+    .community-poll .poll-help-toggle,
+    .community-poll .poll-help-toggle-caret { transition: none; }
 }

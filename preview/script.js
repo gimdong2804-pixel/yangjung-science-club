@@ -2640,6 +2640,13 @@ function applyCurrentUpdateHistory() {
                                 <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">휴대폰에서 댓글 첨부 메뉴를 넓혀 긴 항목명도 한 줄로 보기 쉽게 했습니다. 화면이 좁을 때는 문구가 자동으로 줄바꿈됩니다.</div>
                             </div>
                         </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>게시글 상세 화면 간소화 및 플로팅 닫기 버튼 적용</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">게시글 상세 화면의 상단 제목 표시줄과 배경, 구분선을 제거해 본문 표시 영역을 넓혔습니다. 닫기 버튼은 오른쪽 위에 독립적으로 배치해 스크롤 중에도 같은 위치에서 사용할 수 있으며, 좁은 화면에서는 본문 버튼과 겹치지 않도록 여백을 조정했습니다.</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2657,6 +2664,13 @@ function applyCurrentUpdateHistory() {
                 </button>
                 <div class="update-section-collapse">
                     <div class="update-section-collapse-content">
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>댓글 입력창 스크롤 시 배경 흐림(블러) 깜빡임 오류 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">댓글을 보며 스크롤할 때 하단 댓글창이 숨겨졌다가 다시 나타나는 순간 배경 흐림 효과가 틱 하고 끊겨 보이던 현상을 수정하여 부드럽게 나타나도록 개선했습니다.</div>
+                            </div>
+                        </div>
                         <div class="feature-item">
                             <i class="fa-solid fa-check"></i>
                             <div>
@@ -2713,6 +2727,19 @@ function applyCurrentUpdateHistory() {
                                 <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">설정을 기본값으로 되돌릴 때 나타나는 확인 창에서 이전 AI 채팅 관련 불필요한 문구를 제거했습니다.</div>
                             </div>
                         </div>
+                        <div class="feature-item">
+                            <i class="fa-solid fa-check"></i>
+                            <div>
+                                <strong>One UI 버전 로고 로딩 시 깜빡임 및 떨림 현상 수정</strong>
+                                <div style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.2rem;">설정의 업데이트 탭 진입 시 'One UI 1.5' 로고 텍스트가 웹 폰트 로딩 과정에서 순간적으로 깜빡이거나 위치가 덜컥거리며 움직이던 현상을 수정했습니다.</div>
+                            </div>
+                        </div>
+
+
+
+
+
+
                     </div>
                 </div>
             </div>
@@ -3156,23 +3183,15 @@ function setCommentInputScrollHideEnabled(enabled, save = true) {
 function _hideCommentInput() {
     const area = document.querySelector('.comment-input-area');
     if (area && !_isCommentInputHidden) {
-        area.style.transition = 'opacity 0.35s ease';
-        area.style.opacity = '0';
-        area.style.pointerEvents = 'none';
+        area.classList.add('scroll-hidden');
         _isCommentInputHidden = true;
     }
 }
 
 function _showCommentInput() {
     const area = document.querySelector('.comment-input-area');
-    const container = document.getElementById('commentInputContainer');
-    if (container && container.style.transition) {
-        container.style.transition = '';
-    }
     if (area && _isCommentInputHidden) {
-        area.style.transition = 'opacity 0.35s ease';
-        area.style.opacity = '';
-        area.style.pointerEvents = '';
+        area.classList.remove('scroll-hidden');
         _isCommentInputHidden = false;
     }
 }

@@ -141,12 +141,7 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
         }
     }
 
-    const detailTitle = sideDetailContainer.querySelector('.side-detail-title');
-    if (detailTitle) {
-        detailTitle.innerHTML = isFullscreen
-            ? '<i class="fa-solid fa-file-lines"></i> 게시글 상세'
-            : '<i class="fa-regular fa-comments"></i> 댓글 보기';
-    }
+    sideDetailContainer.setAttribute('aria-label', isFullscreen ? '게시글 상세' : '댓글 보기');
 
     // 3. 브라우저가 레이아웃 변경을 완료하도록 짧은 지연 후 애니메이션 시작
     requestAnimationFrame(() => {
@@ -388,7 +383,7 @@ function openPostDetail(id, post, avatar, timeStr, mode = 'fullscreen') {
                     : escapeHtml(String(currentPost.body || '')).replace(/\n/g, '<br>')}
                         </div>
 
-                        ${window.communityPolls?.renderHtml(currentPost.poll, id) || ''}
+                        ${window.communityPolls?.renderHtml(currentPost.poll, id, '', currentPost.uid || currentPost.authorUid || '', currentPost.pollClosed === true) || ''}
                         ${displayImages.length > 0 ? `
                             <div class="post-image-gallery">
                                 ${displayImages.map((imgObj, imgIdx) => `<img src="${escapeHtml(imgObj.url)}" alt="게시글 첨부 사진" data-double-like-image="true" data-lightbox-url="${escapeHtml(imgObj.url)}" data-lightbox-post-id="${escapeHtml(currentPostId)}" data-lightbox-author-uid="${escapeHtml(currentPost.uid || '')}" data-lightbox-image-index="${imgIdx}" style="cursor: pointer;">`).join('')}
@@ -762,9 +757,32 @@ window.togglePinComment = async function (postId, commentId, currentPinned, clic
     }
 };
 
-async function deletePostAndCommentsDirectly(id) {
-    const postRef = db.collection('posts').doc(id);
+async function deletePollSubcollection(parentRef, collectionName) {
+    const snapshot = await parentRef.collection(collectionName).get();
+    for (let start = 0; start < snapshot.docs.length; start += 400) {
+        const batch = db.batch();
+        snapshot.docs.slice(start, start + 400).forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+    }
+}
+
+async function deletePollData(parentRef) {
+    await deletePollSubcollection(parentRef, 'votes');
+    await deletePollSubcollection(parentRef, 'anonymousVotes');
+    await deletePollSubcollection(parentRef, 'pollFiles');
+}
+
+async function preparePostPollCleanup(postRef) {
     const commentsSnapshot = await postRef.collection('comments').get();
+    await postRef.update({ pollsDeleting: true });
+    for (const commentDoc of commentsSnapshot.docs) await deletePollData(commentDoc.ref);
+    await deletePollData(postRef);
+    return commentsSnapshot;
+}
+
+async function deletePostAndCommentsDirectly(id, preparedComments = null) {
+    const postRef = db.collection('posts').doc(id);
+    const commentsSnapshot = preparedComments || await preparePostPollCleanup(postRef);
     const commentDocs = commentsSnapshot.docs;
 
     for (let start = 0; start < commentDocs.length; start += 400) {
@@ -785,7 +803,6 @@ window.deletePostDocumentWithNotification = async function (id) {
             return;
         } catch (error) {
             if (error?.status === 401 || error?.status === 403) throw error;
-            if (error?.status === 404) return;
             console.warn('알림 서버를 통한 삭제 실패, Firebase에서 직접 삭제합니다:', error);
         }
     }
@@ -1351,6 +1368,16 @@ async function deleteSelectedComments(postId, selectedIds) {
             toHardDelete.add(commentId);
         }
     });
+
+    const pollCleanupIds = [...new Set([...toHardDelete, ...toSoftDelete])];
+    for (let start = 0; start < pollCleanupIds.length; start += 400) {
+        const batch = db.batch();
+        pollCleanupIds.slice(start, start + 400).forEach(commentId => {
+            batch.update(commentsRef.doc(commentId), { pollsDeleting: true });
+        });
+        await batch.commit();
+    }
+    for (const commentId of pollCleanupIds) await deletePollData(commentsRef.doc(commentId));
 
     const operations = [];
     toHardDelete.forEach(commentId => {

@@ -155,6 +155,24 @@ window.addEventListener('popstate', (e) => {
         closeLightbox(true);
         return;
     }
+
+    // 투표 첨부 유튜브 모달이 열려있는 경우
+    const pollYoutubeModal = document.getElementById('pollYoutubeModal');
+    if (pollYoutubeModal && pollYoutubeModal.classList.contains('active')) {
+        if (typeof window.pollAttachments?.closeYoutubeManager === 'function') {
+            window.pollAttachments.closeYoutubeManager(true);
+        }
+        return;
+    }
+
+    // 투표 작성 모달이 열려있는 경우
+    const pollModal = document.getElementById('pollModal');
+    if (document.body.classList.contains('poll-modal-open') || (pollModal && pollModal.classList.contains('active'))) {
+        if (typeof window.closePollModal === 'function') {
+            window.closePollModal(true);
+        }
+        return;
+    }
     const aiChatbotWindow = document.getElementById('aiChatbotWindow');
     if (aiChatbotWindow && aiChatbotWindow.classList.contains('active')) {
         if (typeof window.closeAiChatbotModal === 'function') {

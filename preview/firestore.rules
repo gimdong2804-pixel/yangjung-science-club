@@ -29,22 +29,15 @@ service cloud.firestore {
     function validPollOption(options, index) {
       return options.size() <= index || (
         options[index] is string
-        && options[index].size() > 0
         && options[index].trim().size() > 0
-        && options[index].size() <= 50
-        && options[index].matches('^[^\\n\\r]*$')
+        && options[index].matches('^[^\\n\\r]{1,50}$')
       );
     }
-
-    function validPollOptionsCaseUnique(options) {
-      return options.join('\n').lower().split('\\n').toSet().size() == options.size();
-    }
-
 
     function validPollFile(file) {
       return file is map
         && file.keys().hasOnly(['kind', 'name', 'url', 'size'])
-        && file.kind in ['image', 'audio', 'pdf', 'html']
+        && file.kind in ['image', 'audio', 'pdf', 'html', 'youtube']
         && file.name.matches('^[^\\n\\r]{1,255}$')
         && file.url.matches('^https://[^\\s]+$') && file.url.size() <= 2048
         && file.size is int && file.size >= 0 && file.size <= 104857600;
@@ -76,56 +69,190 @@ service cloud.firestore {
       );
     }
 
-    // Validate each option in a separate write; the immutable parent copies the
-    // validated records. This keeps 100 files below the per-request rule budget.
-    function validPollProofSlot(attachments, optionCount, postId, commentId, key) {
+    function validPollFileMapSlot(options, key) {
+      return options.keys().hasAny([key])
+        && options[key] is list
+        && options[key].size() >= 1
+        && validPollFileList(options[key]);
+    }
+
+    function countPollManifestAt(postId, commentId) {
+      return commentId == ''
+        ? get(/databases/$(database)/documents/posts/$(postId)/pollFiles/manifest).data
+        : get(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)/pollFiles/manifest).data;
+    }
+
+    function validCountPollFileManifestMatches(manifest, optionIndex, files) {
+      return manifest.uid == request.auth.uid
+        && int(optionIndex) < manifest.optionCount
+        && manifest.optionAttachmentCounts.keys().hasAny([optionIndex])
+        && manifest.optionAttachmentCounts[optionIndex] == files.size();
+    }
+
+    function validCountPollFileProof(data, optionIndex, postId, commentId) {
+      return signedIn() && optionIndex.matches('^[0-9]$')
+        && data.keys().hasOnly(['uid', 'options'])
+        && data.uid == request.auth.uid
+        && data.options is map
+        && data.options.keys().hasOnly([optionIndex])
+        && validPollFileMapSlot(data.options, optionIndex)
+        && validCountPollFileManifestMatches(countPollManifestAt(postId, commentId), optionIndex, data.options[optionIndex]);
+    }
+
+    function validCountPollQuestionProof(data, optionIndex, postId, commentId) {
+      return signedIn() && optionIndex == 'question'
+        && data.keys().hasOnly(['uid', 'files'])
+        && data.uid == request.auth.uid
+        && validPollFileList(data.files)
+        && data.files.size() >= 1
+        && countPollManifestAt(postId, commentId).uid == request.auth.uid
+        && countPollManifestAt(postId, commentId).questionAttachmentCount == data.files.size();
+    }
+
+    function validLegacyPollProofSlot(attachments, optionCount, postId, commentId, key, questionFiles, hasQuestionFiles) {
       return !attachments.keys().hasAny([key]) || (
         int(key) < optionCount && (
           commentId == ''
             ? get(/databases/$(database)/documents/posts/$(postId)/pollFiles/$(key)).data
-                == {'uid': request.auth.uid, 'files': attachments[key]}
+                == (key == '0' && hasQuestionFiles
+                  ? {'uid': request.auth.uid, 'files': attachments[key], 'questionFiles': questionFiles}
+                  : {'uid': request.auth.uid, 'files': attachments[key]})
             : get(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)/pollFiles/$(key)).data
-                == {'uid': request.auth.uid, 'files': attachments[key]}
+                == (key == '0' && hasQuestionFiles
+                  ? {'uid': request.auth.uid, 'files': attachments[key], 'questionFiles': questionFiles}
+                  : {'uid': request.auth.uid, 'files': attachments[key]})
         )
       );
     }
 
-    function validAllPollProofs(attachments, optionCount, postId, commentId) {
-      return validPollProofSlot(attachments, optionCount, postId, commentId, '0')
-        && validPollProofSlot(attachments, optionCount, postId, commentId, '1')
-        && validPollProofSlot(attachments, optionCount, postId, commentId, '2')
-        && validPollProofSlot(attachments, optionCount, postId, commentId, '3')
-        && validPollProofSlot(attachments, optionCount, postId, commentId, '4')
-        && validPollProofSlot(attachments, optionCount, postId, commentId, '5')
-        && validPollProofSlot(attachments, optionCount, postId, commentId, '6')
-        && validPollProofSlot(attachments, optionCount, postId, commentId, '7')
-        && validPollProofSlot(attachments, optionCount, postId, commentId, '8')
-        && validPollProofSlot(attachments, optionCount, postId, commentId, '9');
+    function validLegacyPollProofs(attachments, optionCount, postId, commentId, questionFiles, hasQuestionFiles) {
+      return validLegacyPollProofSlot(attachments, optionCount, postId, commentId, '0', questionFiles, hasQuestionFiles)
+        && validLegacyPollProofSlot(attachments, optionCount, postId, commentId, '1', questionFiles, hasQuestionFiles)
+        && validLegacyPollProofSlot(attachments, optionCount, postId, commentId, '2', questionFiles, hasQuestionFiles)
+        && validLegacyPollProofSlot(attachments, optionCount, postId, commentId, '3', questionFiles, hasQuestionFiles)
+        && validLegacyPollProofSlot(attachments, optionCount, postId, commentId, '4', questionFiles, hasQuestionFiles)
+        && validLegacyPollProofSlot(attachments, optionCount, postId, commentId, '5', questionFiles, hasQuestionFiles)
+        && validLegacyPollProofSlot(attachments, optionCount, postId, commentId, '6', questionFiles, hasQuestionFiles)
+        && validLegacyPollProofSlot(attachments, optionCount, postId, commentId, '7', questionFiles, hasQuestionFiles)
+        && validLegacyPollProofSlot(attachments, optionCount, postId, commentId, '8', questionFiles, hasQuestionFiles)
+        && validLegacyPollProofSlot(attachments, optionCount, postId, commentId, '9', questionFiles, hasQuestionFiles);
+    }
+
+    function validLegacyPollQuestionProof(poll, postId, commentId) {
+      return !poll.keys().hasAny(['questionAttachments']) || (
+        poll.get('optionAttachments', {}).keys().hasAny(['0'])
+        || (commentId == ''
+          ? get(/databases/$(database)/documents/posts/$(postId)/pollFiles/0).data
+              == {'uid': request.auth.uid, 'files': [], 'questionFiles': poll.questionAttachments}
+          : get(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)/pollFiles/0).data
+              == {'uid': request.auth.uid, 'files': [], 'questionFiles': poll.questionAttachments})
+      );
     }
 
     function validPollAttachmentProofs(data, postId, commentId) {
-      return !data.keys().hasAny(['poll']) || !data.poll.keys().hasAny(['optionAttachments'])
-        || validAllPollProofs(data.poll.optionAttachments, data.poll.options.size(), postId, commentId);
+      let poll = data.get('poll', {});
+      let hasCounts = poll.keys().hasAny(['optionAttachmentCounts']) || poll.keys().hasAny(['questionAttachmentCount']);
+      return !data.keys().hasAny(['poll']) || (hasCounts
+        ? validCountPollManifestLinkAt(postId, commentId, poll)
+        : (!poll.keys().hasAny(['optionAttachments']) || validLegacyPollProofs(
+            poll.optionAttachments,
+            poll.options.size(),
+            postId,
+            commentId,
+            poll.get('questionAttachments', []),
+            poll.keys().hasAny(['questionAttachments'])
+          )) && validLegacyPollQuestionProof(poll, postId, commentId));
     }
 
     function validPollFileProof(data, optionIndex) {
+      let hasQuestionFiles = data.keys().hasAny(['questionFiles']);
       return signedIn() && optionIndex.matches('^[0-9]$')
-        && data.keys().hasOnly(['uid', 'files']) && data.uid == request.auth.uid
-        && validPollFileList(data.files);
+        && data.keys().hasOnly(hasQuestionFiles ? ['uid', 'files', 'questionFiles'] : ['uid', 'files'])
+        && data.uid == request.auth.uid
+        && validPollFileList(data.files)
+        && (!hasQuestionFiles || (optionIndex == '0' && validPollFileList(data.questionFiles)));
+    }
+
+    function pollAttachmentCount(poll) {
+      let counts = poll.get('optionAttachmentCounts', {});
+      return poll.get('questionAttachmentCount', 0)
+        + (counts.keys().hasAny(['0']) ? counts['0'] : 0)
+        + (counts.keys().hasAny(['1']) ? counts['1'] : 0)
+        + (counts.keys().hasAny(['2']) ? counts['2'] : 0)
+        + (counts.keys().hasAny(['3']) ? counts['3'] : 0)
+        + (counts.keys().hasAny(['4']) ? counts['4'] : 0)
+        + (counts.keys().hasAny(['5']) ? counts['5'] : 0)
+        + (counts.keys().hasAny(['6']) ? counts['6'] : 0)
+        + (counts.keys().hasAny(['7']) ? counts['7'] : 0)
+        + (counts.keys().hasAny(['8']) ? counts['8'] : 0)
+        + (counts.keys().hasAny(['9']) ? counts['9'] : 0);
+    }
+
+    function validCountPollManifest(data) {
+      let counts = data.get('optionAttachmentCounts', {});
+      let optionCount = data.get('optionCount', 0);
+      let allowedCountKeys = optionCount == 2 ? ['0', '1'] : optionCount == 3 ? ['0', '1', '2']
+        : optionCount == 4 ? ['0', '1', '2', '3'] : optionCount == 5 ? ['0', '1', '2', '3', '4']
+        : optionCount == 6 ? ['0', '1', '2', '3', '4', '5'] : optionCount == 7 ? ['0', '1', '2', '3', '4', '5', '6']
+        : optionCount == 8 ? ['0', '1', '2', '3', '4', '5', '6', '7']
+        : optionCount == 9 ? ['0', '1', '2', '3', '4', '5', '6', '7', '8']
+        : ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+      return signedIn()
+        && data.keys().hasOnly(['uid', 'optionCount', 'optionAttachmentCounts', 'questionAttachmentCount'])
+        && data.uid == request.auth.uid
+        && optionCount is int && optionCount >= 2 && optionCount <= 10
+        && counts is map
+        && counts.keys().hasOnly(allowedCountKeys)
+        && data.questionAttachmentCount is int
+        && data.questionAttachmentCount >= 0 && data.questionAttachmentCount <= 10
+        && pollAttachmentCount(data) <= 100;
+    }
+
+    function validCountPollManifestLink(proof, poll) {
+      return proof.keys().hasOnly(['uid', 'optionCount', 'optionAttachmentCounts', 'questionAttachmentCount'])
+        && proof.uid == request.auth.uid
+        && proof.optionCount == poll.options.size()
+        && proof.optionAttachmentCounts == poll.get('optionAttachmentCounts', {})
+        && proof.questionAttachmentCount == poll.get('questionAttachmentCount', 0);
+    }
+
+    function validCountPollManifestProof(data, optionIndex) {
+      return optionIndex == 'manifest' && validCountPollManifest(data);
+    }
+
+    function validCountPollManifestLinkAt(postId, commentId, poll) {
+      return commentId == ''
+        ? validCountPollManifestLink(get(/databases/$(database)/documents/posts/$(postId)/pollFiles/manifest).data, poll)
+        : validCountPollManifestLink(get(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)/pollFiles/manifest).data, poll);
     }
 
     function validPollAttachments(poll) {
-      // File list/type/URL/size validation happens on the immutable proof writes.
-      // The create rule checks that every list exactly matches its owner proof.
-      return !poll.keys().hasAny(['optionAttachments']) || (
-        poll.optionAttachments is map
-        && poll.optionAttachments.keys().hasOnly(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])
-      );
+      let hasLegacy = poll.keys().hasAny(['optionAttachments']) || poll.keys().hasAny(['questionAttachments']);
+      let hasCounts = poll.keys().hasAny(['optionAttachmentCounts']) || poll.keys().hasAny(['questionAttachmentCount']);
+      let counts = poll.get('optionAttachmentCounts', {});
+      return !(hasLegacy && hasCounts)
+        && (!poll.keys().hasAny(['optionAttachments']) || (
+          poll.optionAttachments is map
+          && poll.optionAttachments.keys().hasOnly(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])
+        ))
+        && (!poll.keys().hasAny(['questionAttachments']) || (
+          poll.questionAttachments is list && poll.questionAttachments.size() <= 10
+        ))
+        && (!poll.keys().hasAny(['optionAttachmentCounts']) || (
+          counts is map
+          && counts.keys().hasOnly(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'])
+        ))
+        && (!poll.keys().hasAny(['questionAttachmentCount']) || (
+          poll.questionAttachmentCount is int && poll.questionAttachmentCount >= 1 && poll.questionAttachmentCount <= 10
+        ));
     }
 
     function validPoll(poll) {
       return poll is map
-        && poll.keys().hasOnly(['question', 'options', 'multiple', 'optionAttachments'])
+        && poll.keys().hasOnly([
+          'question', 'options', 'multiple', 'optionAttachments', 'questionAttachments',
+          'optionAttachmentCounts', 'questionAttachmentCount'
+        ])
         && poll.question is string
         && poll.question.size() > 0
         && poll.question.trim().size() > 0
@@ -138,7 +265,6 @@ service cloud.firestore {
         && validPollOption(poll.options, 4) && validPollOption(poll.options, 5)
         && validPollOption(poll.options, 6) && validPollOption(poll.options, 7)
         && validPollOption(poll.options, 8) && validPollOption(poll.options, 9)
-        && validPollOptionsCaseUnique(poll.options)
         && validPollAttachments(poll);
     }
 
@@ -150,9 +276,112 @@ service cloud.firestore {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['poll']);
     }
 
-    function voteActorAllowed(parent, voterId) {
-      return signedIn() && voterId == request.auth.uid
-        && parent.get('deleted', false) == false
+    function pollClosureUnchanged() {
+      return request.resource.data.get('pollClosed', false) == resource.data.get('pollClosed', false)
+        && request.resource.data.get('pollClosedAt', null) == resource.data.get('pollClosedAt', null);
+    }
+
+    function isPollCloseUpdate() {
+      return resource.data.keys().hasAny(['poll'])
+        && pollUnchanged()
+        && changedOnly(['pollClosed', 'pollClosedAt'])
+        && resource.data.get('pollClosed', false) == false
+        && resource.data.get('pollClosedAt', null) == null
+        && request.resource.data.get('pollClosed', false) == true
+        && request.resource.data.pollClosedAt is timestamp
+        && request.resource.data.pollClosedAt == request.time;
+    }
+
+    function pollCleanupNotReopened() {
+      return resource.data.get('pollsDeleting', false) == false
+        || request.resource.data.get('pollsDeleting', false) == true;
+    }
+
+    function canStartPollCleanup() {
+      return changedOnly(['pollsDeleting'])
+        && request.resource.data.get('pollsDeleting', false) == true
+        && resource.data.get('pollsDeleting', false) is bool;
+    }
+
+    function activePollParent(parent) {
+      return parent.get('deleted', false) == false
+        && parent.get('pollsDeleting', false) == false;
+    }
+
+    function canManagePollCleanup(parent) {
+      return owns(parent) || isAdmin();
+    }
+
+    function canReadPostPollVotes(postId) {
+      let post = get(/databases/$(database)/documents/posts/$(postId)).data;
+      return signedIn() && (
+        activePollParent(post)
+        || (post.get('pollsDeleting', false) == true && canManagePollCleanup(post))
+      );
+    }
+
+    function canReadCommentPollVotes(postId, commentId) {
+      let post = get(/databases/$(database)/documents/posts/$(postId)).data;
+      let comment = get(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)).data;
+      return signedIn() && (
+        (activePollParent(post) && activePollParent(comment))
+        || (post.get('pollsDeleting', false) == true && canManagePollCleanup(post))
+        || ((comment.get('pollsDeleting', false) == true || comment.get('deleted', false) == true)
+          && (canManagePollCleanup(comment) || isPostOwner(postId) || isAdmin()))
+      );
+    }
+
+    function canDeletePostPollData(postId) {
+      let post = get(/databases/$(database)/documents/posts/$(postId)).data;
+      return post.get('pollsDeleting', false) == true && canManagePollCleanup(post);
+    }
+
+    function canDeleteCommentPollData(postId, commentId) {
+      let post = get(/databases/$(database)/documents/posts/$(postId)).data;
+      let comment = get(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)).data;
+      return (post.get('pollsDeleting', false) == true && canManagePollCleanup(post))
+        || ((comment.get('pollsDeleting', false) == true || comment.get('deleted', false) == true)
+          && (canManagePollCleanup(comment) || isPostOwner(postId) || isAdmin()));
+    }
+
+    function validPollBallotMapping(data) {
+      return data.keys().hasOnly(['ballotId'])
+        && data.ballotId is string
+        && data.ballotId.matches('^[a-f0-9]{32}$');
+    }
+
+    function validPostBallotMappingCreate(userId, postId, data) {
+      let postPath = /databases/$(database)/documents/posts/$(postId);
+      return signedIn() && request.auth.uid == userId
+        && validPollBallotMapping(data)
+        && exists(postPath)
+        && activePollParent(get(postPath).data)
+        && (get(postPath).data.get('pollClosed', false) == false
+          || exists(/databases/$(database)/documents/posts/$(postId)/votes/$(request.auth.uid)));
+    }
+
+    function validCommentBallotMappingCreate(userId, postId, commentId, data) {
+      let postPath = /databases/$(database)/documents/posts/$(postId);
+      let commentPath = /databases/$(database)/documents/posts/$(postId)/comments/$(commentId);
+      return signedIn() && request.auth.uid == userId
+        && validPollBallotMapping(data)
+        && exists(postPath) && activePollParent(get(postPath).data)
+        && exists(commentPath) && activePollParent(get(commentPath).data)
+        && (get(commentPath).data.get('pollClosed', false) == false
+          || exists(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)/votes/$(request.auth.uid)));
+    }
+
+    function pollBallotMappingMatches(postId, commentId, ballotId) {
+      return commentId == ''
+        ? get(/databases/$(database)/documents/pollBallotMappings/$(request.auth.uid)/posts/$(postId)).data.ballotId == ballotId
+        : get(/databases/$(database)/documents/pollBallotMappings/$(request.auth.uid)/posts/$(postId)/comments/$(commentId)).data.ballotId == ballotId;
+    }
+
+    function voteActorAllowed(parent, ballotId, postId, commentId) {
+      return signedIn()
+        && pollBallotMappingMatches(postId, commentId, ballotId)
+        && activePollParent(parent)
+        && parent.get('pollClosed', false) == false
         && validPoll(parent.get('poll', null));
     }
 
@@ -171,22 +400,22 @@ service cloud.firestore {
         && vote.updatedAt == request.time;
     }
 
-    function validVoteCreate(parent, voterId) {
+    function validVoteCreate(parent, ballotId, postId, commentId) {
       let vote = request.resource.data;
-      return voteActorAllowed(parent, voterId)
+      return voteActorAllowed(parent, ballotId, postId, commentId)
         && validVoteRequestFields(vote)
         && validVoteChoices(parent, vote.choices)
         && vote.cancelCount == 0
         && vote.votedAt == request.time;
     }
 
-    function validVoteUpdate(parent, voterId) {
+    function validVoteUpdate(parent, ballotId, postId, commentId) {
       let old = resource.data;
       let vote = request.resource.data;
       let oldChoices = old.get('choices', []);
       let oldCancelCount = old.get('cancelCount', 0);
       let oldVotedAt = old.get('votedAt', old.get('updatedAt', request.time));
-      return voteActorAllowed(parent, voterId)
+      return voteActorAllowed(parent, ballotId, postId, commentId)
         && oldChoices is list
         && oldCancelCount is int && oldCancelCount >= 0 && oldCancelCount <= 2
         && oldVotedAt is timestamp
@@ -210,6 +439,33 @@ service cloud.firestore {
             && vote.cancelCount == oldCancelCount + 1
             && vote.votedAt == oldVotedAt)
         );
+    }
+
+    function validLegacyVoteMigration(parent, ballotId, postId, commentId) {
+      let legacyExists = commentId == ''
+        ? exists(/databases/$(database)/documents/posts/$(postId)/votes/$(request.auth.uid))
+        : exists(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)/votes/$(request.auth.uid));
+      let legacyVote = commentId == ''
+        ? get(/databases/$(database)/documents/posts/$(postId)/votes/$(request.auth.uid)).data
+        : get(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)/votes/$(request.auth.uid)).data;
+      let vote = request.resource.data;
+      return signedIn() && legacyExists
+        && pollBallotMappingMatches(postId, commentId, ballotId)
+        && activePollParent(parent)
+        && validVoteRequestFields(vote)
+        && vote.choices == legacyVote.get('choices', [])
+        && vote.cancelCount == legacyVote.get('cancelCount', 0)
+        && vote.votedAt == legacyVote.get('votedAt', legacyVote.get('updatedAt', null));
+    }
+
+    function canReadPostLegacyVote(postId, voterId) {
+      return signedIn() && voterId == request.auth.uid
+        && exists(/databases/$(database)/documents/posts/$(postId));
+    }
+
+    function canReadCommentLegacyVote(postId, commentId, voterId) {
+      return signedIn() && voterId == request.auth.uid
+        && exists(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId));
     }
 
     function isPostOwner(postId) {
@@ -328,7 +584,7 @@ service cloud.firestore {
     function isCommentModerationDelete() {
       return changedOnly([
           'body', 'content', 'images', 'videos', 'audios', 'pdfs', 'htmls',
-          'imageDescriptions', 'deleted', 'deletedAt'
+          'imageDescriptions', 'deleted', 'deletedAt', 'pollsDeleting'
         ])
         && resource.data.get('deleted', false) == false
         && request.resource.data.deleted == true
@@ -367,18 +623,32 @@ service cloud.firestore {
       }
     }
 
+    match /pollBallotMappings/{userId}/posts/{postId} {
+      allow get: if signedIn() && request.auth.uid == userId;
+      allow list: if false;
+      allow create: if validPostBallotMappingCreate(userId, postId, request.resource.data);
+      allow update, delete: if false;
+
+      match /comments/{commentId} {
+        allow get: if signedIn() && request.auth.uid == userId;
+        allow list: if false;
+        allow create: if validCommentBallotMappingCreate(userId, postId, commentId, request.resource.data);
+        allow update, delete: if false;
+      }
+    }
+
     match /posts/{postId} {
       allow read: if signedIn();
 
       allow create: if signedIn()
         && postId.matches('^[A-Za-z0-9_-]{1,128}$')
+        && validOptionalPoll(request.resource.data)
         && validPollAttachmentProofs(request.resource.data, postId, '')
         && request.resource.data.keys().hasOnly([
           'title', 'author', 'uid', 'userPhoto', 'categoryMain', 'categorySub',
           'body', 'images', 'attachments', 'createdAt',
           'views', 'viewedBy', 'likes', 'likedUsers', 'poll'
         ])
-        && validOptionalPoll(request.resource.data)
         && request.resource.data.uid == request.auth.uid
         && hasValidAuthor(request.resource.data.author)
         && request.resource.data.title is string
@@ -402,7 +672,9 @@ service cloud.firestore {
         && request.resource.data.likes == 0
         && request.resource.data.likedUsers == [];
 
-      allow update: if (isAdmin() && pollUnchanged())
+      allow update: if (isAdmin() && pollUnchanged() && pollCleanupNotReopened() && pollClosureUnchanged())
+        || ((owns(resource.data) || isAdmin()) && canStartPollCleanup())
+        || ((owns(resource.data) || isAdmin()) && isPollCloseUpdate())
         || (
           owns(resource.data)
           && changedOnly([
@@ -419,22 +691,39 @@ service cloud.firestore {
       match /pollFiles/{optionIndex} {
         allow read: if signedIn() && exists(/databases/$(database)/documents/posts/$(postId));
         allow create: if !exists(/databases/$(database)/documents/posts/$(postId))
-          && validPollFileProof(request.resource.data, optionIndex);
+          && (validPollFileProof(request.resource.data, optionIndex)
+            || validCountPollFileProof(request.resource.data, optionIndex, postId, '')
+            || validCountPollQuestionProof(request.resource.data, optionIndex, postId, '')
+            || validCountPollManifestProof(request.resource.data, optionIndex));
         allow update: if signedIn() && resource.data.uid == request.auth.uid
           && request.resource.data == resource.data
           && !exists(/databases/$(database)/documents/posts/$(postId));
-        allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+        allow delete: if (signedIn() && resource.data.uid == request.auth.uid
+          && !exists(/databases/$(database)/documents/posts/$(postId)))
+          || canDeletePostPollData(postId);
       }
 
       match /votes/{voterId} {
-        allow read: if signedIn();
+        allow get: if signedIn() && voterId == request.auth.uid
+          && exists(/databases/$(database)/documents/posts/$(postId));
+        allow list: if canDeletePostPollData(postId);
+        allow create, update: if false;
+        allow delete: if (signedIn() && voterId == request.auth.uid
+          && exists(/databases/$(database)/documents/posts/$(postId)))
+          || canDeletePostPollData(postId);
+      }
+
+      match /anonymousVotes/{ballotId} {
+        allow read: if canReadPostPollVotes(postId);
         allow create: if validVoteCreate(
-          get(/databases/$(database)/documents/posts/$(postId)).data, voterId
-        );
+            get(/databases/$(database)/documents/posts/$(postId)).data, ballotId, postId, ''
+          ) || validLegacyVoteMigration(
+            get(/databases/$(database)/documents/posts/$(postId)).data, ballotId, postId, ''
+          );
         allow update: if validVoteUpdate(
-          get(/databases/$(database)/documents/posts/$(postId)).data, voterId
+          get(/databases/$(database)/documents/posts/$(postId)).data, ballotId, postId, ''
         );
-        allow delete: if false;
+        allow delete: if canDeletePostPollData(postId);
       }
 
       match /comments/{commentId} {
@@ -442,13 +731,13 @@ service cloud.firestore {
 
         allow create: if signedIn()
           && commentId.matches('^[A-Za-z0-9_-]{1,128}$')
+          && validOptionalPoll(request.resource.data)
           && validPollAttachmentProofs(request.resource.data, postId, commentId)
           && request.resource.data.keys().hasOnly([
             'author', 'uid', 'userPhoto', 'body', 'images', 'videos', 'audios',
             'pdfs', 'htmls', 'imageDescriptions', 'parentId', 'replyToAuthor',
             'pinned', 'likes', 'likedUsers', 'deleted', 'createdAt', 'official', 'poll'
           ])
-          && validOptionalPoll(request.resource.data)
           && request.resource.data.uid == request.auth.uid
           && hasValidAuthor(request.resource.data.author)
           && request.resource.data.official == isAdmin()
@@ -475,7 +764,9 @@ service cloud.firestore {
           && request.resource.data.likedUsers == []
           && request.resource.data.deleted == false;
 
-        allow update: if (isAdmin() && pollUnchanged())
+        allow update: if (isAdmin() && pollUnchanged() && pollCleanupNotReopened() && pollClosureUnchanged())
+          || ((owns(resource.data) || isPostOwner(postId)) && canStartPollCleanup())
+          || ((owns(resource.data) || isPostOwner(postId) || isAdmin()) && isPollCloseUpdate())
           || (
             owns(resource.data)
             && (isCommentOwnerEdit() || isCommentModerationDelete())
@@ -489,20 +780,38 @@ service cloud.firestore {
         match /pollFiles/{optionIndex} {
           allow read: if signedIn() && exists(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId));
           allow create: if !exists(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId))
-            && validPollFileProof(request.resource.data, optionIndex);
+            && (validPollFileProof(request.resource.data, optionIndex)
+              || validCountPollFileProof(request.resource.data, optionIndex, postId, commentId)
+              || validCountPollQuestionProof(request.resource.data, optionIndex, postId, commentId)
+              || validCountPollManifestProof(request.resource.data, optionIndex));
           allow update: if signedIn() && resource.data.uid == request.auth.uid
             && request.resource.data == resource.data
             && !exists(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId));
-          allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+          allow delete: if (signedIn() && resource.data.uid == request.auth.uid
+            && !exists(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)))
+            || canDeleteCommentPollData(postId, commentId);
         }
 
         match /votes/{voterId} {
-          allow read: if signedIn();
+          allow get: if signedIn() && voterId == request.auth.uid
+            && exists(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId));
+          allow list: if canDeleteCommentPollData(postId, commentId);
+          allow create, update: if false;
+          allow delete: if (signedIn() && voterId == request.auth.uid
+            && exists(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)))
+            || canDeleteCommentPollData(postId, commentId);
+        }
+
+        match /anonymousVotes/{ballotId} {
+          allow read: if canReadCommentPollVotes(postId, commentId);
           allow create: if exists(/databases/$(database)/documents/posts/$(postId))
-            && validVoteCreate(get(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)).data, voterId);
+            && get(/databases/$(database)/documents/posts/$(postId)).data.get('pollsDeleting', false) == false
+            && (validVoteCreate(get(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)).data, ballotId, postId, commentId)
+              || validLegacyVoteMigration(get(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)).data, ballotId, postId, commentId));
           allow update: if exists(/databases/$(database)/documents/posts/$(postId))
-            && validVoteUpdate(get(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)).data, voterId);
-          allow delete: if false;
+            && get(/databases/$(database)/documents/posts/$(postId)).data.get('pollsDeleting', false) == false
+            && validVoteUpdate(get(/databases/$(database)/documents/posts/$(postId)/comments/$(commentId)).data, ballotId, postId, commentId);
+          allow delete: if canDeleteCommentPollData(postId, commentId);
         }
       }
     }

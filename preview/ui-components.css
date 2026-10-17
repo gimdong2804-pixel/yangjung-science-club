@@ -905,6 +905,10 @@ body:has(.modal-overlay.active) {
     transition: color 0.5s ease;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
+    contain: layout paint;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    will-change: transform;
 }
 
 .update-check-button {
@@ -1750,7 +1754,9 @@ body:has(.modal-overlay.active) {
         left: 0;
         right: 0;
         margin: auto !important;
-        transform: none !important;
+        transform: translateZ(0) !important;
+        backface-visibility: hidden;
+        will-change: transform, opacity;
         display: flex;
         align-items: center;
         justify-content: center;

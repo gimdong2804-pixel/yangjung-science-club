@@ -310,27 +310,15 @@ html[data-theme="light"] .youtube-option-card:hover {
     box-shadow: 0 8px 24px rgba(59, 130, 246, 0.45) !important;
 }
 
-/* 건의글 상세 상단 헤더: 닫기 버튼과 제목이 같은 고정 줄에 놓입니다. */
-.side-detail-topbar {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding-bottom: 1rem !important;
-    margin-bottom: 0 !important;
-    border-bottom: 1px solid var(--glass-border) !important;
-    transition: border-color 0.5s ease !important;
-    min-height: 42px !important;
-}
-
-/* 게시글 상세 헤더의 닫기 버튼과 파일 미리보기 닫기 버튼 */
+/* 게시글 상세창의 스크롤 영역 밖에 플로팅 닫기 버튼을 배치합니다. */
 /* 기본값: 다크 모드 (html 태그에 data-theme 속성이 없는 기본 상태) */
 #closeSideDetailBtn {
-    position: relative !important;
-    top: auto !important;
-    right: auto !important;
+    position: absolute !important;
+    top: calc(1rem + env(safe-area-inset-top, 0px)) !important;
+    right: calc(1.5rem + env(safe-area-inset-right, 0px)) !important;
     z-index: 1000 !important;
-    width: 36px !important;
-    height: 36px !important;
+    width: 44px !important;
+    height: 44px !important;
     border-radius: 50% !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     background: rgba(30, 41, 59, 0.9) !important;
@@ -351,6 +339,11 @@ html[data-theme="light"] .youtube-option-card:hover {
         border-color 0.25s ease !important;
 }
 
+#closeSideDetailBtn:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 3px;
+}
+
 .file-preview-close-btn {
     width: 36px !important;
     height: 36px !important;
@@ -369,7 +362,7 @@ html[data-theme="light"] .youtube-option-card:hover {
     transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
 }
 
-/* 스크롤 시 다크 모드 X 버튼 (One UI 8.5/9 스타일: 오른쪽으로 슬라이드 및 블러/그림자 강화) */
+/* 스크롤 시 다크 모드 X 버튼의 블러/그림자 강화 */
 .side-detail-container.has-scrolled-detail #closeSideDetailBtn,
 .side-detail-scroll-area.has-scrolled #closeSideDetailBtn,
 .side-detail-container .side-detail-scroll-area.has-scrolled~#closeSideDetailBtn {
@@ -380,12 +373,11 @@ html[data-theme="light"] .youtube-option-card:hover {
     border: 1px solid rgba(255, 255, 255, 0.25) !important;
 }
 
-/* 모바일 반응형: 헤더 구분선과 X 버튼 겹침 완벽 방지 */
+/* 모바일 화면 가장자리와 안전 영역을 반영합니다. */
 @media (max-width: 1023px) {
-    .side-detail-topbar {
-        padding-bottom: 1rem !important;
-        margin-bottom: 0 !important;
-        min-height: 44px !important;
+    #closeSideDetailBtn {
+        top: calc(0.75rem + env(safe-area-inset-top, 0px)) !important;
+        right: calc(1rem + env(safe-area-inset-right, 0px)) !important;
     }
 }
 

@@ -819,7 +819,7 @@ if (commentSubmitBtn && commentInput) {
                 } catch (createError) {
                     // 이전 Firestore 규칙과 새 사이트가 잠시 함께 동작하는 배포 구간을 지원합니다.
                     if (createError?.code !== 'permission-denied') throw createError;
-                    if (poll?.optionAttachments) throw createError;
+                    if (poll?.optionAttachments || poll?.questionAttachments || poll?.optionAttachmentCounts || poll?.questionAttachmentCount) throw createError;
                     assertSubmission();
                     createdCommentRef = await db.collection('posts').doc(currentPostId).collection('comments').add({
                         ...commentData,
@@ -853,7 +853,8 @@ if (commentSubmitBtn && commentInput) {
             updateReplyTargetUI('');
         } catch (e) {
             console.error("댓글 작성/수정 실패 예외 처리:", e);
-            alert(e.message || '댓글 작성 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+            alert(window.communityPolls?.submissionErrorMessage(e, 'comment')
+                || '댓글 저장 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
             updateReplyTargetUI('');
         } finally {
             commentSubmitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';

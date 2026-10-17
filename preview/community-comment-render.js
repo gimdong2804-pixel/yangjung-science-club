@@ -242,7 +242,7 @@ function parseAttachmentItem(item, defaultName = '파일') {
 
 function renderCommentAttachmentsHtml(comment, safePostId, safeCommentId, isDeleted) {
     if (isDeleted) return '';
-    let html = window.communityPolls?.renderHtml(comment.poll, safePostId, safeCommentId) || '';
+    let html = window.communityPolls?.renderHtml(comment.poll, safePostId, safeCommentId, comment.uid || comment.authorUid || '', comment.pollClosed === true) || '';
 
     if (comment.images && Array.isArray(comment.images) && comment.images.length > 0) {
         html += `<div style="display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">`;

@@ -1329,7 +1329,7 @@ if (submitPostBtn) {
                     // 이전 Firestore 규칙은 email 필드를 필수로 요구합니다. 규칙 배포 전
                     // GitHub 사이트가 먼저 갱신되어도 글쓰기가 끊기지 않도록 한 번만 호환 재시도합니다.
                     if (createError?.code !== 'permission-denied') throw createError;
-                    if (poll?.optionAttachments) throw createError;
+                    if (poll?.optionAttachments || poll?.questionAttachments || poll?.optionAttachmentCounts || poll?.questionAttachmentCount) throw createError;
                     assertSubmission();
                     createdPostRef = await db.collection('posts').add({ ...postData, email: currentUser.email });
                 }
@@ -1346,7 +1346,8 @@ if (submitPostBtn) {
             closeWritePage();
         } catch (error) {
             console.error("Error adding post: ", error);
-            alert('업로드 중 오류가 발생했습니다: ' + error.message);
+            alert(window.communityPolls?.submissionErrorMessage(error, 'post')
+                || '게시글 저장 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.');
         } finally {
             submitPostBtn.disabled = false;
             submitPostBtn.innerText = submitLabel;

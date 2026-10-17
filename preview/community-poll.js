@@ -24,6 +24,7 @@
     let pollStartY = 0;
     let pollStartScrollTop = 0;
     let pollReturnFocus = null;
+    let pollCurrentTarget = 'post';
     let pollQuestionFocusTimer = null;
     const prefersReducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
@@ -98,6 +99,38 @@
         });
     }
 
+    function onPollScrollMouseMove(moveEvent) {
+        if (!isPollScrollDragging || !pollModalBody) return;
+        const deltaY = moveEvent.clientY - pollStartY;
+        const scrollHeight = pollModalBody.scrollHeight;
+        const clientHeight = pollModalBody.clientHeight;
+        const trackHeight = pollModalScrollbar.clientHeight || Math.max(10, clientHeight - 16);
+        const thumbHeight = parseFloat(pollModalScrollbarThumb.style.height) || 30;
+        const maxThumbTop = Math.max(1, trackHeight - thumbHeight);
+        const maxScrollTop = scrollHeight - clientHeight;
+
+        const scrollDelta = (deltaY / maxThumbTop) * maxScrollTop;
+        pollModalBody.scrollTop = pollStartScrollTop + scrollDelta;
+    }
+
+    function stopPollScrollDragging() {
+        if (!isPollScrollDragging) return;
+        isPollScrollDragging = false;
+        document.body.style.userSelect = '';
+        if (pollModalScrollbarThumb) {
+            pollModalScrollbarThumb.classList.remove('dragging');
+        }
+        document.removeEventListener('mousemove', onPollScrollMouseMove);
+        document.removeEventListener('mouseup', stopPollScrollDragging);
+
+        if (!isHoveringPollScrollbar) {
+            clearTimeout(pollScrollTimeout);
+            pollScrollTimeout = setTimeout(() => {
+                if (pollModalScrollbar) pollModalScrollbar.classList.remove('visible');
+            }, 1000);
+        }
+    }
+
     if (pollModalScrollbarThumb) {
         pollModalScrollbarThumb.addEventListener('mousedown', (e) => {
             isPollScrollDragging = true;
@@ -106,48 +139,23 @@
             pollModalScrollbarThumb.classList.add('dragging');
             document.body.style.userSelect = 'none';
 
-            const onMouseMove = (moveEvent) => {
-                if (!isPollScrollDragging || !pollModalBody) return;
-                const deltaY = moveEvent.clientY - pollStartY;
-                const scrollHeight = pollModalBody.scrollHeight;
-                const clientHeight = pollModalBody.clientHeight;
-                const trackHeight = pollModalScrollbar.clientHeight || Math.max(10, clientHeight - 16);
-                const thumbHeight = parseFloat(pollModalScrollbarThumb.style.height) || 30;
-                const maxThumbTop = Math.max(1, trackHeight - thumbHeight);
-                const maxScrollTop = scrollHeight - clientHeight;
-
-                const scrollDelta = (deltaY / maxThumbTop) * maxScrollTop;
-                pollModalBody.scrollTop = pollStartScrollTop + scrollDelta;
-            };
-
-            const onMouseUp = () => {
-                if (!isPollScrollDragging) return;
-                isPollScrollDragging = false;
-                document.body.style.userSelect = '';
-                pollModalScrollbarThumb.classList.remove('dragging');
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-
-                if (!isHoveringPollScrollbar) {
-                    clearTimeout(pollScrollTimeout);
-                    pollScrollTimeout = setTimeout(() => {
-                        pollModalScrollbar.classList.remove('visible');
-                    }, 1000);
-                }
-            };
-
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
+            document.addEventListener('mousemove', onPollScrollMouseMove);
+            document.addEventListener('mouseup', stopPollScrollDragging);
         });
     }
 
     // 2. 투표 만들기 모달 열기
     window.openPollModal = function (target = 'post') {
+        if (pollModal?.classList.contains('active')) return;
         if (!window.communityPolls.beginDraft(target)) return;
+        pollCurrentTarget = target;
         clearTimeout(pollQuestionFocusTimer);
         pollReturnFocus = document.activeElement;
         if (typeof window.closeCommentAttachMenu === 'function') {
             window.closeCommentAttachMenu();
+        }
+        if (pollModalBody) {
+            pollModalBody.scrollTop = 0;
         }
         document.body.classList.add('poll-modal-open');
         history.pushState({ ...history.state, pollModal: true }, '');
@@ -171,11 +179,52 @@
         const wasOpen = pollModal?.classList.contains('active');
         clearTimeout(pollQuestionFocusTimer);
         pollQuestionFocusTimer = null;
+        stopPollScrollDragging();
         window.pollAttachments?.cancelEdit();
         document.body.classList.remove('poll-modal-open');
         if (pollModalOverlay) pollModalOverlay.classList.remove('active');
         if (pollModal) pollModal.classList.remove('active');
-        if (wasOpen && pollReturnFocus?.isConnected) pollReturnFocus.focus();
+        if (pollModalBody) {
+            pollModalBody.scrollTop = 0;
+        }
+        if (wasOpen) {
+            let restored = false;
+            // 댓글에서 투표를 열었을 때는 닫힌 뒤 댓글 입력창으로 즉시 포커스 복귀 (숨겨진 첨부메뉴에 갇히는 문제 방지)
+            if (pollCurrentTarget === 'comment') {
+                const commentInput = document.querySelector('.side-detail-container .comment-input') || document.querySelector('.comment-input');
+                if (commentInput && commentInput.isConnected) {
+                    try {
+                        commentInput.focus();
+                        if (document.activeElement === commentInput) restored = true;
+                    } catch (e) { }
+                }
+            }
+
+            // 댓글이 아니거나 댓글 입력창 복귀 실패 시 원래 포커스 대상 복귀 (숨겨진 첨부 메뉴 요소 제외)
+            if (!restored && pollReturnFocus && pollReturnFocus.isConnected && !pollReturnFocus.closest?.('.comment-attach-menu')) {
+                try {
+                    pollReturnFocus.focus();
+                    if (document.activeElement === pollReturnFocus) restored = true;
+                } catch (e) { }
+            }
+
+            // 글쓰기 페이지 기본 포커스 복귀
+            if (!restored && pollCurrentTarget === 'post') {
+                const postPollBtn = document.getElementById('postPollBtn');
+                if (postPollBtn && postPollBtn.isConnected) {
+                    try {
+                        postPollBtn.focus();
+                        if (document.activeElement === postPollBtn) restored = true;
+                    } catch (e) { }
+                }
+                if (!restored) {
+                    const postContent = document.getElementById('postContent');
+                    if (postContent && postContent.isConnected) {
+                        try { postContent.focus(); } catch (e) { }
+                    }
+                }
+            }
+        }
         if (wasOpen && !fromPopState && history.state?.pollModal) {
             window._isProgrammaticBack = true;
             history.back();
