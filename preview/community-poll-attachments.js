@@ -11,6 +11,7 @@
     const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const committed = { post: [], comment: [] };
     const committedQuestion = { post: [], comment: [] };
+    const pausedEdits = { post: null, comment: null };
     const revisions = { post: 0, comment: 0 };
     const entries = new Map(), rows = new Map();
     let questionFiles = [];
@@ -88,6 +89,7 @@
             ...committed.comment.flat(),
             ...committedQuestion.post,
             ...committedQuestion.comment,
+            ...Object.values(pausedEdits).filter(Boolean).flatMap(edit => [...edit.options.flat(), ...edit.question]),
             ...[...rows.values()].flat(),
             ...questionFiles
         ].map(file => file.id));
@@ -100,6 +102,7 @@
 
     function reset(kind, poll) {
         if (!(kind in committed)) return;
+        pausedEdits[kind] = null;
         if (editing === kind) cancelEdit();
         committed[kind] = (poll?.options || []).map((_, i) => (poll.optionAttachments?.[i] || []).map(file => {
             const entry = remoteEntry(file); entries.set(entry.id, entry); return entry;
@@ -124,13 +127,25 @@
     }
 
     function beginEdit(kind) {
+        const paused = pausedEdits[kind];
         cancelEdit(); editing = kind;
-        questionFiles = [...(committedQuestion[kind] || [])];
+        questionFiles = [...(paused?.question || committedQuestion[kind] || [])];
         refreshQuestionRow();
-        activeRows().forEach((row, i) => decorateRow(row, committed[kind][i] || []));
+        activeRows().forEach((row, i) => decorateRow(row, (paused?.options || committed[kind])[i] || []));
+        pausedEdits[kind] = null;
+        sweep();
+    }
+
+    function pauseEdit(kind) {
+        if (editing !== kind) return;
+        pausedEdits[kind] = {
+            options: activeRows().map(row => [...(rows.get(row) || [])]),
+            question: [...questionFiles]
+        };
     }
 
     function commitEdit(kind) {
+        pausedEdits[kind] = null;
         committed[kind] = activeRows().map(row => [...(rows.get(row) || [])]);
         committedQuestion[kind] = [...questionFiles];
         revisions[kind]++;
@@ -941,7 +956,7 @@
     }).observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: true });
 
     window.pollAttachments = {
-        validate, validateCounts, reset, beginEdit, commitEdit, cancelEdit, decorateRow, removeRow, addFiles, addQuestionFiles, prepare,
+        validate, validateCounts, reset, beginEdit, pauseEdit, commitEdit, cancelEdit, decorateRow, removeRow, addFiles, addQuestionFiles, prepare,
         renderDraft, renderPublished, renderPublishedQuestion, closeMenu, closePreview, closeYoutubeManager,
         hasYoutubeManager: () => Boolean(youtubeManager),
         hasPreview: () => Boolean(previewState)

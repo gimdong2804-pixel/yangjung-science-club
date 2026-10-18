@@ -1,6 +1,9 @@
 // 투표 정의는 게시글/댓글에 저장하고, 표는 계정과 분리된 임의 ID로 저장한다.
 (function () {
     const drafts = { post: null, comment: null };
+    // Incomplete modal edits stay separate from the poll attached to the composer.
+    const editingDrafts = { post: null, comment: null };
+    let editingTarget = null;
     const locked = { post: false, comment: false };
     const states = new Map();
     const pendingCreates = new Map();
@@ -135,19 +138,59 @@
         return '';
     }
 
+    function getVoteLimits(state, now = Date.now()) {
+        if (!user()) return null;
+        if (state.closed) return { changes: '변경 불가', time: '투표 마감', remainingMs: null };
+        if (state.ownVoteError || state.resultsError || (state.ownVote && !state.ownVote.metadataKnown)) {
+            return { changes: '변경 정보 확인 불가', time: '다시 불러와 주세요', remainingMs: null };
+        }
+        if (!state.ownVoteLoaded) return { changes: '변경 정보 확인 중…', time: '', remainingMs: null };
+        const count = state.ownVote?.cancelCount || 0;
+        const remainingChanges = Math.max(0, MAX_VOTE_CANCELLATIONS - count);
+        const changes = `변경 기회 ${remainingChanges}회 남음`;
+        if (!remainingChanges) return { changes, time: '더 이상 취소할 수 없어요', remainingMs: null };
+        if (!state.ownVote?.choices.length) {
+            return { changes, time: count ? '재투표 후 취소 시간 시작' : '투표 후 5분 안에 취소 가능', remainingMs: null };
+        }
+        const votedAt = timestampMillis(state.ownVote.votedAt);
+        if (votedAt === null) return { changes: '변경 정보 확인 불가', time: '투표 시간을 확인할 수 없어요', remainingMs: null };
+        const remainingMs = votedAt + VOTE_CANCELLATION_WINDOW_MS - now;
+        if (remainingMs <= 0) return { changes: '변경 불가', time: '취소 시간 종료', remainingMs };
+        const seconds = Math.min(300, Math.ceil(remainingMs / 1000));
+        const clock = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+        return { changes, time: `취소 가능 ${clock}`, remainingMs };
+    }
+
+    function refreshVoteLimits(state) {
+        const limits = getVoteLimits(state);
+        state.nodes.forEach(host => {
+            if (!host.isConnected) return;
+            const row = host.querySelector('.poll-vote-limits');
+            if (!row) return;
+            row.hidden = !limits;
+            if (!limits) return;
+            for (const [selector, value] of [['[data-poll-changes]', limits.changes], ['[data-poll-cancel-time]', limits.time]]) {
+                const node = row.querySelector(selector);
+                if (node && node.textContent !== value) node.textContent = value;
+            }
+        });
+    }
+
     function scheduleCancelExpiry(state) {
         clearTimeout(state.cancelExpiryTimer);
         state.cancelExpiryTimer = null;
-        if (!state.ownVoteLoaded || !state.ownVote?.choices.length || !state.ownVote.metadataKnown
-            || state.ownVote.cancelCount >= MAX_VOTE_CANCELLATIONS) return;
-        const votedAt = timestampMillis(state.ownVote.votedAt);
-        if (votedAt === null) return;
-        const remaining = votedAt + VOTE_CANCELLATION_WINDOW_MS - Date.now();
-        if (remaining <= 0) return;
+        const remaining = getVoteLimits(state)?.remainingMs;
+        if (!(remaining > 0)) return;
         state.cancelExpiryTimer = setTimeout(() => {
             state.cancelExpiryTimer = null;
-            paint(state);
-        }, remaining + 5);
+            const limits = getVoteLimits(state);
+            if (limits?.remainingMs !== null && limits?.remainingMs <= 0) {
+                paint(state, false, false);
+            } else {
+                refreshVoteLimits(state);
+                scheduleCancelExpiry(state);
+            }
+        }, Math.min(1000, remaining) + 5);
     }
 
     function prefersReducedMotion() {
@@ -395,6 +438,8 @@
     }
 
     function setDraft(kind, poll = null, isLocked = false, preserveFiles = false) {
+        editingDrafts[kind] = null;
+        if (editingTarget === kind) editingTarget = null;
         if (!preserveFiles) window.pollAttachments?.reset(kind, poll);
         drafts[kind] = clone(poll);
         locked[kind] = isLocked;
@@ -407,12 +452,25 @@
         const sending = document.querySelector(kind === 'post' ? '#submitPostBtn' : '.comment-submit-btn');
         if (sending?.disabled) return false;
         target = kind;
-        const poll = drafts[kind];
+        const poll = editingDrafts[kind] || drafts[kind];
         document.getElementById('pollQuestionInput').value = poll?.question || '';
         document.getElementById('pollMultipleChoice').checked = !!poll?.multiple;
         document.getElementById('pollOptionsList').innerHTML = (poll?.options || ['', '']).map((option, index) => `<div class="poll-option-row"><input type="text" class="poll-input poll-option-input" placeholder="선택지 ${index + 1}" aria-label="선택지 ${index + 1}" maxlength="50" value="${escape(option)}"><button type="button" class="poll-option-remove-btn" onclick="window.removePollOption(this)" title="삭제"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
         window.pollAttachments?.beginEdit(kind);
+        editingTarget = kind;
         return true;
+    }
+
+    function pauseDraft() {
+        if (!editingTarget) return;
+        const kind = editingTarget;
+        editingDrafts[kind] = {
+            question: document.getElementById('pollQuestionInput').value,
+            options: Array.from(document.querySelectorAll('#pollOptionsList .poll-option-row:not(.poll-option-leaving) .poll-option-input')).map(input => input.value),
+            multiple: document.getElementById('pollMultipleChoice').checked
+        };
+        window.pollAttachments?.pauseEdit(kind);
+        editingTarget = null;
     }
 
     function attachDraft() {
@@ -538,6 +596,8 @@
         }
     }
     function paint(state, animateEntrance = false, animateResults = true) {
+        scheduleCancelExpiry(state);
+        const limits = getVoteLimits(state);
         const { poll } = state;
         const counts = poll.options.map(option => state.votes.filter(vote => vote.choices.includes(option)).length);
         const total = state.votes.length;
@@ -628,6 +688,9 @@
                 return `<div class="poll-choice-group"><label class="poll-choice ${selected.includes(option) ? 'is-selected' : ''}"><span class="poll-result-fill" style="width:${percent}%"></span><input type="${poll.multiple ? 'checkbox' : 'radio'}" name="poll-${escape(state.path)}" value="${index}" ${selected.includes(option) ? 'checked' : ''} ${choicesDisabled ? 'disabled' : ''}><span class="poll-choice-text">${escape(option)}</span><span class="poll-result-count">${state.loaded ? `${counts[index]}표 · ${percent}%` : '—'}</span></label>${window.pollAttachments?.renderPublished(publishedPoll, index) || ''}</div>`;
             }).join('')}</div><div class="poll-vote-footer"><span>${!user() ? '로그인하면 결과를 확인할 수 있어요.' : state.loaded ? `${total}명 참여` : state.resultsError ? '결과를 표시할 수 없어요.' : '결과 불러오는 중…'}${poll.multiple ? ' · 참여자 기준 비율' : ''}</span><div class="poll-vote-actions">${own ? '' : `<button type="button" data-vote="save" ${saveDisabled ? 'disabled' : ''}><span class="poll-vote-label">${state.showSaving ? '저장 중…' : '투표하기'}</span></button>`}${cancelButtonHtml}${canClose ? `<button type="button" data-vote="close" ${state.closing || state.saving ? 'disabled' : ''}>${state.closing ? '마감 중…' : '투표 마감'}</button>` : ''}</div></div><p class="poll-status" role="status" tabindex="-1">${escape(statusMessage)}</p>${user() && canRetry ? '<button type="button" data-vote="retry">다시 불러오기</button>' : ''}`;
 
+            // The countdown updates only these text nodes, preserving focus and animations.
+            if (limits) host.querySelector('.poll-vote-footer').insertAdjacentHTML('afterend',
+                `<div class="poll-vote-limits" aria-live="off"><span data-poll-changes>${escape(limits.changes)}</span><span data-poll-cancel-time>${escape(limits.time)}</span></div>`);
             host.querySelectorAll('.poll-published-question-files, [data-poll-option-files]').forEach(node => {
                 const key = node.classList.contains('poll-published-question-files') ? 'question' : node.dataset.pollOptionFiles;
                 const previous = previousFiles.get(key);
@@ -1162,6 +1225,7 @@
             return ref;
         },
         getDraft: kind => clone(drafts[kind]),
+        pauseDraft,
         resume() { suspended = false; scheduleSync(); },
         dispose() {
             suspended = true;

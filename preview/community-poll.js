@@ -177,6 +177,7 @@
     // 3. 투표 만들기 모달 닫기
     window.closePollModal = function (fromPopState = false) {
         const wasOpen = pollModal?.classList.contains('active');
+        if (wasOpen) window.communityPolls?.pauseDraft();
         clearTimeout(pollQuestionFocusTimer);
         pollQuestionFocusTimer = null;
         stopPollScrollDragging();
